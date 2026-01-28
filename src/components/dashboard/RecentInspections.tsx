@@ -1,24 +1,10 @@
 import { ClipboardCheck, ArrowRight, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRecentInspections } from "@/hooks/useInspections";
 import { cn } from "@/lib/utils";
-
-interface Inspection {
-  id: string;
-  site: string;
-  inspector: string;
-  date: string;
-  status: "passed" | "pending" | "failed";
-  items: number;
-}
-
-const inspections: Inspection[] = [
-  { id: "INS-001", site: "Kilimani Tower", inspector: "David Ochieng", date: "2 hours ago", status: "passed", items: 24 },
-  { id: "INS-002", site: "Westlands Mall", inspector: "Sarah Wanjiku", date: "5 hours ago", status: "pending", items: 18 },
-  { id: "INS-003", site: "Karen Office Park", inspector: "Peter Kamau", date: "Yesterday", status: "passed", items: 32 },
-  { id: "INS-004", site: "Industrial Area Depot", inspector: "Grace Muthoni", date: "Yesterday", status: "failed", items: 15 },
-  { id: "INS-005", site: "Nairobi CBD Complex", inspector: "James Kipchoge", date: "2 days ago", status: "passed", items: 28 },
-];
+import { formatDistanceToNow } from "date-fns";
 
 const statusConfig = {
   passed: { icon: CheckCircle, label: "Passed", className: "status-available" },
@@ -27,6 +13,8 @@ const statusConfig = {
 };
 
 const RecentInspections = () => {
+  const { data: inspections, isLoading, error } = useRecentInspections(5);
+
   return (
     <div className="bg-card rounded-xl border border-border p-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -41,37 +29,59 @@ const RecentInspections = () => {
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {inspections.map((inspection) => {
-          const config = statusConfig[inspection.status];
-          const StatusIcon = config.icon;
-          
-          return (
-            <div 
-              key={inspection.id} 
-              className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-4">
-                <div className={cn("p-2 rounded-lg border", config.className)}>
-                  <StatusIcon className="w-4 h-4" />
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>Unable to load inspections</p>
+        </div>
+      ) : inspections && inspections.length > 0 ? (
+        <div className="space-y-4">
+          {inspections.map((inspection) => {
+            const config = statusConfig[inspection.status];
+            const StatusIcon = config.icon;
+            
+            return (
+              <div 
+                key={inspection.id} 
+                className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={cn("p-2 rounded-lg border", config.className)}>
+                    <StatusIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {inspection.sites?.name || "Unknown Site"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {inspection.profiles?.full_name || "Unknown"} • {inspection.scaffold_count} items
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{inspection.site}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {inspection.inspector} • {inspection.items} items
+                <div className="text-right">
+                  <Badge variant="secondary" className={cn("border", config.className)}>
+                    {config.label}
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatDistanceToNow(new Date(inspection.inspection_date), { addSuffix: true })}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <Badge variant="secondary" className={cn("border", config.className)}>
-                  {config.label}
-                </Badge>
-                <p className="text-xs text-muted-foreground mt-1">{inspection.date}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <ClipboardCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No inspections recorded yet.</p>
+          <p className="text-xs mt-1">Start a new inspection to see history here.</p>
+        </div>
+      )}
     </div>
   );
 };
