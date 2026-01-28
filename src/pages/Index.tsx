@@ -8,9 +8,13 @@ import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const Index = () => {
   const [activeItem, setActiveItem] = useState("dashboard");
+  const { profile } = useAuth();
+  const { data: stats, isLoading } = useDashboardStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,7 +23,7 @@ const Index = () => {
       <main className="ml-64">
         <Header 
           title="Dashboard" 
-          subtitle="Welcome back, John. Here's your scaffold operations overview." 
+          subtitle={`Welcome back, ${profile?.full_name?.split(' ')[0] || 'there'}. Here's your scaffold operations overview.`}
         />
         
         <div className="p-6 space-y-6">
@@ -30,49 +34,49 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <StatCard
               title="Total Scaffolds"
-              value="923"
-              change="+12 this month"
-              changeType="positive"
+              value={isLoading ? "..." : stats?.totalScaffolds || 0}
+              change={stats?.totalScaffolds ? "+12 this month" : "Add scaffolds to get started"}
+              changeType={stats?.totalScaffolds ? "positive" : "neutral"}
               icon={Package}
               iconBg="primary"
             />
             <StatCard
               title="Active Sites"
-              value="8"
-              change="2 starting soon"
+              value={isLoading ? "..." : stats?.activeSites || 0}
+              change={stats?.activeSites ? "2 starting soon" : "Create your first site"}
               changeType="neutral"
               icon={MapPin}
               iconBg="accent"
             />
             <StatCard
               title="Inspections Due"
-              value="5"
-              change="3 overdue"
-              changeType="negative"
+              value={isLoading ? "..." : stats?.inspectionsDue || 0}
+              change={stats?.inspectionsDue && stats.inspectionsDue > 0 ? `${stats.inspectionsDue} pending` : "All caught up"}
+              changeType={stats?.inspectionsDue && stats.inspectionsDue > 0 ? "negative" : "positive"}
               icon={ClipboardCheck}
               iconBg="success"
             />
             <StatCard
               title="Safety Alerts"
-              value="3"
-              change="1 critical"
-              changeType="negative"
+              value={isLoading ? "..." : stats?.safetyAlerts || 0}
+              change={stats?.safetyAlerts ? "Needs attention" : "No alerts"}
+              changeType={stats?.safetyAlerts ? "negative" : "positive"}
               icon={AlertTriangle}
               iconBg="danger"
             />
             <StatCard
               title="Active Workers"
-              value="156"
-              change="12 on leave"
+              value={isLoading ? "..." : stats?.activeWorkers || 0}
+              change="Team members"
               changeType="neutral"
               icon={Users}
               iconBg="accent"
             />
             <StatCard
               title="Pending Repairs"
-              value="18"
-              change="5 urgent"
-              changeType="negative"
+              value={isLoading ? "..." : stats?.pendingRepairs || 0}
+              change={stats?.pendingRepairs ? "Needs resolution" : "All resolved"}
+              changeType={stats?.pendingRepairs ? "negative" : "positive"}
               icon={Wrench}
               iconBg="warning"
             />
