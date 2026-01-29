@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
+import { useScaffolds } from "@/hooks/useScaffolds";
 
 const projectTypes = [
   { id: "building", label: "Building" },
@@ -89,6 +90,23 @@ const HireQuotationForm = () => {
     fsSalesman: "",
     date: "",
   });
+  const [equipmentForm, setEquipmentForm] = useState({
+    partId: "",
+    orderQuantity: "",
+  });
+  const { data: scaffolds, isLoading, error } = useScaffolds();
+
+  const selectedScaffold = scaffolds?.find((item) => item.id === equipmentForm.partId);
+
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return "";
+    return `R${value.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
+  };
+
+  const formatMass = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return "";
+    return `${value} kg`;
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -110,93 +128,94 @@ const HireQuotationForm = () => {
   };
 
   return (
-    <Card className="animate-fade-in">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">Hire Quotation</CardTitle>
-              <p className="text-sm text-muted-foreground">Site Master - Customer Information</p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-        </div>
-      </CardHeader>
-
-      {isExpanded && (
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Invoicing Section */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm text-primary border-b border-border pb-2">Invoicing</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <Label htmlFor="companyName">Company name to appear on invoice</Label>
-                  <Input
-                    id="companyName"
-                    value={formData.companyName}
-                    onChange={(e) => handleInputChange("companyName", e.target.value)}
-                    placeholder="Enter company name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="siteManagerName">Site Manager's Name</Label>
-                  <Input
-                    id="siteManagerName"
-                    value={formData.siteManagerName}
-                    onChange={(e) => handleInputChange("siteManagerName", e.target.value)}
-                    placeholder="Full name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="officeTel">Office Tel</Label>
-                  <Input
-                    id="officeTel"
-                    value={formData.officeTel}
-                    onChange={(e) => handleInputChange("officeTel", e.target.value)}
-                    placeholder="Office telephone"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="siteManagerCell">Cell</Label>
-                  <Input
-                    id="siteManagerCell"
-                    value={formData.siteManagerCell}
-                    onChange={(e) => handleInputChange("siteManagerCell", e.target.value)}
-                    placeholder="Mobile number"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="officeEmail">Office Email</Label>
-                  <Input
-                    id="officeEmail"
-                    type="email"
-                    value={formData.officeEmail}
-                    onChange={(e) => handleInputChange("officeEmail", e.target.value)}
-                    placeholder="Office email address"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="siteManagerEmail">Site Manager's Email</Label>
-                  <Input
-                    id="siteManagerEmail"
-                    type="email"
-                    value={formData.siteManagerEmail}
-                    onChange={(e) => handleInputChange("siteManagerEmail", e.target.value)}
-                    placeholder="Site manager email"
-                  />
-                </div>
+    <div className="space-y-6">
+      <Card className="animate-fade-in">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Hire Quotation</CardTitle>
+                <p className="text-sm text-muted-foreground">Site Master - Customer Information</p>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </div>
+        </CardHeader>
+
+        {isExpanded && (
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Invoicing Section */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm text-primary border-b border-border pb-2">Invoicing</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="companyName">Company name to appear on invoice</Label>
+                    <Input
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange("companyName", e.target.value)}
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteManagerName">Site Manager's Name</Label>
+                    <Input
+                      id="siteManagerName"
+                      value={formData.siteManagerName}
+                      onChange={(e) => handleInputChange("siteManagerName", e.target.value)}
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="officeTel">Office Tel</Label>
+                    <Input
+                      id="officeTel"
+                      value={formData.officeTel}
+                      onChange={(e) => handleInputChange("officeTel", e.target.value)}
+                      placeholder="Office telephone"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteManagerCell">Cell</Label>
+                    <Input
+                      id="siteManagerCell"
+                      value={formData.siteManagerCell}
+                      onChange={(e) => handleInputChange("siteManagerCell", e.target.value)}
+                      placeholder="Mobile number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="officeEmail">Office Email</Label>
+                    <Input
+                      id="officeEmail"
+                      type="email"
+                      value={formData.officeEmail}
+                      onChange={(e) => handleInputChange("officeEmail", e.target.value)}
+                      placeholder="Office email address"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="siteManagerEmail">Site Manager's Email</Label>
+                    <Input
+                      id="siteManagerEmail"
+                      type="email"
+                      value={formData.siteManagerEmail}
+                      onChange={(e) => handleInputChange("siteManagerEmail", e.target.value)}
+                      placeholder="Site manager email"
+                    />
+                  </div>
+                </div>
+              </div>
 
             {/* Ordering Section */}
             <div className="space-y-4">
@@ -537,33 +556,112 @@ const HireQuotationForm = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button type="button" variant="outline" onClick={() => setFormData({
-                companyName: "", siteManagerName: "", siteManagerCell: "", siteManagerEmail: "",
-                officeTel: "", officeEmail: "", customerOrderNumber: "", officialOrdersUsed: false,
-                bulkOrdersUsed: false, newOrderForEveryQuote: false, telephonicOrders: false,
-                personsNameAsOrder: false, personsName: "", requisitionNumberUsed: false,
-                requisitionNumber: "", fixedRateAgreed: "", returns: "", deliveries: "",
-                specialTransportArrangement: "", tonnageProduct: "", tonnageHireDiscount: "",
-                tonnageSalesDiscount: "", tonnageRate: "", basketProduct: "", basketHireDiscount: "",
-                basketSalesDiscount: "", basketRate: "", straightHireProduct: "", straightHireDiscount: "",
-                straightSalesDiscount: "", straightRate: "", nettProduct: "", nettHireDiscount: "",
-                nettSalesDiscount: "", nettRate: "", quoteNumber: "", projectTypes: [],
-                marketSegments: [], customerAccountNo: "", accountType: "30_day", depositAccount: "",
-                moneyPaidDeposit: "", paymentMethod: "eft", creditLimit: "", balanceAvailable: "",
-                siteName: "", siteAddress: "", fsSalesman: "", date: "",
-              })}>
-                Clear Form
-              </Button>
-              <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
-                Submit Quotation
-              </Button>
+              {/* Submit Button */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                <Button type="button" variant="outline" onClick={() => setFormData({
+                  companyName: "", siteManagerName: "", siteManagerCell: "", siteManagerEmail: "",
+                  officeTel: "", officeEmail: "", customerOrderNumber: "", officialOrdersUsed: false,
+                  bulkOrdersUsed: false, newOrderForEveryQuote: false, telephonicOrders: false,
+                  personsNameAsOrder: false, personsName: "", requisitionNumberUsed: false,
+                  requisitionNumber: "", fixedRateAgreed: "", returns: "", deliveries: "",
+                  specialTransportArrangement: "", tonnageProduct: "", tonnageHireDiscount: "",
+                  tonnageSalesDiscount: "", tonnageRate: "", basketProduct: "", basketHireDiscount: "",
+                  basketSalesDiscount: "", basketRate: "", straightHireProduct: "", straightHireDiscount: "",
+                  straightSalesDiscount: "", straightRate: "", nettProduct: "", nettHireDiscount: "",
+                  nettSalesDiscount: "", nettRate: "", quoteNumber: "", projectTypes: [],
+                  marketSegments: [], customerAccountNo: "", accountType: "30_day", depositAccount: "",
+                  moneyPaidDeposit: "", paymentMethod: "eft", creditLimit: "", balanceAvailable: "",
+                  siteName: "", siteAddress: "", fsSalesman: "", date: "",
+                })}>
+                  Clear Form
+                </Button>
+                <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  Submit Quotation
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        )}
+      </Card>
+
+      <Card className="animate-fade-in">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="w-5 h-5 text-primary" />
             </div>
-          </form>
+            <div>
+              <CardTitle className="text-lg">Equipment Details</CardTitle>
+              <p className="text-sm text-muted-foreground">Select a part to load inventory details</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading inventory parts...</p>
+          ) : error ? (
+            <p className="text-sm text-destructive">Unable to load inventory items.</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="equipmentPart">Part</Label>
+                  <Select
+                    value={equipmentForm.partId}
+                    onValueChange={(value) => setEquipmentForm((prev) => ({ ...prev, partId: value }))}
+                  >
+                    <SelectTrigger id="equipmentPart">
+                      <SelectValue placeholder="Select a part from inventory" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scaffolds?.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.part_number || "No Part #"} — {item.description || item.scaffold_type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="equipmentOrderQty">Order Quantity</Label>
+                  <Input
+                    id="equipmentOrderQty"
+                    value={equipmentForm.orderQuantity}
+                    onChange={(e) => setEquipmentForm((prev) => ({ ...prev, orderQuantity: e.target.value }))}
+                    placeholder="Enter quantity"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label>Description</Label>
+                  <Input value={selectedScaffold?.description || selectedScaffold?.scaffold_type || ""} readOnly />
+                </div>
+                <div>
+                  <Label>Mass per Item</Label>
+                  <Input value={formatMass(selectedScaffold?.mass_per_item)} readOnly />
+                </div>
+                <div>
+                  <Label>Weekly Rate</Label>
+                  <Input value={formatCurrency(selectedScaffold?.weekly_rate)} readOnly />
+                </div>
+                <div>
+                  <Label>Available Quantity</Label>
+                  <Input value={selectedScaffold?.quantity?.toString() || ""} readOnly />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="button" variant="outline">
+                  Add Equipment
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
-      )}
-    </Card>
+      </Card>
+    </div>
   );
 };
 
