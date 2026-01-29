@@ -197,48 +197,63 @@ export type Database = {
       scaffolds: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           last_inspection_date: string | null
           manufacturer: string | null
+          mass_per_item: number | null
           next_inspection_due: string | null
           notes: string | null
+          part_number: string | null
           purchase_date: string | null
           qr_code: string | null
+          quantity: number | null
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number: string | null
           site_id: string | null
           status: Database["public"]["Enums"]["scaffold_status"]
           updated_at: string
+          weekly_rate: number | null
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           last_inspection_date?: string | null
           manufacturer?: string | null
+          mass_per_item?: number | null
           next_inspection_due?: string | null
           notes?: string | null
+          part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
+          quantity?: number | null
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
+          weekly_rate?: number | null
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           last_inspection_date?: string | null
           manufacturer?: string | null
+          mass_per_item?: number | null
           next_inspection_due?: string | null
           notes?: string | null
+          part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
+          quantity?: number | null
           scaffold_type?: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
+          weekly_rate?: number | null
         }
         Relationships: [
           {
