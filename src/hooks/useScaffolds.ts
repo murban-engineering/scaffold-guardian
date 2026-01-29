@@ -19,6 +19,11 @@ export interface Scaffold {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  part_number: string | null;
+  description: string | null;
+  quantity: number | null;
+  mass_per_item: number | null;
+  weekly_rate: number | null;
   sites?: {
     name: string;
     location: string;
