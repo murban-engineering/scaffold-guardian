@@ -10,6 +10,7 @@ import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
 import HireQuotationForm from "@/components/dashboard/HireQuotationForm";
 import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
+import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
@@ -36,11 +37,18 @@ const Index = () => {
     return `Equipment: ${previewText}${suffix}`;
   };
 
-  const headerTitle = activeItem === "inventory" ? "Inventory" : "Dashboard";
+  const headerTitle =
+    activeItem === "inventory"
+      ? "Inventory"
+      : activeItem === "workforce"
+        ? "Workforce"
+        : "Dashboard";
   const headerSubtitle =
     activeItem === "inventory"
       ? "Live view of your scaffold stock levels."
-      : `Welcome back, ${profile?.full_name?.split(' ')[0] || "there"}. Here's your scaffold operations overview.`;
+      : activeItem === "workforce"
+        ? "Track the team members currently signed in to your workspace."
+        : `Welcome back, ${profile?.full_name?.split(' ')[0] || "there"}. Here's your scaffold operations overview.`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,6 +75,10 @@ const Index = () => {
         {activeItem === "inventory" ? (
           <div className="p-6">
             <InventoryOverview />
+          </div>
+        ) : activeItem === "workforce" ? (
+          <div className="p-6">
+            <SignedInUsers />
           </div>
         ) : (
           <div className="p-6 space-y-6">
