@@ -8,6 +8,7 @@ import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
+import HireQuotationForm from "@/components/dashboard/HireQuotationForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
@@ -27,6 +28,9 @@ const Index = () => {
         />
         
         <div className="p-6 space-y-6">
+          {/* Hire Quotation Form */}
+          <HireQuotationForm />
+
           {/* Quick Actions */}
           <QuickActions />
 
