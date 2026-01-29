@@ -9,14 +9,32 @@ import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
 import HireQuotationForm from "@/components/dashboard/HireQuotationForm";
-import HireQuotationWorkflow from "@/components/dashboard/HireQuotationWorkflow";
+import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const Index = () => {
   const [activeItem, setActiveItem] = useState("dashboard");
+  const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const { profile } = useAuth();
   const { data: stats, isLoading } = useDashboardStats();
+
+  const getEquipmentSummary = (client: ProcessedClient) => {
+    if (!client.equipmentItems.length) {
+      return "Equipment: none listed";
+    }
+
+    const lineItems = client.equipmentItems.map((item) => {
+      const label = item.description || item.itemCode || "Item";
+      return `${label} (${item.qtyDelivered || "0"})`;
+    });
+    const preview = lineItems.slice(0, 2).join(", ");
+    const remainingCount = lineItems.length - 2;
+    const previewText = preview || "Equipment listed";
+    const suffix = remainingCount > 0 ? ` +${remainingCount} more` : "";
+
+    return `Equipment: ${previewText}${suffix}`;
+  };
 
   const headerTitle = activeItem === "inventory" ? "Inventory" : "Dashboard";
   const headerSubtitle =
@@ -26,7 +44,22 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar activeItem={activeItem} onItemClick={setActiveItem} />
+      <Sidebar
+        activeItem={activeItem}
+        onItemClick={setActiveItem}
+        processedClient={
+          processedClient
+            ? {
+                clientCompanyName: processedClient.clientCompanyName,
+                clientName: processedClient.clientName,
+                siteName: processedClient.siteName,
+                siteLocation: processedClient.siteLocation,
+                siteAddress: processedClient.siteAddress,
+                equipmentSummary: getEquipmentSummary(processedClient),
+              }
+            : null
+        }
+      />
 
       <main className="ml-64">
         <Header title={headerTitle} subtitle={headerSubtitle} />
@@ -39,7 +72,7 @@ const Index = () => {
           <div className="p-6 space-y-6">
             {/* Hire Quotation Form */}
             <HireQuotationForm />
-            <HireQuotationWorkflow />
+            <HireQuotationWorkflow onClientProcessed={setProcessedClient} />
 
             {/* Quick Actions */}
             <QuickActions />
