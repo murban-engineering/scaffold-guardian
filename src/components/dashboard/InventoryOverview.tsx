@@ -1,39 +1,40 @@
 import { Package, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useScaffolds, ScaffoldType } from "@/hooks/useScaffolds";
+import { useScaffolds } from "@/hooks/useScaffolds";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const scaffoldTypeLabels: Record<ScaffoldType, string> = {
-  frame: "Frame Scaffolds",
-  tube_coupler: "Tube & Coupler",
-  mobile: "Mobile Scaffolds",
-  suspended: "Suspended Scaffolds",
-  cantilever: "Cantilever Scaffolds",
-  system: "System Scaffolds",
-};
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const InventoryOverview = () => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
 
-  // Group scaffolds by type and calculate stats
-  const inventoryData = Object.entries(scaffoldTypeLabels).map(([type, label]) => {
-    const typeScaffolds = scaffolds?.filter(s => s.scaffold_type === type) || [];
-    return {
-      type: label,
-      quantity: typeScaffolds.length,
-      available: typeScaffolds.filter(s => s.status === "available").length,
-      inUse: typeScaffolds.filter(s => s.status === "in_use").length,
-      damaged: typeScaffolds.filter(s => s.status === "damaged").length,
-    };
-  }).filter(item => item.quantity > 0);
+  const formatCurrency = (value: number | null) => {
+    if (value === null || value === undefined) return "-";
+    return `R${value.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}`;
+  };
 
-  // If no data, show empty state with sample structure
-  const displayData = inventoryData.length > 0 ? inventoryData : [
-    { type: "Frame Scaffolds", quantity: 0, available: 0, inUse: 0, damaged: 0 },
-    { type: "Tube & Coupler", quantity: 0, available: 0, inUse: 0, damaged: 0 },
-    { type: "Mobile Scaffolds", quantity: 0, available: 0, inUse: 0, damaged: 0 },
-  ];
+  const formatMass = (value: number | null) => {
+    if (value === null || value === undefined) return "-";
+    return `${value} kg`;
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusStyles: Record<string, string> = {
+      available: "status-available",
+      in_use: "status-in-use",
+      damaged: "status-damaged",
+      maintenance: "bg-amber-500/20 text-amber-700 border-amber-500/30",
+    };
+    return statusStyles[status] || "";
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 animate-fade-in">
@@ -42,7 +43,12 @@ const InventoryOverview = () => {
           <div className="p-2 rounded-lg bg-primary/10">
             <Package className="w-5 h-5 text-primary" />
           </div>
-          <h2 className="text-lg font-semibold">Scaffold Inventory</h2>
+          <div>
+            <h2 className="text-lg font-semibold">Scaffold Inventory</h2>
+            <p className="text-sm text-muted-foreground">
+              {scaffolds?.length || 0} items in stock
+            </p>
+          </div>
         </div>
         <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
           View All <ArrowRight className="w-4 h-4 ml-1" />
@@ -51,7 +57,7 @@ const InventoryOverview = () => {
 
       {isLoading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
@@ -59,53 +65,55 @@ const InventoryOverview = () => {
         <div className="text-center py-8 text-muted-foreground">
           <p>Unable to load inventory data</p>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Type</th>
-                <th className="text-center py-3 px-2 text-sm font-medium text-muted-foreground">Total</th>
-                <th className="text-center py-3 px-2 text-sm font-medium text-muted-foreground">Available</th>
-                <th className="text-center py-3 px-2 text-sm font-medium text-muted-foreground">In Use</th>
-                <th className="text-center py-3 px-2 text-sm font-medium text-muted-foreground">Damaged</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayData.map((item, index) => (
-                <tr key={index} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="py-4 px-2">
-                    <span className="font-medium text-foreground">{item.type}</span>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <span className="text-foreground font-semibold">{item.quantity}</span>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <Badge variant="secondary" className="status-available border">
-                      {item.available}
+      ) : scaffolds && scaffolds.length > 0 ? (
+        <ScrollArea className="h-[400px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Part No.</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-center">Qty</TableHead>
+                <TableHead className="text-center">Mass</TableHead>
+                <TableHead className="text-right">Weekly Rate</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scaffolds.map((item) => (
+                <TableRow key={item.id} className="hover:bg-muted/30">
+                  <TableCell className="font-mono text-sm">
+                    {item.part_number || "-"}
+                  </TableCell>
+                  <TableCell className="max-w-[250px] truncate">
+                    {item.description || item.scaffold_type}
+                  </TableCell>
+                  <TableCell className="text-center font-semibold">
+                    {item.quantity ?? 0}
+                  </TableCell>
+                  <TableCell className="text-center text-muted-foreground">
+                    {formatMass(item.mass_per_item)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(item.weekly_rate)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant="secondary"
+                      className={`${getStatusBadge(item.status)} border capitalize`}
+                    >
+                      {item.status.replace("_", " ")}
                     </Badge>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <Badge variant="secondary" className="status-in-use border">
-                      {item.inUse}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-2 text-center">
-                    <Badge variant="secondary" className="status-damaged border">
-                      {item.damaged}
-                    </Badge>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-          
-          {inventoryData.length === 0 && (
-            <div className="text-center py-6 text-muted-foreground">
-              <p className="text-sm">No scaffolds registered yet.</p>
-              <p className="text-xs mt-1">Add scaffolds to see inventory statistics.</p>
-            </div>
-          )}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p className="text-sm">No scaffolds registered yet.</p>
+          <p className="text-xs mt-1">Add scaffolds to see inventory statistics.</p>
         </div>
       )}
     </div>
