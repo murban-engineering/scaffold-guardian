@@ -194,39 +194,6 @@ export type Database = {
         }
         Relationships: []
       }
-      scaffold_items: {
-        Row: {
-          created_at: string
-          description: string
-          id: string
-          mass_tonne_per_item: number | null
-          part_number: string
-          quantity: number
-          updated_at: string
-          weekly_rate: number | null
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          id?: string
-          mass_tonne_per_item?: number | null
-          part_number: string
-          quantity?: number
-          updated_at?: string
-          weekly_rate?: number | null
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          id?: string
-          mass_tonne_per_item?: number | null
-          part_number?: string
-          quantity?: number
-          updated_at?: string
-          weekly_rate?: number | null
-        }
-        Relationships: []
-      }
       scaffolds: {
         Row: {
           created_at: string
