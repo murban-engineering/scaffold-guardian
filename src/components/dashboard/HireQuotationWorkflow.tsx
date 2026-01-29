@@ -73,7 +73,22 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const HireQuotationWorkflow = () => {
+export type ProcessedClient = {
+  id: string;
+  clientCompanyName: string;
+  clientName: string;
+  siteName: string;
+  siteLocation: string;
+  siteAddress: string;
+  equipmentItems: EquipmentItem[];
+  processedAt: string;
+};
+
+type HireQuotationWorkflowProps = {
+  onClientProcessed?: (client: ProcessedClient) => void;
+};
+
+const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps) => {
   const [activeStep, setActiveStep] = useState<StepKey>("client");
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: generateSequence("HQ"),
@@ -188,6 +203,16 @@ const HireQuotationWorkflow = () => {
       return;
     }
     toast.success("Hire quotation calculation saved.");
+    onClientProcessed?.({
+      id: header.quotationNo,
+      clientCompanyName: header.clientCompanyName,
+      clientName: header.clientName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      equipmentItems,
+      processedAt: new Date().toISOString(),
+    });
   };
 
   const resetEquipmentDraft = () =>

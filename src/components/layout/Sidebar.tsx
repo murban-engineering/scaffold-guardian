@@ -16,6 +16,14 @@ import { cn } from "@/lib/utils";
 interface SidebarProps {
   activeItem: string;
   onItemClick: (item: string) => void;
+  processedClient?: {
+    clientCompanyName: string;
+    clientName: string;
+    siteName: string;
+    siteLocation: string;
+    siteAddress: string;
+    equipmentSummary: string;
+  } | null;
 }
 
 const menuItems = [
@@ -29,7 +37,7 @@ const menuItems = [
   { id: "reports", label: "Reports", icon: BarChart3 },
 ];
 
-const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
+const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col z-50">
       {/* Logo */}
@@ -60,6 +68,25 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
                 <item.icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
               </button>
+              {item.id === "sites" && processedClient ? (
+                <div className="mt-2 rounded-lg border border-sidebar-border bg-sidebar-accent/10 px-3 py-2 text-xs text-sidebar-foreground/80">
+                  <p className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
+                    Latest client processed
+                  </p>
+                  <p className="mt-1 font-semibold text-sidebar-foreground">
+                    {processedClient.clientCompanyName || processedClient.clientName}
+                  </p>
+                  <p className="text-sidebar-foreground/70">
+                    {processedClient.siteName}
+                  </p>
+                  <p className="text-sidebar-foreground/70">
+                    {processedClient.siteLocation || processedClient.siteAddress || "Location pending"}
+                  </p>
+                  <p className="mt-1 text-sidebar-foreground/70">
+                    {processedClient.equipmentSummary}
+                  </p>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
