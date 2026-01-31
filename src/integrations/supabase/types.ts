@@ -58,6 +58,102 @@ export type Database = {
           },
         ]
       }
+      hire_quotations: {
+        Row: {
+          account_number: string | null
+          basket_discount: number | null
+          bulk_order_required: boolean | null
+          company_address: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string
+          credit_limit: number | null
+          delivery_address: string | null
+          hire_weeks: number | null
+          id: string
+          market_segment: string[] | null
+          notes: string | null
+          official_order_required: boolean | null
+          other_discount: number | null
+          payment_method: string | null
+          project_type: string[] | null
+          quotation_number: string
+          site_address: string | null
+          site_manager_email: string | null
+          site_manager_name: string | null
+          site_manager_phone: string | null
+          site_name: string | null
+          status: string
+          telephonic_order_acceptable: boolean | null
+          tonnage_discount: number | null
+          transport_arrangement: string | null
+          tube_clamp_discount: number | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          basket_discount?: number | null
+          bulk_order_required?: boolean | null
+          company_address?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by: string
+          credit_limit?: number | null
+          delivery_address?: string | null
+          hire_weeks?: number | null
+          id?: string
+          market_segment?: string[] | null
+          notes?: string | null
+          official_order_required?: boolean | null
+          other_discount?: number | null
+          payment_method?: string | null
+          project_type?: string[] | null
+          quotation_number: string
+          site_address?: string | null
+          site_manager_email?: string | null
+          site_manager_name?: string | null
+          site_manager_phone?: string | null
+          site_name?: string | null
+          status?: string
+          telephonic_order_acceptable?: boolean | null
+          tonnage_discount?: number | null
+          transport_arrangement?: string | null
+          tube_clamp_discount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          basket_discount?: number | null
+          bulk_order_required?: boolean | null
+          company_address?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string
+          credit_limit?: number | null
+          delivery_address?: string | null
+          hire_weeks?: number | null
+          id?: string
+          market_segment?: string[] | null
+          notes?: string | null
+          official_order_required?: boolean | null
+          other_discount?: number | null
+          payment_method?: string | null
+          project_type?: string[] | null
+          quotation_number?: string
+          site_address?: string | null
+          site_manager_email?: string | null
+          site_manager_name?: string | null
+          site_manager_phone?: string | null
+          site_name?: string | null
+          status?: string
+          telephonic_order_acceptable?: boolean | null
+          tonnage_discount?: number | null
+          transport_arrangement?: string | null
+          tube_clamp_discount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inspections: {
         Row: {
           checklist: Json | null
@@ -193,6 +289,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      quotation_line_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          mass_per_item: number | null
+          part_number: string | null
+          quantity: number
+          quotation_id: string
+          scaffold_id: string | null
+          total_mass: number | null
+          updated_at: string
+          weekly_rate: number
+          weekly_total: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          mass_per_item?: number | null
+          part_number?: string | null
+          quantity?: number
+          quotation_id: string
+          scaffold_id?: string | null
+          total_mass?: number | null
+          updated_at?: string
+          weekly_rate?: number
+          weekly_total?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          mass_per_item?: number | null
+          part_number?: string | null
+          quantity?: number
+          quotation_id?: string
+          scaffold_id?: string | null
+          total_mass?: number | null
+          updated_at?: string
+          weekly_rate?: number
+          weekly_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_line_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "hire_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_line_items_scaffold_id_fkey"
+            columns: ["scaffold_id"]
+            isOneToOne: false
+            referencedRelation: "scaffolds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scaffolds: {
         Row: {
