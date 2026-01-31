@@ -8,7 +8,7 @@ import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
-import HireQuotationForm from "@/components/dashboard/HireQuotationForm";
+
 import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,8 +82,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            {/* Hire Quotation Form */}
-            <HireQuotationForm />
+            {/* Hire Quotation Workflow - Database-backed with inventory selection */}
             <HireQuotationWorkflow onClientProcessed={setProcessedClient} />
 
             {/* Quick Actions */}

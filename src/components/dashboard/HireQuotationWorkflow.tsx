@@ -1,12 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Truck, Calculator, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package } from "lucide-react";
 import { toast } from "sonner";
+import { useScaffolds, Scaffold } from "@/hooks/useScaffolds";
+import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, HireQuotation } from "@/hooks/useHireQuotations";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateDeliveryNotePDF, generateQuotationPDF, DeliveryNoteData, QuotationCalculationData } from "@/lib/pdfGenerator";
 
 type StepKey = "client" | "equipment" | "delivery" | "calculation";
 
@@ -27,11 +32,13 @@ type QuotationHeader = {
 
 type EquipmentItem = {
   id: string;
+  scaffoldId: string | null;
   itemCode: string;
   description: string;
   unit: string;
   qtyDelivered: string;
   weeklyRate: string;
+  massPerItem: string;
   notes: string;
 };
 
@@ -53,7 +60,7 @@ type QuotationCalculation = {
 
 const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
   { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
-  { key: "equipment", title: "Equipment", description: "Line items", icon: FileText },
+  { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "delivery", title: "Delivery Note", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
 ];
@@ -66,7 +73,7 @@ const generateSequence = (prefix: string) => {
 const getToday = () => new Date().toISOString().split("T")[0];
 
 const formatCurrency = (value: number) =>
-  value.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  `R ${value.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const parseNumber = (value: string) => {
   const parsed = Number(value);
@@ -89,9 +96,17 @@ type HireQuotationWorkflowProps = {
 };
 
 const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps) => {
+  const { user, profile } = useAuth();
+  const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
+  const createQuotation = useCreateQuotation();
+  const updateQuotation = useUpdateQuotation();
+  const addLineItems = useAddLineItems();
+  const clearLineItems = useClearLineItems();
+
+  const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<StepKey>("client");
   const [header, setHeader] = useState<QuotationHeader>(() => ({
-    quotationNo: generateSequence("HQ"),
+    quotationNo: "",
     dateCreated: getToday(),
     clientCompanyName: "",
     clientName: "",
@@ -104,17 +119,17 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     requisitionNo: "",
     createdBy: "",
   }));
+
+  useEffect(() => {
+    if (profile?.full_name && !header.createdBy) {
+      setHeader(prev => ({ ...prev, createdBy: profile.full_name }));
+    }
+  }, [profile?.full_name, header.createdBy]);
+
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
-  const [equipmentDraft, setEquipmentDraft] = useState<EquipmentItem>({
-    id: "",
-    itemCode: "",
-    description: "",
-    unit: "",
-    qtyDelivered: "",
-    weeklyRate: "",
-    notes: "",
-  });
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
+  const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
+  
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote>(() => ({
     deliveryNoteNo: generateSequence("DN"),
     deliveryDate: getToday(),
@@ -123,10 +138,11 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     vehicleNo: "",
     remarks: "",
   }));
+  
   const [calculation, setCalculation] = useState<QuotationCalculation>({
-    numberOfWeeks: "",
+    numberOfWeeks: "1",
     vatEnabled: true,
-    vatRate: "16",
+    vatRate: "15",
     paymentTerms: "Payment due within 30 days from invoice date.",
   });
 
@@ -172,37 +188,216 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     return true;
   };
 
-  const handleHeaderSave = () => {
-    if (validateHeader()) {
-      toast.success("Quotation header saved.");
+  const handleHeaderSave = async () => {
+    if (!validateHeader()) return;
+    if (!user) {
+      toast.error("Please log in to create a quotation");
+      return;
+    }
+
+    try {
+      if (!savedQuotationId) {
+        const quotation = await createQuotation.mutateAsync({
+          company_name: header.clientCompanyName,
+          site_name: header.siteName,
+          site_address: header.siteAddress,
+          site_manager_name: header.clientName,
+          site_manager_phone: header.clientPhone,
+          site_manager_email: header.clientEmail,
+          delivery_address: header.siteLocation,
+        });
+        setSavedQuotationId(quotation.id);
+        setHeader(prev => ({ ...prev, quotationNo: quotation.quotation_number }));
+        toast.success(`Quotation ${quotation.quotation_number} created and saved!`);
+      } else {
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          company_name: header.clientCompanyName,
+          site_name: header.siteName,
+          site_address: header.siteAddress,
+          site_manager_name: header.clientName,
+          site_manager_phone: header.clientPhone,
+          site_manager_email: header.clientEmail,
+          delivery_address: header.siteLocation,
+        });
+      }
       handleNext();
+    } catch (error) {
+      console.error("Failed to save quotation:", error);
     }
   };
 
-  const handleEquipmentSave = () => {
+  const handleAddFromInventory = () => {
+    if (!selectedScaffoldId) {
+      toast.error("Please select an item from inventory");
+      return;
+    }
+    
+    const scaffold = scaffolds?.find(s => s.id === selectedScaffoldId);
+    if (!scaffold) return;
+
+    const qty = parseNumber(equipmentQuantity);
+    if (qty <= 0) {
+      toast.error("Quantity must be greater than 0");
+      return;
+    }
+
+    const existingIndex = equipmentItems.findIndex(item => item.scaffoldId === scaffold.id);
+    if (existingIndex >= 0) {
+      setEquipmentItems(prev => prev.map((item, idx) => 
+        idx === existingIndex 
+          ? { ...item, qtyDelivered: String(parseNumber(item.qtyDelivered) + qty) }
+          : item
+      ));
+      toast.success(`Updated quantity for ${scaffold.description || scaffold.part_number}`);
+    } else {
+      const newItem: EquipmentItem = {
+        id: crypto.randomUUID(),
+        scaffoldId: scaffold.id,
+        itemCode: scaffold.part_number || "",
+        description: scaffold.description || scaffold.scaffold_type,
+        unit: "pcs",
+        qtyDelivered: String(qty),
+        weeklyRate: String(scaffold.weekly_rate || 0),
+        massPerItem: String(scaffold.mass_per_item || 0),
+        notes: "",
+      };
+      setEquipmentItems(prev => [...prev, newItem]);
+      toast.success(`Added ${scaffold.description || scaffold.part_number}`);
+    }
+
+    setSelectedScaffoldId("");
+    setEquipmentQuantity("1");
+  };
+
+  const removeItem = (index: number) => {
+    setEquipmentItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEquipmentSave = async () => {
     if (!equipmentItems.length) {
       toast.error("Add at least one equipment item before continuing.");
       return;
     }
-    toast.success("Equipment details saved.");
-    handleNext();
+
+    if (!savedQuotationId) {
+      toast.error("Please save client details first");
+      return;
+    }
+
+    try {
+      await clearLineItems.mutateAsync(savedQuotationId);
+      await addLineItems.mutateAsync(
+        equipmentItems.map(item => ({
+          quotation_id: savedQuotationId,
+          scaffold_id: item.scaffoldId || undefined,
+          part_number: item.itemCode,
+          description: item.description,
+          quantity: parseNumber(item.qtyDelivered),
+          mass_per_item: parseNumber(item.massPerItem),
+          weekly_rate: parseNumber(item.weeklyRate),
+        }))
+      );
+      toast.success("Equipment details saved to database");
+      handleNext();
+    } catch (error) {
+      console.error("Failed to save equipment:", error);
+    }
+  };
+
+  const handlePrintDeliveryNote = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in delivery note");
+      return;
+    }
+
+    const data: DeliveryNoteData = {
+      quotationNumber: header.quotationNo,
+      deliveryNoteNumber: deliveryNote.deliveryNoteNo,
+      dateCreated: header.dateCreated,
+      deliveryDate: deliveryNote.deliveryDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      deliveredBy: deliveryNote.deliveredBy,
+      receivedBy: deliveryNote.receivedBy,
+      vehicleNo: deliveryNote.vehicleNo,
+      remarks: deliveryNote.remarks,
+      items: equipmentItems.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: parseNumber(item.qtyDelivered),
+        massPerItem: parseNumber(item.massPerItem) || null,
+        totalMass: parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem) || null,
+      })),
+    };
+
+    generateDeliveryNotePDF(data);
+    toast.success("Delivery note opened for printing");
   };
 
   const handleDeliverySave = () => {
-    if (!equipmentItems.length) {
-      toast.error("Delivery note requires at least one equipment item.");
-      return;
-    }
-    toast.success("Delivery note generated.");
+    handlePrintDeliveryNote();
     handleNext();
   };
 
-  const handleCalculationSave = () => {
+  const handlePrintQuotation = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in quotation");
+      return;
+    }
+
+    const data: QuotationCalculationData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      contactEmail: header.clientEmail,
+      items: equipmentItems.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: parseNumber(item.qtyDelivered),
+        weeklyRate: parseNumber(item.weeklyRate),
+        weeklyTotal: parseNumber(item.qtyDelivered) * parseNumber(item.weeklyRate),
+      })),
+      hireWeeks: numberOfWeeks,
+      weeklyTotal: weeklyHireTotal,
+      totalForPeriod: hireTotalForWeeks,
+      vatRate: parseNumber(calculation.vatRate),
+      vatAmount: vatAmount,
+      grandTotal: grandTotal,
+      paymentTerms: calculation.paymentTerms,
+    };
+
+    generateQuotationPDF(data);
+    toast.success("Quotation opened for printing");
+  };
+
+  const handleCalculationSave = async () => {
     if (numberOfWeeks < 1) {
       toast.error("Enter a valid number of weeks.");
       return;
     }
-    toast.success("Hire quotation calculation saved.");
+
+    if (savedQuotationId) {
+      try {
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          hire_weeks: numberOfWeeks,
+          notes: calculation.paymentTerms,
+          status: "completed",
+        });
+      } catch (error) {
+        console.error("Failed to finalize quotation:", error);
+      }
+    }
+
+    toast.success("Hire quotation completed and saved!");
     onClientProcessed?.({
       id: header.quotationNo,
       clientCompanyName: header.clientCompanyName,
@@ -215,55 +410,21 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     });
   };
 
-  const resetEquipmentDraft = () =>
-    setEquipmentDraft({
-      id: "",
-      itemCode: "",
-      description: "",
-      unit: "",
-      qtyDelivered: "",
-      weeklyRate: "",
-      notes: "",
-    });
-
-  const handleEquipmentAdd = () => {
-    if (!equipmentDraft.description || !equipmentDraft.qtyDelivered || !equipmentDraft.weeklyRate) {
-      toast.error("Description, quantity, and weekly rate are required.");
-      return;
-    }
-
-    if (editingIndex !== null) {
-      setEquipmentItems((prev) =>
-        prev.map((item, index) => (index === editingIndex ? { ...equipmentDraft } : item)),
-      );
-      toast.success("Equipment item updated.");
-      setEditingIndex(null);
-    } else {
-      const newItem = { ...equipmentDraft, id: crypto.randomUUID() };
-      setEquipmentItems((prev) => [...prev, newItem]);
-      toast.success("Equipment item added.");
-    }
-    resetEquipmentDraft();
-  };
-
-  const startEditItem = (index: number) => {
-    setEditingIndex(index);
-    setEquipmentDraft(equipmentItems[index]);
-  };
-
-  const removeItem = (index: number) => {
-    setEquipmentItems((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
-  };
+  const availableScaffolds = scaffolds?.filter(s => 
+    (s.quantity ?? 0) > 0 && s.status === "available"
+  ) || [];
 
   return (
     <Card className="animate-fade-in">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Step-by-step quotation flow (client details → equipment → delivery note → weekly calculation).
+          Create quotations with equipment from inventory → generate delivery notes → calculate hire totals
+          {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Step Navigation */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           {steps.map((step, index) => {
             const Icon = step.icon;
@@ -282,7 +443,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
               >
                 <div
                   className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                    isComplete ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
+                    isComplete ? "bg-success text-success-foreground" : isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -296,23 +457,24 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
           })}
         </div>
 
+        {/* Step 1: Client Details */}
         {activeStep === "client" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label>Quotation No</Label>
-                <Input value={header.quotationNo} readOnly />
+                <Input value={header.quotationNo || "Will be generated on save"} readOnly className="bg-muted" />
               </div>
               <div>
                 <Label>Date Created</Label>
-                <Input value={header.dateCreated} readOnly />
+                <Input value={header.dateCreated} readOnly className="bg-muted" />
               </div>
               <div>
                 <Label htmlFor="clientCompanyName">Client Company Name *</Label>
                 <Input
                   id="clientCompanyName"
                   value={header.clientCompanyName}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, clientCompanyName: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, clientCompanyName: e.target.value }))}
                   placeholder="Company name"
                 />
               </div>
@@ -321,7 +483,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                 <Input
                   id="clientName"
                   value={header.clientName}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, clientName: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, clientName: e.target.value }))}
                   placeholder="Contact name"
                 />
               </div>
@@ -330,7 +492,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                 <Input
                   id="clientPhone"
                   value={header.clientPhone}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, clientPhone: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, clientPhone: e.target.value }))}
                   placeholder="Phone"
                 />
               </div>
@@ -340,7 +502,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                   id="clientEmail"
                   type="email"
                   value={header.clientEmail}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, clientEmail: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, clientEmail: e.target.value }))}
                   placeholder="Email"
                 />
               </div>
@@ -349,7 +511,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                 <Input
                   id="siteName"
                   value={header.siteName}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, siteName: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
                   placeholder="Site name"
                 />
               </div>
@@ -358,7 +520,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                 <Input
                   id="siteLocation"
                   value={header.siteLocation}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, siteLocation: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
                   placeholder="City or area"
                 />
               </div>
@@ -368,25 +530,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                   id="siteAddress"
                   rows={2}
                   value={header.siteAddress}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, siteAddress: event.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerOrderNo">Customer Order No</Label>
-                <Input
-                  id="customerOrderNo"
-                  value={header.customerOrderNo}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, customerOrderNo: event.target.value }))}
-                  placeholder="Optional"
-                />
-              </div>
-              <div>
-                <Label htmlFor="requisitionNo">Requisition No</Label>
-                <Input
-                  id="requisitionNo"
-                  value={header.requisitionNo}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, requisitionNo: event.target.value }))}
-                  placeholder="Optional"
+                  onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
                 />
               </div>
               <div>
@@ -394,136 +538,120 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                 <Input
                   id="createdBy"
                   value={header.createdBy}
-                  onChange={(event) => setHeader((prev) => ({ ...prev, createdBy: event.target.value }))}
+                  onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
                   placeholder="User name"
                 />
               </div>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">* Required fields</p>
-              <Button type="button" onClick={handleHeaderSave}>
-                Save & Continue
+              <Button 
+                type="button" 
+                onClick={handleHeaderSave}
+                disabled={createQuotation.isPending || updateQuotation.isPending}
+              >
+                {createQuotation.isPending ? "Saving..." : "Save & Continue"}
               </Button>
             </div>
           </div>
         )}
 
+        {/* Step 2: Equipment Selection */}
         {activeStep === "equipment" && (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="itemCode">Item Code</Label>
-                <Input
-                  id="itemCode"
-                  value={equipmentDraft.itemCode}
-                  onChange={(event) =>
-                    setEquipmentDraft((prev) => ({ ...prev, itemCode: event.target.value }))
-                  }
-                  placeholder="Optional"
-                />
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Select Equipment from Inventory
+              </h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="md:col-span-2">
+                  <Label>Select Item</Label>
+                  <Select value={selectedScaffoldId} onValueChange={setSelectedScaffoldId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={scaffoldsLoading ? "Loading inventory..." : "Choose from inventory"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableScaffolds.map(scaffold => (
+                        <SelectItem key={scaffold.id} value={scaffold.id}>
+                          {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
+                          (Qty: {scaffold.quantity}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Quantity</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={equipmentQuantity}
+                      onChange={(e) => setEquipmentQuantity(e.target.value)}
+                    />
+                    <Button type="button" onClick={handleAddFromInventory} size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="unit">Unit</Label>
-                <Input
-                  id="unit"
-                  value={equipmentDraft.unit}
-                  onChange={(event) => setEquipmentDraft((prev) => ({ ...prev, unit: event.target.value }))}
-                  placeholder="pcs / sets"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="description">Description *</Label>
-                <Input
-                  id="description"
-                  value={equipmentDraft.description}
-                  onChange={(event) =>
-                    setEquipmentDraft((prev) => ({ ...prev, description: event.target.value }))
-                  }
-                  placeholder="Item description"
-                />
-              </div>
-              <div>
-                <Label htmlFor="qtyDelivered">Qty Delivered *</Label>
-                <Input
-                  id="qtyDelivered"
-                  type="number"
-                  min="0"
-                  value={equipmentDraft.qtyDelivered}
-                  onChange={(event) =>
-                    setEquipmentDraft((prev) => ({ ...prev, qtyDelivered: event.target.value }))
-                  }
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="weeklyRate">Weekly Rate *</Label>
-                <Input
-                  id="weeklyRate"
-                  type="number"
-                  min="0"
-                  value={equipmentDraft.weeklyRate}
-                  onChange={(event) =>
-                    setEquipmentDraft((prev) => ({ ...prev, weeklyRate: event.target.value }))
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Input
-                  id="notes"
-                  value={equipmentDraft.notes}
-                  onChange={(event) => setEquipmentDraft((prev) => ({ ...prev, notes: event.target.value }))}
-                  placeholder="Optional"
-                />
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Button type="button" variant="outline" onClick={resetEquipmentDraft}>
-                Clear Item
-              </Button>
-              <Button type="button" onClick={handleEquipmentAdd}>
-                {editingIndex !== null ? "Update Item" : "Add Item"}
-              </Button>
             </div>
 
+            {/* Equipment Table */}
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
+                    <th className="px-3 py-2 text-left font-medium">Part No</th>
                     <th className="px-3 py-2 text-left font-medium">Description</th>
-                    <th className="px-3 py-2 text-left font-medium">Qty</th>
-                    <th className="px-3 py-2 text-left font-medium">Weekly Rate</th>
-                    <th className="px-3 py-2 text-left font-medium">Notes</th>
-                    <th className="px-3 py-2 text-right font-medium">Actions</th>
+                    <th className="px-3 py-2 text-right font-medium">Qty</th>
+                    <th className="px-3 py-2 text-right font-medium">Mass/Item</th>
+                    <th className="px-3 py-2 text-right font-medium">Weekly Rate</th>
+                    <th className="px-3 py-2 text-right font-medium">Weekly Total</th>
+                    <th className="px-3 py-2 text-center font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {equipmentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-3 py-4 text-center text-sm text-muted-foreground">
-                        No equipment items added yet.
+                      <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                        No equipment added. Select items from inventory above.
                       </td>
                     </tr>
                   ) : (
-                    equipmentItems.map((item, index) => (
-                      <tr key={item.id} className="border-t border-border">
-                        <td className="px-3 py-2">{item.description}</td>
-                        <td className="px-3 py-2">{item.qtyDelivered}</td>
-                        <td className="px-3 py-2">R{item.weeklyRate}</td>
-                        <td className="px-3 py-2">{item.notes || "-"}</td>
-                        <td className="px-3 py-2 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button type="button" size="sm" variant="outline" onClick={() => startEditItem(index)}>
-                              Edit
+                    equipmentItems.map((item, idx) => {
+                      const qty = parseNumber(item.qtyDelivered);
+                      const rate = parseNumber(item.weeklyRate);
+                      const mass = parseNumber(item.massPerItem);
+                      return (
+                        <tr key={item.id} className="border-t border-border">
+                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                          <td className="px-3 py-2">{item.description}</td>
+                          <td className="px-3 py-2 text-right">{qty}</td>
+                          <td className="px-3 py-2 text-right">{mass ? `${mass} kg` : "-"}</td>
+                          <td className="px-3 py-2 text-right">{formatCurrency(rate)}</td>
+                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(qty * rate)}</td>
+                          <td className="px-3 py-2 text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => removeItem(idx)}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                            <Button type="button" size="sm" variant="ghost" onClick={() => removeItem(index)}>
-                              Remove
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                  {equipmentItems.length > 0 && (
+                    <tr className="bg-muted/40 font-semibold">
+                      <td colSpan={5} className="px-3 py-2 text-right">Weekly Hire Total:</td>
+                      <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
+                      <td></td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -533,114 +661,96 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <Button type="button" onClick={handleEquipmentSave}>
-                Save & Continue
+              <Button 
+                type="button" 
+                onClick={handleEquipmentSave}
+                disabled={addLineItems.isPending || clearLineItems.isPending}
+              >
+                {addLineItems.isPending ? "Saving..." : "Save & Continue"}
               </Button>
             </div>
           </div>
         )}
 
+        {/* Step 3: Delivery Note */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label>Delivery Note No</Label>
-                <Input value={deliveryNote.deliveryNoteNo} readOnly />
+                <Input value={deliveryNote.deliveryNoteNo} readOnly className="bg-muted" />
               </div>
               <div>
-                <Label htmlFor="deliveryDate">Delivery Date</Label>
+                <Label>Delivery Date</Label>
                 <Input
-                  id="deliveryDate"
                   type="date"
                   value={deliveryNote.deliveryDate}
-                  onChange={(event) =>
-                    setDeliveryNote((prev) => ({ ...prev, deliveryDate: event.target.value }))
-                  }
+                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveryDate: e.target.value }))}
                 />
               </div>
               <div>
-                <Label htmlFor="deliveredBy">Delivered By</Label>
+                <Label>Delivered By</Label>
                 <Input
-                  id="deliveredBy"
                   value={deliveryNote.deliveredBy}
-                  onChange={(event) =>
-                    setDeliveryNote((prev) => ({ ...prev, deliveredBy: event.target.value }))
-                  }
-                  placeholder="Optional"
+                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveredBy: e.target.value }))}
+                  placeholder="Driver name"
                 />
               </div>
               <div>
-                <Label htmlFor="receivedBy">Received By</Label>
+                <Label>Received By</Label>
                 <Input
-                  id="receivedBy"
                   value={deliveryNote.receivedBy}
-                  onChange={(event) => setDeliveryNote((prev) => ({ ...prev, receivedBy: event.target.value }))}
-                  placeholder="Optional"
+                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, receivedBy: e.target.value }))}
+                  placeholder="Receiver name"
                 />
               </div>
               <div>
-                <Label htmlFor="vehicleNo">Vehicle No</Label>
+                <Label>Vehicle No</Label>
                 <Input
-                  id="vehicleNo"
                   value={deliveryNote.vehicleNo}
-                  onChange={(event) => setDeliveryNote((prev) => ({ ...prev, vehicleNo: event.target.value }))}
-                  placeholder="Optional"
+                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
+                  placeholder="Vehicle registration"
                 />
               </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="remarks">Remarks</Label>
-                <Textarea
-                  id="remarks"
-                  rows={2}
+              <div>
+                <Label>Remarks</Label>
+                <Input
                   value={deliveryNote.remarks}
-                  onChange={(event) => setDeliveryNote((prev) => ({ ...prev, remarks: event.target.value }))}
+                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, remarks: e.target.value }))}
+                  placeholder="Any special notes"
                 />
               </div>
             </div>
 
-            <div className="rounded-lg border border-dashed border-border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">Delivery Note Preview</p>
-                  <p className="text-xs text-muted-foreground">
-                    {header.clientCompanyName || "Client"} · {header.siteName || "Site"}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => toast.message("Delivery Note ready for printing.")}
-                  >
-                    Print
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => toast.message("Delivery Note PDF generated (preview).")}
-                  >
-                    Download PDF
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-muted-foreground">
-                Equipment items: {equipmentItems.length} · Delivery Date: {deliveryNote.deliveryDate}
-              </div>
+            {/* Preview Summary */}
+            <div className="rounded-lg border border-border p-4 bg-muted/30">
+              <h4 className="font-semibold mb-2">Delivery Summary</h4>
+              <p className="text-sm text-muted-foreground">
+                {equipmentItems.length} item(s) • Total mass: {equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem), 0).toFixed(2)} kg
+              </p>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <Button type="button" onClick={handleDeliverySave}>
-                Save & Continue
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Delivery Note
+                </Button>
+                <Button type="button" onClick={handleDeliverySave}>
+                  Continue to Calculation
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
+        {/* Step 4: Calculation */}
         {activeStep === "calculation" && (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label htmlFor="numberOfWeeks">Number of Weeks *</Label>
                 <Input
@@ -648,112 +758,85 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
                   type="number"
                   min="1"
                   value={calculation.numberOfWeeks}
-                  onChange={(event) =>
-                    setCalculation((prev) => ({ ...prev, numberOfWeeks: event.target.value }))
-                  }
+                  onChange={(e) => setCalculation(prev => ({ ...prev, numberOfWeeks: e.target.value }))}
                 />
               </div>
               <div>
                 <Label htmlFor="vatRate">VAT Rate (%)</Label>
-                <Input
-                  id="vatRate"
-                  type="number"
-                  min="0"
-                  value={calculation.vatRate}
-                  onChange={(event) => setCalculation((prev) => ({ ...prev, vatRate: event.target.value }))}
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="vatEnabled"
+                    checked={calculation.vatEnabled}
+                    onCheckedChange={(checked) => setCalculation(prev => ({ ...prev, vatEnabled: !!checked }))}
+                  />
+                  <Label htmlFor="vatEnabled" className="text-sm">Include VAT</Label>
+                  {calculation.vatEnabled && (
+                    <Input
+                      id="vatRate"
+                      type="number"
+                      min="0"
+                      className="w-20"
+                      value={calculation.vatRate}
+                      onChange={(e) => setCalculation(prev => ({ ...prev, vatRate: e.target.value }))}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="paymentTerms">Payment Terms</Label>
+                <Textarea
+                  id="paymentTerms"
+                  rows={2}
+                  value={calculation.paymentTerms}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, paymentTerms: e.target.value }))}
                 />
               </div>
-              <div className="flex items-end gap-2">
-                <Checkbox
-                  id="vatEnabled"
-                  checked={calculation.vatEnabled}
-                  onCheckedChange={(checked) =>
-                    setCalculation((prev) => ({ ...prev, vatEnabled: Boolean(checked) }))
-                  }
-                />
-                <Label htmlFor="vatEnabled">Apply VAT</Label>
+            </div>
+
+            {/* Calculation Summary */}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="bg-muted/40 px-4 py-2 font-semibold">Quotation Summary</div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between">
+                  <span>Weekly Hire Total</span>
+                  <span>{formatCurrency(weeklyHireTotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Number of Weeks</span>
+                  <span>× {numberOfWeeks}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span>Total for Hire Period</span>
+                  <span>{formatCurrency(hireTotalForWeeks)}</span>
+                </div>
+                {calculation.vatEnabled && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>VAT ({calculation.vatRate}%)</span>
+                    <span>{formatCurrency(vatAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                  <span>Grand Total</span>
+                  <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">Description</th>
-                    <th className="px-3 py-2 text-left font-medium">Qty</th>
-                    <th className="px-3 py-2 text-left font-medium">Weekly Rate</th>
-                    <th className="px-3 py-2 text-left font-medium">Weekly Total</th>
-                    <th className="px-3 py-2 text-left font-medium">Weeks</th>
-                    <th className="px-3 py-2 text-left font-medium">Hire Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {equipmentItems.map((item) => {
-                    const qty = parseNumber(item.qtyDelivered);
-                    const rate = parseNumber(item.weeklyRate);
-                    const weeklyTotal = qty * rate;
-                    const hireTotal = weeklyTotal * numberOfWeeks;
-                    return (
-                      <tr key={item.id} className="border-t border-border">
-                        <td className="px-3 py-2">{item.description}</td>
-                        <td className="px-3 py-2">{item.qtyDelivered}</td>
-                        <td className="px-3 py-2">R{item.weeklyRate}</td>
-                        <td className="px-3 py-2">R{formatCurrency(weeklyTotal)}</td>
-                        <td className="px-3 py-2">{numberOfWeeks || 0}</td>
-                        <td className="px-3 py-2">R{formatCurrency(hireTotal)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-muted-foreground">Weekly Hire Total</p>
-                <p className="text-lg font-semibold">R{formatCurrency(weeklyHireTotal)}</p>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-muted-foreground">Weeks</p>
-                <p className="text-lg font-semibold">{numberOfWeeks || 0}</p>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-muted-foreground">VAT</p>
-                <p className="text-lg font-semibold">R{formatCurrency(vatAmount)}</p>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <p className="text-xs text-muted-foreground">Grand Total</p>
-                <p className="text-lg font-semibold">R{formatCurrency(grandTotal)}</p>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="paymentTerms">Payment Terms</Label>
-              <Textarea
-                id="paymentTerms"
-                rows={3}
-                value={calculation.paymentTerms}
-                onChange={(event) =>
-                  setCalculation((prev) => ({ ...prev, paymentTerms: event.target.value }))
-                }
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => toast.message("Quotation ready to print.")}
-                >
-                  Print
+                <Button type="button" variant="outline" onClick={handlePrintQuotation}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Quotation
                 </Button>
-                <Button type="button" variant="outline" onClick={() => toast.message("Quotation PDF generated.")}
+                <Button 
+                  type="button" 
+                  onClick={handleCalculationSave}
+                  disabled={updateQuotation.isPending}
                 >
-                  Download PDF
-                </Button>
-                <Button type="button" onClick={handleCalculationSave}>
-                  Save Quotation
+                  {updateQuotation.isPending ? "Finalizing..." : "Complete Quotation"}
                 </Button>
               </div>
             </div>
