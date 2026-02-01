@@ -1,11 +1,19 @@
-import { MapPin, ArrowRight, Users, Package } from "lucide-react";
+import { MapPin, ArrowRight, Users, Package, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActiveSites } from "@/hooks/useSites";
+import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 
-const ActiveSites = () => {
+type ActiveSitesProps = {
+  processedClient?: ProcessedClient | null;
+};
+
+const ActiveSites = ({ processedClient }: ActiveSitesProps) => {
   const { data: sites, isLoading, error } = useActiveSites();
+  const equipmentItems = processedClient?.equipmentItems ?? [];
+  const equipmentPreview = equipmentItems.slice(0, 3);
+  const remainingEquipment = Math.max(equipmentItems.length - equipmentPreview.length, 0);
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 animate-fade-in">
@@ -20,6 +28,52 @@ const ActiveSites = () => {
           View All <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
+
+      {processedClient ? (
+        <div className="mb-6 rounded-lg border border-accent/30 bg-accent/10 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Latest delivery note</p>
+              <h3 className="text-base font-semibold text-foreground">
+                {processedClient.clientCompanyName || processedClient.clientName || "Client details pending"}
+              </h3>
+              <p className="text-sm text-muted-foreground">{processedClient.clientName || "Contact pending"}</p>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <MapPin className="w-3 h-3" />
+                {processedClient.siteLocation || processedClient.siteAddress || "Site location pending"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-background px-3 py-1 text-xs font-medium text-accent">
+              <FileText className="h-3.5 w-3.5" />
+              Delivery report active
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Equipment details
+            </p>
+            {equipmentItems.length ? (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {equipmentPreview.map((item) => (
+                  <span
+                    key={`${processedClient.id}-${item.itemCode}-${item.description}`}
+                    className="rounded-full bg-background px-3 py-1 text-xs text-foreground shadow-sm"
+                  >
+                    {item.description || item.itemCode || "Item"} · {item.qtyDelivered || "0"}
+                  </span>
+                ))}
+                {remainingEquipment > 0 ? (
+                  <span className="rounded-full bg-background px-3 py-1 text-xs text-muted-foreground shadow-sm">
+                    +{remainingEquipment} more
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">No equipment listed yet.</p>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="space-y-4">

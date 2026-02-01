@@ -457,7 +457,22 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
   };
 
   const handleDeliverySave = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in delivery note");
+      return;
+    }
+
     handlePrintDeliveryNote();
+    onClientProcessed?.({
+      id: header.quotationNo,
+      clientCompanyName: header.clientCompanyName,
+      clientName: header.clientName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      equipmentItems,
+      processedAt: new Date().toISOString(),
+    });
     handleNext();
   };
 
@@ -516,16 +531,6 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     }
 
     toast.success("Hire quotation completed and saved!");
-    onClientProcessed?.({
-      id: header.quotationNo,
-      clientCompanyName: header.clientCompanyName,
-      clientName: header.clientName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      equipmentItems,
-      processedAt: new Date().toISOString(),
-    });
   };
 
   const availableScaffolds = scaffolds?.filter(s => 
