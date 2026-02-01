@@ -11,9 +11,16 @@ import { toast } from "sonner";
 import { useScaffolds, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
-import { generateDeliveryNotePDF, generateQuotationPDF, DeliveryNoteData, QuotationCalculationData } from "@/lib/pdfGenerator";
+import {
+  generateDeliveryNotePDF,
+  generateHireQuotationReportPDF,
+  generateQuotationPDF,
+  DeliveryNoteData,
+  HireQuotationReportData,
+  QuotationCalculationData,
+} from "@/lib/pdfGenerator";
 
-type StepKey = "client" | "equipment" | "delivery" | "calculation";
+type StepKey = "client" | "equipment" | "quotation" | "delivery" | "calculation";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -86,6 +93,7 @@ type QuotationCalculation = {
 const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
   { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
+  { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "delivery", title: "Delivery Note", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
 ];
@@ -401,6 +409,53 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
     toast.success("Delivery note opened for printing");
   };
 
+  const handlePrintHireQuotationReport = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in hire quotation");
+      return;
+    }
+
+    const data: HireQuotationReportData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      contactEmail: header.clientEmail,
+      officeTel: header.officeTel,
+      officeEmail: header.officeEmail,
+      customerOrderNo: header.customerOrderNo,
+      officialOrdersUsed: header.officialOrdersUsed,
+      bulkOrdersUsed: header.bulkOrdersUsed,
+      newOrderForEveryQuote: header.newOrderForEveryQuote,
+      telephonicOrders: header.telephonicOrders,
+      personsNameAsOrder: header.personsNameAsOrder,
+      personsName: header.personsName,
+      requisitionNumberUsed: header.requisitionNumberUsed,
+      requisitionNo: header.requisitionNo,
+      createdBy: header.createdBy,
+      items: equipmentItems.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: parseNumber(item.qtyDelivered),
+        massPerItem: parseNumber(item.massPerItem) || null,
+        weeklyRate: parseNumber(item.weeklyRate),
+        weeklyTotal: parseNumber(item.qtyDelivered) * parseNumber(item.weeklyRate),
+      })),
+    };
+
+    generateHireQuotationReportPDF(data);
+    toast.success("Hire quotation report opened for printing");
+  };
+
+  const handleHireQuotationSave = () => {
+    handlePrintHireQuotationReport();
+    handleNext();
+  };
+
   const handleDeliverySave = () => {
     handlePrintDeliveryNote();
     handleNext();
@@ -482,13 +537,13 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Create quotations with equipment from inventory → generate delivery notes → calculate hire totals
+          Create quotations with equipment from inventory → generate hire quotation report → generate delivery notes → calculate hire totals
           {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -991,7 +1046,51 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
           </div>
         )}
 
-        {/* Step 3: Delivery Note */}
+        {/* Step 3: Hire Quotation */}
+        {activeStep === "quotation" && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Hire Quotation Summary
+              </h4>
+              <div className="grid gap-3 text-sm md:grid-cols-2">
+                <div>
+                  <p className="text-muted-foreground">Client</p>
+                  <p className="font-medium">{header.clientCompanyName || "-"}</p>
+                  <p>{header.clientName || "-"}</p>
+                  <p>{header.clientPhone || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Site</p>
+                  <p className="font-medium">{header.siteName || "-"}</p>
+                  <p>{header.siteLocation || "-"}</p>
+                  <p>{header.siteAddress || "-"}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {equipmentItems.length} equipment item(s) ready for the hire quotation report.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handlePrintHireQuotationReport}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Hire Quotation
+                </Button>
+                <Button type="button" onClick={handleHireQuotationSave}>
+                  Continue to Delivery Note
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Delivery Note */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -1066,7 +1165,7 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
           </div>
         )}
 
-        {/* Step 4: Calculation */}
+        {/* Step 5: Calculation */}
         {activeStep === "calculation" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
