@@ -757,7 +757,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       }))
       .filter((item) => item.quantity > 0);
 
-    const reportedBy = profile?.full_name || user?.email || user?.id || "System";
+    if (!user?.id) {
+      toast.error("You must be logged in to process returns");
+      return;
+    }
+    const reportedByUserId = user.id;
     const conditionPriority: Record<string, "low" | "medium" | "high" | "urgent"> = {
       dirty: "low",
       damaged: "high",
@@ -779,7 +783,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             issue_description: `Return condition: ${entry.condition}. Quantity: ${entry.qty}. Quotation: ${
               header.quotationNo || "N/A"
             }.`,
-            reported_by: reportedBy,
+            reported_by: reportedByUserId,
             priority: conditionPriority[entry.condition],
           }));
       })
