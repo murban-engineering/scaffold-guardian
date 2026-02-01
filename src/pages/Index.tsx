@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Package, MapPin, ClipboardCheck, AlertTriangle, Users, Wrench } from "lucide-react";
+import { Package, MapPin, ClipboardCheck, AlertTriangle, Users, Wrench, FileText } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/dashboard/StatCard";
@@ -13,10 +13,13 @@ import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/H
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [activeItem, setActiveItem] = useState("dashboard");
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
+  const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const { profile } = useAuth();
   const { data: stats, isLoading } = useDashboardStats();
 
@@ -82,11 +85,18 @@ const Index = () => {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            {/* Hire Quotation Workflow - Database-backed with inventory selection */}
-            <HireQuotationWorkflow onClientProcessed={setProcessedClient} />
-
-            {/* Quick Actions */}
-            <QuickActions />
+            {/* Quick Actions with Hire Quotation Button */}
+            <div className="flex flex-wrap items-center gap-4">
+              <Button 
+                size="lg" 
+                onClick={() => setShowQuotationDialog(true)}
+                className="gap-2"
+              >
+                <FileText className="h-5 w-5" />
+                New Hire Quotation
+              </Button>
+              <QuickActions />
+            </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
@@ -164,6 +174,21 @@ const Index = () => {
               <RecentInspections />
               <ActiveSites />
             </div>
+
+            {/* Hire Quotation Dialog */}
+            <Dialog open={showQuotationDialog} onOpenChange={setShowQuotationDialog}>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create Hire Quotation</DialogTitle>
+                </DialogHeader>
+                <HireQuotationWorkflow 
+                  onClientProcessed={(client) => {
+                    setProcessedClient(client);
+                    setShowQuotationDialog(false);
+                  }} 
+                />
+              </DialogContent>
+            </Dialog>
           </div>
         )}
       </main>
