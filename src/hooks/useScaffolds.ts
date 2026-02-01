@@ -161,3 +161,57 @@ export const useUpdateScaffold = () => {
     },
   });
 };
+
+export interface InventoryDeductionItem {
+  scaffoldId: string;
+  quantity: number;
+}
+
+export const useDeductScaffoldInventory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ items, scaffolds }: { items: InventoryDeductionItem[]; scaffolds: Scaffold[] }) => {
+      const updates = items
+        .map((item) => {
+          const scaffold = scaffolds.find((scaffoldItem) => scaffoldItem.id === item.scaffoldId);
+          if (!scaffold) return null;
+          const currentQuantity = scaffold.quantity ?? 0;
+          const nextQuantity = Math.max(currentQuantity - item.quantity, 0);
+          if (nextQuantity === currentQuantity) return null;
+          return { id: scaffold.id, quantity: nextQuantity };
+        })
+        .filter((update): update is { id: string; quantity: number } => Boolean(update));
+
+      if (!updates.length) {
+        return [];
+      }
+
+      const results = await Promise.all(
+        updates.map((update) =>
+          supabase
+            .from("scaffolds")
+            .update({ quantity: update.quantity })
+            .eq("id", update.id)
+            .select()
+            .single()
+        )
+      );
+
+      const firstError = results.find((result) => result.error)?.error;
+      if (firstError) throw firstError;
+
+      return results.map((result) => result.data).filter(Boolean);
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+      if (data.length > 0) {
+        toast.success("Inventory quantities updated after delivery");
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to update inventory: ${error.message}`);
+    },
+  });
+};

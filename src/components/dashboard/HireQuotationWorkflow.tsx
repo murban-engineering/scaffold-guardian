@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package } from "lucide-react";
 import { toast } from "sonner";
-import { useScaffolds, Scaffold } from "@/hooks/useScaffolds";
+import { useScaffolds, useDeductScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -133,6 +133,7 @@ type HireQuotationWorkflowProps = {
 const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
+  const deductInventory = useDeductScaffoldInventory();
   const createQuotation = useCreateQuotation();
   const updateQuotation = useUpdateQuotation();
   const addLineItems = useAddLineItems();
@@ -140,6 +141,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<StepKey>("client");
+  const [inventoryDeducted, setInventoryDeducted] = useState(false);
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
     dateCreated: getToday(),
@@ -233,6 +235,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       }))
     );
     setActiveStep("client");
+    setInventoryDeducted(false);
   }, [initialQuotation, profile?.full_name]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
@@ -435,7 +438,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
   };
 
-  const handlePrintDeliveryNote = () => {
+  const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
       toast.error("No equipment items to include in delivery note");
       return;
@@ -466,6 +469,29 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
+
+    if (!inventoryDeducted) {
+      const inventoryItems = equipmentItems
+        .filter((item) => item.scaffoldId)
+        .map((item) => ({
+          scaffoldId: item.scaffoldId as string,
+          quantity: parseNumber(item.qtyDelivered),
+        }))
+        .filter((item) => item.quantity > 0);
+
+      if (inventoryItems.length) {
+        if (!scaffolds?.length) {
+          toast.error("Inventory data not loaded. Please try again.");
+          return;
+        }
+
+        await deductInventory.mutateAsync({
+          items: inventoryItems,
+          scaffolds,
+        });
+        setInventoryDeducted(true);
+      }
+    }
   };
 
   const handlePrintYardVerificationNote = () => {
@@ -548,13 +574,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     handleNext();
   };
 
-  const handleDeliverySave = () => {
+  const handleDeliverySave = async () => {
     if (!equipmentItems.length) {
       toast.error("No equipment items to include in delivery note");
       return;
     }
 
-    handlePrintDeliveryNote();
+    await handlePrintDeliveryNote();
     onClientProcessed?.({
       id: header.quotationNo,
       clientCompanyName: header.clientCompanyName,
