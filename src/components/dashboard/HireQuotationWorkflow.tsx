@@ -100,9 +100,10 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
 ];
 
-const generateSequence = (prefix: string) => {
-  const random = Math.floor(100000 + Math.random() * 900000);
-  return `${prefix}-${random}`;
+const generateDeliveryNoteNumber = () => {
+  const timestamp = Date.now();
+  const seq = (timestamp % 10000).toString().padStart(4, '0');
+  return `DN-${seq}`;
 };
 
 const getToday = () => new Date().toISOString().split("T")[0];
@@ -250,7 +251,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   ]);
   
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote>(() => ({
-    deliveryNoteNo: generateSequence("DN"),
+    deliveryNoteNo: generateDeliveryNoteNumber(),
     deliveryDate: getToday(),
     deliveredBy: "",
     receivedBy: "",
