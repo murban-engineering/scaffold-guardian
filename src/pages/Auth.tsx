@@ -102,7 +102,7 @@ const Auth = () => {
               <HardHat className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Otno Access</h1>
+              <h1 className="text-2xl font-bold">Otno Access Africa</h1>
               <p className="text-sm opacity-80">Management System</p>
             </div>
           </div>
@@ -151,7 +151,7 @@ const Auth = () => {
               <HardHat className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Otno Access</h1>
+              <h1 className="text-2xl font-bold">Otno Access Africa</h1>
               <p className="text-sm text-muted-foreground">Management System</p>
             </div>
           </div>
