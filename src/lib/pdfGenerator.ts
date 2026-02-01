@@ -307,6 +307,120 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   };
 };
 
+export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Please allow popups for this site to generate PDFs");
+    return;
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Yard Verification Note - ${data.deliveryNoteNumber}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+        .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 12px; }
+        .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
+        .yard-note-table th { background: #f5f5f5; text-align: center; }
+        .yard-note-table .label { width: 22%; font-weight: bold; }
+        .yard-note-table .value { width: 28%; }
+        .yard-note-table .small { width: 12%; }
+        .yard-note-table .notes { height: 28px; }
+        .yard-note-footer { margin-top: 10px; }
+        .yard-note-footer .row { display: flex; gap: 16px; margin-bottom: 6px; }
+        .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 6px; min-height: 28px; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="yard-note">
+        <h2>YARD VERIFICATION NOTE</h2>
+        <table class="yard-note-table">
+          <tr>
+            <td class="label">Customer/Branch Name:</td>
+            <td class="value">${data.companyName || ""}</td>
+            <td class="label">ID no:</td>
+            <td class="value">&nbsp;</td>
+            <td class="label">Date:</td>
+            <td class="value">${data.deliveryDate || ""}</td>
+          </tr>
+          <tr>
+            <td class="label">Vehicle Reg:</td>
+            <td class="value">${data.vehicleNo || ""}</td>
+            <td class="label">Branch:</td>
+            <td class="value">${data.siteName || ""}</td>
+            <td class="label">Customer Return (Yes/No):</td>
+            <td class="value">&nbsp;</td>
+          </tr>
+          <tr>
+            <td class="label">Form-staff Return (Yes/No):</td>
+            <td class="value">&nbsp;</td>
+            <td class="label">Request for collection:</td>
+            <td class="value" colspan="3">&nbsp;</td>
+          </tr>
+        </table>
+
+        <table class="yard-note-table" style="margin-top: 10px;">
+          <tr>
+            <th rowspan="2">Description</th>
+            <th colspan="2">Deliveries</th>
+            <th colspan="5">Returns/Tickets</th>
+          </tr>
+          <tr>
+            <th class="small">Load 1</th>
+            <th class="small">Load 2</th>
+            <th class="small">Good</th>
+            <th class="small">Dirty</th>
+            <th class="small">Damaged</th>
+            <th class="small">Scrap</th>
+            <th class="small">Total</th>
+          </tr>
+          ${Array.from({ length: 12 }).map(() => `
+            <tr>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td>
+            </tr>
+          `).join("")}
+        </table>
+
+        <div class="yard-note-footer">
+          <div class="row">
+            <div class="field"><strong>Gate Pass no:</strong></div>
+            <div class="field"><strong>Customer site return slip no:</strong></div>
+          </div>
+          <div class="row">
+            <div class="field"><strong>Checker name:</strong></div>
+            <div class="field"><strong>Checker Signature:</strong></div>
+          </div>
+          <div class="row">
+            <div class="field"><strong>Discrepancies reported to office staff (name and signature):</strong></div>
+          </div>
+          <div class="row">
+            <div class="field"><strong>Discrepancies resolved with customer by (name and signature):</strong></div>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.onload = () => {
+    printWindow.print();
+  };
+};
+
 export const generateHireQuotationReportPDF = (data: HireQuotationReportData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {

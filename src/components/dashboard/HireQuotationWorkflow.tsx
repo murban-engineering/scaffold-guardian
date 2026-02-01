@@ -15,6 +15,7 @@ import {
   generateDeliveryNotePDF,
   generateHireQuotationReportPDF,
   generateQuotationPDF,
+  generateYardVerificationNotePDF,
   DeliveryNoteData,
   HireQuotationReportData,
   QuotationCalculationData,
@@ -465,6 +466,39 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
+  };
+
+  const handlePrintYardVerificationNote = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in delivery note");
+      return;
+    }
+
+    const data: DeliveryNoteData = {
+      quotationNumber: header.quotationNo,
+      deliveryNoteNumber: deliveryNote.deliveryNoteNo,
+      dateCreated: header.dateCreated,
+      deliveryDate: deliveryNote.deliveryDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      deliveredBy: deliveryNote.deliveredBy,
+      receivedBy: deliveryNote.receivedBy,
+      vehicleNo: deliveryNote.vehicleNo,
+      remarks: deliveryNote.remarks,
+      items: equipmentItems.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: parseNumber(item.qtyDelivered),
+        massPerItem: parseNumber(item.massPerItem) || null,
+        totalMass: parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem) || null,
+      })),
+    };
+
+    generateYardVerificationNotePDF(data);
+    toast.success("Yard verification note opened for printing");
   };
 
   const handlePrintHireQuotationReport = () => {
@@ -1215,10 +1249,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print Delivery Note
+                </Button>
+                <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Yard Verification Note
                 </Button>
                 <Button type="button" onClick={handleDeliverySave}>
                   Continue to Calculation
