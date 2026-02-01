@@ -43,8 +43,8 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
             <HardHat className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">ScaffoldPro</h1>
-            <p className="text-xs text-sidebar-foreground/60">Management System</p>
+            <h1 className="text-lg font-bold text-sidebar-foreground">OTNO Access</h1>
+            <p className="text-xs text-sidebar-foreground/60">Africa</p>
           </div>
         </div>
       </div>
