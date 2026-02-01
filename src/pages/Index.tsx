@@ -28,23 +28,6 @@ const Index = () => {
   const { data: stats, isLoading } = useDashboardStats();
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
 
-  const getEquipmentSummary = (client: ProcessedClient) => {
-    if (!client.equipmentItems.length) {
-      return "Equipment: none listed";
-    }
-
-    const lineItems = client.equipmentItems.map((item) => {
-      const label = item.description || item.itemCode || "Item";
-      return `${label} (${item.qtyDelivered || "0"})`;
-    });
-    const preview = lineItems.slice(0, 2).join(", ");
-    const remainingCount = lineItems.length - 2;
-    const previewText = preview || "Equipment listed";
-    const suffix = remainingCount > 0 ? ` +${remainingCount} more` : "";
-
-    return `Equipment: ${previewText}${suffix}`;
-  };
-
   const headerTitle =
     activeItem === "inventory"
       ? "Inventory"
@@ -81,18 +64,7 @@ const Index = () => {
       <Sidebar
         activeItem={activeItem}
         onItemClick={setActiveItem}
-        processedClient={
-          processedClient
-            ? {
-                clientCompanyName: processedClient.clientCompanyName,
-                clientName: processedClient.clientName,
-                siteName: processedClient.siteName,
-                siteLocation: processedClient.siteLocation,
-                siteAddress: processedClient.siteAddress,
-                equipmentSummary: getEquipmentSummary(processedClient),
-              }
-            : null
-        }
+        processedClient={processedClient}
       />
 
       <main className="ml-64">
