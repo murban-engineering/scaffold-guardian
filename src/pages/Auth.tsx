@@ -122,7 +122,7 @@ const Auth = () => {
                 <p className="text-sm opacity-80">Scaffolds Tracked</p>
               </div>
               <div className="bg-white/10 backdrop-blur rounded-xl p-4">
-                <p className="text-3xl font-bold">8</p>
+                <p className="text-3xl font-bold">2</p>
                 <p className="text-sm opacity-80">Active Sites</p>
               </div>
               <div className="bg-white/10 backdrop-blur rounded-xl p-4">
@@ -130,7 +130,7 @@ const Auth = () => {
                 <p className="text-sm opacity-80">Safety Compliance</p>
               </div>
               <div className="bg-white/10 backdrop-blur rounded-xl p-4">
-                <p className="text-3xl font-bold">156</p>
+                <p className="text-3xl font-bold">4</p>
                 <p className="text-sm opacity-80">Team Members</p>
               </div>
             </div>
