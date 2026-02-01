@@ -12,6 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   activeItem: string;
@@ -30,6 +32,8 @@ const menuItems = [
 
 const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => {
   const { data: hireQuotations, isLoading: hireQuotationsLoading } = useHireQuotations();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const equipmentItems = processedClient?.equipmentItems ?? [];
   const equipmentPreview = equipmentItems.slice(0, 4);
   const remainingEquipment = Math.max(equipmentItems.length - equipmentPreview.length, 0);
@@ -52,6 +56,11 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
       month: "short",
       day: "numeric",
     });
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth");
   };
 
   return (
@@ -219,7 +228,11 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
           <Settings className="w-5 h-5" />
           <span className="font-medium">Settings</span>
         </button>
-        <button className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10">
+        <button
+          className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+          onClick={handleLogout}
+          type="button"
+        >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Logout</span>
         </button>
