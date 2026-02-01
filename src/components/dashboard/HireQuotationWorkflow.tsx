@@ -513,29 +513,42 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
+  };
 
-    if (!inventoryDeducted) {
-      const inventoryItems = equipmentItems
-        .filter((item) => item.scaffoldId)
-        .map((item) => ({
-          scaffoldId: item.scaffoldId as string,
-          quantity: parseNumber(item.qtyDelivered),
-        }))
-        .filter((item) => item.quantity > 0);
-
-      if (inventoryItems.length) {
-        if (!scaffolds?.length) {
-          toast.error("Inventory data not loaded. Please try again.");
-          return;
-        }
-
-        await deductInventory.mutateAsync({
-          items: inventoryItems,
-          scaffolds,
-        });
-        setInventoryDeducted(true);
-      }
+  const handleEquipmentHired = async () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items selected for delivery");
+      return;
     }
+
+    if (inventoryDeducted) {
+      toast.error("Inventory already deducted for this delivery");
+      return;
+    }
+
+    if (!scaffolds?.length) {
+      toast.error("Inventory data not loaded. Please try again.");
+      return;
+    }
+
+    const inventoryItems = equipmentItems
+      .filter((item) => item.scaffoldId)
+      .map((item) => ({
+        scaffoldId: item.scaffoldId as string,
+        quantity: parseNumber(item.qtyDelivered),
+      }))
+      .filter((item) => item.quantity > 0);
+
+    if (!inventoryItems.length) {
+      toast.error("No inventory-linked equipment items to deduct.");
+      return;
+    }
+
+    await deductInventory.mutateAsync({
+      items: inventoryItems,
+      scaffolds,
+    });
+    setInventoryDeducted(true);
   };
 
   const handlePrintYardVerificationNote = () => {
@@ -1402,6 +1415,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <p className="text-sm text-muted-foreground">
                 {equipmentItems.length} item(s) • Total mass: {equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem), 0).toFixed(2)} kg
               </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Inventory status: {inventoryDeducted ? "Deducted" : "Pending"}
+              </p>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
@@ -1409,6 +1425,15 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleEquipmentHired}
+                  disabled={inventoryDeducted || deductInventory.isPending}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Equipment Hired
+                </Button>
                 <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print Delivery Note
