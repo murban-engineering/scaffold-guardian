@@ -99,7 +99,7 @@ const Auth = () => {
         <img 
           src={constructionImage} 
           alt="Construction site silhouette" 
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          className="absolute inset-0 w-full h-full object-cover opacity-70"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-accent/20" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
