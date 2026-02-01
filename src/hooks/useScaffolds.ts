@@ -194,7 +194,7 @@ export const useDeductScaffoldInventory = () => {
             .update({ quantity: update.quantity })
             .eq("id", update.id)
             .select()
-            .single()
+            .maybeSingle()
         )
       );
 
@@ -248,7 +248,7 @@ export const useReturnScaffoldInventory = () => {
             .update({ quantity: update.quantity })
             .eq("id", update.id)
             .select()
-            .single()
+            .maybeSingle()
         )
       );
 
