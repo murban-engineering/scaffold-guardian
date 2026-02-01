@@ -61,7 +61,8 @@ const SignedInUsers = () => {
         ) : data && data.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {data.map((member) => {
-              const initials = member.full_name
+              const fullName = member.full_name?.trim() || "Unknown";
+              const initials = fullName
                 .split(" ")
                 .map((part) => part[0])
                 .slice(0, 2)
@@ -80,7 +81,7 @@ const SignedInUsers = () => {
                     </div>
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-foreground">{member.full_name}</p>
+                        <p className="text-sm font-semibold text-foreground">{fullName}</p>
                         {isCurrentUser ? (
                           <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">
                             You

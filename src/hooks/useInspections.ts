@@ -58,9 +58,18 @@ export const useRecentInspections = (limit = 5) => {
         .limit(limit);
 
       if (error) throw error;
+      if (!data || data.length === 0) return [];
 
       // Fetch inspector profiles separately
-      const inspectorIds = [...new Set(data.map(i => i.inspector_id))];
+      const inspectorIds = [...new Set(data.map(i => i.inspector_id).filter(Boolean))];
+      if (inspectorIds.length === 0) {
+        return data.map((inspection) => ({
+          ...inspection,
+          profiles: {
+            full_name: "Unknown Inspector",
+          },
+        })) as Inspection[];
+      }
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, full_name")

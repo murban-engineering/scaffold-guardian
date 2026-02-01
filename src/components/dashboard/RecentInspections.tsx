@@ -12,6 +12,13 @@ const statusConfig = {
   failed: { icon: XCircle, label: "Failed", className: "status-damaged" },
 };
 
+const formatInspectionTime = (value?: string | null) => {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
 const RecentInspections = () => {
   const { data: inspections, isLoading, error } = useRecentInspections(5);
 
@@ -68,7 +75,7 @@ const RecentInspections = () => {
                     {config.label}
                   </Badge>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(new Date(inspection.inspection_date), { addSuffix: true })}
+                    {formatInspectionTime(inspection.inspection_date)}
                   </p>
                 </div>
               </div>
