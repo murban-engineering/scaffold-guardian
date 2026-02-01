@@ -10,6 +10,7 @@ import {
   LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHireQuotations } from "@/hooks/useHireQuotations";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ const menuItems = [
 ];
 
 const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => {
+  const { data: hireQuotations, isLoading: hireQuotationsLoading } = useHireQuotations();
   const equipmentItems = processedClient?.equipmentItems ?? [];
   const equipmentPreview = equipmentItems.slice(0, 4);
   const remainingEquipment = Math.max(equipmentItems.length - equipmentPreview.length, 0);
@@ -38,6 +40,19 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
         day: "numeric",
       })
     : null;
+  const activeQuotations = (hireQuotations ?? []).filter((quotation) => {
+    const status = quotation.status?.toLowerCase?.() ?? "";
+    return status === "active" || status === "pending";
+  });
+
+  const formatQuotationDate = (date: string | null) => {
+    if (!date) return null;
+    return new Date(date).toLocaleDateString("en-ZA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col z-50">
@@ -69,35 +84,88 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
                 <item.icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
               </button>
-              {item.id === "sites" && processedClient ? (
+              {item.id === "sites" ? (
                 <div className="mt-2 space-y-3 rounded-lg border border-sidebar-border bg-sidebar-accent/10 px-3 py-2 text-xs text-sidebar-foreground/80">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
+                      Active & pending quotations
+                    </p>
+                    {hireQuotationsLoading ? (
+                      <p className="mt-1 text-sidebar-foreground/60">Loading quotations...</p>
+                    ) : activeQuotations.length ? (
+                      <div className="mt-2 space-y-2">
+                        {activeQuotations.slice(0, 3).map((quotation) => {
+                          const savedDate = formatQuotationDate(quotation.created_at);
+                          const displayStatus = quotation.status || "pending";
+
+                          return (
+                            <div key={quotation.id} className="space-y-1 rounded-md border border-sidebar-border/60 bg-sidebar/20 px-2 py-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-semibold text-sidebar-foreground">
+                                  {quotation.company_name || quotation.site_manager_name || "Client pending"}
+                                </p>
+                                <span className="rounded-full bg-sidebar-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-sidebar-primary">
+                                  {displayStatus}
+                                </span>
+                              </div>
+                              <p className="text-sidebar-foreground/70">
+                                {quotation.site_name || "Site name pending"}
+                              </p>
+                              <p className="text-sidebar-foreground/60">
+                                {savedDate ? `Saved ${savedDate}` : "Date pending"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                        {activeQuotations.length > 3 ? (
+                          <p className="text-[11px] text-sidebar-foreground/60">
+                            +{activeQuotations.length - 3} more quotations
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-sidebar-foreground/60">No active or pending quotations yet.</p>
+                    )}
+                  </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
                       Latest client processed
                     </p>
-                    <p className="mt-1 font-semibold text-sidebar-foreground">
-                      {processedClient.clientCompanyName || processedClient.clientName}
-                    </p>
-                    <p className="text-sidebar-foreground/70">
-                      {processedClient.clientName || "Contact pending"}
-                    </p>
+                    {processedClient ? (
+                      <>
+                        <p className="mt-1 font-semibold text-sidebar-foreground">
+                          {processedClient.clientCompanyName || processedClient.clientName}
+                        </p>
+                        <p className="text-sidebar-foreground/70">
+                          {processedClient.clientName || "Contact pending"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sidebar-foreground/60">No recent client processed yet.</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
                       Site details
                     </p>
-                    <p className="text-sidebar-foreground/70">
-                      {processedClient.siteName || "Site name pending"}
-                    </p>
-                    <p className="text-sidebar-foreground/70">
-                      {processedClient.siteLocation || processedClient.siteAddress || "Location pending"}
-                    </p>
+                    {processedClient ? (
+                      <>
+                        <p className="text-sidebar-foreground/70">
+                          {processedClient.siteName || "Site name pending"}
+                        </p>
+                        <p className="text-sidebar-foreground/70">
+                          {processedClient.siteLocation || processedClient.siteAddress || "Location pending"}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sidebar-foreground/60">Site details will appear after processing a client.</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
                       Equipment taken
                     </p>
-                    {equipmentItems.length ? (
+                    {processedClient && equipmentItems.length ? (
                       <div className="mt-1 space-y-1 text-sidebar-foreground/80">
                         {equipmentPreview.map((item, index) => (
                           <p key={`${processedClient.id}-${item.itemCode}-${index}`}>
