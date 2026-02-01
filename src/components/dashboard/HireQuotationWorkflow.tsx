@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package } from "lucide-react";
+import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useScaffolds, useDeductScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
+import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
   generateDeliveryNotePDF,
   generateHireQuotationReportPDF,
@@ -21,7 +22,7 @@ import {
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
 
-type StepKey = "client" | "equipment" | "quotation" | "delivery" | "calculation";
+type StepKey = "client" | "equipment" | "quotation" | "delivery" | "calculation" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -92,12 +93,25 @@ type QuotationCalculation = {
   paymentTerms: string;
 };
 
+type ReturnItem = {
+  id: string;
+  scaffoldId: string | null;
+  itemCode: string;
+  description: string;
+  totalDelivered: number;
+  good: string;
+  dirty: string;
+  damaged: string;
+  scrap: string;
+};
+
 const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
   { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "delivery", title: "Delivery Note", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
+  { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
 
 const generateDeliveryNoteNumber = () => {
@@ -136,14 +150,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const deductInventory = useDeductScaffoldInventory();
+  const returnInventory = useReturnScaffoldInventory();
   const createQuotation = useCreateQuotation();
   const updateQuotation = useUpdateQuotation();
   const addLineItems = useAddLineItems();
   const clearLineItems = useClearLineItems();
+  const createMaintenanceLogs = useCreateMaintenanceLogs();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<StepKey>("client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
+  const [returnProcessed, setReturnProcessed] = useState(false);
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
     dateCreated: getToday(),
@@ -238,6 +255,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     );
     setActiveStep("client");
     setInventoryDeducted(false);
+    setReturnProcessed(false);
   }, [initialQuotation, profile?.full_name]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
@@ -266,6 +284,26 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     discountRate: "0",
     paymentTerms: "Payment due within 30 days from invoice date.",
   });
+  const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
+
+  useEffect(() => {
+    setReturnItems((prev) =>
+      equipmentItems.map((item) => {
+        const existing = prev.find((entry) => entry.id === item.id);
+        return {
+          id: item.id,
+          scaffoldId: item.scaffoldId,
+          itemCode: item.itemCode,
+          description: item.description,
+          totalDelivered: parseNumber(item.qtyDelivered),
+          good: existing?.good ?? "0",
+          dirty: existing?.dirty ?? "0",
+          damaged: existing?.damaged ?? "0",
+          scrap: existing?.scrap ?? "0",
+        };
+      })
+    );
+  }, [equipmentItems]);
 
   const stepIndex = steps.findIndex((step) => step.key === activeStep);
 
@@ -647,6 +685,103 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     toast.success("Hire quotation completed and saved!");
+    setActiveStep("return");
+  };
+
+  const handleReturnQuantityChange = (
+    id: string,
+    field: keyof Omit<ReturnItem, "id" | "scaffoldId" | "itemCode" | "description" | "totalDelivered">,
+    value: string
+  ) => {
+    setReturnItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const handleProcessReturn = async () => {
+    if (!returnItems.length) {
+      toast.error("No items available for return.");
+      return;
+    }
+
+    const hasReturn = returnItems.some((item) =>
+      parseNumber(item.good) +
+        parseNumber(item.dirty) +
+        parseNumber(item.damaged) +
+        parseNumber(item.scrap) >
+      0
+    );
+
+    if (!hasReturn) {
+      toast.error("Enter at least one returned quantity.");
+      return;
+    }
+
+    for (const item of returnItems) {
+      const totalReturned =
+        parseNumber(item.good) +
+        parseNumber(item.dirty) +
+        parseNumber(item.damaged) +
+        parseNumber(item.scrap);
+      if (totalReturned > item.totalDelivered) {
+        toast.error(`Returned quantity for ${item.description || item.itemCode} exceeds delivered amount.`);
+        return;
+      }
+    }
+
+    if (!scaffolds?.length) {
+      toast.error("Inventory data not loaded. Please try again.");
+      return;
+    }
+
+    const inventoryReturnItems = returnItems
+      .filter((item) => item.scaffoldId)
+      .map((item) => ({
+        scaffoldId: item.scaffoldId as string,
+        quantity: parseNumber(item.good) + parseNumber(item.dirty),
+      }))
+      .filter((item) => item.quantity > 0);
+
+    const reportedBy = profile?.full_name || user?.email || user?.id || "System";
+    const conditionPriority: Record<string, "low" | "medium" | "high" | "urgent"> = {
+      dirty: "low",
+      damaged: "high",
+      scrap: "urgent",
+    };
+
+    const maintenanceEntries = returnItems
+      .flatMap((item) => {
+        const entries: { condition: "dirty" | "damaged" | "scrap"; qty: number }[] = [
+          { condition: "dirty", qty: parseNumber(item.dirty) },
+          { condition: "damaged", qty: parseNumber(item.damaged) },
+          { condition: "scrap", qty: parseNumber(item.scrap) },
+        ];
+
+        return entries
+          .filter((entry) => entry.qty > 0)
+          .map((entry) => ({
+            scaffold_id: item.scaffoldId || "",
+            issue_description: `Return condition: ${entry.condition}. Quantity: ${entry.qty}. Quotation: ${
+              header.quotationNo || "N/A"
+            }.`,
+            reported_by: reportedBy,
+            priority: conditionPriority[entry.condition],
+          }));
+      })
+      .filter((entry) => entry.scaffold_id);
+
+    try {
+      if (inventoryReturnItems.length) {
+        await returnInventory.mutateAsync({ items: inventoryReturnItems, scaffolds });
+      }
+      if (maintenanceEntries.length) {
+        await createMaintenanceLogs.mutateAsync(maintenanceEntries);
+      }
+      setReturnProcessed(true);
+      toast.success("Hire return processed successfully!");
+    } catch (error) {
+      console.error("Failed to process return:", error);
+    }
   };
 
   const availableScaffolds = scaffolds?.filter(s => 
@@ -658,13 +793,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Create quotations with equipment from inventory → generate hire quotation report → generate delivery notes → calculate hire totals
+          Create quotations with equipment from inventory → generate hire quotation report → generate delivery notes → calculate hire totals → process hire returns
           {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -1399,9 +1534,113 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   onClick={handleCalculationSave}
                   disabled={updateQuotation.isPending}
                 >
-                  {updateQuotation.isPending ? "Finalizing..." : "Complete Quotation"}
+                  {updateQuotation.isPending ? "Finalizing..." : "Continue to Returns"}
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Hire Return */}
+        {activeStep === "return" && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-border p-4 bg-muted/30">
+              <h4 className="font-semibold mb-1">Hire Return</h4>
+              <p className="text-sm text-muted-foreground">
+                Record the returned quantities by condition. Good and dirty items return to inventory,
+                while damaged and scrap items are logged to maintenance.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Item</th>
+                    <th className="px-3 py-2 text-center font-medium">Delivered</th>
+                    <th className="px-3 py-2 text-center font-medium">Good</th>
+                    <th className="px-3 py-2 text-center font-medium">Dirty</th>
+                    <th className="px-3 py-2 text-center font-medium">Damaged</th>
+                    <th className="px-3 py-2 text-center font-medium">Scrap</th>
+                    <th className="px-3 py-2 text-center font-medium">Returned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {returnItems.map((item) => {
+                    const totalReturned =
+                      parseNumber(item.good) +
+                      parseNumber(item.dirty) +
+                      parseNumber(item.damaged) +
+                      parseNumber(item.scrap);
+                    return (
+                      <tr key={item.id} className="border-b border-border">
+                        <td className="px-3 py-2">
+                          <div className="font-medium">{item.description || item.itemCode}</div>
+                          <div className="text-xs text-muted-foreground">{item.itemCode || "—"}</div>
+                        </td>
+                        <td className="px-3 py-2 text-center font-semibold">{item.totalDelivered}</td>
+                        <td className="px-3 py-2 text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.good}
+                            onChange={(e) => handleReturnQuantityChange(item.id, "good", e.target.value)}
+                            className="h-8 text-center"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.dirty}
+                            onChange={(e) => handleReturnQuantityChange(item.id, "dirty", e.target.value)}
+                            className="h-8 text-center"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.damaged}
+                            onChange={(e) => handleReturnQuantityChange(item.id, "damaged", e.target.value)}
+                            className="h-8 text-center"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.scrap}
+                            onChange={(e) => handleReturnQuantityChange(item.id, "scrap", e.target.value)}
+                            className="h-8 text-center"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center font-semibold">{totalReturned}</td>
+                      </tr>
+                    );
+                  })}
+                  {!returnItems.length && (
+                    <tr>
+                      <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                        No hire items available for return yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={handleProcessReturn}
+                disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+              >
+                {returnProcessed ? "Return Processed" : "Process Return"}
+              </Button>
             </div>
           </div>
         )}

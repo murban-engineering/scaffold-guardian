@@ -8,6 +8,7 @@ import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
+import MaintenanceLogOverview from "@/components/dashboard/MaintenanceLogOverview";
 
 import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
@@ -201,6 +202,8 @@ const Index = () => {
               <RecentInspections />
               <ActiveSites processedClient={processedClient} />
             </div>
+
+            <MaintenanceLogOverview />
 
             {/* Hire Quotation Dialog */}
             <Dialog
