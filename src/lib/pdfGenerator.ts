@@ -131,7 +131,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         .remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }
         .page-break { page-break-before: always; }
         .yard-note { margin-top: 20px; }
-        .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 12px; }
+        .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 6px; }
+        .yard-note h2 { text-align: center; font-size: 16px; margin-bottom: 12px; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
@@ -147,8 +148,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="header">
-        <h1>DELIVERY NOTE</h1>
-        <p>Scaffold Equipment Delivery</p>
+        <h1>OTNO ACCESS AFRICA</h1>
+        <p>Delivery Note</p>
       </div>
       
       <div class="info-grid">
@@ -227,6 +228,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       </div>
 
       <div class="page-break yard-note">
+        <h1>OTNO ACCESS AFRICA</h1>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -325,6 +327,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+        .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 6px; }
         .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 12px; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
@@ -341,6 +344,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="yard-note">
+        <h1>OTNO ACCESS AFRICA</h1>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -458,8 +462,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </head>
     <body>
       <div class="header">
-        <h1>HIRE QUOTATION</h1>
-        <p>Scaffold Equipment Hire</p>
+        <h1>OTNO ACCESS AFRICA</h1>
+        <p>Hire Quotation</p>
       </div>
 
       <div class="info-grid">
@@ -572,8 +576,8 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </head>
     <body>
       <div class="header">
-        <h1>HIRE QUOTATION</h1>
-        <p>Scaffold Equipment Hire</p>
+        <h1>OTNO ACCESS AFRICA</h1>
+        <p>Hire Quotation</p>
       </div>
       
       <div class="info-grid">
