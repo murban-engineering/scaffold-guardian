@@ -116,6 +116,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         .info-row { display: flex; margin-bottom: 5px; }
         .info-label { font-weight: bold; width: 120px; color: #555; }
         .info-value { flex: 1; }
+        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 20px; }
+        .section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f5f5; font-weight: bold; }
@@ -152,13 +154,22 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         </div>
       </div>
 
+      <div class="section">
+        <h3>Hire Loading Note</h3>
+        <div class="info-row"><span class="info-label">Loaded By:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Checked By:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Date:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Time:</span><span class="info-value">____________________</span></div>
+      </div>
+
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Part Number</th>
             <th>Description</th>
-            <th>Quantity</th>
+            <th>Balance Qty</th>
+            <th>This Delivery</th>
             <th>Mass/Item (kg)</th>
             <th>Total Mass (kg)</th>
           </tr>
@@ -170,12 +181,13 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
               <td>${item.partNumber || "-"}</td>
               <td>${item.description || "-"}</td>
               <td>${item.quantity}</td>
+              <td>__________</td>
               <td>${formatMass(item.massPerItem)}</td>
               <td>${formatMass(item.totalMass)}</td>
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="5">Total Mass</td>
+            <td colspan="6">Total Mass</td>
             <td>${formatMass(totalMass)}</td>
           </tr>
         </tbody>
