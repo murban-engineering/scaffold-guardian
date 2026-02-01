@@ -172,7 +172,7 @@ const Index = () => {
             {/* Bottom Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RecentInspections />
-              <ActiveSites />
+              <ActiveSites processedClient={processedClient} />
             </div>
 
             {/* Hire Quotation Dialog */}
