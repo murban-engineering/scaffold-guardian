@@ -87,17 +87,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
-        fetchRoles(session.user.id).then(setRoles);
+    const fetchSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchProfile(session.user.id).then(setProfile);
+          fetchRoles(session.user.id).then(setRoles);
+        }
+      } catch (error) {
+        console.error("Error loading auth session:", error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setRoles([]);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
-    });
+    };
+
+    fetchSession();
 
     return () => subscription.unsubscribe();
   }, []);
