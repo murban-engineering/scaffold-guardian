@@ -45,6 +45,9 @@ export interface QuotationCalculationData {
   vatRate: number;
   vatAmount: number;
   grandTotal: number;
+  discountRate: number;
+  discountAmount: number;
+  paymentTotal: number;
   paymentTerms: string;
 }
 
@@ -81,7 +84,7 @@ export interface HireQuotationReportData {
 }
 
 const formatCurrency = (value: number) =>
-  `R ${value.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const formatMass = (value: number | null) =>
   value != null ? `${value.toFixed(2)} kg` : "-";
@@ -637,9 +640,19 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <span>VAT (${data.vatRate}%)</span>
           <span>${formatCurrency(data.vatAmount)}</span>
         </div>
+        ${data.discountRate > 0 ? `
+          <div class="summary-row">
+            <span>Discount (${data.discountRate}%)</span>
+            <span>-${formatCurrency(data.discountAmount)}</span>
+          </div>
+        ` : ""}
         <div class="summary-row grand">
           <span>GRAND TOTAL (incl. VAT)</span>
           <span>${formatCurrency(data.grandTotal)}</span>
+        </div>
+        <div class="summary-row grand">
+          <span>PAYMENT TOTAL</span>
+          <span>${formatCurrency(data.paymentTotal)}</span>
         </div>
       </div>
 
