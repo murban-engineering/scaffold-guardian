@@ -1,4 +1,4 @@
-import { Plus, ClipboardCheck, Wrench, Truck, FileText, QrCode } from "lucide-react";
+import { Plus, ClipboardCheck, Wrench, Truck, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const actions = [
@@ -7,7 +7,6 @@ const actions = [
   { icon: Wrench, label: "Log Maintenance", description: "Record repair work", color: "bg-warning text-warning-foreground hover:bg-warning/90" },
   { icon: Truck, label: "Transfer Stock", description: "Move between sites", color: "bg-accent text-accent-foreground hover:bg-accent/90" },
   { icon: FileText, label: "Generate Report", description: "Create documentation", color: "bg-secondary text-secondary-foreground hover:bg-secondary/80" },
-  { icon: QrCode, label: "Scan QR Code", description: "Quick asset lookup", color: "bg-muted text-foreground hover:bg-muted/80" },
 ];
 
 const QuickActions = () => {
