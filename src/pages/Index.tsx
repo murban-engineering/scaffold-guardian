@@ -80,6 +80,10 @@ const Index = () => {
       navigate("/sites");
       return;
     }
+    if (item === "settings") {
+      navigate("/settings");
+      return;
+    }
     setActiveItem(item);
   };
 

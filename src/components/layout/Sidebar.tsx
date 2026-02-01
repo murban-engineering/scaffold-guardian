@@ -209,7 +209,13 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
 
       {/* Bottom Section */}
       <div className="p-4 border-t border-sidebar-border">
-        <button className="sidebar-item w-full mb-2">
+        <button
+          className={cn(
+            "sidebar-item w-full mb-2",
+            activeItem === "settings" && "sidebar-item-active"
+          )}
+          onClick={() => onItemClick("settings")}
+        >
           <Settings className="w-5 h-5" />
           <span className="font-medium">Settings</span>
         </button>

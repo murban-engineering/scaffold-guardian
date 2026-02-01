@@ -37,6 +37,10 @@ const Sites = () => {
       navigate("/", { state: { activeItem: item }, replace: true });
       return;
     }
+    if (item === "settings") {
+      navigate("/settings");
+      return;
+    }
   };
 
   const handleOpenWorkflow = (quotation: HireQuotation) => {
