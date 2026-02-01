@@ -18,7 +18,7 @@ const InventoryOverview = () => {
 
   const formatCurrency = (value: number | null) => {
     if (value === null || value === undefined) return "-";
-    return `KSh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
+    return `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2 })}`;
   };
 
   const formatMass = (value: number | null) => {
