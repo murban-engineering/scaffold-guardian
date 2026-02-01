@@ -187,20 +187,19 @@ export const useDeductScaffoldInventory = () => {
         return [];
       }
 
+      // Use the secure database function to update quantities
       const results = await Promise.all(
-        updates.map((update) =>
-          supabase
-            .from("scaffolds")
-            .update({ quantity: update.quantity })
-            .eq("id", update.id)
-            .select("id, quantity")
-        )
+        updates.map(async (update) => {
+          const { error } = await supabase.rpc("update_scaffold_quantity", {
+            scaffold_id: update.id,
+            new_quantity: update.quantity,
+          });
+          if (error) throw error;
+          return { id: update.id, quantity: update.quantity };
+        })
       );
 
-      const firstError = results.find((result) => result.error)?.error;
-      if (firstError) throw firstError;
-
-      return results.flatMap((result) => result.data ?? []);
+      return results;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
@@ -240,20 +239,19 @@ export const useReturnScaffoldInventory = () => {
         return [];
       }
 
+      // Use the secure database function to update quantities
       const results = await Promise.all(
-        updates.map((update) =>
-          supabase
-            .from("scaffolds")
-            .update({ quantity: update.quantity })
-            .eq("id", update.id)
-            .select("id, quantity")
-        )
+        updates.map(async (update) => {
+          const { error } = await supabase.rpc("update_scaffold_quantity", {
+            scaffold_id: update.id,
+            new_quantity: update.quantity,
+          });
+          if (error) throw error;
+          return { id: update.id, quantity: update.quantity };
+        })
       );
 
-      const firstError = results.find((result) => result.error)?.error;
-      if (firstError) throw firstError;
-
-      return results.flatMap((result) => result.data ?? []);
+      return results;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scaffolds"] });

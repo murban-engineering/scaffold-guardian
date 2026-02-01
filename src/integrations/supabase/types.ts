@@ -497,6 +497,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_scaffold_quantity: {
+        Args: { new_quantity: number; scaffold_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "supervisor" | "inspector" | "worker"
