@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Package, MapPin, ClipboardCheck, AlertTriangle, Users, Wrench, FileText, FolderClock } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -17,9 +17,15 @@ import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const [activeItem, setActiveItem] = useState("dashboard");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeItem, setActiveItem] = useState(() => {
+    const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
+    return stateItem ?? "dashboard";
+  });
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
@@ -27,6 +33,13 @@ const Index = () => {
   const { profile } = useAuth();
   const { data: stats, isLoading } = useDashboardStats();
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
+
+  useEffect(() => {
+    const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
+    if (stateItem && stateItem !== activeItem) {
+      setActiveItem(stateItem);
+    }
+  }, [activeItem, location.state]);
 
   const headerTitle =
     activeItem === "inventory"
@@ -59,11 +72,19 @@ const Index = () => {
     setShowQuotationDialog(true);
   };
 
+  const handleSidebarItemClick = (item: string) => {
+    if (item === "sites") {
+      navigate("/sites");
+      return;
+    }
+    setActiveItem(item);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar
         activeItem={activeItem}
-        onItemClick={setActiveItem}
+        onItemClick={handleSidebarItemClick}
         processedClient={processedClient}
       />
 
