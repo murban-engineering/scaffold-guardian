@@ -275,7 +275,7 @@ const Index = () => {
                                 <TableCell>
                                   <div className="font-medium">{itemCount} item(s)</div>
                                   <div className="text-xs text-muted-foreground">
-                                    Weekly total: R {weeklyTotal.toLocaleString("en-ZA", { minimumFractionDigits: 2 })}
+                                    Weekly total: Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
                                   </div>
                                 </TableCell>
                                 <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>

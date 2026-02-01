@@ -88,6 +88,7 @@ type QuotationCalculation = {
   numberOfWeeks: string;
   vatEnabled: boolean;
   vatRate: string;
+  discountRate: string;
   paymentTerms: string;
 };
 
@@ -107,7 +108,7 @@ const generateSequence = (prefix: string) => {
 const getToday = () => new Date().toISOString().split("T")[0];
 
 const formatCurrency = (value: number) =>
-  `R ${value.toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const parseNumber = (value: string) => {
   const parsed = Number(value);
@@ -261,6 +262,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     numberOfWeeks: "1",
     vatEnabled: true,
     vatRate: "15",
+    discountRate: "0",
     paymentTerms: "Payment due within 30 days from invoice date.",
   });
 
@@ -279,6 +281,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const vatRate = parseNumber(calculation.vatRate) / 100;
   const vatAmount = calculation.vatEnabled ? hireTotalForWeeks * vatRate : 0;
   const grandTotal = hireTotalForWeeks + vatAmount;
+  const discountRate = parseNumber(calculation.discountRate) / 100;
+  const discountAmount = grandTotal * discountRate;
+  const paymentTotal = Math.max(grandTotal - discountAmount, 0);
 
   const goToStep = (next: StepKey) => setActiveStep(next);
 
@@ -622,6 +627,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vatRate: parseNumber(calculation.vatRate),
       vatAmount: vatAmount,
       grandTotal: grandTotal,
+      discountRate: parseNumber(calculation.discountRate),
+      discountAmount: discountAmount,
+      paymentTotal: paymentTotal,
       paymentTerms: calculation.paymentTerms,
     };
 
@@ -1327,6 +1335,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   )}
                 </div>
               </div>
+              <div>
+                <Label htmlFor="discountRate">Discount (%)</Label>
+                <Input
+                  id="discountRate"
+                  type="number"
+                  min="0"
+                  value={calculation.discountRate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, discountRate: e.target.value }))}
+                />
+              </div>
               <div className="md:col-span-2">
                 <Label htmlFor="paymentTerms">Payment Terms</Label>
                 <Textarea
@@ -1360,9 +1378,19 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <span>{formatCurrency(vatAmount)}</span>
                   </div>
                 )}
+                {discountRate > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Discount ({calculation.discountRate}%)</span>
+                    <span>-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t pt-2 text-lg font-bold">
                   <span>Grand Total</span>
                   <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                  <span>Payment Total</span>
+                  <span className="text-primary">{formatCurrency(paymentTotal)}</span>
                 </div>
               </div>
             </div>
