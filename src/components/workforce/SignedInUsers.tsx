@@ -36,7 +36,7 @@ const SignedInUsers = () => {
         <div>
           <h2 className="text-xl font-semibold text-foreground">Signed-in users</h2>
           <p className="text-sm text-muted-foreground">
-            Monitor who is currently authenticated in your ScaffoldPro workspace.
+            Monitor who is currently authenticated in your Otno Access workspace.
           </p>
         </div>
         <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
