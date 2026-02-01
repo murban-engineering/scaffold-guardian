@@ -517,20 +517,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     toast.success("Delivery note opened for printing");
   };
 
-  const handleEquipmentHired = async () => {
+  const handleEquipmentHired = async (): Promise<boolean> => {
     if (!equipmentItems.length) {
       toast.error("No equipment items selected for delivery");
-      return;
+      return false;
     }
 
     if (inventoryDeducted) {
       toast.error("Inventory already deducted for this delivery");
-      return;
+      return false;
     }
 
     if (!scaffolds?.length) {
       toast.error("Inventory data not loaded. Please try again.");
-      return;
+      return false;
     }
 
     const inventoryItems = equipmentItems
@@ -543,7 +543,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     if (!inventoryItems.length) {
       toast.error("No inventory-linked equipment items to deduct.");
-      return;
+      return false;
     }
 
     await deductInventory.mutateAsync({
@@ -551,6 +551,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       scaffolds,
     });
     setInventoryDeducted(true);
+    return true;
   };
 
   const handlePrintYardVerificationNote = () => {
@@ -626,6 +627,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     if (!equipmentItems.length) {
       toast.error("No equipment items to include in delivery note");
       return;
+    }
+
+    if (!inventoryDeducted) {
+      const deducted = await handleEquipmentHired();
+      if (!deducted) {
+        return;
+      }
     }
 
     await handlePrintDeliveryNote();
