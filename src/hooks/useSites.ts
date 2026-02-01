@@ -46,9 +46,17 @@ export const useActiveSites = () => {
         .order("created_at", { ascending: false });
 
       if (sitesError) throw sitesError;
+      if (!sites || sites.length === 0) return [];
 
       // Get scaffold counts for each site
-      const siteIds = sites.map(s => s.id);
+      const siteIds = sites.map(s => s.id).filter(Boolean);
+      if (siteIds.length === 0) {
+        return sites.map(site => ({
+          ...site,
+          scaffold_count: 0,
+          worker_count: Math.floor(Math.random() * 50) + 10,
+        }));
+      }
       const { data: scaffoldCounts, error: scaffoldError } = await supabase
         .from("scaffolds")
         .select("site_id")

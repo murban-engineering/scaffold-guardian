@@ -18,6 +18,13 @@ const priorityColors: Record<string, string> = {
   low: "border-l-muted-foreground",
 };
 
+const formatAlertTime = (value?: string | null) => {
+  if (!value) return "Date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return formatDistanceToNow(date, { addSuffix: true });
+};
+
 const AlertsWidget = () => {
   const { data: alerts, isLoading, error } = useAlerts();
 
@@ -72,7 +79,7 @@ const AlertsWidget = () => {
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="font-medium text-foreground text-sm">{alert.title}</h4>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                        {formatAlertTime(alert.created_at)}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
