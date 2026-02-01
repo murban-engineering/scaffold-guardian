@@ -126,9 +126,10 @@ export type ProcessedClient = {
 
 type HireQuotationWorkflowProps = {
   onClientProcessed?: (client: ProcessedClient) => void;
+  initialQuotation?: HireQuotation | null;
 };
 
-const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps) => {
+const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const createQuotation = useCreateQuotation();
@@ -175,6 +176,63 @@ const HireQuotationWorkflow = ({ onClientProcessed }: HireQuotationWorkflowProps
       setHeader(prev => ({ ...prev, createdBy: profile.full_name }));
     }
   }, [profile?.full_name, header.createdBy]);
+
+  useEffect(() => {
+    if (!initialQuotation) return;
+
+    const createdDate = initialQuotation.created_at
+      ? new Date(initialQuotation.created_at).toISOString().split("T")[0]
+      : getToday();
+
+    setSavedQuotationId(initialQuotation.id);
+    setHeader(prev => ({
+      ...prev,
+      quotationNo: initialQuotation.quotation_number || prev.quotationNo,
+      dateCreated: createdDate,
+      clientCompanyName: initialQuotation.company_name ?? "",
+      clientName: initialQuotation.site_manager_name ?? "",
+      clientPhone: initialQuotation.site_manager_phone ?? "",
+      clientEmail: initialQuotation.site_manager_email ?? "",
+      siteName: initialQuotation.site_name ?? "",
+      siteAddress: initialQuotation.site_address ?? "",
+      officialOrdersUsed: initialQuotation.official_order_required ? "yes" : "no",
+      bulkOrdersUsed: initialQuotation.bulk_order_required ? "yes" : "no",
+      telephonicOrders: initialQuotation.telephonic_order_acceptable ? "yes" : "no",
+      specialTransportArrangement: initialQuotation.transport_arrangement ?? "",
+      projectTypes: initialQuotation.project_type ?? [],
+      marketSegments: initialQuotation.market_segment ?? [],
+      customerOrderNo: initialQuotation.account_number ?? "",
+      createdBy: prev.createdBy || profile?.full_name || "",
+    }));
+
+    setDiscounts([
+      { type: "Tonnage", product: "", hireDiscount: String(initialQuotation.tonnage_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Basket", product: "", hireDiscount: String(initialQuotation.basket_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Straight Hire", product: "", hireDiscount: String(initialQuotation.tube_clamp_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Nett", product: "", hireDiscount: String(initialQuotation.other_discount ?? ""), salesDiscount: "", rate: "" },
+    ]);
+
+    setCalculation(prev => ({
+      ...prev,
+      numberOfWeeks: String(initialQuotation.hire_weeks || 1),
+      paymentTerms: initialQuotation.notes ?? "",
+    }));
+
+    setEquipmentItems(
+      (initialQuotation.line_items ?? []).map(item => ({
+        id: item.id,
+        scaffoldId: item.scaffold_id ?? null,
+        itemCode: item.part_number ?? "",
+        description: item.description ?? "",
+        unit: "pcs",
+        qtyDelivered: String(item.quantity ?? 0),
+        weeklyRate: String(item.weekly_rate ?? 0),
+        massPerItem: String(item.mass_per_item ?? 0),
+        notes: "",
+      }))
+    );
+    setActiveStep("client");
+  }, [initialQuotation, profile?.full_name]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
