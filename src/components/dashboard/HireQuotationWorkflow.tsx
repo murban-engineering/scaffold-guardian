@@ -261,6 +261,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
   const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
+  const [itemCodeSearch, setItemCodeSearch] = useState<string>("");
   const [discounts, setDiscounts] = useState<DiscountLine[]>(() => [
     { type: "Tonnage", product: "", hireDiscount: "", salesDiscount: "", rate: "" },
     { type: "Basket", product: "", hireDiscount: "", salesDiscount: "", rate: "" },
@@ -444,6 +445,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     setSelectedScaffoldId("");
+    setItemCodeSearch("");
     setEquipmentQuantity("1");
   };
 
@@ -800,6 +802,30 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const availableScaffolds = scaffolds?.filter(s => 
     (s.quantity ?? 0) > 0 && s.status === "available"
   ) || [];
+  const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
+  const filteredScaffolds = availableScaffolds.filter((scaffold) => {
+    if (!normalizedItemCodeSearch) return true;
+    const partNumber = scaffold.part_number?.toLowerCase() ?? "";
+    const description = scaffold.description?.toLowerCase() ?? "";
+    const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
+    return (
+      partNumber.includes(normalizedItemCodeSearch) ||
+      description.includes(normalizedItemCodeSearch) ||
+      scaffoldType.includes(normalizedItemCodeSearch)
+    );
+  });
+
+  const handleItemCodeSearchChange = (value: string) => {
+    setItemCodeSearch(value);
+    const normalizedValue = value.trim().toLowerCase();
+    if (!normalizedValue) return;
+    const exactMatch = availableScaffolds.find(
+      scaffold => (scaffold.part_number ?? "").toLowerCase() === normalizedValue
+    );
+    if (exactMatch) {
+      setSelectedScaffoldId(exactMatch.id);
+    }
+  };
 
   return (
     <Card className="animate-fade-in">
@@ -1209,18 +1235,44 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               </h4>
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="md:col-span-2">
-                  <Label>Select Item</Label>
-                  <Select value={selectedScaffoldId} onValueChange={setSelectedScaffoldId}>
+                  <Label htmlFor="itemCodeSearch">Item Code</Label>
+                  <Input
+                    id="itemCodeSearch"
+                    value={itemCodeSearch}
+                    onChange={(e) => handleItemCodeSearchChange(e.target.value)}
+                    placeholder="Enter part number to filter or auto-select"
+                    className="mt-2"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Type a part number to auto-select, or scroll the inventory list to browse all items.
+                  </p>
+                  <Label className="mt-4 block">Select Item</Label>
+                  <Select
+                    value={selectedScaffoldId}
+                    onValueChange={(value) => {
+                      setSelectedScaffoldId(value);
+                      const selected = availableScaffolds.find(scaffold => scaffold.id === value);
+                      if (selected?.part_number) {
+                        setItemCodeSearch(selected.part_number);
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={scaffoldsLoading ? "Loading inventory..." : "Choose from inventory"} />
                     </SelectTrigger>
-                    <SelectContent>
-                      {availableScaffolds.map(scaffold => (
-                        <SelectItem key={scaffold.id} value={scaffold.id}>
-                          {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                          (Qty: {scaffold.quantity}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
-                        </SelectItem>
-                      ))}
+                    <SelectContent className="max-h-64 overflow-y-auto">
+                      {filteredScaffolds.length > 0 ? (
+                        filteredScaffolds.map(scaffold => (
+                          <SelectItem key={scaffold.id} value={scaffold.id}>
+                            {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
+                            (Qty: {scaffold.quantity}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">
+                          No inventory items match that code.
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
