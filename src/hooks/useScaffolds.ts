@@ -193,15 +193,14 @@ export const useDeductScaffoldInventory = () => {
             .from("scaffolds")
             .update({ quantity: update.quantity })
             .eq("id", update.id)
-            .select()
-            .maybeSingle()
+            .select("id, quantity")
         )
       );
 
       const firstError = results.find((result) => result.error)?.error;
       if (firstError) throw firstError;
 
-      return results.map((result) => result.data).filter(Boolean);
+      return results.flatMap((result) => result.data ?? []);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
@@ -247,15 +246,14 @@ export const useReturnScaffoldInventory = () => {
             .from("scaffolds")
             .update({ quantity: update.quantity })
             .eq("id", update.id)
-            .select()
-            .maybeSingle()
+            .select("id, quantity")
         )
       );
 
       const firstError = results.find((result) => result.error)?.error;
       if (firstError) throw firstError;
 
-      return results.map((result) => result.data).filter(Boolean);
+      return results.flatMap((result) => result.data ?? []);
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
