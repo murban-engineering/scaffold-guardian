@@ -30,11 +30,11 @@ const Sites = () => {
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
-      navigate("/");
+      navigate("/", { state: { activeItem: "dashboard" }, replace: true });
       return;
     }
     if (item === "inventory" || item === "workforce") {
-      navigate("/", { state: { activeItem: item } });
+      navigate("/", { state: { activeItem: item }, replace: true });
       return;
     }
   };

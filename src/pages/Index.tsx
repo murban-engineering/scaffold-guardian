@@ -36,10 +36,12 @@ const Index = () => {
 
   useEffect(() => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
-    if (stateItem && stateItem !== activeItem) {
+    if (stateItem) {
       setActiveItem(stateItem);
+      // Clear the state to prevent stale navigation
+      window.history.replaceState({}, document.title);
     }
-  }, [activeItem, location.state]);
+  }, [location.state]);
 
   const headerTitle =
     activeItem === "inventory"
