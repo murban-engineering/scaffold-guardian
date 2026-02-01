@@ -500,32 +500,21 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   };
 
   const handlePrintYardVerificationNote = () => {
-    if (!equipmentItems.length) {
-      toast.error("No equipment items to include in delivery note");
-      return;
-    }
-
     const data: DeliveryNoteData = {
-      quotationNumber: header.quotationNo,
-      deliveryNoteNumber: deliveryNote.deliveryNoteNo,
-      dateCreated: header.dateCreated,
-      deliveryDate: deliveryNote.deliveryDate,
-      companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      deliveredBy: deliveryNote.deliveredBy,
-      receivedBy: deliveryNote.receivedBy,
-      vehicleNo: deliveryNote.vehicleNo,
-      remarks: deliveryNote.remarks,
-      items: equipmentItems.map(item => ({
-        partNumber: item.itemCode,
-        description: item.description,
-        quantity: parseNumber(item.qtyDelivered),
-        massPerItem: parseNumber(item.massPerItem) || null,
-        totalMass: parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem) || null,
-      })),
+      quotationNumber: "",
+      deliveryNoteNumber: "",
+      dateCreated: "",
+      deliveryDate: "",
+      companyName: "",
+      siteName: "",
+      siteAddress: "",
+      contactName: "",
+      contactPhone: "",
+      deliveredBy: "",
+      receivedBy: "",
+      vehicleNo: "",
+      remarks: "",
+      items: [],
     };
 
     generateYardVerificationNotePDF(data);
@@ -1290,7 +1279,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Print Yard Verification Note
+                  Yard Verification Note
                 </Button>
                 <Button type="button" onClick={handleDeliverySave}>
                   Continue to Calculation
