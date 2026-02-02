@@ -66,17 +66,13 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col z-50">
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
+      <div className="p-4 border-b border-sidebar-border">
+        <div className="flex items-center justify-center">
           <img 
             src={otnoLogo} 
             alt="Otno Access Logo" 
-            className="w-12 h-12 object-contain"
+            className="w-40 h-auto object-contain"
           />
-          <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">OTNO Access</h1>
-            <p className="text-xs text-sidebar-foreground/60">Africa</p>
-          </div>
         </div>
       </div>
 

@@ -104,16 +104,12 @@ const Auth = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/50 to-accent/20" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <img 
               src={otnoLogo} 
               alt="Otno Access Logo" 
-              className="w-14 h-14 object-contain"
+              className="w-48 h-auto object-contain"
             />
-            <div>
-              <h1 className="text-2xl font-bold">Otno Access Africa</h1>
-              <p className="text-sm opacity-80">Management System</p>
-            </div>
           </div>
           
           <div className="space-y-6">
@@ -155,16 +151,12 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+          <div className="lg:hidden flex items-center justify-center mb-8">
             <img 
               src={otnoLogo} 
               alt="Otno Access Logo" 
-              className="w-14 h-14 object-contain"
+              className="w-40 h-auto object-contain"
             />
-            <div>
-              <h1 className="text-2xl font-bold">Otno Access Africa</h1>
-              <p className="text-sm text-muted-foreground">Management System</p>
-            </div>
           </div>
 
           <div className="text-center">
