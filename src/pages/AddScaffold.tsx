@@ -24,7 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { useCreateScaffold, ScaffoldType, ScaffoldStatus } from "@/hooks/useScaffolds";
+import { useCreateScaffold, useScaffolds, ScaffoldType, ScaffoldStatus } from "@/hooks/useScaffolds";
 import { useSites } from "@/hooks/useSites";
 
 const scaffoldTypes: { value: ScaffoldType; label: string }[] = [
@@ -63,11 +63,12 @@ const AddScaffold = () => {
   const navigate = useNavigate();
   const createScaffold = useCreateScaffold();
   const { data: sites } = useSites();
+  const { data: existingScaffolds } = useScaffolds();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      scaffold_type: "frame",
+      scaffold_type: "system",
       status: "available",
       part_number: "",
       description: "",
@@ -80,6 +81,17 @@ const AddScaffold = () => {
       notes: "",
     },
   });
+
+  const handlePresetSelect = (scaffoldId: string) => {
+    const scaffold = existingScaffolds?.find(s => s.id === scaffoldId);
+    if (scaffold) {
+      form.setValue("scaffold_type", scaffold.scaffold_type);
+      form.setValue("part_number", scaffold.part_number || "");
+      form.setValue("description", scaffold.description || "");
+      form.setValue("mass_per_item", scaffold.mass_per_item || undefined);
+      form.setValue("weekly_rate", scaffold.weekly_rate || undefined);
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     const scaffoldData = {
@@ -126,6 +138,28 @@ const AddScaffold = () => {
               <CardContent>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Preset Selection */}
+                    <div className="p-4 bg-muted rounded-lg">
+                      <FormLabel className="text-sm font-medium mb-2 block">
+                        Quick Select from Price List
+                      </FormLabel>
+                      <Select onValueChange={handlePresetSelect}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an item to auto-fill details..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {existingScaffolds?.map((scaffold) => (
+                            <SelectItem key={scaffold.id} value={scaffold.id}>
+                              {scaffold.part_number} - {scaffold.description}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Or fill in the details manually below
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -133,7 +167,7 @@ const AddScaffold = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Scaffold Type *</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select type" />
@@ -158,7 +192,7 @@ const AddScaffold = () => {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select status" />
@@ -186,7 +220,7 @@ const AddScaffold = () => {
                           <FormItem>
                             <FormLabel>Part Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., KS-STD-3.0" {...field} />
+                              <Input placeholder="e.g., 1105005" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -215,7 +249,7 @@ const AddScaffold = () => {
                         <FormItem>
                           <FormLabel>Description</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., 3.0m Standard Kwik-stage" {...field} />
+                            <Input placeholder="e.g., Kwik-stage Standard 3000" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
