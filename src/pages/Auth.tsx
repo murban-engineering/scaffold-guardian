@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HardHat, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import constructionImage from "@/assets/construction-silhouette.jpg";
+import otnoLogo from "@/assets/otno-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,9 +105,11 @@ const Auth = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/50 to-accent/20" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <HardHat className="w-7 h-7" />
-            </div>
+            <img 
+              src={otnoLogo} 
+              alt="Otno Access Logo" 
+              className="w-14 h-14 object-contain"
+            />
             <div>
               <h1 className="text-2xl font-bold">Otno Access Africa</h1>
               <p className="text-sm opacity-80">Management System</p>
@@ -153,9 +156,11 @@ const Auth = () => {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-              <HardHat className="w-7 h-7 text-primary-foreground" />
-            </div>
+            <img 
+              src={otnoLogo} 
+              alt="Otno Access Logo" 
+              className="w-14 h-14 object-contain"
+            />
             <div>
               <h1 className="text-2xl font-bold">Otno Access Africa</h1>
               <p className="text-sm text-muted-foreground">Management System</p>
