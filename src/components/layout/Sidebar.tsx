@@ -6,10 +6,10 @@ import {
   Bell, 
   BarChart3,
   Settings,
-  HardHat,
   LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import otnoLogo from "@/assets/otno-logo.png";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,9 +68,11 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <HardHat className="w-6 h-6 text-sidebar-primary-foreground" />
-          </div>
+          <img 
+            src={otnoLogo} 
+            alt="Otno Access Logo" 
+            className="w-12 h-12 object-contain"
+          />
           <div>
             <h1 className="text-lg font-bold text-sidebar-foreground">OTNO Access</h1>
             <p className="text-xs text-sidebar-foreground/60">Africa</p>
