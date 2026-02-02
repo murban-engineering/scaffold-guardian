@@ -108,7 +108,7 @@ const Auth = () => {
             <img 
               src={otnoLogo} 
               alt="Otno Access Logo" 
-              className="w-48 h-auto object-contain"
+              className="w-32 h-auto object-contain"
             />
           </div>
           
@@ -155,7 +155,7 @@ const Auth = () => {
             <img 
               src={otnoLogo} 
               alt="Otno Access Logo" 
-              className="w-40 h-auto object-contain"
+              className="w-28 h-auto object-contain"
             />
           </div>
 
