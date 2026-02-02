@@ -71,7 +71,7 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
           <img 
             src={otnoLogo} 
             alt="Otno Access Logo" 
-            className="w-40 h-auto object-contain"
+            className="w-24 h-auto object-contain"
           />
         </div>
       </div>
