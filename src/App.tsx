@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Sites from "./pages/Sites";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import AddScaffold from "./pages/AddScaffold";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/add-scaffold"
+              element={
+                <ProtectedRoute>
+                  <AddScaffold />
                 </ProtectedRoute>
               }
             />
