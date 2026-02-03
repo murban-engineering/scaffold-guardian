@@ -96,11 +96,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden rounded-r-3xl">
         <img 
           src={constructionImage} 
           alt="Construction site silhouette" 
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/50 to-accent/20" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
