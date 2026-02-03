@@ -95,7 +95,7 @@ const MaintenanceLogs = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="maintenance" onItemClick={handleSidebarItemClick} />
-      <div className="ml-64">
+      <div className="ml-0 md:ml-64">
         <Header title="Maintenance Logs" subtitle="Track damaged, dirty, and scrap returns" />
         <main className="p-6">
           <Button

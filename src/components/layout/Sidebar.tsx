@@ -7,7 +7,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ClipboardCheck
+  ClipboardCheck,
+  Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnoLogo from "@/assets/otno-logo.png";
@@ -15,6 +16,9 @@ import { useHireQuotations } from "@/hooks/useHireQuotations";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useState } from "react";
 
 interface SidebarProps {
   activeItem: string;
@@ -33,6 +37,7 @@ const menuItems = [
 ];
 
 const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { data: hireQuotations, isLoading: hireQuotationsLoading } = useHireQuotations();
   const { signOut } = useAuth();
   const navigate = useNavigate();
@@ -65,8 +70,15 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
     navigate("/auth");
   };
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar flex flex-col z-50">
+  const handleItemClick = (item: string, closeMobile = false) => {
+    onItemClick(item);
+    if (closeMobile) {
+      setMobileOpen(false);
+    }
+  };
+
+  const sidebarContent = (closeOnSelect: boolean) => (
+    <>
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-center">
@@ -84,7 +96,7 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
           {menuItems.map((item) => (
             <li key={item.id}>
               <button
-                onClick={() => onItemClick(item.id)}
+                onClick={() => handleItemClick(item.id, closeOnSelect)}
                 className={cn(
                   "sidebar-item w-full",
                   activeItem === item.id && "sidebar-item-active"
@@ -223,7 +235,7 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
             "sidebar-item w-full mb-2",
             activeItem === "settings" && "sidebar-item-active"
           )}
-          onClick={() => onItemClick("settings")}
+          onClick={() => handleItemClick("settings", closeOnSelect)}
         >
           <Settings className="w-5 h-5" />
           <span className="font-medium">Settings</span>
@@ -237,7 +249,32 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
           <span className="font-medium">Logout</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <div className="fixed left-4 top-4 z-50 md:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground">
+          <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
+        </SheetContent>
+      </Sheet>
+
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col bg-sidebar md:flex">
+        {sidebarContent(false)}
+      </aside>
+    </>
   );
 };
 
