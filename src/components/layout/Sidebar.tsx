@@ -6,7 +6,8 @@ import {
   Bell, 
   BarChart3,
   Settings,
-  LogOut
+  LogOut,
+  ClipboardCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnoLogo from "@/assets/otno-logo.png";
@@ -25,6 +26,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "inventory", label: "Inventory", icon: Package },
   { id: "sites", label: "Sites", icon: MapPin },
+  { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
   { id: "workforce", label: "Workforce", icon: Users },
   { id: "alerts", label: "Alerts", icon: Bell },
   { id: "reports", label: "Reports", icon: BarChart3 },

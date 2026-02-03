@@ -84,6 +84,10 @@ const Index = () => {
       navigate("/settings");
       return;
     }
+    if (item === "maintenance") {
+      navigate("/maintenance-logs");
+      return;
+    }
     setActiveItem(item);
   };
 

@@ -524,11 +524,19 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="3"><strong>TOTAL</strong></td>
+            <td colspan="3"><strong>SUBTOTAL</strong></td>
             <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
             <td class="text-right"><strong>${formatMass(data.items.reduce((sum, item) => sum + (item.massPerItem || 0) * item.quantity, 0))}</strong></td>
             <td class="text-right">-</td>
             <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0))}</strong></td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="6"><strong>VAT (16%)</strong></td>
+            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0) * 0.16)}</strong></td>
+          </tr>
+          <tr class="total-row" style="background: #333; color: white;">
+            <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
+            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0) * 1.16)}</strong></td>
           </tr>
         </tbody>
       </table>

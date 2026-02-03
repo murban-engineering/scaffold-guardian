@@ -9,6 +9,7 @@ import Sites from "./pages/Sites";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AddScaffold from "./pages/AddScaffold";
+import MaintenanceLogs from "./pages/MaintenanceLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AddScaffold />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/maintenance-logs"
+              element={
+                <ProtectedRoute>
+                  <MaintenanceLogs />
                 </ProtectedRoute>
               }
             />
