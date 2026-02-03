@@ -83,6 +83,10 @@ export interface HireQuotationReportData {
   }>;
 }
 
+const COMPANY_NAME = "OTNO Access Solutions";
+const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
+const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+
 const formatCurrency = (value: number) =>
   `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -148,8 +152,10 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="header">
-        <h1>OTNO ACCESS AFRICA</h1>
+        <h1>${COMPANY_NAME}</h1>
         <p>Email: otnoacess@gmail.com</p>
+        <p>${COMPANY_ADDRESS}</p>
+        <p>${COMPANY_LOCATION}</p>
         <p>Delivery Note</p>
       </div>
       
@@ -229,7 +235,9 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       </div>
 
       <div class="page-break yard-note">
-        <h1>OTNO ACCESS AFRICA</h1>
+        <h1>${COMPANY_NAME}</h1>
+        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
+        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -345,8 +353,10 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="yard-note">
-        <h1>OTNO ACCESS AFRICA</h1>
+        <h1>${COMPANY_NAME}</h1>
         <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
+        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
+        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -464,8 +474,10 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </head>
     <body>
       <div class="header">
-        <h1>OTNO ACCESS AFRICA</h1>
+        <h1>${COMPANY_NAME}</h1>
         <p>Email: otnoacess@gmail.com</p>
+        <p>${COMPANY_ADDRESS}</p>
+        <p>${COMPANY_LOCATION}</p>
         <p>Hire Quotation</p>
       </div>
 
@@ -483,7 +495,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
         </div>
         <div class="info-section">
-          <h3>OT/No Access Details</h3>
+          <h3>OTNO Access Details</h3>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
           <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
           <div class="info-row"><span class="info-label">Customer Order No:</span><span class="info-value">${data.customerOrderNo || "-"}</span></div>
@@ -543,7 +555,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
         <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For OTNO Access Africa:</strong></p>
+          <p style="margin-bottom: 5px;"><strong>For ${COMPANY_NAME}:</strong></p>
           <p style="margin-bottom: 20px;">Name: ___________________________</p>
           <p style="margin-bottom: 20px;">Signature: ___________________________</p>
           <p>Date: ___________________________</p>
@@ -605,8 +617,10 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </head>
     <body>
       <div class="header">
-        <h1>OTNO ACCESS AFRICA</h1>
+        <h1>${COMPANY_NAME}</h1>
         <p>Email: otnoacess@gmail.com</p>
+        <p>${COMPANY_ADDRESS}</p>
+        <p>${COMPANY_LOCATION}</p>
         <p>Hire Quotation</p>
       </div>
       
@@ -698,7 +712,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
         <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For OTNO Access Africa:</strong></p>
+          <p style="margin-bottom: 5px;"><strong>For ${COMPANY_NAME}:</strong></p>
           <p style="margin-bottom: 20px;">Name: ___________________________</p>
           <p style="margin-bottom: 20px;">Signature: ___________________________</p>
           <p>Date: ___________________________</p>
