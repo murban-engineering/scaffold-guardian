@@ -238,7 +238,10 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         <h1>${COMPANY_NAME}</h1>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
-        <p style="text-align: center; margin-bottom: 6px;">Request for collection:</p>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span>Site: ${data.siteName || ""}</span>
+          <span>Request for collection:</span>
+        </div>
         <p style="text-align: center; margin-bottom: 6px;">Date:</p>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
@@ -347,6 +350,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
         .yard-note-footer { margin-top: 10px; }
         .yard-note-footer .row { display: flex; gap: 16px; margin-bottom: 6px; }
         .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 6px; min-height: 28px; }
+        .yard-note-header-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
         @media print { body { padding: 0; } }
       </style>
     </head>
@@ -354,7 +358,10 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <div class="yard-note">
         <h1>${COMPANY_NAME}</h1>
         <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
-        <p style="text-align: center; margin-bottom: 6px;">Request for collection:</p>
+        <div class="yard-note-header-row">
+          <span>Site: ${data.siteName || ""}</span>
+          <span>Request for collection:</span>
+        </div>
         <p style="text-align: center; margin-bottom: 6px;">Date: ${data.deliveryDate || ""}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
