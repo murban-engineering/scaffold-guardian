@@ -478,6 +478,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         th { background: #f5f5f5; font-weight: bold; }
         .text-right { text-align: right; }
         .total-row { font-weight: bold; background: #f9f9f9; }
+        .terms { margin-top: 16px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 11px; }
         @media print { body { padding: 0; } }
       </style>
     </head>
@@ -507,15 +508,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           <h3>OTNO Access Details</h3>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
           <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
-          <div class="info-row"><span class="info-label">Customer Order No:</span><span class="info-value">${data.customerOrderNo || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Official Orders Used:</span><span class="info-value">${formatFlag(data.officialOrdersUsed)}</span></div>
-          <div class="info-row"><span class="info-label">Bulk Orders Used:</span><span class="info-value">${formatFlag(data.bulkOrdersUsed)}</span></div>
-          <div class="info-row"><span class="info-label">New Order per Quote:</span><span class="info-value">${formatFlag(data.newOrderForEveryQuote)}</span></div>
-          <div class="info-row"><span class="info-label">Telephonic Orders:</span><span class="info-value">${formatFlag(data.telephonicOrders)}</span></div>
-          <div class="info-row"><span class="info-label">Person's Name as Order:</span><span class="info-value">${formatFlag(data.personsNameAsOrder)}</span></div>
-          <div class="info-row"><span class="info-label">Person's Name:</span><span class="info-value">${data.personsName || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Requisition No Used:</span><span class="info-value">${formatFlag(data.requisitionNumberUsed)}</span></div>
-          <div class="info-row"><span class="info-label">Requisition No:</span><span class="info-value">${data.requisitionNo || "-"}</span></div>
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
         </div>
       </div>
@@ -561,6 +553,30 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           </tr>
         </tbody>
       </table>
+
+      <div class="terms">
+        <strong>TERMS:</strong><br />
+        Quote does not include transport to and from site.<br />
+        Order confirmation is through deposit payment before collection.<br />
+        Four (4) weeks deposit is required upfront.<br />
+        Items not currently available in our yard will not be billed.<br />
+        <strong>Note:</strong><br />
+        All transactions are subject to our Standard Terms of Trade.<br />
+        By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
+        Scaffold Hire Contract.<br />
+        We thank you for affording us the opportunity to quote. Please sign below for acceptance.<br />
+        Name : _______________________________________________<br />
+        Signature :____________________________________<br />
+        Date :____________________________________<br />
+        <strong>Payment Details:</strong><br />
+        Account Name: OTNO ACCESS SOLUTIONS LIMITED<br />
+        KES Account Number: 02107773676350<br />
+        Bank Name: I&amp;M BANK LIMITED<br />
+        Branch Name: Changamwe<br />
+        Bank Code: 57, Branch code: 021<br />
+        Swift code: IMBLKENA<br />
+        Mpesa paybill code: 542542
+      </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
         <div style="border-top: 1px solid #333; padding-top: 10px;">
