@@ -266,12 +266,12 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground">
-          <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
-        </SheetContent>
-      </Sheet>
+      <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground shadow-2xl">
+        <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
+      </SheetContent>
+    </Sheet>
 
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col bg-sidebar md:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-sidebar-border/70 bg-sidebar shadow-xl md:flex">
         {sidebarContent(false)}
       </aside>
     </>
