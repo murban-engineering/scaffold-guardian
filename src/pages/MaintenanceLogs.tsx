@@ -70,9 +70,31 @@ const MaintenanceLogs = () => {
     scrap: maintenanceLogs.filter(log => parseReturnLog(log.issue_description ?? "").condition === "scrap").length,
   };
 
+  const handleSidebarItemClick = (item: string) => {
+    if (item === "dashboard") {
+      navigate("/", { state: { activeItem: "dashboard" }, replace: true });
+      return;
+    }
+    if (item === "inventory" || item === "workforce") {
+      navigate("/", { state: { activeItem: item }, replace: true });
+      return;
+    }
+    if (item === "sites") {
+      navigate("/sites");
+      return;
+    }
+    if (item === "settings") {
+      navigate("/settings");
+      return;
+    }
+    if (item === "maintenance") {
+      navigate("/maintenance-logs");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar activeItem="maintenance" onItemClick={() => {}} />
+      <Sidebar activeItem="maintenance" onItemClick={handleSidebarItemClick} />
       <div className="ml-64">
         <Header title="Maintenance Logs" subtitle="Track damaged, dirty, and scrap returns" />
         <main className="p-6">
