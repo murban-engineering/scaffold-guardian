@@ -52,7 +52,7 @@ const Sites = () => {
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="sites" onItemClick={handleSidebarItemClick} />
 
-      <main className="ml-64">
+      <main className="ml-0 md:ml-64">
         <Header
           title="Sites"
           subtitle="Review saved client quotations, active sites, and continue hire quotation workflows."

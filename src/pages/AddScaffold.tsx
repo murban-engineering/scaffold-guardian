@@ -109,7 +109,7 @@ const AddScaffold = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="inventory" onItemClick={() => {}} />
-      <div className="ml-64">
+      <div className="ml-0 md:ml-64">
         <Header title="Add Scaffold" subtitle="Register new equipment" />
         <main className="p-6">
           <div className="max-w-2xl mx-auto">

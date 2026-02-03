@@ -99,7 +99,7 @@ const Index = () => {
         processedClient={processedClient}
       />
 
-      <main className="ml-64">
+      <main className="ml-0 md:ml-64">
         <Header title={headerTitle} subtitle={headerSubtitle} />
 
         {activeItem === "inventory" ? (

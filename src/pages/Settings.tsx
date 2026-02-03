@@ -106,7 +106,7 @@ const Settings = () => {
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="settings" onItemClick={handleSidebarItemClick} />
 
-      <main className="ml-64">
+      <main className="ml-0 md:ml-64">
         <Header title="Settings" subtitle="Manage support contacts and help resources." />
 
         <div className="p-6 space-y-6">
