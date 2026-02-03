@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
   Form,
   FormControl,
@@ -51,10 +51,8 @@ const formSchema = z.object({
   quantity: z.coerce.number().int().min(0, "Quantity must be 0 or greater").default(0),
   mass_per_item: z.coerce.number().min(0, "Mass must be 0 or greater").optional(),
   weekly_rate: z.coerce.number().min(0, "Rate must be 0 or greater").optional(),
-  serial_number: z.string().max(100, "Serial number must be less than 100 characters").optional(),
   manufacturer: z.string().max(100, "Manufacturer must be less than 100 characters").optional(),
   site_id: z.string().uuid().optional().or(z.literal("")),
-  notes: z.string().max(1000, "Notes must be less than 1000 characters").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -75,10 +73,8 @@ const AddScaffold = () => {
       quantity: 0,
       mass_per_item: undefined,
       weekly_rate: undefined,
-      serial_number: "",
       manufacturer: "",
       site_id: "",
-      notes: "",
     },
   });
 
@@ -102,10 +98,8 @@ const AddScaffold = () => {
       quantity: values.quantity,
       mass_per_item: values.mass_per_item || null,
       weekly_rate: values.weekly_rate || null,
-      serial_number: values.serial_number || null,
       manufacturer: values.manufacturer || null,
       site_id: values.site_id && values.site_id !== "" ? values.site_id : null,
-      notes: values.notes || null,
     };
 
     await createScaffold.mutateAsync(scaffoldData);
@@ -227,19 +221,6 @@ const AddScaffold = () => {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name="serial_number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Serial Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., SN-001234" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
                     <FormField
@@ -354,24 +335,6 @@ const AddScaffold = () => {
                         )}
                       />
                     </div>
-
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Notes</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Additional notes about this scaffold..."
-                              className="min-h-[100px]"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     <div className="flex gap-4 pt-4">
                       <Button

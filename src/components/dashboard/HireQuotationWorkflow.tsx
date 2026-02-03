@@ -790,7 +790,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             scaffold_id: item.scaffoldId || "",
             issue_description: `Return condition: ${entry.condition}. Quantity: ${entry.qty}. Quotation: ${
               header.quotationNo || "N/A"
-            }.`,
+            }. Client: ${header.clientCompanyName || "N/A"}.`,
             reported_by: reportedByUserId,
             priority: conditionPriority[entry.condition],
           }));
