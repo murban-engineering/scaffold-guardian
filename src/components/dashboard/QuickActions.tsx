@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 
 const actions = [
   { icon: Plus, label: "Add Scaffold", description: "Register new equipment", color: "bg-primary text-primary-foreground hover:bg-primary/90", href: "/add-scaffold" },
-  { icon: Wrench, label: "Log Maintenance", description: "Record repair work", color: "bg-warning text-warning-foreground hover:bg-warning/90" },
+  {
+    icon: Wrench,
+    label: "Log Maintenance",
+    description: "Record repair work",
+    color: "bg-warning text-warning-foreground hover:bg-warning/90",
+    href: "/maintenance-logs",
+  },
   { icon: Truck, label: "Transfer Stock", description: "Move between sites", color: "bg-accent text-accent-foreground hover:bg-accent/90" },
   {
     icon: FileText,
