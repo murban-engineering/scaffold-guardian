@@ -149,6 +149,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     <body>
       <div class="header">
         <h1>OTNO ACCESS AFRICA</h1>
+        <p>Email: otnoacess@gmail.com</p>
         <p>Delivery Note</p>
       </div>
       
@@ -345,6 +346,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     <body>
       <div class="yard-note">
         <h1>OTNO ACCESS AFRICA</h1>
+        <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -463,6 +465,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     <body>
       <div class="header">
         <h1>OTNO ACCESS AFRICA</h1>
+        <p>Email: otnoacess@gmail.com</p>
         <p>Hire Quotation</p>
       </div>
 
@@ -521,11 +524,29 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="6">Weekly Hire Total</td>
-            <td class="text-right">${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0))}</td>
+            <td colspan="3"><strong>TOTAL</strong></td>
+            <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
+            <td class="text-right"><strong>${formatMass(data.items.reduce((sum, item) => sum + (item.massPerItem || 0) * item.quantity, 0))}</strong></td>
+            <td class="text-right">-</td>
+            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0))}</strong></td>
           </tr>
         </tbody>
       </table>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+        <div style="border-top: 1px solid #333; padding-top: 10px;">
+          <p style="margin-bottom: 5px;"><strong>For OTNO Access Africa:</strong></p>
+          <p style="margin-bottom: 20px;">Name: ___________________________</p>
+          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
+          <p>Date: ___________________________</p>
+        </div>
+        <div style="border-top: 1px solid #333; padding-top: 10px;">
+          <p style="margin-bottom: 5px;"><strong>For Client:</strong></p>
+          <p style="margin-bottom: 20px;">Name: ___________________________</p>
+          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
+          <p>Date: ___________________________</p>
+        </div>
+      </div>
     </body>
     </html>
   `;
@@ -577,6 +598,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     <body>
       <div class="header">
         <h1>OTNO ACCESS AFRICA</h1>
+        <p>Email: otnoacess@gmail.com</p>
         <p>Hire Quotation</p>
       </div>
       
@@ -621,8 +643,10 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="5">Weekly Hire Total</td>
-            <td class="text-right">${formatCurrency(data.weeklyTotal)}</td>
+            <td colspan="3"><strong>TOTAL</strong></td>
+            <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
+            <td class="text-right">-</td>
+            <td class="text-right"><strong>${formatCurrency(data.weeklyTotal)}</strong></td>
           </tr>
         </tbody>
       </table>
@@ -662,6 +686,21 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
 
       <div class="terms">
         <strong>Payment Terms:</strong> ${data.paymentTerms}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+        <div style="border-top: 1px solid #333; padding-top: 10px;">
+          <p style="margin-bottom: 5px;"><strong>For OTNO Access Africa:</strong></p>
+          <p style="margin-bottom: 20px;">Name: ___________________________</p>
+          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
+          <p>Date: ___________________________</p>
+        </div>
+        <div style="border-top: 1px solid #333; padding-top: 10px;">
+          <p style="margin-bottom: 5px;"><strong>For Client:</strong></p>
+          <p style="margin-bottom: 20px;">Name: ___________________________</p>
+          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
+          <p>Date: ___________________________</p>
+        </div>
       </div>
     </body>
     </html>
