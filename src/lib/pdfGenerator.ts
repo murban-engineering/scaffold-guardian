@@ -238,6 +238,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         <h1>${COMPANY_NAME}</h1>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
+        <p style="text-align: center; margin-bottom: 6px;">Request for collection:</p>
+        <p style="text-align: center; margin-bottom: 6px;">Date:</p>
         <h2>YARD VERIFICATION NOTE</h2>
         <table class="yard-note-table">
           <tr>
@@ -245,8 +247,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
             <td class="value">&nbsp;</td>
             <td class="label">ID no:</td>
             <td class="value">&nbsp;</td>
-            <td class="label">Date:</td>
-            <td class="value">&nbsp;</td>
+            <td class="label" colspan="2">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Vehicle Reg:</td>
@@ -259,8 +260,6 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <tr>
             <td class="label">Form-staff Return (Yes/No):</td>
             <td class="value">&nbsp;</td>
-            <td class="label">Request for collection:</td>
-            <td class="value" colspan="3">&nbsp;</td>
           </tr>
         </table>
 
@@ -355,6 +354,8 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <div class="yard-note">
         <h1>${COMPANY_NAME}</h1>
         <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
+        <p style="text-align: center; margin-bottom: 6px;">Request for collection:</p>
+        <p style="text-align: center; margin-bottom: 6px;">Date: ${data.deliveryDate || ""}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
         <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
         <h2>YARD VERIFICATION NOTE</h2>
@@ -364,8 +365,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <td class="value">${data.companyName || ""}</td>
             <td class="label">ID no:</td>
             <td class="value">&nbsp;</td>
-            <td class="label">Date:</td>
-            <td class="value">${data.deliveryDate || ""}</td>
+            <td class="label" colspan="2">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Vehicle Reg:</td>
@@ -382,10 +382,6 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <td class="value">&nbsp;</td>
             <td class="label">&nbsp;</td>
             <td class="value">&nbsp;</td>
-          </tr>
-          <tr>
-            <td class="label">Request for collection:</td>
-            <td class="value" colspan="5">&nbsp;</td>
           </tr>
         </table>
 
