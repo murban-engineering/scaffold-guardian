@@ -92,7 +92,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted/30">
       <Sidebar
         activeItem={activeItem}
         onItemClick={handleSidebarItemClick}
@@ -103,21 +103,25 @@ const Index = () => {
         <Header title={headerTitle} subtitle={headerSubtitle} />
 
         {activeItem === "inventory" ? (
-          <div className="p-6">
-            <InventoryOverview />
+          <div className="mx-auto w-full max-w-7xl px-6 py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+              <InventoryOverview />
+            </div>
           </div>
         ) : activeItem === "workforce" ? (
-          <div className="p-6">
-            <SignedInUsers />
+          <div className="mx-auto w-full max-w-7xl px-6 py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+              <SignedInUsers />
+            </div>
           </div>
         ) : (
-          <div className="p-6 space-y-6">
+          <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
             {/* Quick Actions with Hire Quotation Button */}
             <div className="flex flex-wrap items-center gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={handleStartNewQuotation}
-                className="gap-2"
+                className="gap-2 shadow-sm transition-transform hover:-translate-y-0.5"
               >
                 <FileText className="h-5 w-5" />
                 New Hire Quotation
@@ -126,7 +130,7 @@ const Index = () => {
                 size="lg"
                 variant="outline"
                 onClick={() => setShowContinueDialog(true)}
-                className="gap-2"
+                className="gap-2 border-border/70 bg-card/80 shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-card"
               >
                 <FolderClock className="h-5 w-5" />
                 Continue Quotation
@@ -135,7 +139,7 @@ const Index = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <StatCard
                 title="Total Scaffolds"
                 value={isLoading ? "..." : stats?.totalScaffolds || 0}
@@ -193,7 +197,7 @@ const Index = () => {
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
               {/* Left Column - Inventory */}
               <div className="xl:col-span-2">
                 <InventoryOverview />
@@ -206,7 +210,7 @@ const Index = () => {
             </div>
 
             {/* Bottom Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <RecentInspections />
               <ActiveSites processedClient={processedClient} />
             </div>

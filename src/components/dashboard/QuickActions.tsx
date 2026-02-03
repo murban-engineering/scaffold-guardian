@@ -25,14 +25,14 @@ const QuickActions = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-card rounded-xl border border-border p-6 animate-fade-in">
-      <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="animate-fade-in rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm backdrop-blur">
+      <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {actions.map((action) => (
           <Button
             key={action.label}
             variant="ghost"
-            className={`h-auto flex-col py-4 px-3 ${action.color} transition-all`}
+            className={`h-auto flex-col rounded-xl px-3 py-4 shadow-sm transition-all hover:-translate-y-0.5 ${action.color}`}
             onClick={() => {
               if (action.href) {
                 navigate(action.href);
