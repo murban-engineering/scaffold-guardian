@@ -63,15 +63,6 @@ export interface HireQuotationReportData {
   contactEmail: string;
   officeTel: string;
   officeEmail: string;
-  customerOrderNo: string;
-  officialOrdersUsed: string;
-  bulkOrdersUsed: string;
-  newOrderForEveryQuote: string;
-  telephonicOrders: string;
-  personsNameAsOrder: string;
-  personsName: string;
-  requisitionNumberUsed: string;
-  requisitionNo: string;
   createdBy: string;
   items: Array<{
     partNumber: string | null;
@@ -92,11 +83,6 @@ const formatCurrency = (value: number) =>
 
 const formatMass = (value: number | null) =>
   value != null ? `${value.toFixed(2)} kg` : "-";
-
-const formatFlag = (value: string) => {
-  if (!value) return "-";
-  return value === "yes" ? "Yes" : value === "no" ? "No" : value;
-};
 
 export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
@@ -732,7 +718,27 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       </div>
 
       <div class="terms">
-        <strong>Payment Terms:</strong> ${data.paymentTerms}
+        <strong>TERMS:</strong><br />
+        Quote does not include transport to and from site.<br />
+        Order confirmation is through deposit payment before collection.<br />
+        Four (4) weeks deposit is required upfront.<br />
+        Items not currently available in our yard will not be billed<br />
+        <strong>Note:</strong><br />
+        All transactions are subject to our Standard Terms of Trade.<br />
+        By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
+        Scaffold Hire Contract.<br />
+        We thank you for affording us the opportunity to quote. Please sign below for acceptance.<br />
+        Name : _______________________________________________<br />
+        Signature :____________________________________<br />
+        Date :____________________________________<br />
+        <strong>Payment Details:</strong><br />
+        Account Name: OTNO ACCESS SOLUTIONS LIMITED<br />
+        KES Account Number: 02107773676350<br />
+        Bank Name: I&amp;M BANK LIMITED<br />
+        Branch Name: Changamwe<br />
+        Bank Code: 57, Branch code: 021<br />
+        Swift code: IMBLKENA<br />
+        Mpesa paybill code: 542542
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
