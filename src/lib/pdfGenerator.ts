@@ -372,14 +372,16 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <td class="value">${data.vehicleNo || ""}</td>
             <td class="label">Branch:</td>
             <td class="value">${data.siteName || ""}</td>
-            <td class="label">Customer Return (Yes/No):</td>
+            <td class="label">Request for collection:</td>
             <td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Form-staff Return (Yes/No):</td>
+            <td class="label">Customer Return (Yes/No):</td>
             <td class="value">&nbsp;</td>
-            <td class="label">Request for collection:</td>
-            <td class="value" colspan="3">&nbsp;</td>
+            <td class="label">OTNO Return (Yes/No):</td>
+            <td class="value">&nbsp;</td>
+            <td class="label">&nbsp;</td>
+            <td class="value">&nbsp;</td>
           </tr>
         </table>
 
