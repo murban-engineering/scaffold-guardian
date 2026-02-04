@@ -31,7 +31,8 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
-  const { profile } = useAuth();
+  const { profile, hasRole, loading: authLoading } = useAuth();
+  const canViewWorkforce = hasRole("admin");
   const { data: stats, isLoading } = useDashboardStats();
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
 
@@ -43,6 +44,12 @@ const Index = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (!authLoading && activeItem === "workforce" && !canViewWorkforce) {
+      setActiveItem("dashboard");
+    }
+  }, [activeItem, authLoading, canViewWorkforce]);
 
   const headerTitle =
     activeItem === "inventory"
