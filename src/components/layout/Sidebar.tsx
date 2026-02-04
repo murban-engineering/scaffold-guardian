@@ -1,12 +1,13 @@
-import { 
-  LayoutDashboard, 
-  Package, 
-  MapPin, 
-  Users, 
+import {
+  LayoutDashboard,
+  Package,
+  FolderClock,
+  MapPin,
+  Users,
   Settings,
   LogOut,
   ClipboardCheck,
-  Menu
+  Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnLogo from "@/assets/otn-logo.png";
@@ -26,6 +27,7 @@ interface SidebarProps {
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "inventory", label: "Inventory", icon: Package },
+  { id: "previous-clients", label: "Previous Clients", icon: FolderClock },
   { id: "sites", label: "Sites", icon: MapPin },
   { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
   { id: "workforce", label: "Workforce", icon: Users },

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Sites from "./pages/Sites";
+import PreviousClients from "./pages/PreviousClients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AddScaffold from "./pages/AddScaffold";
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Sites />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/previous-clients"
+              element={
+                <ProtectedRoute>
+                  <PreviousClients />
                 </ProtectedRoute>
               }
             />
