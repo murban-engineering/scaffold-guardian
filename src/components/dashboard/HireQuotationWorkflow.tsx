@@ -116,8 +116,27 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
 
 const generateDeliveryNoteNumber = () => {
   const timestamp = Date.now();
-  const seq = (timestamp % 10000).toString().padStart(4, '0');
+  const seq = (timestamp % 10000).toString().padStart(4, "0");
   return `DN-${seq}`;
+};
+
+const deriveDeliveryNoteNumber = (quotationNo: string) => {
+  if (!quotationNo) {
+    return generateDeliveryNoteNumber();
+  }
+
+  const parts = quotationNo.match(/\d+/g);
+  const lastPart = parts?.[parts.length - 1];
+  if (!lastPart) {
+    return generateDeliveryNoteNumber();
+  }
+
+  const numericPart = Number.parseInt(lastPart, 10);
+  if (Number.isNaN(numericPart)) {
+    return generateDeliveryNoteNumber();
+  }
+
+  return `DN-${String(numericPart).padStart(3, "0")}`;
 };
 
 const getToday = () => new Date().toISOString().split("T")[0];
@@ -271,13 +290,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   ]);
   
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote>(() => ({
-    deliveryNoteNo: generateDeliveryNoteNumber(),
+    deliveryNoteNo: deriveDeliveryNoteNumber(""),
     deliveryDate: getToday(),
     deliveredBy: "",
     receivedBy: "",
     vehicleNo: "",
     remarks: "",
   }));
+
+  useEffect(() => {
+    setDeliveryNote((prev) => ({
+      ...prev,
+      deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo),
+    }));
+  }, [header.quotationNo]);
   
   const [calculation, setCalculation] = useState<QuotationCalculation>({
     numberOfWeeks: "1",
