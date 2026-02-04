@@ -500,13 +500,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   };
 
   const handleEquipmentSave = async () => {
-    if (!equipmentItems.length) {
-      toast.error("Add at least one equipment item before continuing.");
-      return;
-    }
-
-    if (!savedQuotationId) {
-      toast.error("Please save client details first");
+    if (!equipmentItems.length || !savedQuotationId) {
+      handleNext();
       return;
     }
 
@@ -682,10 +677,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     if (!inventoryDeducted) {
-      const deducted = await handleEquipmentHired();
-      if (!deducted) {
-        return;
-      }
+      toast.error("Please click \"Equipment Hired\" before continuing.");
+      return;
     }
 
     await handlePrintDeliveryNote();
