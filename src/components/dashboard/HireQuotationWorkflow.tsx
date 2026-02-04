@@ -789,12 +789,37 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     field: keyof Omit<ReturnItem, "id" | "scaffoldId" | "itemCode" | "description" | "totalDelivered">,
     value: string
   ) => {
+    if (returnProcessed) {
+      toast.error("Return has already been processed for this hire.");
+      return;
+    }
+
     setReturnItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const nextItem = { ...item, [field]: value };
+        const totalReturned =
+          parseNumber(nextItem.good) +
+          parseNumber(nextItem.dirty) +
+          parseNumber(nextItem.damaged) +
+          parseNumber(nextItem.scrap);
+
+        if (totalReturned > item.totalDelivered) {
+          toast.error(`Returned quantity for ${item.description || item.itemCode} exceeds hired amount.`);
+          return item;
+        }
+
+        return nextItem;
+      })
     );
   };
 
   const handleProcessReturn = async () => {
+    if (returnProcessed) {
+      toast.error("Return has already been processed for this hire.");
+      return;
+    }
+
     if (!returnItems.length) {
       toast.error("No items available for return.");
       return;
@@ -1802,6 +1827,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.good}
                             onChange={(e) => handleReturnQuantityChange(item.id, "good", e.target.value)}
+                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -1811,6 +1837,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.dirty}
                             onChange={(e) => handleReturnQuantityChange(item.id, "dirty", e.target.value)}
+                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -1820,6 +1847,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.damaged}
                             onChange={(e) => handleReturnQuantityChange(item.id, "damaged", e.target.value)}
+                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -1829,6 +1857,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.scrap}
                             onChange={(e) => handleReturnQuantityChange(item.id, "scrap", e.target.value)}
+                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
