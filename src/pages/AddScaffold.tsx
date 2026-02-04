@@ -63,6 +63,33 @@ const AddScaffold = () => {
   const { data: sites } = useSites();
   const { data: existingScaffolds } = useScaffolds();
 
+  const handleSidebarItemClick = (item: string) => {
+    if (item === "dashboard") {
+      navigate("/", { state: { activeItem: "dashboard" }, replace: true });
+      return;
+    }
+    if (item === "inventory" || item === "workforce") {
+      navigate("/", { state: { activeItem: item }, replace: true });
+      return;
+    }
+    if (item === "sites") {
+      navigate("/sites");
+      return;
+    }
+    if (item === "previous-clients") {
+      navigate("/previous-clients");
+      return;
+    }
+    if (item === "maintenance") {
+      navigate("/maintenance-logs");
+      return;
+    }
+    if (item === "settings") {
+      navigate("/settings");
+      return;
+    }
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,7 +135,7 @@ const AddScaffold = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar activeItem="inventory" onItemClick={() => {}} />
+      <Sidebar activeItem="inventory" onItemClick={handleSidebarItemClick} />
       <div className="ml-0 md:ml-64">
         <Header title="Add Scaffold" subtitle="Register new equipment" />
         <main className="p-6">
