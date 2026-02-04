@@ -221,9 +221,6 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
 };
 
 export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
@@ -357,9 +354,6 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
 
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
 };
 
 export const generateHireQuotationReportPDF = (data: HireQuotationReportData) => {
@@ -528,9 +522,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
   printWindow.document.write(html);
   printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
 };
 
 export const generateQuotationPDF = (data: QuotationCalculationData) => {
