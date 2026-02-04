@@ -13,7 +13,8 @@ interface WorkforceUser {
 }
 
 const SignedInUsers = () => {
-  const { user } = useAuth();
+  const { user, hasRole, loading } = useAuth();
+  const isAdmin = hasRole("admin");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["workforce-users"],
     queryFn: async (): Promise<WorkforceUser[]> => {
@@ -28,7 +29,26 @@ const SignedInUsers = () => {
 
       return profiles || [];
     },
+    enabled: isAdmin,
   });
+
+  if (!loading && !isAdmin) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Signed-in users</h2>
+            <p className="text-sm text-muted-foreground">
+              This view is restricted to administrators.
+            </p>
+          </div>
+        </div>
+        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-sm text-muted-foreground">
+          Ask an admin to review active sessions for your workspace.
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">

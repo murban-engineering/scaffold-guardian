@@ -35,8 +35,12 @@ const menuItems = [
 
 const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut, hasRole } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = hasRole("admin");
+  const visibleMenuItems = isAdmin
+    ? menuItems
+    : menuItems.filter((item) => item.id !== "workforce");
 
   const handleLogout = async () => {
     await signOut();
@@ -66,7 +70,7 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
-          {menuItems.map((item) => (
+          {visibleMenuItems.map((item) => (
             <li key={item.id}>
               <button
                 onClick={() => handleItemClick(item.id, closeOnSelect)}
