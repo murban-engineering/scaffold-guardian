@@ -80,6 +80,10 @@ const Index = () => {
       navigate("/sites");
       return;
     }
+    if (item === "previous-clients") {
+      navigate("/previous-clients");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
       return;
