@@ -11,7 +11,7 @@ import {
   Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import otnoLogo from "@/assets/otno-logo.png";
+import otnLogo from "@/assets/otn-logo.png";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,9 +83,9 @@ const Sidebar = ({ activeItem, onItemClick, processedClient }: SidebarProps) => 
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-center">
           <img 
-            src={otnoLogo} 
-            alt="Otno Access Logo" 
-            className="w-24 h-auto object-contain"
+            src={otnLogo} 
+            alt="OTN Logo" 
+            className="w-28 h-auto object-contain"
           />
         </div>
       </div>

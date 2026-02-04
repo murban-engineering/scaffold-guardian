@@ -101,9 +101,11 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { color: #666; }
+        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header-logo { width: 100px; height: auto; margin-right: 20px; }
+        .header-content { flex: 1; }
+        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
+        .header-content p { color: #666; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
         .info-row { display: flex; margin-bottom: 5px; }
@@ -138,11 +140,14 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="header">
-        <h1>${COMPANY_NAME}</h1>
-        <p>Email: otnoacess@gmail.com</p>
-        <p>${COMPANY_ADDRESS}</p>
-        <p>${COMPANY_LOCATION}</p>
-        <p>Delivery Note</p>
+        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <div class="header-content">
+          <h1>${COMPANY_NAME}</h1>
+          <p>Email: otnoacess@gmail.com</p>
+          <p>${COMPANY_ADDRESS}</p>
+          <p>${COMPANY_LOCATION}</p>
+          <p><strong>Delivery Note</strong></p>
+        </div>
       </div>
       
       <div class="info-grid">
@@ -342,8 +347,13 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="yard-note">
-        <h1>${COMPANY_NAME}</h1>
-        <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
+        <div style="display: flex; align-items: flex-start; margin-bottom: 10px;">
+          <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" style="width: 80px; height: auto; margin-right: 15px;" />
+          <div style="flex: 1;">
+            <h1 style="text-align: center;">${COMPANY_NAME}</h1>
+            <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
+          </div>
+        </div>
         <div class="yard-note-header-row">
           <span>Site: ${data.siteName || ""}</span>
           <span>Request for collection:</span>
@@ -450,9 +460,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { color: #666; }
+        .header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header-logo { width: 100px; height: auto; margin-right: 20px; }
+        .header-content { flex: 1; }
+        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
+        .header-content p { color: #666; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
         .info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
         .info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
@@ -470,11 +482,14 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </head>
     <body>
       <div class="header">
-        <h1>${COMPANY_NAME}</h1>
-        <p>Email: otnoacess@gmail.com</p>
-        <p>${COMPANY_ADDRESS}</p>
-        <p>${COMPANY_LOCATION}</p>
-        <p>Hire Quotation</p>
+        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <div class="header-content">
+          <h1>${COMPANY_NAME}</h1>
+          <p>Email: otnoacess@gmail.com</p>
+          <p>${COMPANY_ADDRESS}</p>
+          <p>${COMPANY_LOCATION}</p>
+          <p><strong>Hire Quotation</strong></p>
+        </div>
       </div>
 
       <div class="info-grid">
@@ -601,9 +616,11 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header h1 { font-size: 24px; margin-bottom: 5px; }
-        .header p { color: #666; }
+        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header-logo { width: 100px; height: auto; margin-right: 20px; }
+        .header-content { flex: 1; }
+        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
+        .header-content p { color: #666; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
         .info-row { display: flex; margin-bottom: 5px; }
@@ -625,11 +642,14 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </head>
     <body>
       <div class="header">
-        <h1>${COMPANY_NAME}</h1>
-        <p>Email: otnoacess@gmail.com</p>
-        <p>${COMPANY_ADDRESS}</p>
-        <p>${COMPANY_LOCATION}</p>
-        <p>Hire Quotation</p>
+        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <div class="header-content">
+          <h1>${COMPANY_NAME}</h1>
+          <p>Email: otnoacess@gmail.com</p>
+          <p>${COMPANY_ADDRESS}</p>
+          <p>${COMPANY_LOCATION}</p>
+          <p><strong>Hire Quotation</strong></p>
+        </div>
       </div>
       
       <div class="info-grid">

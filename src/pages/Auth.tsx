@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import constructionImage from "@/assets/construction-silhouette.jpg";
-import otnoLogo from "@/assets/otno-logo.png";
+import otnLogo from "@/assets/otn-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,9 +106,9 @@ const Auth = () => {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div className="flex items-center">
             <img 
-              src={otnoLogo} 
-              alt="Otno Access Logo" 
-              className="w-32 h-auto object-contain"
+              src={otnLogo} 
+              alt="OTN Logo" 
+              className="w-36 h-auto object-contain"
             />
           </div>
           
@@ -153,9 +153,9 @@ const Auth = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-8">
             <img 
-              src={otnoLogo} 
-              alt="Otno Access Logo" 
-              className="w-28 h-auto object-contain"
+              src={otnLogo} 
+              alt="OTN Logo" 
+              className="w-32 h-auto object-contain"
             />
           </div>
 
