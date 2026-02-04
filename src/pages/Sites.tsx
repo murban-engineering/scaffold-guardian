@@ -152,6 +152,59 @@ const Sites = () => {
         />
 
         <div className="p-6 space-y-6">
+          <section className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>Inventory Removal Report</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Print a report of clients and sites for each item removed from inventory.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={handlePrintRemovalReport}>
+                  Print Report
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {removalReportRows.length ? (
+                  <div className="rounded-lg border border-border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead>Item Code</TableHead>
+                          <TableHead>Qty</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Site</TableHead>
+                          <TableHead>Hire Quotation ID</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {removalReportRows.map((row, index) => (
+                          <TableRow key={`${row.quotationId}-${row.itemCode}-${index}`}>
+                            <TableCell>
+                              <div className="font-medium">{row.itemLabel}</div>
+                              <div className="text-xs text-muted-foreground">{row.itemCode}</div>
+                            </TableCell>
+                            <TableCell>{row.itemCode}</TableCell>
+                            <TableCell>{row.quantity}</TableCell>
+                            <TableCell>{row.client}</TableCell>
+                            <TableCell>{row.site}</TableCell>
+                            <TableCell className="font-mono text-xs">{row.quotationId}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    No inventory removal records yet. Completed hire quotations will appear here.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
           <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -285,59 +338,6 @@ const Sites = () => {
                 </CardContent>
               </Card>
             )}
-          </section>
-
-          <section className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <CardTitle>Inventory Removal Report</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Print a report of clients and sites for each item removed from inventory.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={handlePrintRemovalReport}>
-                  Print Report
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {removalReportRows.length ? (
-                  <div className="rounded-lg border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead>Item Code</TableHead>
-                          <TableHead>Qty</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Site</TableHead>
-                          <TableHead>Hire Quotation ID</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {removalReportRows.map((row, index) => (
-                          <TableRow key={`${row.quotationId}-${row.itemCode}-${index}`}>
-                            <TableCell>
-                              <div className="font-medium">{row.itemLabel}</div>
-                              <div className="text-xs text-muted-foreground">{row.itemCode}</div>
-                            </TableCell>
-                            <TableCell>{row.itemCode}</TableCell>
-                            <TableCell>{row.quantity}</TableCell>
-                            <TableCell>{row.client}</TableCell>
-                            <TableCell>{row.site}</TableCell>
-                            <TableCell className="font-mono text-xs">{row.quotationId}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    No inventory removal records yet. Completed hire quotations will appear here.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </section>
         </div>
       </main>
