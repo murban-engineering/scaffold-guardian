@@ -59,7 +59,7 @@ const Header = ({ title, subtitle }: HeaderProps) => {
           </Button>
 
           {/* User */}
-          <div className="flex flex-wrap items-center gap-3 border-border sm:border-l sm:pl-4">
+          <div className="flex flex-wrap items-center gap-3 border-border sm:flex-nowrap sm:border-l sm:pl-4">
             <div className="text-right">
               <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
               <p className="text-xs text-muted-foreground">{displayRole}</p>
