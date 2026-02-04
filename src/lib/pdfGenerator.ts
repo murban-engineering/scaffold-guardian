@@ -66,6 +66,7 @@ export interface HireQuotationReportData {
   officeTel: string;
   officeEmail: string;
   createdBy: string;
+  discountRate: number;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -368,6 +369,15 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     return;
   }
 
+  const subtotal = data.items.reduce((sum, item) => sum + item.weeklyTotal, 0);
+  const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalMass = data.items.reduce((sum, item) => sum + (item.massPerItem || 0) * item.quantity, 0);
+  const vatRate = 0.16;
+  const vatAmount = subtotal * vatRate;
+  const totalBeforeDiscount = subtotal + vatAmount;
+  const discountAmount = totalBeforeDiscount * (data.discountRate / 100);
+  const totalAfterDiscount = totalBeforeDiscount - discountAmount;
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -455,18 +465,24 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           `).join("")}
           <tr class="total-row">
             <td colspan="3"><strong>SUBTOTAL</strong></td>
-            <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
-            <td class="text-right"><strong>${formatMass(data.items.reduce((sum, item) => sum + (item.massPerItem || 0) * item.quantity, 0))}</strong></td>
+            <td class="text-right"><strong>${totalQuantity}</strong></td>
+            <td class="text-right"><strong>${formatMass(totalMass)}</strong></td>
             <td class="text-right">-</td>
-            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0))}</strong></td>
+            <td class="text-right"><strong>${formatCurrency(subtotal)}</strong></td>
           </tr>
           <tr class="total-row">
             <td colspan="6"><strong>VAT (16%)</strong></td>
-            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0) * 0.16)}</strong></td>
+            <td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td>
           </tr>
+          ${data.discountRate > 0 ? `
+            <tr class="total-row">
+              <td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td>
+              <td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td>
+            </tr>
+          ` : ""}
           <tr class="total-row" style="background: #333; color: white;">
             <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
-            <td class="text-right"><strong>${formatCurrency(data.items.reduce((sum, item) => sum + item.weeklyTotal, 0) * 1.16)}</strong></td>
+            <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
           </tr>
         </tbody>
       </table>

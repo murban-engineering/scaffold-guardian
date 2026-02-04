@@ -651,6 +651,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
+      discountRate: parseNumber(hireQuotationDiscount),
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -1496,7 +1497,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   placeholder="0"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Internal only. This discount will not appear on the hire quotation report.
+                  This discount will be applied to the printed hire quotation total.
                 </p>
               </div>
             </div>
