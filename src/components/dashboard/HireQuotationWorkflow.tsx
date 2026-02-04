@@ -420,6 +420,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
+    // Check available inventory
+    const availableQty = scaffold.quantity ?? 0;
+    const existingItem = equipmentItems.find(item => item.scaffoldId === scaffold.id);
+    const alreadyAdded = existingItem ? parseNumber(existingItem.qtyDelivered) : 0;
+    const totalRequested = alreadyAdded + qty;
+
+    if (totalRequested > availableQty) {
+      toast.error(`Cannot order ${totalRequested} items. Only ${availableQty} available in inventory (${alreadyAdded} already added).`);
+      return;
+    }
+
     const existingIndex = equipmentItems.findIndex(item => item.scaffoldId === scaffold.id);
     if (existingIndex >= 0) {
       setEquipmentItems(prev => prev.map((item, idx) => 
@@ -504,6 +515,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       receivedBy: deliveryNote.receivedBy,
       vehicleNo: deliveryNote.vehicleNo,
       remarks: deliveryNote.remarks,
+      createdBy: header.createdBy,
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -533,6 +545,19 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return false;
     }
 
+    // Validate quantities against current inventory before deducting
+    for (const item of equipmentItems) {
+      if (!item.scaffoldId) continue;
+      const scaffold = scaffolds.find(s => s.id === item.scaffoldId);
+      if (!scaffold) continue;
+      const requestedQty = parseNumber(item.qtyDelivered);
+      const availableQty = scaffold.quantity ?? 0;
+      if (requestedQty > availableQty) {
+        toast.error(`Cannot hire ${requestedQty} of "${item.description || item.itemCode}". Only ${availableQty} available in inventory.`);
+        return false;
+      }
+    }
+
     const inventoryItems = equipmentItems
       .filter((item) => item.scaffoldId)
       .map((item) => ({
@@ -551,6 +576,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       scaffolds,
     });
     setInventoryDeducted(true);
+    toast.success("Inventory quantities deducted successfully!");
     return true;
   };
 
@@ -656,6 +682,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       contactEmail: header.clientEmail,
+      createdBy: header.createdBy,
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,

@@ -14,6 +14,7 @@ export interface DeliveryNoteData {
   receivedBy: string;
   vehicleNo: string;
   remarks: string;
+  createdBy?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -32,6 +33,7 @@ export interface QuotationCalculationData {
   contactName: string;
   contactPhone: string;
   contactEmail: string;
+  createdBy?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -158,6 +160,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <div class="info-row"><span class="info-label">Delivery Date:</span><span class="info-value">${data.deliveryDate}</span></div>
           <div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">${data.vehicleNo || "-"}</span></div>
           <div class="info-row"><span class="info-label">Delivered By:</span><span class="info-value">${data.deliveredBy || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
         </div>
         <div class="info-section">
           <h3>Client Information</h3>
@@ -658,6 +661,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
           <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${data.dateCreated}</span></div>
           <div class="info-row"><span class="info-label">Hire Period:</span><span class="info-value">${data.hireWeeks} week(s)</span></div>
+          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
         </div>
         <div class="info-section">
           <h3>Client Information</h3>
