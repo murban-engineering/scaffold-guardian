@@ -332,62 +332,67 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 6px; }
-        .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 12px; }
+        .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+        .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
-        .yard-note-table .label { width: 22%; font-weight: bold; }
-        .yard-note-table .value { width: 28%; }
+        .yard-note-table .label { width: 20%; font-weight: bold; }
+        .yard-note-table .value { width: 30%; }
         .yard-note-table .small { width: 12%; }
         .yard-note-table .notes { height: 28px; }
         .yard-note-footer { margin-top: 10px; }
         .yard-note-footer .row { display: flex; gap: 16px; margin-bottom: 6px; }
         .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 6px; min-height: 28px; }
-        .yard-note-header-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .yard-note-header { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; margin-bottom: 6px; }
+        .yard-note-header .title-block { text-align: center; }
+        .yard-note-meta { font-size: 10px; text-align: right; }
+        .yard-note-info-table td { height: 28px; }
+        .yard-note-info-table .label { font-weight: bold; }
         @media print { body { padding: 0; } }
       </style>
     </head>
     <body>
       <div class="yard-note">
-        <div style="display: flex; align-items: flex-start; margin-bottom: 10px;">
-          <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" style="width: 80px; height: auto; margin-right: 15px;" />
-          <div style="flex: 1;">
-            <h1 style="text-align: center;">${COMPANY_NAME}</h1>
-            <p style="text-align: center; margin-bottom: 6px;">Email: otnoacess@gmail.com</p>
+        <div class="yard-note-header">
+          <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" style="width: 80px; height: auto;" />
+          <div class="title-block">
+            <h1>${COMPANY_NAME}</h1>
+            <p>Email: otnoacess@gmail.com</p>
+            <p>${COMPANY_ADDRESS}</p>
+            <p>${COMPANY_LOCATION}</p>
           </div>
+          <div class="yard-note-meta">T.B.OD32</div>
         </div>
-        <div class="yard-note-header-row">
-          <span>Site: ${data.siteName || ""}</span>
-          <span>Request for collection:</span>
-        </div>
-        <p style="text-align: center; margin-bottom: 6px;">Date: ${data.deliveryDate || ""}</p>
-        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_ADDRESS}</p>
-        <p style="text-align: center; margin-bottom: 6px;">${COMPANY_LOCATION}</p>
         <h2>YARD VERIFICATION NOTE</h2>
-        <table class="yard-note-table">
+        <table class="yard-note-table yard-note-info-table">
           <tr>
             <td class="label">Customer/Branch Name:</td>
             <td class="value">${data.companyName || ""}</td>
             <td class="label">ID no:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label" colspan="2">&nbsp;</td>
+            <td class="value">${data.deliveryNoteNumber || ""}</td>
+          </tr>
+          <tr>
+            <td class="label">Site:</td>
+            <td class="value">${data.siteName || ""}</td>
+            <td class="label">Date:</td>
+            <td class="value">${data.deliveryDate || ""}</td>
           </tr>
           <tr>
             <td class="label">Vehicle Reg:</td>
             <td class="value">${data.vehicleNo || ""}</td>
             <td class="label">Branch:</td>
             <td class="value">${data.siteName || ""}</td>
-            <td class="label">&nbsp;</td>
-            <td class="value">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Customer Return (Yes/No):</td>
             <td class="value">&nbsp;</td>
             <td class="label">OTNO Return (Yes/No):</td>
             <td class="value">&nbsp;</td>
-            <td class="label">&nbsp;</td>
-            <td class="value">&nbsp;</td>
+          </tr>
+          <tr>
+            <td class="label">Request for collection:</td>
+            <td class="value" colspan="3">&nbsp;</td>
           </tr>
         </table>
 
