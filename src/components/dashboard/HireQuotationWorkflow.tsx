@@ -888,17 +888,23 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     (s.quantity ?? 0) > 0 && s.status === "available"
   ) || [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
-  const filteredScaffolds = availableScaffolds.filter((scaffold) => {
-    if (!normalizedItemCodeSearch) return true;
-    const partNumber = scaffold.part_number?.toLowerCase() ?? "";
-    const description = scaffold.description?.toLowerCase() ?? "";
-    const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
-    return (
-      partNumber.includes(normalizedItemCodeSearch) ||
-      description.includes(normalizedItemCodeSearch) ||
-      scaffoldType.includes(normalizedItemCodeSearch)
-    );
-  });
+  const filteredScaffolds = (() => {
+    if (!normalizedItemCodeSearch) return availableScaffolds;
+    const matches = availableScaffolds.filter((scaffold) => {
+      const partNumber = scaffold.part_number?.toLowerCase() ?? "";
+      const description = scaffold.description?.toLowerCase() ?? "";
+      const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
+      return (
+        partNumber.includes(normalizedItemCodeSearch) ||
+        description.includes(normalizedItemCodeSearch) ||
+        scaffoldType.includes(normalizedItemCodeSearch)
+      );
+    });
+    if (!matches.length) return availableScaffolds;
+    const matchIds = new Set(matches.map(match => match.id));
+    const remaining = availableScaffolds.filter(scaffold => !matchIds.has(scaffold.id));
+    return [...matches, ...remaining];
+  })();
 
   const handleItemCodeSearchChange = (value: string) => {
     setItemCodeSearch(value);
@@ -1329,7 +1335,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     className="mt-2"
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Type a part number to auto-select, or scroll the inventory list to browse all items.
+                    Type a part number to auto-select and move matching items to the top of the list.
                   </p>
                   <Label className="mt-4 block">Select Item</Label>
                   <Select
