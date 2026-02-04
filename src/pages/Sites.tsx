@@ -21,6 +21,31 @@ const Sites = () => {
     });
   }, [hireQuotations]);
 
+  const removalReportRows = useMemo(() => {
+    return hireQuotations
+      .filter((quotation) => {
+        const status = quotation.status?.toLowerCase?.() ?? "";
+        return status !== "draft" && status !== "cancelled";
+      })
+      .flatMap((quotation) =>
+        (quotation.line_items ?? [])
+          .filter((item) => item.quantity > 0)
+          .map((item) => ({
+            itemLabel: item.description || item.part_number || "Unknown item",
+            itemCode: item.part_number || "—",
+            quantity: item.quantity,
+            client: quotation.company_name || quotation.site_manager_name || "Unknown client",
+            site: quotation.site_name || "No site name",
+            quotationId: quotation.quotation_number || quotation.id,
+          }))
+      )
+      .sort((a, b) => {
+        const itemCompare = a.itemLabel.localeCompare(b.itemLabel);
+        if (itemCompare !== 0) return itemCompare;
+        return a.client.localeCompare(b.client);
+      });
+  }, [hireQuotations]);
+
   const formatDate = (value: string | null) => {
     if (!value) return "—";
     const date = new Date(value);
@@ -46,6 +71,74 @@ const Sites = () => {
   const handleOpenWorkflow = (quotation: HireQuotation) => {
     setSelectedQuotation(quotation);
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  };
+
+  const handlePrintRemovalReport = () => {
+    if (!removalReportRows.length) {
+      window.alert("No inventory removal records available to print yet.");
+      return;
+    }
+
+    const tableRows = removalReportRows
+      .map(
+        (row) => `
+          <tr>
+            <td>${row.itemLabel}</td>
+            <td>${row.itemCode}</td>
+            <td>${row.quantity}</td>
+            <td>${row.client}</td>
+            <td>${row.site}</td>
+            <td>${row.quotationId}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    const html = `
+      <html>
+        <head>
+          <title>Inventory Removal Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
+            h1 { font-size: 20px; margin-bottom: 8px; }
+            p { margin-top: 0; color: #555; }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>Inventory Removal Report</h1>
+          <p>Clients with items removed from inventory, grouped by hire quotation.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Item Code</th>
+                <th>Qty</th>
+                <th>Client</th>
+                <th>Site</th>
+                <th>Hire Quotation ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      window.alert("Please allow popups to print the report.");
+      return;
+    }
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   return (
@@ -192,6 +285,59 @@ const Sites = () => {
                 </CardContent>
               </Card>
             )}
+          </section>
+
+          <section className="space-y-4">
+            <Card>
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>Inventory Removal Report</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Print a report of clients and sites for each item removed from inventory.
+                  </p>
+                </div>
+                <Button variant="outline" onClick={handlePrintRemovalReport}>
+                  Print Report
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {removalReportRows.length ? (
+                  <div className="rounded-lg border border-border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead>Item Code</TableHead>
+                          <TableHead>Qty</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Site</TableHead>
+                          <TableHead>Hire Quotation ID</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {removalReportRows.map((row, index) => (
+                          <TableRow key={`${row.quotationId}-${row.itemCode}-${index}`}>
+                            <TableCell>
+                              <div className="font-medium">{row.itemLabel}</div>
+                              <div className="text-xs text-muted-foreground">{row.itemCode}</div>
+                            </TableCell>
+                            <TableCell>{row.itemCode}</TableCell>
+                            <TableCell>{row.quantity}</TableCell>
+                            <TableCell>{row.client}</TableCell>
+                            <TableCell>{row.site}</TableCell>
+                            <TableCell className="font-mono text-xs">{row.quotationId}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    No inventory removal records yet. Completed hire quotations will appear here.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </section>
         </div>
       </main>
