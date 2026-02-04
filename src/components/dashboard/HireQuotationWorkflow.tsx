@@ -316,6 +316,40 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }, 0);
   }, [equipmentItems]);
 
+  const selectedScaffold = useMemo(
+    () => scaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId),
+    [scaffolds, selectedScaffoldId]
+  );
+  const remainingSelectedQty = useMemo(() => {
+    if (!selectedScaffold) return 0;
+    const availableQty = selectedScaffold.quantity ?? 0;
+    const alreadyAdded = equipmentItems.reduce((total, item) => {
+      if (item.scaffoldId !== selectedScaffold.id) return total;
+      return total + parseNumber(item.qtyDelivered);
+    }, 0);
+    return Math.max(availableQty - alreadyAdded, 0);
+  }, [equipmentItems, selectedScaffold]);
+  const addDisabled =
+    !selectedScaffoldId ||
+    remainingSelectedQty <= 0 ||
+    parseNumber(equipmentQuantity) <= 0;
+
+  useEffect(() => {
+    if (!selectedScaffoldId) return;
+    if (remainingSelectedQty <= 0) {
+      setEquipmentQuantity("0");
+      return;
+    }
+    const currentQty = parseNumber(equipmentQuantity);
+    if (currentQty <= 0) {
+      setEquipmentQuantity("1");
+      return;
+    }
+    if (currentQty > remainingSelectedQty) {
+      setEquipmentQuantity(String(remainingSelectedQty));
+    }
+  }, [equipmentQuantity, remainingSelectedQty, selectedScaffoldId]);
+
   const numberOfWeeks = parseNumber(calculation.numberOfWeeks || "0");
   const hireTotalForWeeks = weeklyHireTotal * numberOfWeeks;
   const vatRate = parseNumber(calculation.vatRate) / 100;
@@ -1292,12 +1326,19 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     </SelectTrigger>
                     <SelectContent className="max-h-64 overflow-y-auto">
                       {filteredScaffolds.length > 0 ? (
-                        filteredScaffolds.map(scaffold => (
-                          <SelectItem key={scaffold.id} value={scaffold.id}>
-                            {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                            (Qty: {scaffold.quantity}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
-                          </SelectItem>
-                        ))
+                        filteredScaffolds.map(scaffold => {
+                          const alreadyAdded = equipmentItems.reduce((total, item) => {
+                            if (item.scaffoldId !== scaffold.id) return total;
+                            return total + parseNumber(item.qtyDelivered);
+                          }, 0);
+                          const remainingQty = Math.max((scaffold.quantity ?? 0) - alreadyAdded, 0);
+                          return (
+                            <SelectItem key={scaffold.id} value={scaffold.id}>
+                              {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
+                              (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                            </SelectItem>
+                          );
+                        })
                       ) : (
                         <div className="px-3 py-2 text-xs text-muted-foreground">
                           No inventory items match that code.
@@ -1311,14 +1352,38 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      min="1"
+                      min={selectedScaffoldId ? 1 : 0}
+                      max={selectedScaffoldId ? Math.max(remainingSelectedQty, 0) : undefined}
                       value={equipmentQuantity}
-                      onChange={(e) => setEquipmentQuantity(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (!selectedScaffoldId) {
+                          setEquipmentQuantity(value);
+                          return;
+                        }
+                        if (value === "") {
+                          setEquipmentQuantity(value);
+                          return;
+                        }
+                        const nextValue = parseNumber(value);
+                        if (remainingSelectedQty <= 0) {
+                          setEquipmentQuantity("0");
+                          return;
+                        }
+                        const capped = Math.min(Math.max(nextValue, 1), remainingSelectedQty);
+                        setEquipmentQuantity(String(capped));
+                      }}
+                      disabled={!selectedScaffoldId || remainingSelectedQty <= 0}
                     />
-                    <Button type="button" onClick={handleAddFromInventory} size="icon">
+                    <Button type="button" onClick={handleAddFromInventory} size="icon" disabled={addDisabled}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+                  {selectedScaffoldId && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Remaining in inventory: {remainingSelectedQty}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
