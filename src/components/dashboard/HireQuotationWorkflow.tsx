@@ -724,7 +724,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
   const handlePrintQuotation = () => {
     if (!equipmentItems.length) {
-      toast.error("No equipment items to include in quotation");
+      toast.error("No equipment items to include in invoice");
       return;
     }
 
@@ -758,7 +758,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     };
 
     generateQuotationPDF(data);
-    toast.success("Quotation opened for printing");
+    toast.success("Invoice opened for printing");
   };
 
   const handleCalculationSave = async () => {
@@ -1725,7 +1725,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
             {/* Calculation Summary */}
             <div className="rounded-lg border border-border overflow-hidden">
-              <div className="bg-muted/40 px-4 py-2 font-semibold">Quotation Summary</div>
+              <div className="bg-muted/40 px-4 py-2 font-semibold">Invoice Summary</div>
               <div className="p-4 space-y-3">
                 <div className="flex justify-between">
                   <span>Weekly Hire Total</span>
@@ -1769,7 +1769,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={handlePrintQuotation}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Print Quotation
+                  Print Invoice
                 </Button>
                 <Button 
                   type="button" 
