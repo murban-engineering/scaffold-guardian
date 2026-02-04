@@ -257,6 +257,7 @@ const Sites = () => {
                   <p className="text-sm text-muted-foreground">No active or pending quotations yet.</p>
                 )}
               </CardContent>
+            </Card>
           </section>
 
           <section className="space-y-4">
