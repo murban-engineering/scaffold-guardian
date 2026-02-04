@@ -82,7 +82,7 @@ const Settings = () => {
 
   const handleResolveTicket = (ticketId: string) => {
     const updatedTickets = tickets.map((ticket) =>
-      ticket.id === ticketId ? { ...ticket, status: "resolved" } : ticket,
+      ticket.id === ticketId ? { ...ticket, status: "resolved" as const } : ticket,
     );
     setTickets(updatedTickets);
     saveTickets(updatedTickets);
