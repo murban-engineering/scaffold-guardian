@@ -161,6 +161,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [activeStep, setActiveStep] = useState<StepKey>("client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
   const [returnProcessed, setReturnProcessed] = useState(false);
+  const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
     dateCreated: getToday(),
@@ -1422,6 +1423,24 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <p className="mt-4 text-sm text-muted-foreground">
                 {equipmentItems.length} equipment item(s) ready for the hire quotation report.
               </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="hireQuotationDiscount">Discount (%)</Label>
+                <Input
+                  id="hireQuotationDiscount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={hireQuotationDiscount}
+                  onChange={(e) => setHireQuotationDiscount(e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Internal only. This discount will not appear on the hire quotation report.
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
