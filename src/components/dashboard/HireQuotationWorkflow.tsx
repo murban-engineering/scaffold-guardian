@@ -86,7 +86,8 @@ type DeliveryNote = {
 };
 
 type QuotationCalculation = {
-  numberOfWeeks: string;
+  hireDate: string;
+  returnDate: string;
   vatEnabled: boolean;
   vatRate: string;
   discountRate: string;
@@ -256,7 +257,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     setCalculation(prev => ({
       ...prev,
-      numberOfWeeks: String(initialQuotation.hire_weeks || 1),
+      hireDate: prev.hireDate || createdDate,
+      returnDate: prev.returnDate || createdDate,
       paymentTerms: initialQuotation.notes ?? "",
     }));
 
@@ -306,7 +308,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   }, [header.quotationNo]);
   
   const [calculation, setCalculation] = useState<QuotationCalculation>({
-    numberOfWeeks: "1",
+    hireDate: getToday(),
+    returnDate: getToday(),
     vatEnabled: true,
     vatRate: "15",
     discountRate: "0",
@@ -377,7 +380,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
   }, [equipmentQuantity, remainingSelectedQty, selectedScaffoldId]);
 
-  const numberOfWeeks = parseNumber(calculation.numberOfWeeks || "0");
+  const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
+  const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
+  const hasValidDateRange =
+    !!hireDateValue &&
+    !!returnDateValue &&
+    !Number.isNaN(hireDateValue.getTime()) &&
+    !Number.isNaN(returnDateValue.getTime()) &&
+    returnDateValue >= hireDateValue;
+  const numberOfDays = hasValidDateRange && hireDateValue && returnDateValue
+    ? Math.floor((returnDateValue.getTime() - hireDateValue.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    : 0;
+  const numberOfWeeks = numberOfDays > 0 ? Math.ceil(numberOfDays / 7) : 0;
   const hireTotalForWeeks = weeklyHireTotal * numberOfWeeks;
   const vatRate = parseNumber(calculation.vatRate) / 100;
   const vatAmount = calculation.vatEnabled ? hireTotalForWeeks * vatRate : 0;
@@ -762,8 +776,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   };
 
   const handleCalculationSave = async () => {
-    if (numberOfWeeks < 1) {
-      toast.error("Enter a valid number of weeks.");
+    if (!hasValidDateRange || numberOfWeeks < 1) {
+      toast.error("Please enter a valid hire date and return date.");
       return;
     }
 
@@ -1672,13 +1686,22 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="numberOfWeeks">Number of Weeks *</Label>
+                <Label htmlFor="hireDate">Hire Date *</Label>
                 <Input
-                  id="numberOfWeeks"
-                  type="number"
-                  min="1"
-                  value={calculation.numberOfWeeks}
-                  onChange={(e) => setCalculation(prev => ({ ...prev, numberOfWeeks: e.target.value }))}
+                  id="hireDate"
+                  type="date"
+                  value={calculation.hireDate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, hireDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="returnDate">Return Date *</Label>
+                <Input
+                  id="returnDate"
+                  type="date"
+                  min={calculation.hireDate || undefined}
+                  value={calculation.returnDate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, returnDate: e.target.value }))}
                 />
               </div>
               <div>
@@ -1732,7 +1755,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <span>{formatCurrency(weeklyHireTotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Number of Weeks</span>
+                  <span>Number of Days</span>
+                  <span>{numberOfDays}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Converted Weeks</span>
                   <span>× {numberOfWeeks}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
