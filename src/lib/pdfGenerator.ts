@@ -669,9 +669,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
         By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
         Scaffold Hire Contract.<br />
         We thank you for affording us the opportunity to quote. Please sign below for acceptance.<br />
-        Name : _______________________________________________<br />
-        Signature :____________________________________<br />
-        Date :____________________________________<br />
         <strong>Payment Details:</strong><br />
         Account Name: OTNO ACCESS SOLUTIONS LIMITED<br />
         KES Account Number: 02107773676350<br />
