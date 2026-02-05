@@ -96,38 +96,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Delivery Note - ${data.deliveryNoteNumber}</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header-logo { width: 100px; height: auto; margin-right: 20px; }
-        .header-content { flex: 1; }
-        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
-        .header-content p { color: #666; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { font-weight: bold; width: 120px; color: #555; }
-        .info-value { flex: 1; }
-        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 20px; }
-        .section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .total-row { font-weight: bold; background: #f9f9f9; }
-        .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
-        .signature-box { border-top: 1px solid #333; padding-top: 10px; }
-        .signature-box p { margin-bottom: 5px; }
-        .remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }
-        @media print { body { padding: 0; } }
-      </style>
-    </head>
-    <body>
+  const deliveryNotePage = () => `
+    <div class="delivery-note-page">
       <div class="header">
         <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
         <div class="header-content">
@@ -214,7 +184,45 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <p>Date: _______________</p>
         </div>
       </div>
+    </div>
+  `;
 
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Delivery Note - ${data.deliveryNoteNumber}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header-logo { width: 100px; height: auto; margin-right: 20px; }
+        .header-content { flex: 1; }
+        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
+        .header-content p { color: #666; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+        .info-row { display: flex; margin-bottom: 5px; }
+        .info-label { font-weight: bold; width: 120px; color: #555; }
+        .info-value { flex: 1; }
+        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 20px; }
+        .section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        .total-row { font-weight: bold; background: #f9f9f9; }
+        .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
+        .signature-box { border-top: 1px solid #333; padding-top: 10px; }
+        .signature-box p { margin-bottom: 5px; }
+        .remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }
+        .delivery-note-page { page-break-after: always; }
+        .delivery-note-page:last-child { page-break-after: auto; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      ${deliveryNotePage()}
+      ${deliveryNotePage()}
     </body>
     </html>
   `;
