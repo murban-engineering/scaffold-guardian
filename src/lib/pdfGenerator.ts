@@ -87,6 +87,46 @@ const formatCurrency = (value: number) =>
 const formatMass = (value: number | null) =>
   value != null ? `${value.toFixed(2)} kg` : "-";
 
+const withPrintOption = (html: string) => {
+  const printControls = `
+    <style>
+      .print-controls {
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        display: flex;
+        justify-content: flex-end;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.96);
+        border-bottom: 1px solid #ddd;
+      }
+      .print-button {
+        border: 1px solid #333;
+        border-radius: 6px;
+        background: #111;
+        color: #fff;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      @media print {
+        .print-controls {
+          display: none;
+        }
+      }
+    </style>
+    <script>
+      const triggerPrint = () => window.print();
+    </script>
+    <div class="print-controls">
+      <button type="button" class="print-button" onclick="triggerPrint()">Print report</button>
+    </div>
+  `;
+
+  return html.replace("<body>", `<body>${printControls}`);
+};
+
 export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -227,7 +267,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     </html>
   `;
 
-  printWindow.document.write(html);
+  printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
@@ -360,7 +400,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </html>
   `;
 
-  printWindow.document.write(html);
+  printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
@@ -528,7 +568,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </html>
   `;
 
-  printWindow.document.write(html);
+  printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
@@ -705,9 +745,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </html>
   `;
 
-  printWindow.document.write(html);
+  printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
-  printWindow.onload = () => {
-    printWindow.print();
-  };
 };

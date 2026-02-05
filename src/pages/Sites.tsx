@@ -113,9 +113,36 @@ const Sites = () => {
             table { width: 100%; border-collapse: collapse; margin-top: 16px; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
             th { background: #f3f4f6; }
+            .print-controls {
+              position: sticky;
+              top: 0;
+              z-index: 9999;
+              display: flex;
+              justify-content: flex-end;
+              padding-bottom: 12px;
+              margin-bottom: 12px;
+              border-bottom: 1px solid #ddd;
+              background: rgba(255, 255, 255, 0.96);
+            }
+            .print-button {
+              border: 1px solid #333;
+              border-radius: 6px;
+              background: #111;
+              color: #fff;
+              padding: 8px 14px;
+              font-size: 12px;
+              font-weight: 600;
+              cursor: pointer;
+            }
+            @media print {
+              .print-controls { display: none; }
+            }
           </style>
         </head>
         <body>
+          <div class="print-controls">
+            <button type="button" class="print-button" onclick="window.print()">Print report</button>
+          </div>
           <h1>Inventory Removal Report</h1>
           <p>Clients with items removed from inventory, grouped by hire quotation.</p>
           <table>
@@ -146,7 +173,6 @@ const Sites = () => {
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.focus();
-    printWindow.print();
   };
 
   return (
