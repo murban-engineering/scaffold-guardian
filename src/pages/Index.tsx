@@ -287,7 +287,16 @@ const Index = () => {
                             const lineItems = quotation.line_items ?? [];
                             const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
                             const weeklyTotal = lineItems.reduce(
-                              (sum, item) => sum + (item.weekly_total ?? item.weekly_rate * item.quantity),
+                              (sum, item) => {
+                                if (item.weekly_total != null) {
+                                  return sum + item.weekly_total;
+                                }
+                                const rate = item.weekly_rate ?? 0;
+                                const qty = item.quantity ?? 0;
+                                const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
+                                const hireRate = Math.max(rate * (1 - discountRate), 0);
+                                return sum + hireRate * qty;
+                              },
                               0
                             );
 
