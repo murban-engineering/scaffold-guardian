@@ -31,25 +31,29 @@ const Header = ({ title, subtitle }: HeaderProps) => {
     : "Worker";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-card/90 shadow-sm backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-6 sm:py-0">
+    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-lg">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+          {subtitle && <p className="text-sm text-muted-foreground/90">{subtitle}</p>}
         </div>
 
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
           {/* Search */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search scaffolds, sites..."
-              className="w-full bg-background/70 pl-9 shadow-inner"
+              className="h-11 rounded-full border-border/70 bg-card pl-9 shadow-sm transition focus-visible:ring-2"
             />
           </div>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative self-start sm:self-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-11 w-11 self-start rounded-full border border-border/70 bg-card shadow-sm hover:bg-muted sm:self-auto"
+          >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
               <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center bg-destructive p-0 text-xs text-destructive-foreground">
@@ -59,15 +63,15 @@ const Header = ({ title, subtitle }: HeaderProps) => {
           </Button>
 
           {/* User */}
-          <div className="flex flex-wrap items-center gap-3 border-border sm:flex-nowrap sm:border-l sm:pl-4">
-            <div className="text-right">
+          <div className="flex items-center gap-3 rounded-full border border-border/70 bg-card px-2 py-1 shadow-sm">
+            <div className="hidden text-right sm:block">
               <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
               <p className="text-xs text-muted-foreground">{displayRole}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 shadow-sm">
               <User className="h-5 w-5 text-primary-foreground" />
             </div>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign out">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={handleSignOut} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

@@ -8,6 +8,8 @@ import {
   LogOut,
   ClipboardCheck,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnLogo from "@/assets/otn-logo.png";
@@ -35,6 +37,7 @@ const menuItems = [
 
 const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasRole("admin");
@@ -57,18 +60,28 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const sidebarContent = (closeOnSelect: boolean) => (
     <>
       {/* Logo */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-center">
+      <div className="border-b border-sidebar-border/70 p-4">
+        <div className={cn("flex items-center", collapsed && !closeOnSelect ? "justify-center" : "justify-between")}>
           <img 
             src={otnLogo} 
             alt="OTN Logo" 
-            className="w-28 h-auto object-contain"
+            className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-10" : "w-28")}
           />
+          {!closeOnSelect && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full border border-sidebar-border/80 bg-sidebar-accent/40 text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={() => setCollapsed((prev) => !prev)}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
           {visibleMenuItems.map((item) => (
             <li key={item.id}>
@@ -76,11 +89,13 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
                 onClick={() => handleItemClick(item.id, closeOnSelect)}
                 className={cn(
                   "sidebar-item w-full",
+                  collapsed && !closeOnSelect && "justify-center px-2",
                   activeItem === item.id && "sidebar-item-active"
                 )}
+                title={collapsed && !closeOnSelect ? item.label : undefined}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>{item.label}</span>
               </button>
             </li>
           ))}
@@ -88,24 +103,30 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="border-t border-sidebar-border/70 p-3">
         <button
           className={cn(
             "sidebar-item w-full mb-2",
+            collapsed && !closeOnSelect && "justify-center px-2",
             activeItem === "settings" && "sidebar-item-active"
           )}
           onClick={() => handleItemClick("settings", closeOnSelect)}
+          title={collapsed && !closeOnSelect ? "Settings" : undefined}
         >
-          <Settings className="w-5 h-5" />
-          <span className="font-medium">Settings</span>
+          <Settings className="h-5 w-5 shrink-0" />
+          <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Settings</span>
         </button>
         <button
-          className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+          className={cn(
+            "sidebar-item w-full text-destructive/80 hover:bg-destructive/10 hover:text-destructive",
+            collapsed && !closeOnSelect && "justify-center px-2"
+          )}
           onClick={handleLogout}
           type="button"
+          title={collapsed && !closeOnSelect ? "Logout" : undefined}
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
+          <LogOut className="h-5 w-5 shrink-0" />
+          <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Logout</span>
         </button>
       </div>
     </>
@@ -130,7 +151,12 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       </SheetContent>
     </Sheet>
 
-      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-sidebar-border/70 bg-sidebar shadow-xl md:flex">
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border/70 bg-sidebar shadow-xl transition-all duration-300 md:flex",
+          collapsed ? "w-20" : "w-64"
+        )}
+      >
         {sidebarContent(false)}
       </aside>
     </>
