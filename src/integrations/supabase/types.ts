@@ -295,6 +295,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          hire_discount: number | null
           mass_per_item: number | null
           part_number: string | null
           quantity: number
@@ -309,6 +310,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          hire_discount?: number | null
           mass_per_item?: number | null
           part_number?: string | null
           quantity?: number
@@ -323,6 +325,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          hire_discount?: number | null
           mass_per_item?: number | null
           part_number?: string | null
           quantity?: number
