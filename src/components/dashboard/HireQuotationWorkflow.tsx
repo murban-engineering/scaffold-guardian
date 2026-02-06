@@ -114,7 +114,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
-  { key: "delivery", title: "Hire Delivery Note", description: "Generate report", icon: Truck },
+  { key: "delivery", title: "Hire Loading", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
