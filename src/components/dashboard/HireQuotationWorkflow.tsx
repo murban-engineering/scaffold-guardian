@@ -1845,7 +1845,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <Button type="button" onClick={handleNext}>
-                Continue to Hire Delivery Note
+                Hire Loading Note
               </Button>
             </div>
           </div>
