@@ -662,7 +662,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
             <th>Description</th>
             <th class="text-right">Qty</th>
             <th class="text-right">Weekly Rate</th>
-            <th class="text-right">Weekly Total</th>
           </tr>
         </thead>
         <tbody>
@@ -673,23 +672,17 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
               <td>${item.description || "-"}</td>
               <td class="text-right">${item.quantity}</td>
               <td class="text-right">${formatCurrency(item.weeklyRate)}</td>
-              <td class="text-right">${formatCurrency(item.weeklyTotal)}</td>
             </tr>
           `).join("")}
           <tr class="total-row">
             <td colspan="3"><strong>TOTAL</strong></td>
             <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
             <td class="text-right">-</td>
-            <td class="text-right"><strong>${formatCurrency(data.weeklyTotal)}</strong></td>
           </tr>
         </tbody>
       </table>
 
       <div class="summary-box">
-        <div class="summary-row">
-          <span>Weekly Hire Total</span>
-          <span>${formatCurrency(data.weeklyTotal)}</span>
-        </div>
         <div class="summary-row">
           <span>Number of Weeks</span>
           <span>× ${data.hireWeeks}</span>
