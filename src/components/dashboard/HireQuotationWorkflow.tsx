@@ -606,6 +606,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     return getDeliveredQuantity(item);
   };
 
+  const validateDeliveryQuantities = () => {
+    for (const item of equipmentItems) {
+      const orderedQty = getOrderedQuantity(item);
+      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+      if (deliveredQty > orderedQty) {
+        toast.error(`Delivery Qty cannot exceed Order Qty for ${item.description || item.itemCode}.`);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleEquipmentSave = async () => {
     if (!equipmentItems.length || !savedQuotationId) {
       handleNext();
@@ -657,9 +669,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
-        quantity: getOrderedQuantity(item),
+        balanceQuantity: Math.max(getOrderedQuantity(item) - getInventoryDeliveryQuantity(item), 0),
+        quantity: getInventoryDeliveryQuantity(item),
         massPerItem: parseNumber(item.massPerItem) || null,
-        totalMass: getOrderedQuantity(item) * parseNumber(item.massPerItem) || null,
+        totalMass: getInventoryDeliveryQuantity(item) * parseNumber(item.massPerItem) || null,
       })),
     };
 
@@ -707,6 +720,30 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     };
 
     generateHireLoadingNotePDF(data);
+
+    const remainingItems = equipmentItems
+      .map((item) => {
+        const orderedQty = getOrderedQuantity(item);
+        const deliveredQty = deliveredQuantities[item.id] ?? 0;
+        const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+        return {
+          partNumber: item.itemCode,
+          description: item.description,
+          quantity: remainingQty,
+          massPerItem: parseNumber(item.massPerItem) || null,
+          totalMass: remainingQty * parseNumber(item.massPerItem) || null,
+        };
+      })
+      .filter((item) => item.quantity > 0);
+
+    if (remainingItems.length > 0) {
+      generateHireLoadingNotePDF({
+        ...data,
+        items: remainingItems,
+      });
+      toast.success("Additional hire loading note generated for remaining quantities.");
+    }
+
     setLastDeliveredQuantities(deliveredQuantities);
     setRemainingQuantities((prev) => {
       const next = { ...prev };
@@ -729,6 +766,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     toast.success("Hire loading note opened for printing");
   };
 
+  const handleHireDeliveryAction = async () => {
+    if (!validateDeliveryQuantities()) {
+      return;
+    }
+
+    const success = await handleEquipmentHired();
+    if (!success) {
+      return;
+    }
+
+    handlePrintHireLoadingNote();
+    handleNext();
+  };
+
   const handleEquipmentHired = async (): Promise<boolean> => {
     if (!equipmentItems.length) {
       toast.error("No equipment items selected for delivery");
@@ -742,6 +793,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     if (!scaffolds?.length) {
       toast.error("Inventory data not loaded. Please try again.");
+      return false;
+    }
+
+    if (!validateDeliveryQuantities()) {
       return false;
     }
 
@@ -1803,39 +1858,47 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <th className="px-3 py-2 text-right font-medium">Balance Qty</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {equipmentItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                        No equipment items available yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    equipmentItems.map((item) => {
-                      const orderedQty = getOrderedQuantity(item);
-                      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-                      const balanceQty = Math.max(orderedQty - deliveredQty, 0);
-                      return (
-                        <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
-                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
-                          <td className="px-3 py-2">{item.description}</td>
-                          <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
-                          <td className="px-3 py-2 text-right">
-                            <Input
-                              type="number"
-                              min="0"
-                              className="h-8 w-24 text-right"
-                              value={deliveryQuantities[item.id] ?? ""}
-                              onChange={(e) =>
-                                setDeliveryQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))
-                              }
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-right font-medium">{balanceQty}</td>
-                        </tr>
-                      );
-                    })
-                  )}
+        <tbody>
+          {equipmentItems.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                No equipment items available yet.
+              </td>
+            </tr>
+          ) : (
+            equipmentItems.map((item) => {
+              const orderedQty = getOrderedQuantity(item);
+              const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+              const balanceQty = Math.max(orderedQty - deliveredQty, 0);
+              return (
+                <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
+                  <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                  <td className="px-3 py-2">{item.description}</td>
+                  <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
+                  <td className="px-3 py-2 text-right">
+                    <Input
+                      type="number"
+                      min="0"
+                      max={orderedQty}
+                      className="h-8 w-24 text-right"
+                      value={deliveryQuantities[item.id] ?? ""}
+                      onChange={(e) => {
+                        const rawValue = e.target.value;
+                        const nextValue = parseNumber(rawValue);
+                        if (nextValue > orderedQty) {
+                          toast.error("Delivery Qty cannot exceed Order Qty.");
+                          setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
+                          return;
+                        }
+                        setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
+                      }}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right font-medium">{balanceQty}</td>
+                </tr>
+              );
+            })
+          )}
                 </tbody>
               </table>
             </div>
@@ -1844,9 +1907,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <Button type="button" onClick={handleNext}>
-                Hire Loading Note
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleHireDeliveryAction}
+                  disabled={inventoryDeducted || deductInventory.isPending}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Equipment Hired
+                </Button>
+                <Button type="button" onClick={handleNext}>
+                  Continue to Delivery Note
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -1917,16 +1991,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleEquipmentHired}
-                  disabled={inventoryDeducted || deductInventory.isPending}
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  Equipment Hired
-                </Button>
                 <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Hire Delivery Note
+                </Button>
+                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
                   <Printer className="h-4 w-4 mr-2" />
                   Hire Loading Note
                 </Button>
@@ -1935,7 +2004,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   Yard Verification Note
                 </Button>
                 <Button type="button" onClick={handleDeliverySave}>
-                  Hire Loading Note
+                  Continue
                 </Button>
               </div>
             </div>

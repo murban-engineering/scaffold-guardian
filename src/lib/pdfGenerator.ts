@@ -18,6 +18,7 @@ export interface DeliveryNoteData {
   items: Array<{
     partNumber: string | null;
     description: string | null;
+    balanceQuantity: number;
     quantity: number;
     massPerItem: number | null;
     totalMass: number | null;
@@ -214,8 +215,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
               <td>${idx + 1}</td>
               <td>${item.partNumber || "-"}</td>
               <td>${item.description || "-"}</td>
+              <td>${item.balanceQuantity}</td>
               <td>${item.quantity}</td>
-              <td>__________</td>
               <td>${formatMass(item.massPerItem)}</td>
               <td>${formatMass(item.totalMass)}</td>
             </tr>
