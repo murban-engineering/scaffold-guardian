@@ -24,24 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { useCreateScaffold, useScaffolds, ScaffoldType, ScaffoldStatus } from "@/hooks/useScaffolds";
-import { useSites } from "@/hooks/useSites";
-
-const scaffoldTypes: { value: ScaffoldType; label: string }[] = [
-  { value: "frame", label: "Frame" },
-  { value: "tube_coupler", label: "Tube & Coupler" },
-  { value: "mobile", label: "Mobile" },
-  { value: "suspended", label: "Suspended" },
-  { value: "cantilever", label: "Cantilever" },
-  { value: "system", label: "System" },
-];
-
-const scaffoldStatuses: { value: ScaffoldStatus; label: string }[] = [
-  { value: "available", label: "Available" },
-  { value: "in_use", label: "In Use" },
-  { value: "damaged", label: "Damaged" },
-  { value: "maintenance", label: "Maintenance" },
-];
+import { useCreateScaffold, useScaffolds } from "@/hooks/useScaffolds";
 
 const formSchema = z.object({
   scaffold_type: z.enum(["frame", "tube_coupler", "mobile", "suspended", "cantilever", "system"]),
@@ -51,8 +34,6 @@ const formSchema = z.object({
   quantity: z.coerce.number().int().min(0, "Quantity must be 0 or greater").default(0),
   mass_per_item: z.coerce.number().min(0, "Mass must be 0 or greater").optional(),
   weekly_rate: z.coerce.number().min(0, "Rate must be 0 or greater").optional(),
-  manufacturer: z.string().max(100, "Manufacturer must be less than 100 characters").optional(),
-  site_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,7 +41,6 @@ type FormValues = z.infer<typeof formSchema>;
 const AddScaffold = () => {
   const navigate = useNavigate();
   const createScaffold = useCreateScaffold();
-  const { data: sites } = useSites();
   const { data: existingScaffolds } = useScaffolds();
 
   const handleSidebarItemClick = (item: string) => {
@@ -100,8 +80,6 @@ const AddScaffold = () => {
       quantity: 0,
       mass_per_item: undefined,
       weekly_rate: undefined,
-      manufacturer: "",
-      site_id: "",
     },
   });
 
@@ -125,8 +103,6 @@ const AddScaffold = () => {
       quantity: values.quantity,
       mass_per_item: values.mass_per_item || null,
       weekly_rate: values.weekly_rate || null,
-      manufacturer: values.manufacturer || null,
-      site_id: values.site_id && values.site_id !== "" ? values.site_id : null,
     };
 
     await createScaffold.mutateAsync(scaffoldData);
@@ -179,58 +155,6 @@ const AddScaffold = () => {
                       <p className="text-xs text-muted-foreground mt-2">
                         Or fill in the details manually below
                       </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="scaffold_type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Scaffold Type *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {scaffoldTypes.map((type) => (
-                                  <SelectItem key={type.value} value={type.value}>
-                                    {type.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {scaffoldStatuses.map((status) => (
-                                  <SelectItem key={status.value} value={status.value}>
-                                    {status.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -316,47 +240,6 @@ const AddScaffold = () => {
                                 value={field.value ?? ""}
                               />
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="manufacturer"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Manufacturer</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Kwik-stage" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="site_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Assign to Site</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select site (optional)" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {sites?.map((site) => (
-                                  <SelectItem key={site.id} value={site.id}>
-                                    {site.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
