@@ -1505,8 +1505,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <th className="px-3 py-2 text-right font-medium">Mass/Item</th>
                     <th className="px-3 py-2 text-right font-medium">Weekly Rate</th>
                     <th className="px-3 py-2 text-right font-medium">Discount (%)</th>
+                    <th className="px-3 py-2 text-right font-medium">Hire</th>
                     <th className="px-3 py-2 text-right font-medium">Weekly Total</th>
-                    <th className="px-3 py-2 text-right font-medium">Discounted Total</th>
                     <th className="px-3 py-2 text-center font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -1524,7 +1524,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       const mass = parseNumber(item.massPerItem);
                       const weeklyTotal = qty * rate;
                       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
-                      const discountedTotal = Math.max(weeklyTotal - weeklyTotal * discountRate, 0);
+                      const hireRate = Math.max(rate * discountRate, 0);
                       return (
                         <tr key={item.id} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
@@ -1551,8 +1551,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                               }}
                             />
                           </td>
+                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(hireRate)}</td>
                           <td className="px-3 py-2 text-right font-medium">{formatCurrency(weeklyTotal)}</td>
-                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(discountedTotal)}</td>
                           <td className="px-3 py-2 text-center">
                             <Button
                               variant="ghost"
@@ -1569,9 +1569,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   )}
                   {equipmentItems.length > 0 && (
                     <tr className="bg-muted/40 font-semibold">
-                      <td colSpan={6} className="px-3 py-2 text-right">Weekly Hire Total:</td>
+                      <td colSpan={7} className="px-3 py-2 text-right">Weekly Hire Total:</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
-                      <td className="px-3 py-2 text-right">{formatCurrency(discountedWeeklyHireTotal)}</td>
                       <td></td>
                     </tr>
                   )}
