@@ -1524,7 +1524,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       const mass = parseNumber(item.massPerItem);
                       const weeklyTotal = qty * rate;
                       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
-                      const hireRate = Math.max(rate * discountRate, 0);
+                      const hireRate = Math.max(rate * (1 - discountRate), 0);
                       return (
                         <tr key={item.id} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
