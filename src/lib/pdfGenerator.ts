@@ -494,13 +494,14 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             <th class="text-right">Qty</th>
             <th class="text-right">Mass/Item</th>
             <th class="text-right">Rate</th>
+            <th class="text-right">Weekly Total</th>
             <th class="text-right">Discount (%)</th>
-            <th class="text-right">Discount (Ksh)</th>
             <th class="text-right">Hire/Week (Net)</th>
           </tr>
         </thead>
         <tbody>
           ${data.items.map((item, idx) => {
+            const weeklyTotal = item.weeklyRate * item.quantity;
             const discountAmount = item.weeklyRate * item.quantity * (item.discountRate / 100);
             const discountedTotal = item.weeklyRate * item.quantity - discountAmount;
             return `
@@ -511,8 +512,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
                 <td class="text-right">${item.quantity}</td>
                 <td class="text-right">${formatMass(item.massPerItem)}</td>
                 <td class="text-right">${formatCurrency(item.weeklyRate)}</td>
+                <td class="text-right">${formatCurrency(weeklyTotal)}</td>
                 <td class="text-right">${item.discountRate}%</td>
-                <td class="text-right">${formatCurrency(discountAmount)}</td>
                 <td class="text-right">${formatCurrency(discountedTotal)}</td>
               </tr>
             `;
