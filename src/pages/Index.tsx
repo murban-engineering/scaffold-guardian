@@ -103,7 +103,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-background to-background">
       <Sidebar
         activeItem={activeItem}
         onItemClick={handleSidebarItemClick}
@@ -128,29 +128,36 @@ const Index = () => {
         ) : (
           <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
             {/* Quick Actions with Hire Quotation Button */}
-            <div className="flex flex-wrap items-center gap-4">
-              <Button
-                size="lg"
-                onClick={handleStartNewQuotation}
-                className="gap-2 shadow-sm transition-transform hover:-translate-y-0.5"
-              >
-                <FileText className="h-5 w-5" />
-                New Hire Quotation
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => setShowContinueDialog(true)}
-                className="gap-2 border-border/70 bg-card/80 shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-card"
-              >
-                <FolderClock className="h-5 w-5" />
-                Continue Quotation
-              </Button>
+            <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+              <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Quotation Center</p>
+                <h2 className="mt-2 text-xl font-bold tracking-tight">Manage hire quotation workflow</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Create new client quotations quickly or resume saved drafts.</p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <Button
+                    size="lg"
+                    onClick={handleStartNewQuotation}
+                    className="gap-2 rounded-xl bg-primary px-6 shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/95"
+                  >
+                    <FileText className="h-5 w-5" />
+                    New Hire Quotation
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => setShowContinueDialog(true)}
+                    className="gap-2 rounded-xl border-border bg-background px-6 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-muted"
+                  >
+                    <FolderClock className="h-5 w-5" />
+                    Continue Quotation
+                  </Button>
+                </div>
+              </div>
               <QuickActions />
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               <StatCard
                 title="Total Scaffolds"
                 value={isLoading ? "..." : stats?.totalScaffolds || 0}

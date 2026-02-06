@@ -11,11 +11,19 @@ interface StatCardProps {
 }
 
 const iconBgClasses = {
-  primary: "bg-primary/10 text-primary",
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
-  accent: "bg-accent/10 text-accent",
+  primary: "bg-primary/15 text-primary",
+  success: "bg-success/15 text-success",
+  warning: "bg-warning/15 text-warning",
+  danger: "bg-danger/15 text-danger",
+  accent: "bg-accent/15 text-accent",
+};
+
+const cardGradientClasses = {
+  primary: "from-primary/[0.08] to-white",
+  success: "from-success/[0.08] to-white",
+  warning: "from-warning/[0.10] to-white",
+  danger: "from-danger/[0.08] to-white",
+  accent: "from-accent/[0.08] to-white",
 };
 
 const StatCard = ({ 
@@ -27,14 +35,19 @@ const StatCard = ({
   iconBg = "primary"
 }: StatCardProps) => {
   return (
-    <div className="stat-card animate-fade-in">
+    <div
+      className={cn(
+        "stat-card animate-fade-in bg-gradient-to-br",
+        cardGradientClasses[iconBg]
+      )}
+    >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold text-foreground mt-2">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground/90">{title}</p>
+          <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
           {change && (
             <p className={cn(
-              "text-sm mt-2 font-medium",
+              "mt-2 text-sm font-medium",
               changeType === "positive" && "text-success",
               changeType === "negative" && "text-danger",
               changeType === "neutral" && "text-muted-foreground"
@@ -43,7 +56,7 @@ const StatCard = ({
             </p>
           )}
         </div>
-        <div className={cn("p-3 rounded-xl", iconBgClasses[iconBg])}>
+        <div className={cn("rounded-2xl border border-white/70 p-3 shadow-sm", iconBgClasses[iconBg])}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
