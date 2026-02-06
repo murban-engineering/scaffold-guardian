@@ -272,7 +272,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         unit: "pcs",
         qtyDelivered: String(item.quantity ?? 0),
         weeklyRate: String(item.weekly_rate ?? 0),
-        hireDiscount: "0",
+        hireDiscount: String(item.hire_discount ?? 0),
         massPerItem: String(item.mass_per_item ?? 0),
         notes: "",
       }))
@@ -568,6 +568,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           part_number: item.itemCode,
           description: item.description,
           quantity: parseNumber(item.qtyDelivered),
+          hire_discount: parseNumber(item.hireDiscount),
           mass_per_item: parseNumber(item.massPerItem),
           weekly_rate: parseNumber(item.weeklyRate),
         }))
@@ -748,6 +749,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             part_number: item.itemCode,
             description: item.description,
             quantity: parseNumber(item.qtyDelivered),
+            hire_discount: parseNumber(item.hireDiscount),
             mass_per_item: parseNumber(item.massPerItem),
             weekly_rate: parseNumber(item.weeklyRate),
           }))

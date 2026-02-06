@@ -10,6 +10,7 @@ export interface QuotationLineItem {
   part_number: string | null;
   description: string | null;
   quantity: number;
+  hire_discount: number | null;
   mass_per_item: number | null;
   weekly_rate: number;
   total_mass: number | null;
@@ -83,6 +84,7 @@ export interface CreateLineItemInput {
   part_number?: string;
   description?: string;
   quantity: number;
+  hire_discount?: number;
   mass_per_item?: number;
   weekly_rate: number;
 }
