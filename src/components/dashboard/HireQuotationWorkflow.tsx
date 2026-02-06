@@ -72,6 +72,7 @@ type EquipmentItem = {
   unit: string;
   qtyDelivered: string;
   weeklyRate: string;
+  hireDiscount: string;
   massPerItem: string;
   notes: string;
 };
@@ -271,6 +272,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         unit: "pcs",
         qtyDelivered: String(item.quantity ?? 0),
         weeklyRate: String(item.weekly_rate ?? 0),
+        hireDiscount: "0",
         massPerItem: String(item.mass_per_item ?? 0),
         notes: "",
       }))
@@ -523,6 +525,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         unit: "pcs",
         qtyDelivered: String(qty),
         weeklyRate: String(scaffold.weekly_rate || 0),
+        hireDiscount: "0",
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
       };
@@ -699,6 +702,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         massPerItem: parseNumber(item.massPerItem) || null,
         weeklyRate: parseNumber(item.weeklyRate),
         weeklyTotal: parseNumber(item.qtyDelivered) * parseNumber(item.weeklyRate),
+        discountRate: parseNumber(item.hireDiscount),
       })),
     };
 
@@ -1487,6 +1491,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <th className="px-3 py-2 text-right font-medium">Qty</th>
                     <th className="px-3 py-2 text-right font-medium">Mass/Item</th>
                     <th className="px-3 py-2 text-right font-medium">Weekly Rate</th>
+                    <th className="px-3 py-2 text-right font-medium">Discount (%)</th>
                     <th className="px-3 py-2 text-right font-medium">Weekly Total</th>
                     <th className="px-3 py-2 text-center font-medium">Actions</th>
                   </tr>
@@ -1494,7 +1499,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 <tbody>
                   {equipmentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
                         No equipment added. Select items from inventory above.
                       </td>
                     </tr>
@@ -1510,6 +1515,23 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                           <td className="px-3 py-2 text-right">{qty}</td>
                           <td className="px-3 py-2 text-right">{mass ? `${mass} kg` : "-"}</td>
                           <td className="px-3 py-2 text-right">{formatCurrency(rate)}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              className="h-8 w-20 text-right"
+                              value={item.hireDiscount}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setEquipmentItems((prev) =>
+                                  prev.map((entry, entryIndex) =>
+                                    entryIndex === idx ? { ...entry, hireDiscount: value } : entry
+                                  )
+                                );
+                              }}
+                            />
+                          </td>
                           <td className="px-3 py-2 text-right font-medium">{formatCurrency(qty * rate)}</td>
                           <td className="px-3 py-2 text-center">
                             <Button
@@ -1527,7 +1549,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   )}
                   {equipmentItems.length > 0 && (
                     <tr className="bg-muted/40 font-semibold">
-                      <td colSpan={5} className="px-3 py-2 text-right">Weekly Hire Total:</td>
+                      <td colSpan={6} className="px-3 py-2 text-right">Weekly Hire Total:</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
                       <td></td>
                     </tr>
