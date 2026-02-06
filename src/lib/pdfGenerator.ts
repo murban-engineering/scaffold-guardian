@@ -89,6 +89,7 @@ export interface HireLoadingNoteData {
   contactName: string;
   contactPhone: string;
   createdBy: string;
+  noteTitle?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -299,6 +300,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   }
 
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
+  const noteTitle = data.noteTitle ?? "Hire Loading Note";
 
   const loadingNotePage = (copyLabel: string) => `
     <div class="loading-note-page">
@@ -309,7 +311,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
-          <p><strong>Hire Loading Note</strong></p>
+          <p><strong>${noteTitle}</strong></p>
           <p class="copy-label">${copyLabel}</p>
         </div>
       </div>
@@ -338,6 +340,14 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         <div class="info-row"><span class="info-label">Checked By:</span><span class="info-value">____________________</span></div>
         <div class="info-row"><span class="info-label">Date:</span><span class="info-value">____________________</span></div>
         <div class="info-row"><span class="info-label">Time:</span><span class="info-value">____________________</span></div>
+      </div>
+
+      <div class="section">
+        <h3>Ground Verification (To be completed on site)</h3>
+        <div class="info-row"><span class="info-label">Received By:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Site Time In:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Site Time Out:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Remarks:</span><span class="info-value">________________________________________________</span></div>
       </div>
 
       <table>

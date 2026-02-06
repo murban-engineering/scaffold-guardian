@@ -651,6 +651,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
+    const balanceQuantities: Record<string, number> = {};
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -666,17 +667,62 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vehicleNo: deliveryNote.vehicleNo,
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
-      items: equipmentItems.map(item => ({
-        partNumber: item.itemCode,
-        description: item.description,
-        balanceQuantity: Math.max(getOrderedQuantity(item) - getInventoryDeliveryQuantity(item), 0),
-        quantity: getInventoryDeliveryQuantity(item),
-        massPerItem: parseNumber(item.massPerItem) || null,
-        totalMass: getInventoryDeliveryQuantity(item) * parseNumber(item.massPerItem) || null,
-      })),
+      items: equipmentItems.map(item => {
+        const balanceQuantity = Math.max(getOrderedQuantity(item) - getInventoryDeliveryQuantity(item), 0);
+        balanceQuantities[item.id] = balanceQuantity;
+        return {
+          partNumber: item.itemCode,
+          description: item.description,
+          balanceQuantity,
+          quantity: getInventoryDeliveryQuantity(item),
+          massPerItem: parseNumber(item.massPerItem) || null,
+          totalMass: getInventoryDeliveryQuantity(item) * parseNumber(item.massPerItem) || null,
+        };
+      }),
     };
 
     generateDeliveryNotePDF(data);
+    setRemainingQuantities(balanceQuantities);
+    setDeliveryQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        if (balanceQuantities[item.id] != null) {
+          next[item.id] = String(balanceQuantities[item.id]);
+        }
+      });
+      return next;
+    });
+
+    const balanceItems = equipmentItems
+      .map((item) => {
+        const balanceQty = balanceQuantities[item.id] ?? 0;
+        return {
+          partNumber: item.itemCode,
+          description: item.description,
+          quantity: balanceQty,
+          massPerItem: parseNumber(item.massPerItem) || null,
+          totalMass: balanceQty * parseNumber(item.massPerItem) || null,
+        };
+      })
+      .filter((item) => item.quantity > 0);
+
+    if (balanceItems.length > 0) {
+      generateHireLoadingNotePDF({
+        quotationNumber: header.quotationNo,
+        dateCreated: header.dateCreated,
+        companyName: header.clientCompanyName,
+        siteName: header.siteName,
+        siteLocation: header.siteLocation,
+        siteAddress: header.siteAddress,
+        contactName: header.clientName,
+        contactPhone: header.clientPhone,
+        createdBy: header.createdBy,
+        noteTitle: "Hire Loading Note (Balance)",
+        items: balanceItems,
+      });
+      toast.success("Balance hire loading note opened for printing.");
+    }
+
     toast.success("Hire delivery note opened for printing");
   };
 
@@ -716,6 +762,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
+      noteTitle: "Hire Loading Note",
       items,
     };
 
@@ -739,6 +786,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     if (remainingItems.length > 0) {
       generateHireLoadingNotePDF({
         ...data,
+        noteTitle: "Hire Loading Note (Balance)",
         items: remainingItems,
       });
       toast.success("Additional hire loading note generated for remaining quantities.");
