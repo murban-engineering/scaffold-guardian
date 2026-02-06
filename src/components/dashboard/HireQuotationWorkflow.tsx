@@ -14,10 +14,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
   generateDeliveryNotePDF,
+  generateHireLoadingNotePDF,
   generateHireQuotationReportPDF,
   generateQuotationPDF,
   generateYardVerificationNotePDF,
   DeliveryNoteData,
+  HireLoadingNoteData,
   HireQuotationReportData,
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
@@ -349,6 +351,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return total + qty * hireRate;
     }, 0);
   }, [equipmentItems]);
+
+  const inventoryEquipmentItems = useMemo(
+    () => equipmentItems.filter((item) => item.scaffoldId),
+    [equipmentItems]
+  );
 
   const selectedScaffold = useMemo(
     () => scaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId),
@@ -718,6 +725,40 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     generateHireQuotationReportPDF(data);
     toast.success("Hire quotation report opened for printing");
+  };
+
+  const handlePrintHireLoadingNote = () => {
+    const inventoryItems = equipmentItems.filter((item) => item.scaffoldId);
+    if (!inventoryItems.length) {
+      toast.error("No inventory items to include in hire loading note");
+      return;
+    }
+
+    const data: HireLoadingNoteData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      createdBy: header.createdBy,
+      items: inventoryItems.map((item) => {
+        const quantity = parseNumber(item.qtyDelivered);
+        const massPerItem = parseNumber(item.massPerItem) || null;
+        return {
+          partNumber: item.itemCode,
+          description: item.description,
+          quantity,
+          massPerItem,
+          totalMass: massPerItem != null ? quantity * massPerItem : null,
+        };
+      }),
+    };
+
+    generateHireLoadingNotePDF(data);
+    toast.success("Hire loading note opened for printing");
   };
 
   const handleHireQuotationSave = () => {
@@ -1639,6 +1680,67 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 <p className="text-xs text-muted-foreground">
                   This discount will be applied to the printed hire quotation total.
                 </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+              <div>
+                <h4 className="font-semibold mb-1 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Hire Loading Note
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Print the company and client copies using the inventory items listed on this hire quotation.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-border bg-background">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Part No</th>
+                      <th className="px-3 py-2 text-left font-medium">Description</th>
+                      <th className="px-3 py-2 text-right font-medium">Qty</th>
+                      <th className="px-3 py-2 text-right font-medium">Mass/Item</th>
+                      <th className="px-3 py-2 text-right font-medium">Total Mass</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inventoryEquipmentItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                          No inventory items linked to this hire quotation yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      inventoryEquipmentItems.map((item) => {
+                        const quantity = parseNumber(item.qtyDelivered);
+                        const massPerItem = parseNumber(item.massPerItem);
+                        const totalMass = massPerItem ? quantity * massPerItem : 0;
+                        return (
+                          <tr key={`loading-${item.id}`} className="border-t border-border">
+                            <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                            <td className="px-3 py-2">{item.description}</td>
+                            <td className="px-3 py-2 text-right">{quantity}</td>
+                            <td className="px-3 py-2 text-right">
+                              {massPerItem ? `${massPerItem} kg` : "-"}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              {massPerItem ? `${totalMass.toFixed(2)} kg` : "-"}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Hire Loading Note (Company & Client)
+                </Button>
               </div>
             </div>
 
