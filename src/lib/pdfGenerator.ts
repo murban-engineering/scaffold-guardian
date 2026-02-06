@@ -78,6 +78,25 @@ export interface HireQuotationReportData {
   }>;
 }
 
+export interface HireLoadingNoteData {
+  quotationNumber: string;
+  dateCreated: string;
+  companyName: string;
+  siteName: string;
+  siteLocation: string;
+  siteAddress: string;
+  contactName: string;
+  contactPhone: string;
+  createdBy: string;
+  items: Array<{
+    partNumber: string | null;
+    description: string | null;
+    quantity: number;
+    massPerItem: number | null;
+    totalMass: number | null;
+  }>;
+}
+
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
@@ -264,6 +283,129 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     <body>
       ${deliveryNotePage()}
       ${deliveryNotePage()}
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(withPrintOption(html));
+  printWindow.document.close();
+};
+
+export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Please allow popups for this site to generate PDFs");
+    return;
+  }
+
+  const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
+
+  const loadingNotePage = (copyLabel: string) => `
+    <div class="loading-note-page">
+      <div class="header">
+        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <div class="header-content">
+          <h1>${COMPANY_NAME}</h1>
+          <p>Email: otnoacess@gmail.com</p>
+          <p>${COMPANY_ADDRESS}</p>
+          <p>${COMPANY_LOCATION}</p>
+          <p><strong>Hire Loading Note</strong></p>
+          <p class="copy-label">${copyLabel}</p>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-section">
+          <h3>Client Details</h3>
+          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
+          <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
+          <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
+          <div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">${data.siteName}</span></div>
+          <div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">${data.siteLocation || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
+        </div>
+        <div class="info-section">
+          <h3>OTNO Access Details</h3>
+          <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
+          <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
+          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Loading Details</h3>
+        <div class="info-row"><span class="info-label">Loaded By:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Checked By:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Date:</span><span class="info-value">____________________</span></div>
+        <div class="info-row"><span class="info-label">Time:</span><span class="info-value">____________________</span></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Part Number</th>
+            <th>Description</th>
+            <th class="text-right">Qty</th>
+            <th class="text-right">Mass/Item</th>
+            <th class="text-right">Total Mass</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.items.map((item, idx) => `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${item.partNumber || "-"}</td>
+              <td>${item.description || "-"}</td>
+              <td class="text-right">${item.quantity}</td>
+              <td class="text-right">${formatMass(item.massPerItem)}</td>
+              <td class="text-right">${formatMass(item.totalMass)}</td>
+            </tr>
+          `).join("")}
+          <tr class="total-row">
+            <td colspan="5">Total Mass</td>
+            <td class="text-right">${formatMass(totalMass)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Hire Loading Note - ${data.quotationNumber}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+        .header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header-logo { width: 100px; height: auto; margin-right: 20px; }
+        .header-content { flex: 1; }
+        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
+        .header-content p { color: #666; }
+        .copy-label { font-weight: bold; color: #111; margin-top: 4px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
+        .info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
+        .info-row { display: flex; margin-bottom: 5px; }
+        .info-label { font-weight: bold; width: 140px; color: #555; }
+        .info-value { flex: 1; }
+        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 16px; }
+        .section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; font-weight: bold; }
+        .text-right { text-align: right; }
+        .total-row { font-weight: bold; background: #f9f9f9; }
+        .loading-note-page { page-break-after: always; }
+        .loading-note-page:last-child { page-break-after: auto; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head>
+    <body>
+      ${loadingNotePage("Company Copy")}
+      ${loadingNotePage("Client Copy")}
     </body>
     </html>
   `;
