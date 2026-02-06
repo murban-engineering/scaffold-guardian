@@ -494,7 +494,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             <th class="text-right">Qty</th>
             <th class="text-right">Mass/Item</th>
             <th class="text-right">Rate</th>
-            <th class="text-right">Weekly Total</th>
             <th class="text-right">Hire/Week (Net)</th>
           </tr>
         </thead>
@@ -502,8 +501,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           ${data.items.map((item, idx) => {
             const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
             const discountedRate = item.weeklyRate * (1 - discountRate);
-            const weeklyTotal = discountedRate * item.quantity;
-            const discountedTotal = weeklyTotal;
+            const discountedTotal = discountedRate * item.quantity;
             return `
               <tr>
                 <td>${idx + 1}</td>
@@ -512,7 +510,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
                 <td class="text-right">${item.quantity}</td>
                 <td class="text-right">${formatMass(item.massPerItem)}</td>
                 <td class="text-right">${formatCurrency(discountedRate)}</td>
-                <td class="text-right">${formatCurrency(weeklyTotal)}</td>
                 <td class="text-right">${formatCurrency(discountedTotal)}</td>
               </tr>
             `;
@@ -521,21 +518,21 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             <td colspan="3"><strong>SUBTOTAL</strong></td>
             <td class="text-right"><strong>${totalQuantity}</strong></td>
             <td class="text-right"><strong>${formatMass(totalMass)}</strong></td>
-            <td class="text-right" colspan="2">-</td>
+            <td class="text-right">-</td>
             <td class="text-right"><strong>${formatCurrency(subtotal)}</strong></td>
           </tr>
           <tr class="total-row">
-            <td colspan="7"><strong>VAT (16%)</strong></td>
+            <td colspan="6"><strong>VAT (16%)</strong></td>
             <td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td>
           </tr>
           ${data.discountRate > 0 ? `
             <tr class="total-row">
-              <td colspan="7"><strong>Discount (${data.discountRate}%)</strong></td>
+              <td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td>
               <td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td>
             </tr>
           ` : ""}
           <tr class="total-row" style="background: #333; color: white;">
-            <td colspan="7"><strong>TOTAL (incl. VAT)</strong></td>
+            <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
             <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
           </tr>
         </tbody>
