@@ -1736,12 +1736,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 </table>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Hire Loading Note (Company & Client)
-                </Button>
-              </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
@@ -1752,6 +1746,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 <Button type="button" variant="outline" onClick={handlePrintHireQuotationReport}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print Hire Quotation
+                </Button>
+                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Hire Loading Note
                 </Button>
                 <Button type="button" onClick={handleHireQuotationSave}>
                   Continue to Delivery Note
