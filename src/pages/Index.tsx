@@ -270,7 +270,7 @@ const Index = () => {
                   {quotationsLoading ? (
                     <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
                   ) : hireQuotations.length ? (
-                    <div className="rounded-lg border border-border">
+                    <div className="max-h-[60vh] overflow-y-auto rounded-lg border border-border">
                       <Table>
                         <TableHeader>
                           <TableRow>
