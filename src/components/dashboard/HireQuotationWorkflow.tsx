@@ -1928,11 +1928,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Print Hire Delivery Note
-                </Button>
-                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Hire Loading Note
+                  Hire Loading Note
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
                   <Printer className="h-4 w-4 mr-2" />
