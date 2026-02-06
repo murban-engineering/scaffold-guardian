@@ -1939,7 +1939,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   Yard Verification Note
                 </Button>
                 <Button type="button" onClick={handleDeliverySave}>
-                  Continue to Calculation
+                  Hire Loading Note
                 </Button>
               </div>
             </div>
