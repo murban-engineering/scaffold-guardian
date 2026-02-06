@@ -62,6 +62,7 @@ CREATE TABLE public.quotation_line_items (
   quantity INTEGER NOT NULL DEFAULT 1,
   mass_per_item NUMERIC,
   weekly_rate NUMERIC NOT NULL DEFAULT 0,
+  hire_discount NUMERIC DEFAULT 0,
   
   -- Calculated fields stored for reference
   total_mass NUMERIC GENERATED ALWAYS AS (quantity * COALESCE(mass_per_item, 0)) STORED,
