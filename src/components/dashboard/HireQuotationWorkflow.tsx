@@ -311,7 +311,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     hireDate: getToday(),
     returnDate: getToday(),
     vatEnabled: true,
-    vatRate: "15",
+    vatRate: "16",
     discountRate: "0",
     paymentTerms: "Payment due within 30 days from invoice date.",
   });
