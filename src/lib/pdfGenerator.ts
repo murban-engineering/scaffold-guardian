@@ -165,7 +165,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
-          <p><strong>Delivery Note</strong></p>
+          <p><strong>Hire Delivery Note</strong></p>
         </div>
       </div>
       
@@ -180,21 +180,20 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
         </div>
         <div class="info-section">
-          <h3>Client Information</h3>
+          <h3>Client Details</h3>
           <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
           <div class="info-row"><span class="info-label">Site:</span><span class="info-value">${data.siteName}</span></div>
           <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
           <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
           <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
         </div>
-      </div>
-
-      <div class="section">
-        <h3>Hire Loading Note</h3>
-        <div class="info-row"><span class="info-label">Loaded By:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Checked By:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Date:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Time:</span><span class="info-value">____________________</span></div>
+        <div class="info-section">
+          <h3>OTNO Access Details</h3>
+          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${COMPANY_NAME}</span></div>
+          <div class="info-row"><span class="info-label">Email:</span><span class="info-value">otnoacess@gmail.com</span></div>
+          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
+          <div class="info-row"><span class="info-label">Location:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
+        </div>
       </div>
 
       <table>
@@ -251,7 +250,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Delivery Note - ${data.deliveryNoteNumber}</title>
+      <title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
@@ -260,7 +259,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         .header-content { flex: 1; }
         .header-content h1 { font-size: 24px; margin-bottom: 5px; }
         .header-content p { color: #666; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
         .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
         .info-row { display: flex; margin-bottom: 5px; }
         .info-label { font-weight: bold; width: 120px; color: #555; }

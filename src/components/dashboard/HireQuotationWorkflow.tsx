@@ -14,10 +14,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
   generateDeliveryNotePDF,
+  generateHireLoadingNotePDF,
   generateHireQuotationReportPDF,
   generateQuotationPDF,
   generateYardVerificationNotePDF,
   DeliveryNoteData,
+  HireLoadingNoteData,
   HireQuotationReportData,
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
@@ -112,7 +114,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
-  { key: "delivery", title: "Delivery Note", description: "Generate report", icon: Truck },
+  { key: "delivery", title: "Hire Delivery Note", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
@@ -285,6 +287,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
+  const [remainingQuantities, setRemainingQuantities] = useState<Record<string, number>>({});
+  const [lastDeliveredQuantities, setLastDeliveredQuantities] = useState<Record<string, number> | null>(null);
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
   const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
   const [itemCodeSearch, setItemCodeSearch] = useState<string>("");
@@ -312,11 +316,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   }, [header.quotationNo]);
 
   useEffect(() => {
-    setDeliveryQuantities((prev) => {
+    setRemainingQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
         if (next[item.id] === undefined) {
-          next[item.id] = item.qtyDelivered || "";
+          next[item.id] = parseNumber(item.qtyDelivered);
         }
       });
       Object.keys(next).forEach((id) => {
@@ -326,6 +330,28 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       });
       return next;
     });
+  }, [equipmentItems]);
+
+  useEffect(() => {
+    setDeliveryQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        const remaining = remainingQuantities[item.id];
+        if (next[item.id] === undefined) {
+          next[item.id] = String(remaining ?? parseNumber(item.qtyDelivered));
+        }
+      });
+      Object.keys(next).forEach((id) => {
+        if (!equipmentItems.some((item) => item.id === id)) {
+          delete next[id];
+        }
+      });
+      return next;
+    });
+  }, [equipmentItems, remainingQuantities]);
+
+  useEffect(() => {
+    setLastDeliveredQuantities(null);
   }, [equipmentItems]);
   
   const [calculation, setCalculation] = useState<QuotationCalculation>({
@@ -564,6 +590,22 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     setEquipmentItems(prev => prev.filter((_, i) => i !== index));
   };
 
+  const getOrderedQuantity = (item: EquipmentItem) =>
+    remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
+
+  const getDeliveredQuantity = (item: EquipmentItem) => {
+    const orderedQty = getOrderedQuantity(item);
+    const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+    return Math.min(Math.max(deliveredQty, 0), orderedQty);
+  };
+
+  const getInventoryDeliveryQuantity = (item: EquipmentItem) => {
+    if (lastDeliveredQuantities?.[item.id] != null) {
+      return lastDeliveredQuantities[item.id];
+    }
+    return getDeliveredQuantity(item);
+  };
+
   const handleEquipmentSave = async () => {
     if (!equipmentItems.length || !savedQuotationId) {
       handleNext();
@@ -615,14 +657,76 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
-        quantity: parseNumber(item.qtyDelivered),
+        quantity: getOrderedQuantity(item),
         massPerItem: parseNumber(item.massPerItem) || null,
-        totalMass: parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem) || null,
+        totalMass: getOrderedQuantity(item) * parseNumber(item.massPerItem) || null,
       })),
     };
 
     generateDeliveryNotePDF(data);
-    toast.success("Delivery note opened for printing");
+    toast.success("Hire delivery note opened for printing");
+  };
+
+  const handlePrintHireLoadingNote = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in hire loading note");
+      return;
+    }
+
+    const deliveredQuantities: Record<string, number> = {};
+    const items = equipmentItems
+      .map((item) => {
+        const deliveredQty = getDeliveredQuantity(item);
+        deliveredQuantities[item.id] = deliveredQty;
+        return {
+          partNumber: item.itemCode,
+          description: item.description,
+          quantity: deliveredQty,
+          massPerItem: parseNumber(item.massPerItem) || null,
+          totalMass: deliveredQty * parseNumber(item.massPerItem) || null,
+        };
+      })
+      .filter((item) => item.quantity > 0);
+
+    if (!items.length) {
+      toast.error("Enter delivered quantities to generate a hire loading note.");
+      return;
+    }
+
+    const data: HireLoadingNoteData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      createdBy: header.createdBy,
+      items,
+    };
+
+    generateHireLoadingNotePDF(data);
+    setLastDeliveredQuantities(deliveredQuantities);
+    setRemainingQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        const orderedQty = getOrderedQuantity(item);
+        const deliveredQty = deliveredQuantities[item.id] ?? 0;
+        next[item.id] = Math.max(orderedQty - deliveredQty, 0);
+      });
+      return next;
+    });
+    setDeliveryQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        const orderedQty = getOrderedQuantity(item);
+        const deliveredQty = deliveredQuantities[item.id] ?? 0;
+        next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
+      });
+      return next;
+    });
+    toast.success("Hire loading note opened for printing");
   };
 
   const handleEquipmentHired = async (): Promise<boolean> => {
@@ -646,7 +750,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       if (!item.scaffoldId) continue;
       const scaffold = scaffolds.find(s => s.id === item.scaffoldId);
       if (!scaffold) continue;
-      const requestedQty = parseNumber(item.qtyDelivered);
+      const requestedQty = getInventoryDeliveryQuantity(item);
       const availableQty = scaffold.quantity ?? 0;
       if (requestedQty > availableQty) {
         toast.error(`Cannot hire ${requestedQty} of "${item.description || item.itemCode}". Only ${availableQty} available in inventory.`);
@@ -658,7 +762,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       .filter((item) => item.scaffoldId)
       .map((item) => ({
         scaffoldId: item.scaffoldId as string,
-        quantity: parseNumber(item.qtyDelivered),
+        quantity: getInventoryDeliveryQuantity(item),
       }))
       .filter((item) => item.quantity > 0);
 
@@ -1671,7 +1775,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   Print Hire Quotation
                 </Button>
                 <Button type="button" onClick={handleHireQuotationSave}>
-                  Continue to Delivery Note
+                  Continue to Hire Delivery Note
                 </Button>
               </div>
             </div>
@@ -1708,7 +1812,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     </tr>
                   ) : (
                     equipmentItems.map((item) => {
-                      const orderedQty = parseNumber(item.qtyDelivered);
+                      const orderedQty = getOrderedQuantity(item);
                       const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
                       const balanceQty = Math.max(orderedQty - deliveredQty, 0);
                       return (
@@ -1741,18 +1845,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <Button type="button" onClick={handleNext}>
-                Continue to Delivery Note
+                Continue to Hire Delivery Note
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 5: Delivery Note */}
+        {/* Step 5: Hire Delivery Note */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label>Delivery Note No</Label>
+                <Label>Hire Delivery Note No</Label>
                 <Input value={deliveryNote.deliveryNoteNo} readOnly className="bg-muted" />
               </div>
               <div>
@@ -1824,7 +1928,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Print Delivery Note
+                  Print Hire Delivery Note
+                </Button>
+                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Hire Loading Note
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
                   <Printer className="h-4 w-4 mr-2" />
