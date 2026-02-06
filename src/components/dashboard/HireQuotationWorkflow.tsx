@@ -348,6 +348,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }, 0);
   }, [equipmentItems]);
 
+  const discountedWeeklyHireTotal = useMemo(() => {
+    return equipmentItems.reduce((total, item) => {
+      const qty = parseNumber(item.qtyDelivered);
+      const rate = parseNumber(item.weeklyRate);
+      const weeklyTotal = qty * rate;
+      const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
+      return total + Math.max(weeklyTotal - weeklyTotal * discountRate, 0);
+    }, 0);
+  }, [equipmentItems]);
+
   const selectedScaffold = useMemo(
     () => scaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId),
     [scaffolds, selectedScaffoldId]
@@ -517,6 +527,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       ));
       toast.success(`Updated quantity for ${scaffold.description || scaffold.part_number}`);
     } else {
+      const inheritedDiscount = equipmentItems[0]?.hireDiscount ?? "0";
       const newItem: EquipmentItem = {
         id: crypto.randomUUID(),
         scaffoldId: scaffold.id,
@@ -525,7 +536,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         unit: "pcs",
         qtyDelivered: String(qty),
         weeklyRate: String(scaffold.weekly_rate || 0),
-        hireDiscount: "0",
+        hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
       };
@@ -1493,13 +1504,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <th className="px-3 py-2 text-right font-medium">Weekly Rate</th>
                     <th className="px-3 py-2 text-right font-medium">Discount (%)</th>
                     <th className="px-3 py-2 text-right font-medium">Weekly Total</th>
+                    <th className="px-3 py-2 text-right font-medium">Discounted Total</th>
                     <th className="px-3 py-2 text-center font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {equipmentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                      <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground">
                         No equipment added. Select items from inventory above.
                       </td>
                     </tr>
@@ -1508,6 +1520,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       const qty = parseNumber(item.qtyDelivered);
                       const rate = parseNumber(item.weeklyRate);
                       const mass = parseNumber(item.massPerItem);
+                      const weeklyTotal = qty * rate;
+                      const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
+                      const discountedTotal = Math.max(weeklyTotal - weeklyTotal * discountRate, 0);
                       return (
                         <tr key={item.id} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
@@ -1526,13 +1541,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                                 const value = e.target.value;
                                 setEquipmentItems((prev) =>
                                   prev.map((entry, entryIndex) =>
-                                    entryIndex === idx ? { ...entry, hireDiscount: value } : entry
+                                    idx === 0 || entryIndex === idx
+                                      ? { ...entry, hireDiscount: value }
+                                      : entry
                                   )
                                 );
                               }}
                             />
                           </td>
-                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(qty * rate)}</td>
+                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(weeklyTotal)}</td>
+                          <td className="px-3 py-2 text-right font-medium">{formatCurrency(discountedTotal)}</td>
                           <td className="px-3 py-2 text-center">
                             <Button
                               variant="ghost"
@@ -1551,6 +1569,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <tr className="bg-muted/40 font-semibold">
                       <td colSpan={6} className="px-3 py-2 text-right">Weekly Hire Total:</td>
                       <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
+                      <td className="px-3 py-2 text-right">{formatCurrency(discountedWeeklyHireTotal)}</td>
                       <td></td>
                     </tr>
                   )}
