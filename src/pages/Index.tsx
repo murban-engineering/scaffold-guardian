@@ -128,7 +128,7 @@ const Index = () => {
         ) : (
           <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
             {/* Quick Actions with Hire Quotation Button */}
-            <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+            <div className="space-y-4">
               <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Quotation Center</p>
                 <h2 className="mt-2 text-xl font-bold tracking-tight">Manage hire quotation workflow</h2>
