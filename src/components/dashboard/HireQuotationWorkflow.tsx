@@ -722,6 +722,29 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
+    // Save all equipment items to database before generating delivery note
+    if (savedQuotationId) {
+      try {
+        await clearLineItems.mutateAsync(savedQuotationId);
+        await addLineItems.mutateAsync(
+          equipmentItems.map(item => ({
+            quotation_id: savedQuotationId,
+            scaffold_id: item.scaffoldId || undefined,
+            part_number: item.itemCode,
+            description: item.description,
+            quantity: parseNumber(item.qtyDelivered),
+            mass_per_item: parseNumber(item.massPerItem),
+            weekly_rate: parseNumber(item.weeklyRate),
+          }))
+        );
+        toast.success("Delivery items saved to database");
+      } catch (error) {
+        console.error("Failed to save delivery items:", error);
+        toast.error("Failed to save delivery items to database");
+        return;
+      }
+    }
+
     await handlePrintDeliveryNote();
     onClientProcessed?.({
       id: header.quotationNo,
