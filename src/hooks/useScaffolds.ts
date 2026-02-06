@@ -115,12 +115,25 @@ export const useCreateScaffold = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (scaffold: { scaffold_type: ScaffoldType; status?: ScaffoldStatus; serial_number?: string; site_id?: string; manufacturer?: string; notes?: string }) => {
-      const { data, error } = await supabase
-        .from("scaffolds")
-        .insert([scaffold])
-        .select()
-        .single();
+    mutationFn: async (scaffold: { 
+      scaffold_type: ScaffoldType; 
+      status?: ScaffoldStatus; 
+      part_number?: string | null;
+      description?: string | null;
+      quantity?: number;
+      mass_per_item?: number | null;
+      weekly_rate?: number | null;
+    }) => {
+      // Use the upsert function to add to existing quantity if part_number matches
+      const { data, error } = await supabase.rpc("upsert_scaffold", {
+        p_scaffold_type: scaffold.scaffold_type,
+        p_status: scaffold.status || "available",
+        p_part_number: scaffold.part_number || null,
+        p_description: scaffold.description || null,
+        p_quantity: scaffold.quantity || 0,
+        p_mass_per_item: scaffold.mass_per_item || null,
+        p_weekly_rate: scaffold.weekly_rate || null,
+      });
 
       if (error) throw error;
       return data;
