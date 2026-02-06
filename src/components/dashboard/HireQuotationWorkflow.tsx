@@ -344,17 +344,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     return equipmentItems.reduce((total, item) => {
       const qty = parseNumber(item.qtyDelivered);
       const rate = parseNumber(item.weeklyRate);
-      return total + qty * rate;
-    }, 0);
-  }, [equipmentItems]);
-
-  const discountedWeeklyHireTotal = useMemo(() => {
-    return equipmentItems.reduce((total, item) => {
-      const qty = parseNumber(item.qtyDelivered);
-      const rate = parseNumber(item.weeklyRate);
-      const weeklyTotal = qty * rate;
       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
-      return total + Math.max(weeklyTotal - weeklyTotal * discountRate, 0);
+      const hireRate = Math.max(rate * (1 - discountRate), 0);
+      return total + qty * hireRate;
     }, 0);
   }, [equipmentItems]);
 
@@ -713,7 +705,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         quantity: parseNumber(item.qtyDelivered),
         massPerItem: parseNumber(item.massPerItem) || null,
         weeklyRate: parseNumber(item.weeklyRate),
-        weeklyTotal: parseNumber(item.qtyDelivered) * parseNumber(item.weeklyRate),
+        weeklyTotal: (() => {
+          const rate = parseNumber(item.weeklyRate);
+          const qty = parseNumber(item.qtyDelivered);
+          const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
+          const hireRate = Math.max(rate * (1 - discountRate), 0);
+          return qty * hireRate;
+        })(),
         discountRate: parseNumber(item.hireDiscount),
       })),
     };
@@ -797,7 +795,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         description: item.description,
         quantity: parseNumber(item.qtyDelivered),
         weeklyRate: parseNumber(item.weeklyRate),
-        weeklyTotal: parseNumber(item.qtyDelivered) * parseNumber(item.weeklyRate),
+        weeklyTotal: (() => {
+          const rate = parseNumber(item.weeklyRate);
+          const qty = parseNumber(item.qtyDelivered);
+          const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
+          const hireRate = Math.max(rate * (1 - discountRate), 0);
+          return qty * hireRate;
+        })(),
       })),
       hireWeeks: numberOfWeeks,
       weeklyTotal: weeklyHireTotal,
@@ -1522,9 +1526,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       const qty = parseNumber(item.qtyDelivered);
                       const rate = parseNumber(item.weeklyRate);
                       const mass = parseNumber(item.massPerItem);
-                      const weeklyTotal = qty * rate;
                       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
                       const hireRate = Math.max(rate * (1 - discountRate), 0);
+                      const weeklyTotal = qty * hireRate;
                       return (
                         <tr key={item.id} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
