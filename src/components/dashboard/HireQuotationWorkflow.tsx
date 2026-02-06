@@ -24,7 +24,7 @@ import {
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
 
-type StepKey = "client" | "equipment" | "quotation" | "delivery" | "calculation" | "return";
+type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "calculation" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -113,6 +113,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
+  { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Delivery Note", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
@@ -285,6 +286,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   }, [initialQuotation, profile?.full_name]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
+  const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
   const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
   const [itemCodeSearch, setItemCodeSearch] = useState<string>("");
@@ -310,6 +312,23 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo),
     }));
   }, [header.quotationNo]);
+
+  useEffect(() => {
+    setDeliveryQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        if (next[item.id] === undefined) {
+          next[item.id] = item.qtyDelivered || "";
+        }
+      });
+      Object.keys(next).forEach((id) => {
+        if (!equipmentItems.some((item) => item.id === id)) {
+          delete next[id];
+        }
+      });
+      return next;
+    });
+  }, [equipmentItems]);
   
   const [calculation, setCalculation] = useState<QuotationCalculation>({
     hireDate: getToday(),
@@ -1047,13 +1066,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Create quotations with equipment from inventory → generate hire quotation report → generate delivery notes → calculate hire totals → process hire returns
+          Create quotations with equipment from inventory → generate hire quotation report → confirm delivery quantities → generate delivery notes → calculate hire totals → process hire returns
           {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -1759,7 +1778,76 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           </div>
         )}
 
-        {/* Step 4: Delivery Note */}
+        {/* Step 4: Hire Delivery Note */}
+        {activeStep === "hire-delivery" && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <h4 className="font-semibold mb-2">Hire Delivery Note</h4>
+              <p className="text-sm text-muted-foreground">
+                Confirm ordered quantities, record delivered quantities manually, and review balances.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Part No</th>
+                    <th className="px-3 py-2 text-left font-medium">Description</th>
+                    <th className="px-3 py-2 text-right font-medium">Order Qty</th>
+                    <th className="px-3 py-2 text-right font-medium">Delivery Qty</th>
+                    <th className="px-3 py-2 text-right font-medium">Balance Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {equipmentItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                        No equipment items available yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    equipmentItems.map((item) => {
+                      const orderedQty = parseNumber(item.qtyDelivered);
+                      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+                      const balanceQty = Math.max(orderedQty - deliveredQty, 0);
+                      return (
+                        <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
+                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                          <td className="px-3 py-2">{item.description}</td>
+                          <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              className="h-8 w-24 text-right"
+                              value={deliveryQuantities[item.id] ?? ""}
+                              onChange={(e) =>
+                                setDeliveryQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium">{balanceQty}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button type="button" onClick={handleNext}>
+                Continue to Delivery Note
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Delivery Note */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -1850,7 +1938,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           </div>
         )}
 
-        {/* Step 5: Calculation */}
+        {/* Step 6: Calculation */}
         {activeStep === "calculation" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -1979,7 +2067,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           </div>
         )}
 
-        {/* Step 6: Hire Return */}
+        {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
             <div className="rounded-lg border border-border p-4 bg-muted/30">
