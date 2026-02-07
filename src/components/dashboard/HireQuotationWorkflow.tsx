@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
-import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
@@ -179,6 +179,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const updateQuotation = useUpdateQuotation();
   const addLineItems = useAddLineItems();
   const clearLineItems = useClearLineItems();
+  const updateLineItemQuantities = useUpdateLineItemQuantities();
   const createMaintenanceLogs = useCreateMaintenanceLogs();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
@@ -652,6 +653,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     const balanceQuantities: Record<string, number> = {};
+    const deliveredQuantities: Record<string, number> = {};
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -668,18 +670,43 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       items: equipmentItems.map(item => {
-        const balanceQuantity = Math.max(getOrderedQuantity(item) - getInventoryDeliveryQuantity(item), 0);
+        const deliveredQty = getInventoryDeliveryQuantity(item);
+        const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
         balanceQuantities[item.id] = balanceQuantity;
+        deliveredQuantities[item.id] = deliveredQty;
         return {
           partNumber: item.itemCode,
           description: item.description,
           balanceQuantity,
-          quantity: getInventoryDeliveryQuantity(item),
+          quantity: deliveredQty,
           massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: getInventoryDeliveryQuantity(item) * parseNumber(item.massPerItem) || null,
+          totalMass: deliveredQty * parseNumber(item.massPerItem) || null,
         };
       }),
     };
+
+    // Save balance and delivered quantities to database
+    if (savedQuotationId) {
+      try {
+        const quantityUpdates = equipmentItems
+          .filter(item => item.itemCode) // Only update items with part numbers
+          .map(item => ({
+            part_number: item.itemCode,
+            delivered_quantity: deliveredQuantities[item.id] ?? 0,
+            balance_quantity: balanceQuantities[item.id] ?? 0,
+          }));
+        
+        if (quantityUpdates.length > 0) {
+          await updateLineItemQuantities.mutateAsync({
+            quotation_id: savedQuotationId,
+            items: quantityUpdates,
+          });
+          toast.success("Delivery quantities saved to database");
+        }
+      } catch (error) {
+        console.error("Failed to save delivery quantities:", error);
+      }
+    }
 
     generateDeliveryNotePDF(data);
     setRemainingQuantities(balanceQuantities);

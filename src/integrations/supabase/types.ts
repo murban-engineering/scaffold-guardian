@@ -292,10 +292,12 @@ export type Database = {
       }
       quotation_line_items: {
         Row: {
+          balance_quantity: number | null
           created_at: string
+          delivered_quantity: number | null
           description: string | null
-          id: string
           hire_discount: number | null
+          id: string
           mass_per_item: number | null
           part_number: string | null
           quantity: number
@@ -307,10 +309,12 @@ export type Database = {
           weekly_total: number | null
         }
         Insert: {
+          balance_quantity?: number | null
           created_at?: string
+          delivered_quantity?: number | null
           description?: string | null
-          id?: string
           hire_discount?: number | null
+          id?: string
           mass_per_item?: number | null
           part_number?: string | null
           quantity?: number
@@ -322,10 +326,12 @@ export type Database = {
           weekly_total?: number | null
         }
         Update: {
+          balance_quantity?: number | null
           created_at?: string
+          delivered_quantity?: number | null
           description?: string | null
-          id?: string
           hire_discount?: number | null
+          id?: string
           mass_per_item?: number | null
           part_number?: string | null
           quantity?: number
