@@ -10,6 +10,8 @@ export interface QuotationLineItem {
   part_number: string | null;
   description: string | null;
   quantity: number;
+  delivered_quantity: number;
+  balance_quantity: number;
   hire_discount: number | null;
   mass_per_item: number | null;
   weekly_rate: number;
@@ -84,6 +86,8 @@ export interface CreateLineItemInput {
   part_number?: string;
   description?: string;
   quantity: number;
+  delivered_quantity?: number;
+  balance_quantity?: number;
   hire_discount?: number;
   mass_per_item?: number;
   weekly_rate: number;
@@ -275,6 +279,41 @@ export const useClearLineItems = () => {
     },
     onError: (error) => {
       toast.error(`Failed to clear line items: ${error.message}`);
+    },
+  });
+};
+
+export interface UpdateLineItemQuantityInput {
+  part_number: string;
+  delivered_quantity: number;
+  balance_quantity: number;
+}
+
+export const useUpdateLineItemQuantities = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ quotation_id, items }: { quotation_id: string; items: UpdateLineItemQuantityInput[] }): Promise<void> => {
+      // Update each line item's delivered and balance quantities by part_number
+      for (const item of items) {
+        const { error } = await supabase
+          .from("quotation_line_items")
+          .update({
+            delivered_quantity: item.delivered_quantity,
+            balance_quantity: item.balance_quantity,
+          })
+          .eq("quotation_id", quotation_id)
+          .eq("part_number", item.part_number);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { quotation_id }) => {
+      queryClient.invalidateQueries({ queryKey: ["hire-quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["hire-quotation", quotation_id] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to update delivery quantities: ${error.message}`);
     },
   });
 };

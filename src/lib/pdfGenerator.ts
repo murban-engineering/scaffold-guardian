@@ -357,6 +357,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
             <th>Part Number</th>
             <th>Description</th>
             <th class="text-right">Qty</th>
+            <th class="text-right">This Delivery</th>
             <th class="text-right">Mass/Item</th>
             <th class="text-right">Total Mass</th>
           </tr>
@@ -368,12 +369,13 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
               <td>${item.partNumber || "-"}</td>
               <td>${item.description || "-"}</td>
               <td class="text-right">${item.quantity}</td>
+              <td class="text-right"></td>
               <td class="text-right">${formatMass(item.massPerItem)}</td>
               <td class="text-right">${formatMass(item.totalMass)}</td>
             </tr>
           `).join("")}
           <tr class="total-row">
-            <td colspan="5">Total Mass</td>
+            <td colspan="6">Total Mass</td>
             <td class="text-right">${formatMass(totalMass)}</td>
           </tr>
         </tbody>
