@@ -77,6 +77,9 @@ type EquipmentItem = {
   hireDiscount: string;
   massPerItem: string;
   notes: string;
+  originalQuantity: number; // Total quantity originally ordered
+  previouslyDelivered: number; // Quantity already delivered in previous deliveries
+  dbBalanceQuantity: number; // Balance quantity from database (remaining to deliver)
 };
 
 type DeliveryNote = {
@@ -125,7 +128,7 @@ const generateDeliveryNoteNumber = () => {
   return `DN-${seq}`;
 };
 
-const deriveDeliveryNoteNumber = (quotationNo: string) => {
+const deriveDeliveryNoteNumber = (quotationNo: string, deliverySequence: number = 1) => {
   if (!quotationNo) {
     return generateDeliveryNoteNumber();
   }
@@ -141,7 +144,13 @@ const deriveDeliveryNoteNumber = (quotationNo: string) => {
     return generateDeliveryNoteNumber();
   }
 
-  return `DN-${String(numericPart).padStart(3, "0")}`;
+  const baseNumber = `DN-${String(numericPart).padStart(4, "0")}`;
+  // Add suffix for subsequent deliveries (A, B, C, etc.)
+  if (deliverySequence > 1) {
+    const suffix = String.fromCharCode(64 + deliverySequence); // 65 = 'A', so 2->A, 3->B, etc.
+    return `${baseNumber}-${suffix}`;
+  }
+  return baseNumber;
 };
 
 const getToday = () => new Date().toISOString().split("T")[0];
@@ -186,6 +195,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [activeStep, setActiveStep] = useState<StepKey>("client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
   const [returnProcessed, setReturnProcessed] = useState(false);
+  const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
@@ -267,21 +277,48 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       paymentTerms: initialQuotation.notes ?? "",
     }));
 
+    // Load equipment items with balance tracking from database
+    const lineItems = initialQuotation.line_items ?? [];
+    const hasBalanceItems = lineItems.some(item => (item.balance_quantity ?? 0) > 0);
+    
     setEquipmentItems(
-      (initialQuotation.line_items ?? []).map(item => ({
-        id: item.id,
-        scaffoldId: item.scaffold_id ?? null,
-        itemCode: item.part_number ?? "",
-        description: item.description ?? "",
-        unit: "pcs",
-        qtyDelivered: String(item.quantity ?? 0),
-        weeklyRate: String(item.weekly_rate ?? 0),
-        hireDiscount: String(item.hire_discount ?? 0),
-        massPerItem: String(item.mass_per_item ?? 0),
-        notes: "",
-      }))
+      lineItems.map(item => {
+        const originalQty = item.quantity ?? 0;
+        const deliveredQty = item.delivered_quantity ?? 0;
+        const balanceQty = item.balance_quantity ?? 0;
+        
+        // If there's balance remaining, use that as the qty to deliver
+        // Otherwise use the original quantity
+        const qtyToShow = balanceQty > 0 ? balanceQty : originalQty;
+        
+        return {
+          id: item.id,
+          scaffoldId: item.scaffold_id ?? null,
+          itemCode: item.part_number ?? "",
+          description: item.description ?? "",
+          unit: "pcs",
+          qtyDelivered: String(qtyToShow),
+          weeklyRate: String(item.weekly_rate ?? 0),
+          hireDiscount: String(item.hire_discount ?? 0),
+          massPerItem: String(item.mass_per_item ?? 0),
+          notes: "",
+          originalQuantity: originalQty,
+          previouslyDelivered: deliveredQty,
+          dbBalanceQuantity: balanceQty,
+        };
+      })
     );
-    setActiveStep("client");
+    
+    // If this quotation has balance items from previous delivery, skip to hire-delivery step
+    if (hasBalanceItems) {
+      setActiveStep("hire-delivery");
+      setDeliverySequence(2); // This is at least the 2nd delivery
+      setInventoryDeducted(false); // Reset so they can deliver again
+      toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
+    } else {
+      setActiveStep("client");
+      setDeliverySequence(1);
+    }
     setInventoryDeducted(false);
     setReturnProcessed(false);
   }, [initialQuotation, profile?.full_name]);
@@ -312,9 +349,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   useEffect(() => {
     setDeliveryNote((prev) => ({
       ...prev,
-      deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo),
+      deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, deliverySequence),
     }));
-  }, [header.quotationNo]);
+  }, [header.quotationNo, deliverySequence]);
 
   useEffect(() => {
     setRemainingQuantities((prev) => {
@@ -577,6 +614,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
+        originalQuantity: qty,
+        previouslyDelivered: 0,
+        dbBalanceQuantity: 0,
       };
       setEquipmentItems(prev => [...prev, newItem]);
       toast.success(`Added ${scaffold.description || scaffold.part_number}`);
@@ -1915,6 +1955,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         {/* Step 4: Hire Delivery Note */}
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
+            {/* Check if this is a balance delivery */}
+            {equipmentItems.some(item => item.previouslyDelivered > 0) && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <h4 className="font-semibold text-primary mb-1">Balance Delivery</h4>
+                <p className="text-sm text-muted-foreground">
+                  This quotation has items from a previous delivery. The quantities shown are the balance remaining to be delivered.
+                </p>
+              </div>
+            )}
+            
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <h4 className="font-semibold mb-2">Hire Delivery Note</h4>
               <p className="text-sm text-muted-foreground">
@@ -1928,15 +1978,23 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Part No</th>
                     <th className="px-3 py-2 text-left font-medium">Description</th>
-                    <th className="px-3 py-2 text-right font-medium">Order Qty</th>
-                    <th className="px-3 py-2 text-right font-medium">Delivery Qty</th>
-                    <th className="px-3 py-2 text-right font-medium">Balance Qty</th>
+                    {equipmentItems.some(item => item.previouslyDelivered > 0) && (
+                      <>
+                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
+                        <th className="px-3 py-2 text-right font-medium">Prev. Delivered</th>
+                      </>
+                    )}
+                    <th className="px-3 py-2 text-right font-medium">
+                      {equipmentItems.some(item => item.previouslyDelivered > 0) ? "Balance Qty" : "Order Qty"}
+                    </th>
+                    <th className="px-3 py-2 text-right font-medium">This Delivery</th>
+                    <th className="px-3 py-2 text-right font-medium">Remaining</th>
                   </tr>
                 </thead>
         <tbody>
           {equipmentItems.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+              <td colSpan={equipmentItems.some(item => item.previouslyDelivered > 0) ? 7 : 5} className="px-3 py-6 text-center text-muted-foreground">
                 No equipment items available yet.
               </td>
             </tr>
@@ -1944,11 +2002,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             equipmentItems.map((item) => {
               const orderedQty = getOrderedQuantity(item);
               const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-              const balanceQty = Math.max(orderedQty - deliveredQty, 0);
+              const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+              const hasPreviousDelivery = item.previouslyDelivered > 0;
               return (
                 <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
                   <td className="px-3 py-2">{item.itemCode || "-"}</td>
                   <td className="px-3 py-2">{item.description}</td>
+                  {equipmentItems.some(i => i.previouslyDelivered > 0) && (
+                    <>
+                      <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
+                      <td className="px-3 py-2 text-right text-muted-foreground">{item.previouslyDelivered}</td>
+                    </>
+                  )}
                   <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
                   <td className="px-3 py-2 text-right">
                     <Input
@@ -1961,7 +2026,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                         const rawValue = e.target.value;
                         const nextValue = parseNumber(rawValue);
                         if (nextValue > orderedQty) {
-                          toast.error("Delivery Qty cannot exceed Order Qty.");
+                          toast.error("Delivery Qty cannot exceed available quantity.");
                           setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
                           return;
                         }
@@ -1969,7 +2034,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       }}
                     />
                   </td>
-                  <td className="px-3 py-2 text-right font-medium">{balanceQty}</td>
+                  <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
                 </tr>
               );
             })
