@@ -27,7 +27,6 @@ export interface DeliveryRecord {
 interface DeliveryHistorySectionProps {
   deliveries: DeliveryRecord[];
   onPrintDeliveryNote: (delivery: DeliveryRecord) => void;
-  onPrintLoadingNote: (delivery: DeliveryRecord) => void;
   onMarkDispatched: (deliveryId: string) => void;
   onDeliverBalance: () => void;
   hasRemainingBalance: boolean;
@@ -41,7 +40,6 @@ const formatCurrency = (value: number) =>
 export const DeliveryHistorySection = ({
   deliveries,
   onPrintDeliveryNote,
-  onPrintLoadingNote,
   onMarkDispatched,
   onDeliverBalance,
   hasRemainingBalance,
@@ -172,14 +170,6 @@ export const DeliveryHistorySection = ({
                     >
                       <Printer className="h-3 w-3 mr-1" />
                       DN
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onPrintLoadingNote(delivery)}
-                    >
-                      <Printer className="h-3 w-3 mr-1" />
-                      LN
                     </Button>
                     {delivery.status === "pending" && (
                       <Button
