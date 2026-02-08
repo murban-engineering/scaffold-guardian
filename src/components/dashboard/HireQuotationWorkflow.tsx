@@ -287,9 +287,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         const deliveredQty = item.delivered_quantity ?? 0;
         const balanceQty = item.balance_quantity ?? 0;
         
-        // If there's balance remaining, use that as the qty to deliver
+        // If this quotation has a balance delivery, show only the balance quantities
         // Otherwise use the original quantity
-        const qtyToShow = balanceQty > 0 ? balanceQty : originalQty;
+        const qtyToShow = hasBalanceItems ? balanceQty : originalQty;
         
         return {
           id: item.id,
@@ -432,6 +432,26 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return total + qty * hireRate;
     }, 0);
   }, [equipmentItems]);
+
+  const hasPreviousDelivery = useMemo(
+    () => equipmentItems.some((item) => item.previouslyDelivered > 0),
+    [equipmentItems]
+  );
+
+  const hasBalanceDelivery = useMemo(
+    () => equipmentItems.some((item) => item.dbBalanceQuantity > 0),
+    [equipmentItems]
+  );
+
+  const balanceDeliveryItems = useMemo(
+    () => (hasBalanceDelivery ? equipmentItems.filter((item) => item.dbBalanceQuantity > 0) : equipmentItems),
+    [equipmentItems, hasBalanceDelivery]
+  );
+
+  const previousDeliveryItems = useMemo(
+    () => equipmentItems.filter((item) => item.previouslyDelivered > 0),
+    [equipmentItems]
+  );
 
   const selectedScaffold = useMemo(
     () => scaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId),
@@ -1956,7 +1976,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
             {/* Check if this is a balance delivery */}
-            {equipmentItems.some(item => item.previouslyDelivered > 0) && (
+            {hasPreviousDelivery && (
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
                 <h4 className="font-semibold text-primary mb-1">Balance Delivery</h4>
                 <p className="text-sm text-muted-foreground">
@@ -1978,70 +1998,99 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Part No</th>
                     <th className="px-3 py-2 text-left font-medium">Description</th>
-                    {equipmentItems.some(item => item.previouslyDelivered > 0) && (
+                    {hasPreviousDelivery && (
                       <>
                         <th className="px-3 py-2 text-right font-medium">Original Qty</th>
                         <th className="px-3 py-2 text-right font-medium">Prev. Delivered</th>
                       </>
                     )}
                     <th className="px-3 py-2 text-right font-medium">
-                      {equipmentItems.some(item => item.previouslyDelivered > 0) ? "Balance Qty" : "Order Qty"}
+                      {hasPreviousDelivery ? "Balance Qty" : "Order Qty"}
                     </th>
                     <th className="px-3 py-2 text-right font-medium">This Delivery</th>
                     <th className="px-3 py-2 text-right font-medium">Remaining</th>
                   </tr>
                 </thead>
-        <tbody>
-          {equipmentItems.length === 0 ? (
-            <tr>
-              <td colSpan={equipmentItems.some(item => item.previouslyDelivered > 0) ? 7 : 5} className="px-3 py-6 text-center text-muted-foreground">
-                No equipment items available yet.
-              </td>
-            </tr>
-          ) : (
-            equipmentItems.map((item) => {
-              const orderedQty = getOrderedQuantity(item);
-              const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-              const remainingQty = Math.max(orderedQty - deliveredQty, 0);
-              const hasPreviousDelivery = item.previouslyDelivered > 0;
-              return (
-                <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
-                  <td className="px-3 py-2">{item.itemCode || "-"}</td>
-                  <td className="px-3 py-2">{item.description}</td>
-                  {equipmentItems.some(i => i.previouslyDelivered > 0) && (
-                    <>
-                      <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
-                      <td className="px-3 py-2 text-right text-muted-foreground">{item.previouslyDelivered}</td>
-                    </>
+                <tbody>
+                  {balanceDeliveryItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={hasPreviousDelivery ? 7 : 5} className="px-3 py-6 text-center text-muted-foreground">
+                        {hasBalanceDelivery ? "No balance quantities remain to be delivered." : "No equipment items available yet."}
+                      </td>
+                    </tr>
+                  ) : (
+                    balanceDeliveryItems.map((item) => {
+                      const orderedQty = getOrderedQuantity(item);
+                      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+                      const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+                      return (
+                        <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
+                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                          <td className="px-3 py-2">{item.description}</td>
+                          {hasPreviousDelivery && (
+                            <>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{item.previouslyDelivered}</td>
+                            </>
+                          )}
+                          <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              max={orderedQty}
+                              className="h-8 w-24 text-right"
+                              value={deliveryQuantities[item.id] ?? ""}
+                              onChange={(e) => {
+                                const rawValue = e.target.value;
+                                const nextValue = parseNumber(rawValue);
+                                if (nextValue > orderedQty) {
+                                  toast.error("Delivery Qty cannot exceed available quantity.");
+                                  setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
+                                  return;
+                                }
+                                setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
+                        </tr>
+                      );
+                    })
                   )}
-                  <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
-                  <td className="px-3 py-2 text-right">
-                    <Input
-                      type="number"
-                      min="0"
-                      max={orderedQty}
-                      className="h-8 w-24 text-right"
-                      value={deliveryQuantities[item.id] ?? ""}
-                      onChange={(e) => {
-                        const rawValue = e.target.value;
-                        const nextValue = parseNumber(rawValue);
-                        if (nextValue > orderedQty) {
-                          toast.error("Delivery Qty cannot exceed available quantity.");
-                          setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
-                          return;
-                        }
-                        setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
-                      }}
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
-                </tr>
-              );
-            })
-          )}
                 </tbody>
               </table>
             </div>
+
+            {hasPreviousDelivery && previousDeliveryItems.length > 0 && (
+              <div className="rounded-lg border border-border bg-muted/20 p-4">
+                <h4 className="font-semibold mb-3">First Delivery Equipment</h4>
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium">Part No</th>
+                        <th className="px-3 py-2 text-left font-medium">Description</th>
+                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
+                        <th className="px-3 py-2 text-right font-medium">Delivered Qty</th>
+                        <th className="px-3 py-2 text-right font-medium">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previousDeliveryItems.map((item) => (
+                        <tr key={`previous-delivery-${item.id}`} className="border-t border-border">
+                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                          <td className="px-3 py-2">{item.description}</td>
+                          <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
+                          <td className="px-3 py-2 text-right font-medium">{item.previouslyDelivered}</td>
+                          <td className="px-3 py-2 text-right text-muted-foreground">{item.dbBalanceQuantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
