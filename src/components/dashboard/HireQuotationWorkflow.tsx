@@ -738,11 +738,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
       const orderedQty = getOrderedQuantity(item);
       const balanceAfter = Math.max(orderedQty - deliveredQty, 0);
+      const massPerItem = parseNumber(item.massPerItem);
       return {
         itemCode: item.itemCode,
         description: item.description,
         quantityDelivered: deliveredQty,
         balanceAfter,
+        massPerItem,
+        totalMass: deliveredQty * massPerItem,
       };
     }).filter(item => item.quantityDelivered > 0);
 
@@ -884,8 +887,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         description: item.description,
         balanceQuantity: item.balanceAfter,
         quantity: item.quantityDelivered,
-        massPerItem: null,
-        totalMass: null,
+        massPerItem: item.massPerItem ?? 0,
+        totalMass: item.totalMass ?? item.quantityDelivered * (item.massPerItem ?? 0),
       })),
     };
     generateDeliveryNotePDF(data);
@@ -909,8 +912,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         partNumber: item.itemCode,
         description: item.description,
         quantity: item.quantityDelivered,
-        massPerItem: null,
-        totalMass: null,
+        massPerItem: item.massPerItem ?? 0,
+        totalMass: item.totalMass ?? item.quantityDelivered * (item.massPerItem ?? 0),
       })),
     };
     generateHireLoadingNotePDF(data);
@@ -943,6 +946,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
+        const massPerItem = parseNumber(item.massPerItem);
         balanceQuantities[item.id] = balanceQuantity;
         deliveredQuantities[item.id] = deliveredQty;
         return {
@@ -950,8 +954,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           description: item.description,
           balanceQuantity,
           quantity: deliveredQty,
-          massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: deliveredQty * parseNumber(item.massPerItem) || null,
+          massPerItem,
+          totalMass: deliveredQty * massPerItem,
         };
       }),
     };
@@ -1014,13 +1018,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     const currentItems = equipmentItems
       .map((item) => {
         const deliveredQty = getDeliveredQuantity(item);
+        const massPerItem = parseNumber(item.massPerItem);
         deliveredQuantities[item.id] = deliveredQty;
         return {
           partNumber: item.itemCode,
           description: item.description,
           quantity: deliveredQty,
-          massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: deliveredQty * parseNumber(item.massPerItem) || null,
+          massPerItem,
+          totalMass: deliveredQty * massPerItem,
         };
       })
       .filter((item) => item.quantity > 0);
@@ -1044,12 +1049,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         const orderedQty = getOrderedQuantity(item);
         const deliveredQty = deliveredQuantities[item.id] ?? 0;
         const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+        const massPerItem = parseNumber(item.massPerItem);
         return {
           partNumber: item.itemCode,
           description: item.description,
           quantity: remainingQty,
-          massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: remainingQty * parseNumber(item.massPerItem) || null,
+          massPerItem,
+          totalMass: remainingQty * massPerItem,
         };
       })
       .filter((item) => item.quantity > 0);

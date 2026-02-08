@@ -17,6 +17,8 @@ export interface DeliveryRecord {
     description: string;
     quantityDelivered: number;
     balanceAfter: number;
+    massPerItem: number;
+    totalMass: number;
   }[];
   totalMass: number;
   createdAt: string;
