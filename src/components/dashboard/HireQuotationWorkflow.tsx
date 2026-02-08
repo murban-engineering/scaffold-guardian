@@ -1,12 +1,13 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw } from "lucide-react";
+import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
@@ -23,6 +24,7 @@ import {
   HireQuotationReportData,
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
+import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 
 type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "calculation" | "return";
 
@@ -196,6 +198,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
   const [returnProcessed, setReturnProcessed] = useState(false);
   const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
+  const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]); // Track all deliveries
+  const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false); // Track if current delivery is dispatched
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
@@ -706,6 +710,213 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
   };
 
+  // Calculate totals for delivery progress
+  const totalOrdered = useMemo(() => 
+    equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered), 0), 
+    [equipmentItems]
+  );
+
+  const totalDeliveredFromHistory = useMemo(() => 
+    deliveryHistory.reduce((sum, delivery) => 
+      sum + delivery.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
+    ), 
+    [deliveryHistory]
+  );
+
+  const hasRemainingBalance = useMemo(() => {
+    // Check if there are items with balance quantities
+    return equipmentItems.some(item => {
+      const orderedQty = getOrderedQuantity(item);
+      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+      return orderedQty > deliveredQty;
+    });
+  }, [equipmentItems, deliveryQuantities]);
+
+  // Create a delivery record and add to history
+  const createDeliveryRecord = useCallback((): DeliveryRecord => {
+    const items = equipmentItems.map(item => {
+      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+      const orderedQty = getOrderedQuantity(item);
+      const balanceAfter = Math.max(orderedQty - deliveredQty, 0);
+      return {
+        itemCode: item.itemCode,
+        description: item.description,
+        quantityDelivered: deliveredQty,
+        balanceAfter,
+      };
+    }).filter(item => item.quantityDelivered > 0);
+
+    const totalMass = equipmentItems.reduce((sum, item) => {
+      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+      return sum + deliveredQty * parseNumber(item.massPerItem);
+    }, 0);
+
+    return {
+      id: crypto.randomUUID(),
+      deliveryNoteNumber: deliveryNote.deliveryNoteNo,
+      deliveryDate: deliveryNote.deliveryDate,
+      deliveredBy: deliveryNote.deliveredBy,
+      receivedBy: deliveryNote.receivedBy,
+      vehicleNo: deliveryNote.vehicleNo,
+      status: "pending",
+      items,
+      totalMass,
+      createdAt: new Date().toISOString(),
+    };
+  }, [equipmentItems, deliveryQuantities, deliveryNote]);
+
+  // Dispatch a delivery and save to database
+  const handleDispatchDelivery = async () => {
+    if (!validateDeliveryQuantities()) return;
+
+    // Deduct inventory first
+    const success = await handleEquipmentHired();
+    if (!success) return;
+
+    // Create delivery record
+    const newDelivery = createDeliveryRecord();
+    newDelivery.status = "dispatched";
+    setDeliveryHistory(prev => [newDelivery, ...prev]);
+
+    // Calculate balance quantities
+    const balanceQuantities: Record<string, number> = {};
+    const deliveredQuantities: Record<string, number> = {};
+    
+    equipmentItems.forEach(item => {
+      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+      const orderedQty = getOrderedQuantity(item);
+      balanceQuantities[item.id] = Math.max(orderedQty - deliveredQty, 0);
+      deliveredQuantities[item.id] = deliveredQty;
+    });
+
+    // Save to database
+    if (savedQuotationId) {
+      try {
+        const quantityUpdates = equipmentItems
+          .filter(item => item.itemCode)
+          .map(item => ({
+            part_number: item.itemCode,
+            delivered_quantity: (item.previouslyDelivered || 0) + (deliveredQuantities[item.id] ?? 0),
+            balance_quantity: balanceQuantities[item.id] ?? 0,
+          }));
+        
+        if (quantityUpdates.length > 0) {
+          await updateLineItemQuantities.mutateAsync({
+            quotation_id: savedQuotationId,
+            items: quantityUpdates,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to save delivery quantities:", error);
+      }
+    }
+
+    // Update remaining quantities for next delivery
+    setRemainingQuantities(balanceQuantities);
+    setCurrentDeliveryDispatched(true);
+    
+    toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
+  };
+
+  // Start a new delivery for remaining balance
+  const handleDeliverBalance = useCallback(() => {
+    // Increment delivery sequence
+    const nextSequence = deliverySequence + 1;
+    setDeliverySequence(nextSequence);
+    
+    // Reset delivery state for new batch
+    setInventoryDeducted(false);
+    setCurrentDeliveryDispatched(false);
+    
+    // Update delivery note number
+    setDeliveryNote(prev => ({
+      ...prev,
+      deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, nextSequence),
+      deliveryDate: getToday(),
+      deliveredBy: "",
+      receivedBy: "",
+      vehicleNo: "",
+      remarks: "",
+    }));
+
+    // Set delivery quantities to remaining balance
+    const newDeliveryQuantities: Record<string, string> = {};
+    equipmentItems.forEach(item => {
+      const remaining = remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
+      newDeliveryQuantities[item.id] = String(remaining);
+    });
+    setDeliveryQuantities(newDeliveryQuantities);
+    
+    toast.info(`Starting delivery batch ${nextSequence}. Enter quantities for this delivery.`);
+  }, [deliverySequence, header.quotationNo, equipmentItems, remainingQuantities]);
+
+  // Mark a delivery as dispatched from history
+  const handleMarkDeliveryDispatched = useCallback((deliveryId: string) => {
+    setDeliveryHistory(prev => 
+      prev.map(delivery => 
+        delivery.id === deliveryId 
+          ? { ...delivery, status: "dispatched" as const }
+          : delivery
+      )
+    );
+    toast.success("Delivery marked as dispatched");
+  }, []);
+
+  // Print delivery note from history
+  const handlePrintDeliveryNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
+    const data: DeliveryNoteData = {
+      quotationNumber: header.quotationNo,
+      deliveryNoteNumber: delivery.deliveryNoteNumber,
+      dateCreated: header.dateCreated,
+      deliveryDate: delivery.deliveryDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      deliveredBy: delivery.deliveredBy,
+      receivedBy: delivery.receivedBy,
+      vehicleNo: delivery.vehicleNo,
+      remarks: "",
+      createdBy: header.createdBy,
+      items: delivery.items.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        balanceQuantity: item.balanceAfter,
+        quantity: item.quantityDelivered,
+        massPerItem: null,
+        totalMass: null,
+      })),
+    };
+    generateDeliveryNotePDF(data);
+    toast.success("Delivery note opened for printing");
+  }, [header]);
+
+  // Print loading note from history
+  const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
+    const data: HireLoadingNoteData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      createdBy: header.createdBy,
+      noteTitle: `Hire Loading Note (${delivery.deliveryNoteNumber})`,
+      items: delivery.items.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: item.quantityDelivered,
+        massPerItem: null,
+        totalMass: null,
+      })),
+    };
+    generateHireLoadingNotePDF(data);
+    toast.success("Loading note opened for printing");
+  }, [header]);
+
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
       toast.error("No equipment items to include in delivery note");
@@ -752,7 +963,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           .filter(item => item.itemCode) // Only update items with part numbers
           .map(item => ({
             part_number: item.itemCode,
-            delivered_quantity: deliveredQuantities[item.id] ?? 0,
+            delivered_quantity: (item.previouslyDelivered || 0) + (deliveredQuantities[item.id] ?? 0),
             balance_quantity: balanceQuantities[item.id] ?? 0,
           }));
         
@@ -767,6 +978,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         console.error("Failed to save delivery quantities:", error);
       }
     }
+
+    // Add to delivery history
+    const newDelivery = createDeliveryRecord();
+    setDeliveryHistory(prev => {
+      // Avoid duplicates
+      if (prev.some(d => d.deliveryNoteNumber === newDelivery.deliveryNoteNumber)) {
+        return prev;
+      }
+      return [newDelivery, ...prev];
+    });
 
     generateDeliveryNotePDF(data);
     setRemainingQuantities(balanceQuantities);
@@ -1938,145 +2159,321 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         {/* Step 4: Hire Delivery Note */}
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
-            {/* Check if this is a balance delivery */}
-            {hasPreviousDelivery && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                <h4 className="font-semibold text-primary mb-1">Balance Delivery</h4>
-                <p className="text-sm text-muted-foreground">
-                  This quotation has items from a previous delivery. The quantities shown are the balance remaining to be delivered.
+            {/* Header with Delivery Number Badge */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xl font-semibold">Hire Delivery Note</h3>
+                  <Badge variant="outline" className="gap-1 text-sm">
+                    <Truck className="h-3 w-3" />
+                    {deliveryNote.deliveryNoteNo}
+                  </Badge>
+                  {deliverySequence > 1 && (
+                    <Badge variant="secondary" className="text-xs">
+                      Batch {deliverySequence}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Enter quantities for this delivery batch, then dispatch to deduct from inventory.
                 </p>
               </div>
-            )}
-            
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <h4 className="font-semibold mb-2">Hire Delivery Note</h4>
-              <p className="text-sm text-muted-foreground">
-                Confirm ordered quantities, record delivered quantities manually, and review balances.
-              </p>
+              {inventoryDeducted && (
+                <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Inventory Deducted
+                </Badge>
+              )}
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium">Part No</th>
-                    <th className="px-3 py-2 text-left font-medium">Description</th>
-                    {hasPreviousDelivery && (
-                      <>
-                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Prev. Delivered</th>
-                      </>
-                    )}
-                    <th className="px-3 py-2 text-right font-medium">
-                      {hasPreviousDelivery ? "Balance Qty" : "Order Qty"}
-                    </th>
-                    <th className="px-3 py-2 text-right font-medium">This Delivery</th>
-                    <th className="px-3 py-2 text-right font-medium">Remaining</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {balanceDeliveryItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={hasPreviousDelivery ? 7 : 5} className="px-3 py-6 text-center text-muted-foreground">
-                        {hasBalanceDelivery ? "No balance quantities remain to be delivered." : "No equipment items available yet."}
-                      </td>
-                    </tr>
-                  ) : (
-                    balanceDeliveryItems.map((item) => {
-                      const orderedQty = getOrderedQuantity(item);
-                      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-                      const remainingQty = Math.max(orderedQty - deliveredQty, 0);
-                      return (
-                        <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
-                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
-                          <td className="px-3 py-2">{item.description}</td>
-                          {hasPreviousDelivery && (
-                            <>
-                              <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
-                              <td className="px-3 py-2 text-right text-muted-foreground">{item.previouslyDelivered}</td>
-                            </>
-                          )}
-                          <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
-                          <td className="px-3 py-2 text-right">
-                            <Input
-                              type="number"
-                              min="0"
-                              max={orderedQty}
-                              className="h-8 w-24 text-right"
-                              value={deliveryQuantities[item.id] ?? ""}
-                              onChange={(e) => {
-                                const rawValue = e.target.value;
-                                const nextValue = parseNumber(rawValue);
-                                if (nextValue > orderedQty) {
-                                  toast.error("Delivery Qty cannot exceed available quantity.");
-                                  setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
-                                  return;
-                                }
-                                setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
-                              }}
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {hasPreviousDelivery && previousDeliveryItems.length > 0 && (
-              <div className="rounded-lg border border-border bg-muted/20 p-4">
-                <h4 className="font-semibold mb-3">First Delivery Equipment</h4>
-                <div className="overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Part No</th>
-                        <th className="px-3 py-2 text-left font-medium">Description</th>
-                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Delivered Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previousDeliveryItems.map((item) => (
-                        <tr key={`previous-delivery-${item.id}`} className="border-t border-border">
-                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
-                          <td className="px-3 py-2">{item.description}</td>
-                          <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
-                          <td className="px-3 py-2 text-right font-medium">{item.previouslyDelivered}</td>
-                          <td className="px-3 py-2 text-right text-muted-foreground">{item.dbBalanceQuantity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            {/* Balance Delivery Alert */}
+            {(hasPreviousDelivery || deliverySequence > 1) && (
+              <div className="rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-primary/20 p-2">
+                    <History className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-primary">Balance Delivery (Batch {deliverySequence})</h4>
+                    <p className="text-sm text-muted-foreground">
+                      This is a continuation delivery. The quantities shown are the balance remaining from previous deliveries.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
 
+            {/* Delivery Details Form */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Delivery Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label htmlFor="deliveryDate">Delivery Date</Label>
+                  <Input
+                    id="deliveryDate"
+                    type="date"
+                    value={deliveryNote.deliveryDate}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveryDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="deliveredBy">Delivered By</Label>
+                  <Input
+                    id="deliveredBy"
+                    value={deliveryNote.deliveredBy}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveredBy: e.target.value }))}
+                    placeholder="Driver name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vehicleNo">Vehicle No</Label>
+                  <Input
+                    id="vehicleNo"
+                    value={deliveryNote.vehicleNo}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
+                    placeholder="Vehicle registration"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="receivedBy">Received By</Label>
+                  <Input
+                    id="receivedBy"
+                    value={deliveryNote.receivedBy}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, receivedBy: e.target.value }))}
+                    placeholder="Receiver name"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="remarks">Remarks</Label>
+                  <Input
+                    id="remarks"
+                    value={deliveryNote.remarks}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, remarks: e.target.value }))}
+                    placeholder="Any special notes for this delivery"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Equipment Delivery Table */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Equipment Items ({balanceDeliveryItems.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/60">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold">Part No</th>
+                        <th className="px-4 py-3 text-left font-semibold">Description</th>
+                        {(hasPreviousDelivery || deliverySequence > 1) && (
+                          <>
+                            <th className="px-4 py-3 text-right font-semibold">Original</th>
+                            <th className="px-4 py-3 text-right font-semibold">Prev. Delivered</th>
+                          </>
+                        )}
+                        <th className="px-4 py-3 text-right font-semibold">
+                          {(hasPreviousDelivery || deliverySequence > 1) ? "Available" : "Order Qty"}
+                        </th>
+                        <th className="px-4 py-3 text-right font-semibold bg-primary/10">This Delivery</th>
+                        <th className="px-4 py-3 text-right font-semibold">After</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {balanceDeliveryItems.length === 0 ? (
+                        <tr>
+                          <td colSpan={(hasPreviousDelivery || deliverySequence > 1) ? 7 : 5} className="px-4 py-8 text-center text-muted-foreground">
+                            {hasBalanceDelivery ? "All items have been fully delivered." : "No equipment items available."}
+                          </td>
+                        </tr>
+                      ) : (
+                        balanceDeliveryItems.map((item, idx) => {
+                          const orderedQty = getOrderedQuantity(item);
+                          const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+                          const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+                          const isFullyDelivered = deliveredQty === orderedQty;
+                          return (
+                            <tr 
+                              key={`hire-delivery-${item.id}`} 
+                              className={`border-t border-border transition-colors ${isFullyDelivered ? 'bg-green-50/50' : 'hover:bg-muted/30'}`}
+                            >
+                              <td className="px-4 py-3 font-mono text-xs">{item.itemCode || "-"}</td>
+                              <td className="px-4 py-3">{item.description}</td>
+                              {(hasPreviousDelivery || deliverySequence > 1) && (
+                                <>
+                                  <td className="px-4 py-3 text-right text-muted-foreground">{item.originalQuantity}</td>
+                                  <td className="px-4 py-3 text-right text-muted-foreground">{item.previouslyDelivered}</td>
+                                </>
+                              )}
+                              <td className="px-4 py-3 text-right font-semibold">{orderedQty}</td>
+                              <td className="px-4 py-3 text-right bg-primary/5">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max={orderedQty}
+                                  className="h-9 w-24 text-right font-medium border-primary/30 focus:border-primary"
+                                  value={deliveryQuantities[item.id] ?? ""}
+                                  onChange={(e) => {
+                                    const rawValue = e.target.value;
+                                    const nextValue = parseNumber(rawValue);
+                                    if (nextValue > orderedQty) {
+                                      toast.error("Delivery quantity cannot exceed available quantity.");
+                                      setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
+                                      return;
+                                    }
+                                    setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
+                                  }}
+                                  disabled={inventoryDeducted}
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <span className={`font-medium ${remainingQty === 0 ? 'text-green-600' : remainingQty > 0 ? 'text-amber-600' : ''}`}>
+                                  {remainingQty}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                    {balanceDeliveryItems.length > 0 && (
+                      <tfoot className="bg-muted/40">
+                        <tr>
+                          <td colSpan={(hasPreviousDelivery || deliverySequence > 1) ? 4 : 2} className="px-4 py-3 font-semibold">
+                            Totals
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold">
+                            {balanceDeliveryItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold bg-primary/10">
+                            {balanceDeliveryItems.reduce((sum, item) => sum + parseNumber(deliveryQuantities[item.id] ?? "0"), 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold">
+                            {balanceDeliveryItems.reduce((sum, item) => {
+                              const orderedQty = getOrderedQuantity(item);
+                              const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+                              return sum + Math.max(orderedQty - deliveredQty, 0);
+                            }, 0)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <Card className="border-2 border-dashed">
+              <CardContent className="py-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Delivery Actions</p>
+                    <p className="text-xs text-muted-foreground">
+                      {!inventoryDeducted 
+                        ? "Click 'Dispatch Delivery' to deduct from inventory and record this delivery."
+                        : "Delivery dispatched. Generate reports or continue to next step."}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {!inventoryDeducted ? (
+                      <Button
+                        onClick={async () => {
+                          const success = await handleEquipmentHired();
+                          if (success) {
+                            // Create and add delivery record
+                            const newDelivery = createDeliveryRecord();
+                            newDelivery.status = "dispatched";
+                            setDeliveryHistory(prev => [newDelivery, ...prev]);
+                            setCurrentDeliveryDispatched(true);
+                            
+                            // Update remaining quantities
+                            const balanceQuantities: Record<string, number> = {};
+                            equipmentItems.forEach(item => {
+                              const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+                              const orderedQty = getOrderedQuantity(item);
+                              balanceQuantities[item.id] = Math.max(orderedQty - deliveredQty, 0);
+                            });
+                            setRemainingQuantities(balanceQuantities);
+                            
+                            // Save to database
+                            if (savedQuotationId) {
+                              try {
+                                const quantityUpdates = equipmentItems
+                                  .filter(item => item.itemCode)
+                                  .map(item => ({
+                                    part_number: item.itemCode,
+                                    delivered_quantity: (item.previouslyDelivered || 0) + parseNumber(deliveryQuantities[item.id] ?? "0"),
+                                    balance_quantity: balanceQuantities[item.id] ?? 0,
+                                  }));
+                                
+                                if (quantityUpdates.length > 0) {
+                                  await updateLineItemQuantities.mutateAsync({
+                                    quotation_id: savedQuotationId,
+                                    items: quantityUpdates,
+                                  });
+                                }
+                              } catch (error) {
+                                console.error("Failed to save delivery quantities:", error);
+                              }
+                            }
+                            
+                            toast.success(`Delivery ${deliveryNote.deliveryNoteNo} dispatched!`);
+                          }
+                        }}
+                        disabled={deductInventory.isPending}
+                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
+                      >
+                        <Truck className="h-4 w-4 mr-2" />
+                        {deductInventory.isPending ? "Dispatching..." : "Dispatch Delivery"}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" onClick={handlePrintDeliveryNote}>
+                          <Printer className="h-4 w-4 mr-2" />
+                          Delivery Note
+                        </Button>
+                        <Button variant="outline" onClick={() => handlePrintHireLoadingNote("current")}>
+                          <Printer className="h-4 w-4 mr-2" />
+                          Loading Note
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Delivery History Section */}
+            {(deliveryHistory.length > 0 || inventoryDeducted) && (
+              <DeliveryHistorySection
+                deliveries={deliveryHistory}
+                onPrintDeliveryNote={handlePrintDeliveryNoteFromHistory}
+                onPrintLoadingNote={handlePrintLoadingNoteFromHistory}
+                onMarkDispatched={handleMarkDeliveryDispatched}
+                onDeliverBalance={handleDeliverBalance}
+                hasRemainingBalance={Object.values(remainingQuantities).some(qty => qty > 0)}
+                totalDelivered={deliveryHistory.reduce((sum, d) => 
+                  sum + d.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
+                )}
+                totalOrdered={equipmentItems.reduce((sum, item) => sum + item.originalQuantity, 0)}
+              />
+            )}
+
+            {/* Navigation */}
             <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleEquipmentHired}
-                  disabled={inventoryDeducted || deductInventory.isPending}
-                >
-                  <Package className="h-4 w-4 mr-2" />
-                  Equipment Hired
-                </Button>
-                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Hire Delivery Note
-                </Button>
-                <Button type="button" onClick={handleNext}>
-                  Continue to Delivery Note
-                </Button>
-              </div>
+              <Button type="button" onClick={handleNext} disabled={!inventoryDeducted}>
+                {inventoryDeducted ? "Continue to Loading Note" : "Dispatch delivery first"}
+              </Button>
             </div>
           </div>
         )}
