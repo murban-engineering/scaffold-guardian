@@ -154,95 +154,6 @@ export type Database = {
         }
         Relationships: []
       }
-      hire_batches: {
-        Row: {
-          batch_no: number
-          created_at: string
-          delivered_at: string | null
-          delivered_by: string | null
-          id: string
-          loaded_at: string | null
-          loaded_by: string | null
-          notes: string | null
-          quotation_id: string
-          status: string
-        }
-        Insert: {
-          batch_no: number
-          created_at?: string
-          delivered_at?: string | null
-          delivered_by?: string | null
-          id?: string
-          loaded_at?: string | null
-          loaded_by?: string | null
-          notes?: string | null
-          quotation_id: string
-          status?: string
-        }
-        Update: {
-          batch_no?: number
-          created_at?: string
-          delivered_at?: string | null
-          delivered_by?: string | null
-          id?: string
-          loaded_at?: string | null
-          loaded_by?: string | null
-          notes?: string | null
-          quotation_id?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hire_batches_quotation_id_fkey"
-            columns: ["quotation_id"]
-            isOneToOne: false
-            referencedRelation: "hire_quotations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      hire_batch_items: {
-        Row: {
-          batch_id: string
-          delivered_at: string | null
-          id: string
-          qty_delivered: number
-          qty_loaded: number
-          quotation_line_item_id: string
-        }
-        Insert: {
-          batch_id: string
-          delivered_at?: string | null
-          id?: string
-          qty_delivered?: number
-          qty_loaded?: number
-          quotation_line_item_id: string
-        }
-        Update: {
-          batch_id?: string
-          delivered_at?: string | null
-          id?: string
-          qty_delivered?: number
-          qty_loaded?: number
-          quotation_line_item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hire_batch_items_batch_id_fkey"
-            columns: ["batch_id"]
-            isOneToOne: false
-            referencedRelation: "hire_batches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hire_batch_items_quotation_line_item_id_fkey"
-            columns: ["quotation_line_item_id"]
-            isOneToOne: false
-            referencedRelation: "quotation_line_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       inspections: {
         Row: {
           checklist: Json | null
@@ -450,9 +361,7 @@ export type Database = {
       }
       scaffolds: {
         Row: {
-          available_qty: number
           created_at: string
-          damaged_qty: number
           description: string | null
           id: string
           last_inspection_date: string | null
@@ -460,24 +369,19 @@ export type Database = {
           mass_per_item: number | null
           next_inspection_due: string | null
           notes: string | null
-          on_hire_qty: number
           part_number: string | null
           purchase_date: string | null
           qr_code: string | null
           quantity: number | null
-          reserved_qty: number
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number: string | null
           site_id: string | null
           status: Database["public"]["Enums"]["scaffold_status"]
           updated_at: string
           weekly_rate: number | null
-          dirty_qty: number
         }
         Insert: {
-          available_qty?: number
           created_at?: string
-          damaged_qty?: number
           description?: string | null
           id?: string
           last_inspection_date?: string | null
@@ -485,24 +389,19 @@ export type Database = {
           mass_per_item?: number | null
           next_inspection_due?: string | null
           notes?: string | null
-          on_hire_qty?: number
           part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
           quantity?: number | null
-          reserved_qty?: number
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
           weekly_rate?: number | null
-          dirty_qty?: number
         }
         Update: {
-          available_qty?: number
           created_at?: string
-          damaged_qty?: number
           description?: string | null
           id?: string
           last_inspection_date?: string | null
@@ -510,19 +409,16 @@ export type Database = {
           mass_per_item?: number | null
           next_inspection_due?: string | null
           notes?: string | null
-          on_hire_qty?: number
           part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
           quantity?: number | null
-          reserved_qty?: number
           scaffold_type?: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
           weekly_rate?: number | null
-          dirty_qty?: number
         }
         Relationships: [
           {
@@ -609,18 +505,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      reserve_scaffold_inventory: {
-        Args: { reserve_qty: number; scaffold_id: string }
-        Returns: undefined
-      }
-      release_scaffold_inventory: {
-        Args: { release_qty: number; scaffold_id: string }
-        Returns: undefined
-      }
-      deliver_scaffold_inventory: {
-        Args: { delivered_qty: number; return_qty?: number; scaffold_id: string }
-        Returns: undefined
       }
       update_scaffold_quantity: {
         Args: { new_quantity: number; scaffold_id: string }
