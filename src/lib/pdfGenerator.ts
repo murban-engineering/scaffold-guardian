@@ -106,8 +106,13 @@ const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakas
 const formatCurrency = (value: number) =>
   `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const formatMass = (value: number | null) =>
-  value != null ? `${value.toFixed(2)} kg` : "-";
+const formatMass = (value: number | string | null | undefined) => {
+  if (value == null) {
+    return "-";
+  }
+  const parsed = typeof value === "string" ? Number(value) : value;
+  return Number.isFinite(parsed) ? `${parsed.toFixed(2)} kg` : "-";
+};
 
 const withPrintOption = (html: string) => {
   const printControls = `
