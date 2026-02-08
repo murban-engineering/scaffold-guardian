@@ -189,13 +189,6 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
           <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
         </div>
-        <div class="info-section">
-          <h3>OTNO Access Details</h3>
-          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${COMPANY_NAME}</span></div>
-          <div class="info-row"><span class="info-label">Email:</span><span class="info-value">otnoacess@gmail.com</span></div>
-          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
-          <div class="info-row"><span class="info-label">Location:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
-        </div>
       </div>
 
       <table>
