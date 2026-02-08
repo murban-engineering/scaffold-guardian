@@ -2057,6 +2057,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <Package className="h-4 w-4 mr-2" />
                   Equipment Hired
                 </Button>
+                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Hire Delivery Note
+                </Button>
                 <Button type="button" onClick={handleNext}>
                   Continue to Delivery Note
                 </Button>
