@@ -99,6 +99,10 @@ const Settings = () => {
     }
     if (item === "sites") {
       navigate("/sites");
+      return;
+    }
+    if (item === "revenue") {
+      navigate("/revenue");
     }
   };
 

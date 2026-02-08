@@ -99,6 +99,10 @@ const Index = () => {
       navigate("/maintenance-logs");
       return;
     }
+    if (item === "revenue") {
+      navigate("/revenue");
+      return;
+    }
     setActiveItem(item);
   };
 
