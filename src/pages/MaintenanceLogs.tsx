@@ -83,6 +83,10 @@ const MaintenanceLogs = () => {
       navigate("/sites");
       return;
     }
+    if (item === "revenue") {
+      navigate("/revenue");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
       return;

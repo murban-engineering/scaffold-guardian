@@ -64,6 +64,10 @@ const AddScaffold = () => {
       navigate("/maintenance-logs");
       return;
     }
+    if (item === "revenue") {
+      navigate("/revenue");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
       return;
