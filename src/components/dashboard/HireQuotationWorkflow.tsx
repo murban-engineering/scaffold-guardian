@@ -119,7 +119,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
-  { key: "delivery", title: "Hire Loading", description: "Generate report", icon: Truck },
+  { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
@@ -2478,18 +2478,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <Button type="button" onClick={handleNext} disabled={!inventoryDeducted}>
-                {inventoryDeducted ? "Continue to Loading Note" : "Dispatch delivery first"}
+                {inventoryDeducted ? "Continue to Yard Verification Report" : "Dispatch delivery first"}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 5: Hire Delivery Note */}
+        {/* Step 5: Yard Verification Report */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label>Hire Delivery Note No</Label>
+                <Label>Yard Verification Report No</Label>
                 <Input value={deliveryNote.deliveryNoteNo} readOnly className="bg-muted" />
               </div>
               <div>
@@ -2550,29 +2550,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Hire Delivery Note
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handlePrintHireLoadingNote("current")}
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Hire Loading Note (This Delivery)
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handlePrintHireLoadingNote("balance")}
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Hire Loading Note (Balance)
-                </Button>
                 <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
                   <Printer className="h-4 w-4 mr-2" />
-                  Yard Verification Note
+                  Yard Verification Report
                 </Button>
                 <Button type="button" onClick={handleDeliverySave}>
                   Continue

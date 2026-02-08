@@ -435,7 +435,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Yard Verification Note - ${data.deliveryNoteNumber}</title>
+      <title>Yard Verification Report - ${data.deliveryNoteNumber}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
@@ -471,7 +471,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
           </div>
           <div class="yard-note-meta">T.B.OD32</div>
         </div>
-        <h2>YARD VERIFICATION NOTE</h2>
+        <h2>YARD VERIFICATION REPORT</h2>
         <table class="yard-note-table yard-note-info-table">
           <tr>
             <td class="label">Customer/Branch Name:</td>
