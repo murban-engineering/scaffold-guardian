@@ -780,47 +780,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return next;
     });
 
-    const balanceItems = equipmentItems
-      .map((item) => {
-        const balanceQty = balanceQuantities[item.id] ?? 0;
-        return {
-          partNumber: item.itemCode,
-          description: item.description,
-          quantity: balanceQty,
-          massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: balanceQty * parseNumber(item.massPerItem) || null,
-        };
-      })
-      .filter((item) => item.quantity > 0);
-
-    if (balanceItems.length > 0) {
-      generateHireLoadingNotePDF({
-        quotationNumber: header.quotationNo,
-        dateCreated: header.dateCreated,
-        companyName: header.clientCompanyName,
-        siteName: header.siteName,
-        siteLocation: header.siteLocation,
-        siteAddress: header.siteAddress,
-        contactName: header.clientName,
-        contactPhone: header.clientPhone,
-        createdBy: header.createdBy,
-        noteTitle: "Hire Loading Note (Balance)",
-        items: balanceItems,
-      });
-      toast.success("Balance hire loading note opened for printing.");
-    }
-
     toast.success("Hire delivery note opened for printing");
   };
 
-  const handlePrintHireLoadingNote = () => {
+  const handlePrintHireLoadingNote = (noteType: "current" | "balance") => {
     if (!equipmentItems.length) {
       toast.error("No equipment items to include in hire loading note");
       return;
     }
 
     const deliveredQuantities: Record<string, number> = {};
-    const items = equipmentItems
+    const currentItems = equipmentItems
       .map((item) => {
         const deliveredQty = getDeliveredQuantity(item);
         deliveredQuantities[item.id] = deliveredQty;
@@ -834,11 +804,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       })
       .filter((item) => item.quantity > 0);
 
-    if (!items.length) {
-      toast.error("Enter delivered quantities to generate a hire loading note.");
-      return;
-    }
-
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
@@ -849,11 +814,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
-      noteTitle: "Hire Loading Note",
-      items,
+      noteTitle: noteType === "balance" ? "Hire Loading Note (Balance)" : "Hire Loading Note",
+      items: [],
     };
-
-    generateHireLoadingNotePDF(data);
 
     const remainingItems = equipmentItems
       .map((item) => {
@@ -870,49 +833,49 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       })
       .filter((item) => item.quantity > 0);
 
-    if (remainingItems.length > 0) {
-      generateHireLoadingNotePDF({
-        ...data,
-        noteTitle: "Hire Loading Note (Balance)",
-        items: remainingItems,
-      });
-      toast.success("Additional hire loading note generated for remaining quantities.");
-    }
+    const items = noteType === "balance" ? remainingItems : currentItems;
 
-    setLastDeliveredQuantities(deliveredQuantities);
-    setRemainingQuantities((prev) => {
-      const next = { ...prev };
-      equipmentItems.forEach((item) => {
-        const orderedQty = getOrderedQuantity(item);
-        const deliveredQty = deliveredQuantities[item.id] ?? 0;
-        next[item.id] = Math.max(orderedQty - deliveredQty, 0);
-      });
-      return next;
-    });
-    setDeliveryQuantities((prev) => {
-      const next = { ...prev };
-      equipmentItems.forEach((item) => {
-        const orderedQty = getOrderedQuantity(item);
-        const deliveredQty = deliveredQuantities[item.id] ?? 0;
-        next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
-      });
-      return next;
-    });
-    toast.success("Hire loading note opened for printing");
-  };
-
-  const handleHireDeliveryAction = async () => {
-    if (!validateDeliveryQuantities()) {
+    if (!items.length) {
+      toast.error(
+        noteType === "balance"
+          ? "No remaining quantities to include in a balance hire loading note."
+          : "Enter delivered quantities to generate a hire loading note."
+      );
       return;
     }
 
-    const success = await handleEquipmentHired();
-    if (!success) {
-      return;
+    generateHireLoadingNotePDF({
+      ...data,
+      items,
+    });
+
+    if (noteType === "current") {
+      setLastDeliveredQuantities(deliveredQuantities);
+      setRemainingQuantities((prev) => {
+        const next = { ...prev };
+        equipmentItems.forEach((item) => {
+          const orderedQty = getOrderedQuantity(item);
+          const deliveredQty = deliveredQuantities[item.id] ?? 0;
+          next[item.id] = Math.max(orderedQty - deliveredQty, 0);
+        });
+        return next;
+      });
+      setDeliveryQuantities((prev) => {
+        const next = { ...prev };
+        equipmentItems.forEach((item) => {
+          const orderedQty = getOrderedQuantity(item);
+          const deliveredQty = deliveredQuantities[item.id] ?? 0;
+          next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
+        });
+        return next;
+      });
     }
 
-    handlePrintHireLoadingNote();
-    handleNext();
+    toast.success(
+      noteType === "balance"
+        ? "Balance hire loading note opened for printing."
+        : "Hire loading note opened for printing"
+    );
   };
 
   const handleEquipmentHired = async (): Promise<boolean> => {
@@ -2100,7 +2063,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleHireDeliveryAction}
+                  onClick={handleEquipmentHired}
                   disabled={inventoryDeducted || deductInventory.isPending}
                 >
                   <Package className="h-4 w-4 mr-2" />
@@ -2188,9 +2151,21 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <Printer className="h-4 w-4 mr-2" />
                   Hire Delivery Note
                 </Button>
-                <Button type="button" variant="outline" onClick={handlePrintHireLoadingNote}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePrintHireLoadingNote("current")}
+                >
                   <Printer className="h-4 w-4 mr-2" />
-                  Hire Loading Note
+                  Hire Loading Note (This Delivery)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handlePrintHireLoadingNote("balance")}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Hire Loading Note (Balance)
                 </Button>
                 <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
                   <Printer className="h-4 w-4 mr-2" />
