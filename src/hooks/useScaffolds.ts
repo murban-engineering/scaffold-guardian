@@ -22,6 +22,11 @@ export interface Scaffold {
   part_number: string | null;
   description: string | null;
   quantity: number | null;
+  available_qty: number | null;
+  reserved_qty: number | null;
+  on_hire_qty: number | null;
+  dirty_qty: number | null;
+  damaged_qty: number | null;
   mass_per_item: number | null;
   weekly_rate: number | null;
   sites?: {
@@ -275,6 +280,102 @@ export const useReturnScaffoldInventory = () => {
     },
     onError: (error) => {
       toast.error(`Failed to update inventory: ${error.message}`);
+    },
+  });
+};
+
+export interface InventoryReserveItem {
+  scaffoldId: string;
+  quantity: number;
+}
+
+export interface InventoryDeliverItem {
+  scaffoldId: string;
+  deliveredQty: number;
+  returnQty?: number;
+}
+
+export const useReserveScaffoldInventory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ items }: { items: InventoryReserveItem[] }) => {
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const { error } = await supabase.rpc("reserve_scaffold_inventory", {
+            scaffold_id: item.scaffoldId,
+            reserve_qty: item.quantity,
+          });
+          if (error) throw error;
+          return item;
+        })
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+      toast.success("Inventory reserved for batch loading");
+    },
+    onError: (error) => {
+      toast.error(`Failed to reserve inventory: ${error.message}`);
+    },
+  });
+};
+
+export const useReleaseScaffoldInventory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ items }: { items: InventoryReserveItem[] }) => {
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const { error } = await supabase.rpc("release_scaffold_inventory", {
+            scaffold_id: item.scaffoldId,
+            release_qty: item.quantity,
+          });
+          if (error) throw error;
+          return item;
+        })
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+      toast.success("Reserved inventory released");
+    },
+    onError: (error) => {
+      toast.error(`Failed to release inventory: ${error.message}`);
+    },
+  });
+};
+
+export const useDeliverScaffoldInventory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ items }: { items: InventoryDeliverItem[] }) => {
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const { error } = await supabase.rpc("deliver_scaffold_inventory", {
+            scaffold_id: item.scaffoldId,
+            delivered_qty: item.deliveredQty,
+            return_qty: item.returnQty ?? 0,
+          });
+          if (error) throw error;
+          return item;
+        })
+      );
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+      toast.success("Inventory updated for delivery");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update inventory for delivery: ${error.message}`);
     },
   });
 };

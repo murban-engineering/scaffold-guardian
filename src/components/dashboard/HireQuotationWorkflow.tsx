@@ -8,10 +8,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
+import {
+  useScaffolds,
+  useReturnScaffoldInventory,
+  useReserveScaffoldInventory,
+  useDeliverScaffoldInventory,
+  useReleaseScaffoldInventory,
+  Scaffold,
+} from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
+import { useHireBatches, useCreateHireBatch, useUpdateHireBatch, useUpsertHireBatchItems } from "@/hooks/useHireBatches";
 import {
   generateDeliveryNotePDF,
   generateHireLoadingNotePDF,
@@ -116,8 +124,8 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
-  { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Hire Loading", description: "Generate report", icon: Truck },
+  { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
@@ -182,7 +190,9 @@ type HireQuotationWorkflowProps = {
 const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
-  const deductInventory = useDeductScaffoldInventory();
+  const reserveInventory = useReserveScaffoldInventory();
+  const deliverInventory = useDeliverScaffoldInventory();
+  const releaseInventory = useReleaseScaffoldInventory();
   const returnInventory = useReturnScaffoldInventory();
   const createQuotation = useCreateQuotation();
   const updateQuotation = useUpdateQuotation();
@@ -190,13 +200,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const clearLineItems = useClearLineItems();
   const updateLineItemQuantities = useUpdateLineItemQuantities();
   const createMaintenanceLogs = useCreateMaintenanceLogs();
+  const createHireBatch = useCreateHireBatch();
+  const updateHireBatch = useUpdateHireBatch();
+  const upsertHireBatchItems = useUpsertHireBatchItems();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<StepKey>("client");
-  const [inventoryDeducted, setInventoryDeducted] = useState(false);
+  const [inventoryReserved, setInventoryReserved] = useState(false);
   const [returnProcessed, setReturnProcessed] = useState(false);
-  const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
+  const [deliverySequence, setDeliverySequence] = useState(1);
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
+  const { data: hireBatches = [] } = useHireBatches(savedQuotationId);
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
+  const [batchLoadedQuantities, setBatchLoadedQuantities] = useState<Record<string, string>>({});
+  const [returnUndeliveredToStore, setReturnUndeliveredToStore] = useState(true);
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
     dateCreated: getToday(),
@@ -277,56 +294,38 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       paymentTerms: initialQuotation.notes ?? "",
     }));
 
-    // Load equipment items with balance tracking from database
     const lineItems = initialQuotation.line_items ?? [];
-    const hasBalanceItems = lineItems.some(item => (item.balance_quantity ?? 0) > 0);
-    
+
     setEquipmentItems(
       lineItems.map(item => {
         const originalQty = item.quantity ?? 0;
-        const deliveredQty = item.delivered_quantity ?? 0;
-        const balanceQty = item.balance_quantity ?? 0;
-        
-        // If this quotation has a balance delivery, show only the balance quantities
-        // Otherwise use the original quantity
-        const qtyToShow = hasBalanceItems ? balanceQty : originalQty;
-        
         return {
           id: item.id,
           scaffoldId: item.scaffold_id ?? null,
           itemCode: item.part_number ?? "",
           description: item.description ?? "",
           unit: "pcs",
-          qtyDelivered: String(qtyToShow),
+          qtyDelivered: String(originalQty),
           weeklyRate: String(item.weekly_rate ?? 0),
           hireDiscount: String(item.hire_discount ?? 0),
           massPerItem: String(item.mass_per_item ?? 0),
           notes: "",
           originalQuantity: originalQty,
-          previouslyDelivered: deliveredQty,
-          dbBalanceQuantity: balanceQty,
+          previouslyDelivered: item.delivered_quantity ?? 0,
+          dbBalanceQuantity: item.balance_quantity ?? 0,
         };
       })
     );
-    
-    // If this quotation has balance items from previous delivery, skip to hire-delivery step
-    if (hasBalanceItems) {
-      setActiveStep("hire-delivery");
-      setDeliverySequence(2); // This is at least the 2nd delivery
-      setInventoryDeducted(false); // Reset so they can deliver again
-      toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
-    } else {
-      setActiveStep("client");
-      setDeliverySequence(1);
-    }
-    setInventoryDeducted(false);
+
+    setActiveStep("client");
+    setDeliverySequence(1);
+    setInventoryReserved(false);
     setReturnProcessed(false);
   }, [initialQuotation, profile?.full_name]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
   const [remainingQuantities, setRemainingQuantities] = useState<Record<string, number>>({});
-  const [lastDeliveredQuantities, setLastDeliveredQuantities] = useState<Record<string, number> | null>(null);
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
   const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
   const [itemCodeSearch, setItemCodeSearch] = useState<string>("");
@@ -353,30 +352,76 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }));
   }, [header.quotationNo, deliverySequence]);
 
+  const activeBatch = useMemo(
+    () => hireBatches.find((batch) => batch.id === activeBatchId) ?? null,
+    [hireBatches, activeBatchId]
+  );
+
   useEffect(() => {
-    setRemainingQuantities((prev) => {
-      const next = { ...prev };
-      equipmentItems.forEach((item) => {
-        if (next[item.id] === undefined) {
-          next[item.id] = parseNumber(item.qtyDelivered);
-        }
+    if (activeBatchId || hireBatches.length === 0) return;
+    const nextBatch = [...hireBatches].reverse().find((batch) => batch.status !== "Delivered" && batch.status !== "Cancelled");
+    setActiveBatchId(nextBatch?.id ?? hireBatches[hireBatches.length - 1]?.id ?? null);
+  }, [hireBatches, activeBatchId]);
+
+  useEffect(() => {
+    if (activeBatch) {
+      setDeliverySequence(activeBatch.batch_no);
+      return;
+    }
+    setDeliverySequence(nextBatchNo);
+  }, [activeBatch, nextBatchNo]);
+
+  useEffect(() => {
+    setInventoryReserved(activeBatch?.status === "Loaded");
+  }, [activeBatch]);
+
+  const deliveredTotalsByItem = useMemo(() => {
+    const totals: Record<string, number> = {};
+    hireBatches.forEach((batch) => {
+      batch.items?.forEach((item) => {
+        totals[item.quotation_line_item_id] = (totals[item.quotation_line_item_id] ?? 0) + (item.qty_delivered ?? 0);
       });
-      Object.keys(next).forEach((id) => {
-        if (!equipmentItems.some((item) => item.id === id)) {
-          delete next[id];
-        }
-      });
-      return next;
     });
-  }, [equipmentItems]);
+    return totals;
+  }, [hireBatches]);
+
+  const nextBatchNo = useMemo(() => {
+    if (!hireBatches.length) return 1;
+    return Math.max(...hireBatches.map((batch) => batch.batch_no)) + 1;
+  }, [hireBatches]);
+
+  const remainingByItem = useMemo(() => {
+    const next: Record<string, number> = {};
+    equipmentItems.forEach((item) => {
+      const orderedQty = item.originalQuantity ?? parseNumber(item.qtyDelivered);
+      const deliveredQty = deliveredTotalsByItem[item.id] ?? 0;
+      next[item.id] = Math.max(orderedQty - deliveredQty, 0);
+    });
+    return next;
+  }, [equipmentItems, deliveredTotalsByItem]);
+
+  const hasRemainingDeliveries = useMemo(
+    () => Object.values(remainingByItem).some((qty) => qty > 0),
+    [remainingByItem]
+  );
+
+  useEffect(() => {
+    setRemainingQuantities(remainingByItem);
+  }, [remainingByItem]);
+
+  useEffect(() => {
+    setDeliveryQuantities({});
+    setBatchLoadedQuantities({});
+  }, [activeBatchId]);
 
   useEffect(() => {
     setDeliveryQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
-        const remaining = remainingQuantities[item.id];
+        const remaining = remainingByItem[item.id] ?? 0;
+        const batchDelivered = activeBatch?.items?.find((entry) => entry.quotation_line_item_id === item.id)?.qty_delivered;
         if (next[item.id] === undefined) {
-          next[item.id] = String(remaining ?? parseNumber(item.qtyDelivered));
+          next[item.id] = String(batchDelivered ?? remaining);
         }
       });
       Object.keys(next).forEach((id) => {
@@ -386,12 +431,28 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       });
       return next;
     });
-  }, [equipmentItems, remainingQuantities]);
+  }, [equipmentItems, remainingByItem, activeBatch]);
 
   useEffect(() => {
-    setLastDeliveredQuantities(null);
-  }, [equipmentItems]);
-  
+    if (!activeBatch) return;
+    setBatchLoadedQuantities((prev) => {
+      const next: Record<string, string> = { ...prev };
+      equipmentItems.forEach((item) => {
+        const batchItem = activeBatch.items?.find((entry) => entry.quotation_line_item_id === item.id);
+        const remaining = remainingByItem[item.id] ?? 0;
+        if (next[item.id] === undefined) {
+          next[item.id] = String(batchItem?.qty_loaded ?? remaining);
+        }
+      });
+      Object.keys(next).forEach((id) => {
+        if (!equipmentItems.some((item) => item.id === id)) {
+          delete next[id];
+        }
+      });
+      return next;
+    });
+  }, [activeBatch, equipmentItems, remainingByItem]);
+
   const [calculation, setCalculation] = useState<QuotationCalculation>({
     hireDate: getToday(),
     returnDate: getToday(),
@@ -411,7 +472,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           scaffoldId: item.scaffoldId,
           itemCode: item.itemCode,
           description: item.description,
-          totalDelivered: parseNumber(item.qtyDelivered),
+          totalDelivered: deliveredTotalsByItem[item.id] ?? 0,
           good: existing?.good ?? "0",
           dirty: existing?.dirty ?? "0",
           damaged: existing?.damaged ?? "0",
@@ -419,38 +480,28 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         };
       })
     );
-  }, [equipmentItems]);
+  }, [equipmentItems, deliveredTotalsByItem]);
 
   const stepIndex = steps.findIndex((step) => step.key === activeStep);
 
   const weeklyHireTotal = useMemo(() => {
     return equipmentItems.reduce((total, item) => {
-      const qty = parseNumber(item.qtyDelivered);
+      const qty = deliveredTotalsByItem[item.id] ?? 0;
       const rate = parseNumber(item.weeklyRate);
       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
       const hireRate = Math.max(rate * (1 - discountRate), 0);
       return total + qty * hireRate;
     }, 0);
-  }, [equipmentItems]);
-
-  const hasPreviousDelivery = useMemo(
-    () => equipmentItems.some((item) => item.previouslyDelivered > 0),
-    [equipmentItems]
-  );
+  }, [equipmentItems, deliveredTotalsByItem]);
 
   const hasBalanceDelivery = useMemo(
-    () => equipmentItems.some((item) => item.dbBalanceQuantity > 0),
-    [equipmentItems]
+    () => equipmentItems.some((item) => (remainingByItem[item.id] ?? 0) > 0),
+    [equipmentItems, remainingByItem]
   );
 
   const balanceDeliveryItems = useMemo(
-    () => (hasBalanceDelivery ? equipmentItems.filter((item) => item.dbBalanceQuantity > 0) : equipmentItems),
-    [equipmentItems, hasBalanceDelivery]
-  );
-
-  const previousDeliveryItems = useMemo(
-    () => equipmentItems.filter((item) => item.previouslyDelivered > 0),
-    [equipmentItems]
+    () => (hasBalanceDelivery ? equipmentItems.filter((item) => (remainingByItem[item.id] ?? 0) > 0) : equipmentItems),
+    [equipmentItems, hasBalanceDelivery, remainingByItem]
   );
 
   const selectedScaffold = useMemo(
@@ -459,7 +510,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   );
   const remainingSelectedQty = useMemo(() => {
     if (!selectedScaffold) return 0;
-    const availableQty = selectedScaffold.quantity ?? 0;
+    const availableQty = selectedScaffold.available_qty ?? selectedScaffold.quantity ?? 0;
     const alreadyAdded = equipmentItems.reduce((total, item) => {
       if (item.scaffoldId !== selectedScaffold.id) return total;
       return total + parseNumber(item.qtyDelivered);
@@ -603,7 +654,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     // Check available inventory
-    const availableQty = scaffold.quantity ?? 0;
+    const availableQty = scaffold.available_qty ?? scaffold.quantity ?? 0;
     const existingItem = equipmentItems.find(item => item.scaffoldId === scaffold.id);
     const alreadyAdded = existingItem ? parseNumber(existingItem.qtyDelivered) : 0;
     const totalRequested = alreadyAdded + qty;
@@ -651,28 +702,28 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     setEquipmentItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const getOrderedQuantity = (item: EquipmentItem) =>
-    remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
+  const getOriginalQuantity = (item: EquipmentItem) =>
+    item.originalQuantity ?? parseNumber(item.qtyDelivered);
+
+  const getRemainingQuantity = (item: EquipmentItem) =>
+    remainingQuantities[item.id] ?? getOriginalQuantity(item);
 
   const getDeliveredQuantity = (item: EquipmentItem) => {
-    const orderedQty = getOrderedQuantity(item);
+    const orderedQty = getRemainingQuantity(item);
     const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
     return Math.min(Math.max(deliveredQty, 0), orderedQty);
   };
 
   const getInventoryDeliveryQuantity = (item: EquipmentItem) => {
-    if (lastDeliveredQuantities?.[item.id] != null) {
-      return lastDeliveredQuantities[item.id];
-    }
     return getDeliveredQuantity(item);
   };
 
   const validateDeliveryQuantities = () => {
     for (const item of equipmentItems) {
-      const orderedQty = getOrderedQuantity(item);
+      const orderedQty = getRemainingQuantity(item);
       const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
       if (deliveredQty > orderedQty) {
-        toast.error(`Delivery Qty cannot exceed Order Qty for ${item.description || item.itemCode}.`);
+        toast.error(`Delivery Qty cannot exceed remaining quantity for ${item.description || item.itemCode}.`);
         return false;
       }
     }
@@ -712,6 +763,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
+    if (!activeBatch) {
+      toast.error("Select a batch before generating the delivery note.");
+      return;
+    }
+
     const balanceQuantities: Record<string, number> = {};
     const deliveredQuantities: Record<string, number> = {};
     const data: DeliveryNoteData = {
@@ -731,7 +787,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       createdBy: header.createdBy,
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
-        const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
+        const balanceQuantity = Math.max(getRemainingQuantity(item) - deliveredQty, 0);
         balanceQuantities[item.id] = balanceQuantity;
         deliveredQuantities[item.id] = deliveredQty;
         return {
@@ -745,41 +801,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       }),
     };
 
-    // Save balance and delivered quantities to database
-    if (savedQuotationId) {
-      try {
-        const quantityUpdates = equipmentItems
-          .filter(item => item.itemCode) // Only update items with part numbers
-          .map(item => ({
-            part_number: item.itemCode,
-            delivered_quantity: deliveredQuantities[item.id] ?? 0,
-            balance_quantity: balanceQuantities[item.id] ?? 0,
-          }));
-        
-        if (quantityUpdates.length > 0) {
-          await updateLineItemQuantities.mutateAsync({
-            quotation_id: savedQuotationId,
-            items: quantityUpdates,
-          });
-          toast.success("Delivery quantities saved to database");
-        }
-      } catch (error) {
-        console.error("Failed to save delivery quantities:", error);
-      }
-    }
-
     generateDeliveryNotePDF(data);
-    setRemainingQuantities(balanceQuantities);
-    setDeliveryQuantities((prev) => {
-      const next = { ...prev };
-      equipmentItems.forEach((item) => {
-        if (balanceQuantities[item.id] != null) {
-          next[item.id] = String(balanceQuantities[item.id]);
-        }
-      });
-      return next;
-    });
-
     toast.success("Hire delivery note opened for printing");
   };
 
@@ -789,17 +811,23 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
-    const deliveredQuantities: Record<string, number> = {};
+    if (!activeBatch) {
+      toast.error("Select a batch before generating the loading report.");
+      return;
+    }
+
+    const loadedQuantities: Record<string, number> = {};
     const currentItems = equipmentItems
       .map((item) => {
-        const deliveredQty = getDeliveredQuantity(item);
-        deliveredQuantities[item.id] = deliveredQty;
+        const remainingQty = getRemainingQuantity(item);
+        const loadedQty = Math.min(parseNumber(batchLoadedQuantities[item.id] ?? ""), remainingQty);
+        loadedQuantities[item.id] = loadedQty;
         return {
           partNumber: item.itemCode,
           description: item.description,
-          quantity: deliveredQty,
+          quantity: loadedQty,
           massPerItem: parseNumber(item.massPerItem) || null,
-          totalMass: deliveredQty * parseNumber(item.massPerItem) || null,
+          totalMass: loadedQty * parseNumber(item.massPerItem) || null,
         };
       })
       .filter((item) => item.quantity > 0);
@@ -814,15 +842,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
-      noteTitle: noteType === "balance" ? "Hire Loading Note (Balance)" : "Hire Loading Note",
+      noteTitle: noteType === "balance"
+        ? "Hire Loading Note (Balance)"
+        : `Hire Loading Note (Batch ${activeBatch?.batch_no ?? deliverySequence})`,
       items: [],
     };
 
     const remainingItems = equipmentItems
       .map((item) => {
-        const orderedQty = getOrderedQuantity(item);
-        const deliveredQty = deliveredQuantities[item.id] ?? 0;
-        const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+        const orderedQty = getRemainingQuantity(item);
+        const loadedQty = loadedQuantities[item.id] ?? 0;
+        const remainingQty = Math.max(orderedQty - loadedQty, 0);
         return {
           partNumber: item.itemCode,
           description: item.description,
@@ -839,7 +869,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       toast.error(
         noteType === "balance"
           ? "No remaining quantities to include in a balance hire loading note."
-          : "Enter delivered quantities to generate a hire loading note."
+          : "Enter loaded quantities to generate a hire loading note."
       );
       return;
     }
@@ -849,28 +879,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       items,
     });
 
-    if (noteType === "current") {
-      setLastDeliveredQuantities(deliveredQuantities);
-      setRemainingQuantities((prev) => {
-        const next = { ...prev };
-        equipmentItems.forEach((item) => {
-          const orderedQty = getOrderedQuantity(item);
-          const deliveredQty = deliveredQuantities[item.id] ?? 0;
-          next[item.id] = Math.max(orderedQty - deliveredQty, 0);
-        });
-        return next;
-      });
-      setDeliveryQuantities((prev) => {
-        const next = { ...prev };
-        equipmentItems.forEach((item) => {
-          const orderedQty = getOrderedQuantity(item);
-          const deliveredQty = deliveredQuantities[item.id] ?? 0;
-          next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
-        });
-        return next;
-      });
-    }
-
     toast.success(
       noteType === "balance"
         ? "Balance hire loading note opened for printing."
@@ -878,14 +886,46 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     );
   };
 
-  const handleEquipmentHired = async (): Promise<boolean> => {
+  const handleCreateBatch = async () => {
+    if (!savedQuotationId) {
+      toast.error("Save the hire order before creating batches.");
+      return;
+    }
+    if (!Object.values(remainingByItem).some((qty) => qty > 0)) {
+      toast.error("No remaining quantities to deliver.");
+      return;
+    }
+
+    try {
+      const batch = await createHireBatch.mutateAsync({
+        quotation_id: savedQuotationId,
+        batch_no: nextBatchNo,
+      });
+      setActiveBatchId(batch.id);
+      setInventoryReserved(false);
+    } catch (error) {
+      console.error("Failed to create batch:", error);
+    }
+  };
+
+  const handleLoadBatch = async (): Promise<boolean> => {
     if (!equipmentItems.length) {
-      toast.error("No equipment items selected for delivery");
+      toast.error("No equipment items selected for loading.");
       return false;
     }
 
-    if (inventoryDeducted) {
-      toast.error("Inventory already deducted for this delivery");
+    if (!activeBatch) {
+      toast.error("Create or select a batch before loading.");
+      return false;
+    }
+
+    if (activeBatch.status === "Delivered") {
+      toast.error("This batch has already been delivered.");
+      return false;
+    }
+
+    if (activeBatch.status === "Loaded") {
+      toast.error("This batch has already been loaded.");
       return false;
     }
 
@@ -894,43 +934,181 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return false;
     }
 
-    if (!validateDeliveryQuantities()) {
-      return false;
-    }
+    const inventoryItems = [];
+    const batchItems = [];
 
-    // Validate quantities against current inventory before deducting
     for (const item of equipmentItems) {
-      if (!item.scaffoldId) continue;
-      const scaffold = scaffolds.find(s => s.id === item.scaffoldId);
-      if (!scaffold) continue;
-      const requestedQty = getInventoryDeliveryQuantity(item);
-      const availableQty = scaffold.quantity ?? 0;
-      if (requestedQty > availableQty) {
-        toast.error(`Cannot hire ${requestedQty} of "${item.description || item.itemCode}". Only ${availableQty} available in inventory.`);
+      const remainingQty = getRemainingQuantity(item);
+      const loadedQty = Math.min(parseNumber(batchLoadedQuantities[item.id] ?? ""), remainingQty);
+      if (loadedQty > remainingQty) {
+        toast.error(`Loaded Qty cannot exceed remaining quantity for ${item.description || item.itemCode}.`);
         return false;
+      }
+      if (loadedQty <= 0) continue;
+      const existingBatchItem = activeBatch.items?.find((entry) => entry.quotation_line_item_id === item.id);
+      batchItems.push({
+        batch_id: activeBatch.id,
+        quotation_line_item_id: item.id,
+        qty_loaded: loadedQty,
+        qty_delivered: existingBatchItem?.qty_delivered ?? 0,
+        delivered_at: existingBatchItem?.delivered_at ?? null,
+      });
+
+      if (item.scaffoldId) {
+        const scaffold = scaffolds.find((scaffoldItem) => scaffoldItem.id === item.scaffoldId);
+        if (!scaffold) continue;
+        const availableQty = scaffold.available_qty ?? scaffold.quantity ?? 0;
+        if (loadedQty > availableQty) {
+          toast.error(`Cannot load ${loadedQty} of "${item.description || item.itemCode}". Only ${availableQty} available.`);
+          return false;
+        }
+        inventoryItems.push({ scaffoldId: item.scaffoldId, quantity: loadedQty });
       }
     }
 
-    const inventoryItems = equipmentItems
-      .filter((item) => item.scaffoldId)
-      .map((item) => ({
-        scaffoldId: item.scaffoldId as string,
-        quantity: getInventoryDeliveryQuantity(item),
-      }))
-      .filter((item) => item.quantity > 0);
-
-    if (!inventoryItems.length) {
-      toast.error("No inventory-linked equipment items to deduct.");
+    if (!batchItems.length) {
+      toast.error("Enter quantities to load for this batch.");
       return false;
     }
 
-    await deductInventory.mutateAsync({
-      items: inventoryItems,
-      scaffolds,
+    await reserveInventory.mutateAsync({ items: inventoryItems });
+    await upsertHireBatchItems.mutateAsync({ quotationId: activeBatch.quotation_id, items: batchItems });
+    await updateHireBatch.mutateAsync({
+      id: activeBatch.id,
+      status: "Loaded",
+      loaded_at: new Date().toISOString(),
+      loaded_by: profile?.full_name ?? null,
     });
-    setInventoryDeducted(true);
-    toast.success("Inventory quantities deducted successfully!");
+    setInventoryReserved(true);
     return true;
+  };
+
+  const handleConfirmDelivery = async () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items selected for delivery.");
+      return;
+    }
+
+    if (!activeBatch) {
+      toast.error("Create or select a batch before confirming delivery.");
+      return;
+    }
+
+    if (activeBatch.status === "Delivered") {
+      toast.error("This batch has already been delivered.");
+      return;
+    }
+
+    if (activeBatch.status === "Draft") {
+      toast.error("Load the batch before confirming delivery.");
+      return;
+    }
+
+    if (!validateDeliveryQuantities()) {
+      return;
+    }
+
+    const batchItems = [];
+    const inventoryItems = [];
+    const totalUpdates: Record<string, number> = {};
+
+    for (const item of equipmentItems) {
+      const remainingQty = getRemainingQuantity(item);
+      const deliveredQty = Math.min(parseNumber(deliveryQuantities[item.id] ?? ""), remainingQty);
+      const loadedQty = Math.min(parseNumber(batchLoadedQuantities[item.id] ?? ""), remainingQty);
+      if (deliveredQty > loadedQty) {
+        toast.error(`Delivered Qty cannot exceed loaded quantity for ${item.description || item.itemCode}.`);
+        return;
+      }
+
+      const existingBatchDelivered = activeBatch.items?.find((entry) => entry.quotation_line_item_id === item.id)?.qty_delivered ?? 0;
+      const currentTotalDelivered = deliveredTotalsByItem[item.id] ?? 0;
+      totalUpdates[item.id] = currentTotalDelivered - existingBatchDelivered + deliveredQty;
+
+      batchItems.push({
+        batch_id: activeBatch.id,
+        quotation_line_item_id: item.id,
+        qty_loaded: loadedQty,
+        qty_delivered: deliveredQty,
+        delivered_at: deliveryNote.deliveryDate,
+      });
+
+      const returnQty = returnUndeliveredToStore ? Math.max(loadedQty - deliveredQty, 0) : 0;
+      if (item.scaffoldId && (deliveredQty > 0 || returnQty > 0)) {
+        inventoryItems.push({
+          scaffoldId: item.scaffoldId,
+          deliveredQty,
+          returnQty,
+        });
+      }
+    }
+
+    await deliverInventory.mutateAsync({ items: inventoryItems });
+    await upsertHireBatchItems.mutateAsync({ quotationId: activeBatch.quotation_id, items: batchItems });
+    await updateHireBatch.mutateAsync({
+      id: activeBatch.id,
+      status: "Delivered",
+      delivered_at: new Date().toISOString(),
+      delivered_by: deliveryNote.deliveredBy || profile?.full_name || null,
+    });
+
+    if (savedQuotationId) {
+      const quantityUpdates = equipmentItems
+        .filter((item) => item.itemCode)
+        .map((item) => ({
+          part_number: item.itemCode,
+          delivered_quantity: totalUpdates[item.id] ?? 0,
+          balance_quantity: Math.max(getOriginalQuantity(item) - (totalUpdates[item.id] ?? 0), 0),
+        }));
+      if (quantityUpdates.length > 0) {
+        await updateLineItemQuantities.mutateAsync({
+          quotation_id: savedQuotationId,
+          items: quantityUpdates,
+        });
+      }
+
+      const fullyDelivered = equipmentItems.every(
+        (item) => (totalUpdates[item.id] ?? 0) >= getOriginalQuantity(item)
+      );
+      await updateQuotation.mutateAsync({
+        id: savedQuotationId,
+        status: fullyDelivered ? "Fully Delivered" : "Partially Delivered",
+      });
+    }
+
+    setInventoryReserved(false);
+    toast.success("Batch delivery confirmed.");
+  };
+
+  const handleCancelBatch = async () => {
+    if (!activeBatch) {
+      toast.error("Select a batch to cancel.");
+      return;
+    }
+
+    if (activeBatch.status === "Delivered") {
+      toast.error("Delivered batches cannot be cancelled.");
+      return;
+    }
+
+    const releaseItems = equipmentItems
+      .filter((item) => item.scaffoldId)
+      .map((item) => {
+        const loadedQty = parseNumber(batchLoadedQuantities[item.id] ?? "");
+        return { scaffoldId: item.scaffoldId as string, quantity: loadedQty };
+      })
+      .filter((item) => item.quantity > 0);
+
+    if (releaseItems.length) {
+      await releaseInventory.mutateAsync({ items: releaseItems });
+    }
+
+    await updateHireBatch.mutateAsync({
+      id: activeBatch.id,
+      status: "Cancelled",
+    });
+    setInventoryReserved(false);
+    toast.success("Batch cancelled and inventory released.");
   };
 
   const handlePrintYardVerificationNote = () => {
@@ -1007,36 +1185,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       return;
     }
 
-    if (!inventoryDeducted) {
-      toast.error("Please click \"Equipment Hired\" before continuing.");
+    if (!activeBatch) {
+      toast.error("Create or select a batch before continuing.");
       return;
     }
 
-    // Save all equipment items to database before generating delivery note
-    if (savedQuotationId) {
-      try {
-        await clearLineItems.mutateAsync(savedQuotationId);
-        await addLineItems.mutateAsync(
-          equipmentItems.map(item => ({
-            quotation_id: savedQuotationId,
-            scaffold_id: item.scaffoldId || undefined,
-            part_number: item.itemCode,
-            description: item.description,
-            quantity: parseNumber(item.qtyDelivered),
-            hire_discount: parseNumber(item.hireDiscount),
-            mass_per_item: parseNumber(item.massPerItem),
-            weekly_rate: parseNumber(item.weeklyRate),
-          }))
-        );
-        toast.success("Delivery items saved to database");
-      } catch (error) {
-        console.error("Failed to save delivery items:", error);
-        toast.error("Failed to save delivery items to database");
-        return;
-      }
+    if (!inventoryReserved && activeBatch.status === "Draft") {
+      toast.error("Load the batch before continuing.");
+      return;
     }
 
-    await handlePrintDeliveryNote();
     onClientProcessed?.({
       id: header.quotationNo,
       clientCompanyName: header.clientCompanyName,
@@ -1717,11 +1875,12 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             if (item.scaffoldId !== scaffold.id) return total;
                             return total + parseNumber(item.qtyDelivered);
                           }, 0);
-                          const remainingQty = Math.max((scaffold.quantity ?? 0) - alreadyAdded, 0);
+                          const availableQty = scaffold.available_qty ?? scaffold.quantity ?? 0;
+                          const remainingQty = Math.max(availableQty - alreadyAdded, 0);
                           return (
                             <SelectItem key={scaffold.id} value={scaffold.id}>
                               {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                              (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                              (Qty: {availableQty}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
                             </SelectItem>
                           );
                         })
@@ -1858,6 +2017,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               </table>
             </div>
 
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="returnToStore"
+                checked={returnUndeliveredToStore}
+                onCheckedChange={(checked) => setReturnUndeliveredToStore(!!checked)}
+              />
+              <Label htmlFor="returnToStore" className="text-sm text-muted-foreground">
+                Return undelivered items to store (release reserved stock).
+              </Label>
+            </div>
+
             <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
@@ -1938,20 +2108,45 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         {/* Step 4: Hire Delivery Note */}
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
-            {/* Check if this is a balance delivery */}
-            {hasPreviousDelivery && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                <h4 className="font-semibold text-primary mb-1">Balance Delivery</h4>
-                <p className="text-sm text-muted-foreground">
-                  This quotation has items from a previous delivery. The quantities shown are the balance remaining to be delivered.
-                </p>
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h4 className="font-semibold">Hire Batches</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Track each loading/delivery batch separately. Select a batch to confirm delivery.
+                  </p>
+                </div>
+                <Button type="button" onClick={handleCreateBatch} disabled={!hasRemainingDeliveries || createHireBatch.isPending}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Batch
+                </Button>
               </div>
-            )}
+              <div className="mt-4 space-y-2 text-sm">
+                {hireBatches.length === 0 ? (
+                  <p className="text-muted-foreground">No batches created yet.</p>
+                ) : (
+                  hireBatches.map((batch) => (
+                    <div
+                      key={batch.id}
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 ${batch.id === activeBatchId ? "border-primary/50 bg-primary/5" : "border-border"}`}
+                    >
+                      <div>
+                        <p className="font-medium">Batch {batch.batch_no}</p>
+                        <p className="text-xs text-muted-foreground">Status: {batch.status}</p>
+                      </div>
+                      <Button type="button" variant="outline" onClick={() => setActiveBatchId(batch.id)}>
+                        {batch.id === activeBatchId ? "Active" : "Select"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
             
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <h4 className="font-semibold mb-2">Hire Delivery Note</h4>
               <p className="text-sm text-muted-foreground">
-                Confirm ordered quantities, record delivered quantities manually, and review balances.
+                Confirm delivered quantities for the selected batch. Remaining quantities update automatically.
               </p>
             </div>
 
@@ -1961,62 +2156,54 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Part No</th>
                     <th className="px-3 py-2 text-left font-medium">Description</th>
-                    {hasPreviousDelivery && (
-                      <>
-                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Prev. Delivered</th>
-                      </>
-                    )}
-                    <th className="px-3 py-2 text-right font-medium">
-                      {hasPreviousDelivery ? "Balance Qty" : "Order Qty"}
-                    </th>
-                    <th className="px-3 py-2 text-right font-medium">This Delivery</th>
+                    <th className="px-3 py-2 text-right font-medium">Ordered Qty</th>
+                    <th className="px-3 py-2 text-right font-medium">Delivered To Date</th>
                     <th className="px-3 py-2 text-right font-medium">Remaining</th>
+                    <th className="px-3 py-2 text-right font-medium">This Delivery</th>
+                    <th className="px-3 py-2 text-right font-medium">Remaining After</th>
                   </tr>
                 </thead>
                 <tbody>
                   {balanceDeliveryItems.length === 0 ? (
                     <tr>
-                      <td colSpan={hasPreviousDelivery ? 7 : 5} className="px-3 py-6 text-center text-muted-foreground">
-                        {hasBalanceDelivery ? "No balance quantities remain to be delivered." : "No equipment items available yet."}
+                      <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                        {hasBalanceDelivery ? "No remaining quantities to be delivered." : "No equipment items available yet."}
                       </td>
                     </tr>
                   ) : (
                     balanceDeliveryItems.map((item) => {
-                      const orderedQty = getOrderedQuantity(item);
+                      const orderedQty = getOriginalQuantity(item);
+                      const deliveredToDate = deliveredTotalsByItem[item.id] ?? 0;
+                      const remainingQty = remainingByItem[item.id] ?? 0;
                       const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-                      const remainingQty = Math.max(orderedQty - deliveredQty, 0);
+                      const remainingAfter = Math.max(remainingQty - deliveredQty, 0);
                       return (
                         <tr key={`hire-delivery-${item.id}`} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
                           <td className="px-3 py-2">{item.description}</td>
-                          {hasPreviousDelivery && (
-                            <>
-                              <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
-                              <td className="px-3 py-2 text-right text-muted-foreground">{item.previouslyDelivered}</td>
-                            </>
-                          )}
                           <td className="px-3 py-2 text-right font-medium">{orderedQty}</td>
+                          <td className="px-3 py-2 text-right text-muted-foreground">{deliveredToDate}</td>
+                          <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
                           <td className="px-3 py-2 text-right">
                             <Input
                               type="number"
                               min="0"
-                              max={orderedQty}
+                              max={remainingQty}
                               className="h-8 w-24 text-right"
                               value={deliveryQuantities[item.id] ?? ""}
                               onChange={(e) => {
                                 const rawValue = e.target.value;
                                 const nextValue = parseNumber(rawValue);
-                                if (nextValue > orderedQty) {
-                                  toast.error("Delivery Qty cannot exceed available quantity.");
-                                  setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
+                                if (nextValue > remainingQty) {
+                                  toast.error("Delivery Qty cannot exceed remaining quantity.");
+                                  setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(remainingQty) }));
                                   return;
                                 }
                                 setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
                               }}
                             />
                           </td>
-                          <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
+                          <td className="px-3 py-2 text-right font-medium">{remainingAfter}</td>
                         </tr>
                       );
                     })
@@ -2024,36 +2211,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 </tbody>
               </table>
             </div>
-
-            {hasPreviousDelivery && previousDeliveryItems.length > 0 && (
-              <div className="rounded-lg border border-border bg-muted/20 p-4">
-                <h4 className="font-semibold mb-3">First Delivery Equipment</h4>
-                <div className="overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Part No</th>
-                        <th className="px-3 py-2 text-left font-medium">Description</th>
-                        <th className="px-3 py-2 text-right font-medium">Original Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Delivered Qty</th>
-                        <th className="px-3 py-2 text-right font-medium">Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previousDeliveryItems.map((item) => (
-                        <tr key={`previous-delivery-${item.id}`} className="border-t border-border">
-                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
-                          <td className="px-3 py-2">{item.description}</td>
-                          <td className="px-3 py-2 text-right text-muted-foreground">{item.originalQuantity}</td>
-                          <td className="px-3 py-2 text-right font-medium">{item.previouslyDelivered}</td>
-                          <td className="px-3 py-2 text-right text-muted-foreground">{item.dbBalanceQuantity}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <Button type="button" variant="outline" onClick={handleBack}>
@@ -2063,27 +2220,70 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleEquipmentHired}
-                  disabled={inventoryDeducted || deductInventory.isPending}
+                  onClick={handleConfirmDelivery}
+                  disabled={!activeBatch || deliverInventory.isPending}
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  Equipment Hired
+                  Confirm Delivery
                 </Button>
-                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
+                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote} disabled={!activeBatch}>
                   <Printer className="h-4 w-4 mr-2" />
                   Hire Delivery Note
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelBatch}
+                  disabled={!activeBatch || activeBatch.status === "Delivered" || updateHireBatch.isPending}
+                >
+                  Cancel Batch
+                </Button>
                 <Button type="button" onClick={handleNext}>
-                  Continue to Delivery Note
+                  Continue to Calculation
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 5: Hire Delivery Note */}
+        {/* Step 5: Hire Loading */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h4 className="font-semibold">Hire Loading Batches</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Reserve inventory and load quantities for the selected batch.
+                  </p>
+                </div>
+                <Button type="button" onClick={handleCreateBatch} disabled={!hasRemainingDeliveries || createHireBatch.isPending}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Batch
+                </Button>
+              </div>
+              <div className="mt-4 space-y-2 text-sm">
+                {hireBatches.length === 0 ? (
+                  <p className="text-muted-foreground">No batches created yet.</p>
+                ) : (
+                  hireBatches.map((batch) => (
+                    <div
+                      key={batch.id}
+                      className={`flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 ${batch.id === activeBatchId ? "border-primary/50 bg-primary/5" : "border-border"}`}
+                    >
+                      <div>
+                        <p className="font-medium">Batch {batch.batch_no}</p>
+                        <p className="text-xs text-muted-foreground">Status: {batch.status}</p>
+                      </div>
+                      <Button type="button" variant="outline" onClick={() => setActiveBatchId(batch.id)}>
+                        {batch.id === activeBatchId ? "Active" : "Select"}
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label>Hire Delivery Note No</Label>
@@ -2131,14 +2331,74 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               </div>
             </div>
 
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Part No</th>
+                    <th className="px-3 py-2 text-left font-medium">Description</th>
+                    <th className="px-3 py-2 text-right font-medium">Remaining</th>
+                    <th className="px-3 py-2 text-right font-medium">Available</th>
+                    <th className="px-3 py-2 text-right font-medium">Load Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balanceDeliveryItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                        {hasBalanceDelivery ? "No remaining quantities to load." : "No equipment items available yet."}
+                      </td>
+                    </tr>
+                  ) : (
+                    balanceDeliveryItems.map((item) => {
+                      const remainingQty = remainingByItem[item.id] ?? 0;
+                      const scaffold = scaffolds?.find((scaffoldItem) => scaffoldItem.id === item.scaffoldId);
+                      const availableQty = scaffold?.available_qty ?? scaffold?.quantity ?? 0;
+                      return (
+                        <tr key={`hire-loading-${item.id}`} className="border-t border-border">
+                          <td className="px-3 py-2">{item.itemCode || "-"}</td>
+                          <td className="px-3 py-2">{item.description}</td>
+                          <td className="px-3 py-2 text-right font-medium">{remainingQty}</td>
+                          <td className="px-3 py-2 text-right text-muted-foreground">{availableQty}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              max={Math.min(remainingQty, availableQty)}
+                              className="h-8 w-24 text-right"
+                              value={batchLoadedQuantities[item.id] ?? ""}
+                              onChange={(e) => {
+                                const rawValue = e.target.value;
+                                const nextValue = parseNumber(rawValue);
+                                const capped = Math.min(nextValue, remainingQty, availableQty);
+                                if (nextValue > capped) {
+                                  toast.error("Load Qty cannot exceed remaining or available quantity.");
+                                  setBatchLoadedQuantities((prev) => ({ ...prev, [item.id]: String(capped) }));
+                                  return;
+                                }
+                                setBatchLoadedQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
             {/* Preview Summary */}
             <div className="rounded-lg border border-border p-4 bg-muted/30">
               <h4 className="font-semibold mb-2">Delivery Summary</h4>
               <p className="text-sm text-muted-foreground">
-                {equipmentItems.length} item(s) • Total mass: {equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered) * parseNumber(item.massPerItem), 0).toFixed(2)} kg
+                {equipmentItems.length} item(s) • Total loaded mass: {equipmentItems.reduce((sum, item) => {
+                  const loadedQty = parseNumber(batchLoadedQuantities[item.id] ?? "");
+                  return sum + loadedQty * parseNumber(item.massPerItem);
+                }, 0).toFixed(2)} kg
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Inventory status: {inventoryDeducted ? "Deducted" : "Pending"}
+                Inventory status: {inventoryReserved ? "Reserved" : "Pending"}
               </p>
             </div>
 
@@ -2147,22 +2407,24 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 Back
               </Button>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={handlePrintDeliveryNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Hire Delivery Note
+                <Button type="button" variant="outline" onClick={handleLoadBatch} disabled={!activeBatch || reserveInventory.isPending}>
+                  <Package className="h-4 w-4 mr-2" />
+                  Load Batch
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handlePrintHireLoadingNote("current")}
+                  disabled={!activeBatch}
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  Hire Loading Note (This Delivery)
+                  Hire Loading Note (This Batch)
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => handlePrintHireLoadingNote("balance")}
+                  disabled={!activeBatch}
                 >
                   <Printer className="h-4 w-4 mr-2" />
                   Hire Loading Note (Balance)
