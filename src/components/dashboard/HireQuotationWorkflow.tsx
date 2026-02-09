@@ -2307,42 +2307,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveryDate: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="deliveredBy">Delivered By</Label>
-                  <Input
-                    id="deliveredBy"
-                    value={deliveryNote.deliveredBy}
-                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveredBy: e.target.value }))}
-                    placeholder="Driver name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="vehicleNo">Vehicle No</Label>
-                  <Input
-                    id="vehicleNo"
-                    value={deliveryNote.vehicleNo}
-                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
-                    placeholder="Vehicle registration"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="receivedBy">Received By</Label>
-                  <Input
-                    id="receivedBy"
-                    value={deliveryNote.receivedBy}
-                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, receivedBy: e.target.value }))}
-                    placeholder="Receiver name"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="remarks">Remarks</Label>
-                  <Input
-                    id="remarks"
-                    value={deliveryNote.remarks}
-                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, remarks: e.target.value }))}
-                    placeholder="Any special notes for this delivery"
-                  />
-                </div>
               </CardContent>
             </Card>
 
@@ -2581,38 +2545,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   type="date"
                   value={deliveryNote.deliveryDate}
                   onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveryDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>Delivered By</Label>
-                <Input
-                  value={deliveryNote.deliveredBy}
-                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveredBy: e.target.value }))}
-                  placeholder="Driver name"
-                />
-              </div>
-              <div>
-                <Label>Received By</Label>
-                <Input
-                  value={deliveryNote.receivedBy}
-                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, receivedBy: e.target.value }))}
-                  placeholder="Receiver name"
-                />
-              </div>
-              <div>
-                <Label>Vehicle No</Label>
-                <Input
-                  value={deliveryNote.vehicleNo}
-                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
-                  placeholder="Vehicle registration"
-                />
-              </div>
-              <div>
-                <Label>Remarks</Label>
-                <Input
-                  value={deliveryNote.remarks}
-                  onChange={(e) => setDeliveryNote(prev => ({ ...prev, remarks: e.target.value }))}
-                  placeholder="Any special notes"
                 />
               </div>
             </div>
