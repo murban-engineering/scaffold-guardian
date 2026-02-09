@@ -61,6 +61,7 @@ const AddScaffold = () => {
   const deleteScaffold = useDeleteScaffold();
   const { data: existingScaffolds } = useScaffolds();
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
+  const isSubmitting = createScaffold.isPending || updateScaffold.isPending;
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -116,6 +117,13 @@ const AddScaffold = () => {
       form.setValue("description", scaffold.description || "");
       form.setValue("mass_per_item", scaffold.mass_per_item || undefined);
       form.setValue("weekly_rate", scaffold.weekly_rate || undefined);
+    }
+  };
+
+  const handleAdjustmentSelect = (type: FormValues["adjustment_type"]) => {
+    form.setValue("adjustment_type", type);
+    if (type === "remove" && !selectedScaffoldId && existingScaffolds?.length) {
+      handlePresetSelect(existingScaffolds[0].id);
     }
   };
 
@@ -213,9 +221,9 @@ const AddScaffold = () => {
                     {/* Preset Selection */}
                     <div className="p-4 bg-muted rounded-lg">
                       <FormLabel className="text-sm font-medium mb-2 block">
-                        Quick Select from Price List
+                        Quick Select from Inventory
                       </FormLabel>
-                      <Select onValueChange={handlePresetSelect}>
+                      <Select onValueChange={handlePresetSelect} value={selectedScaffoldId ?? ""}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select an item to auto-fill details..." />
                         </SelectTrigger>
@@ -227,20 +235,6 @@ const AddScaffold = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={handleDeleteSelected}
-                          disabled={deleteScaffold.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {deleteScaffold.isPending ? "Deleting..." : "Delete selected inventory item"}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">
-                          Choose an item above to enable deletion.
-                        </p>
-                      </div>
                       <p className="text-xs text-muted-foreground mt-2">
                         Or fill in the details manually below
                       </p>
@@ -251,30 +245,41 @@ const AddScaffold = () => {
                       name="adjustment_type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Inventory Adjustment</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose how to adjust inventory" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="add">
-                                <span className="flex items-center gap-2">
-                                  <Plus className="h-4 w-4" />
-                                  Add to inventory
-                                </span>
-                              </SelectItem>
-                              <SelectItem value="remove">
-                                <span className="flex items-center gap-2">
-                                  <Minus className="h-4 w-4" />
-                                  Remove from inventory
-                                </span>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Inventory Actions</FormLabel>
+                          <FormControl>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <Button
+                                type="button"
+                                variant={field.value === "add" ? "default" : "outline"}
+                                className="justify-start gap-2"
+                                onClick={() => handleAdjustmentSelect("add")}
+                              >
+                                <Plus className="h-4 w-4" />
+                                Add Inventory
+                              </Button>
+                              <Button
+                                type="button"
+                                variant={field.value === "remove" ? "default" : "outline"}
+                                className="justify-start gap-2"
+                                onClick={() => handleAdjustmentSelect("remove")}
+                              >
+                                <Minus className="h-4 w-4" />
+                                Deduct Inventory
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                className="justify-start gap-2 sm:col-span-2"
+                                onClick={handleDeleteSelected}
+                                disabled={deleteScaffold.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                {deleteScaffold.isPending ? "Deleting..." : "Delete Inventory Item"}
+                              </Button>
+                            </div>
+                          </FormControl>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Choose remove to deduct quantities from an existing inventory item.
+                            Deduct and delete actions use the inventory selector above to target an item.
                           </p>
                           <FormMessage />
                         </FormItem>
@@ -382,9 +387,13 @@ const AddScaffold = () => {
                       <Button
                         type="submit"
                         className="flex-1"
-                        disabled={createScaffold.isPending}
+                        disabled={isSubmitting}
                       >
-                        {createScaffold.isPending ? "Adding..." : "Add Scaffold"}
+                        {isSubmitting
+                          ? "Saving..."
+                          : form.getValues("adjustment_type") === "remove"
+                          ? "Deduct Inventory"
+                          : "Add Inventory"}
                       </Button>
                     </div>
                   </form>
