@@ -29,11 +29,24 @@ import { useCreateScaffold, useScaffolds } from "@/hooks/useScaffolds";
 const formSchema = z.object({
   scaffold_type: z.enum(["frame", "tube_coupler", "mobile", "suspended", "cantilever", "system"]),
   status: z.enum(["available", "in_use", "damaged", "maintenance"]).default("available"),
-  part_number: z.string().max(50, "Part number must be less than 50 characters").optional(),
-  description: z.string().max(500, "Description must be less than 500 characters").optional(),
-  quantity: z.coerce.number().int().min(0, "Quantity must be 0 or greater").default(0),
-  mass_per_item: z.coerce.number().min(0, "Mass must be 0 or greater").optional(),
-  weekly_rate: z.coerce.number().min(0, "Rate must be 0 or greater").optional(),
+  part_number: z
+    .string()
+    .min(1, "Part number is required")
+    .max(50, "Part number must be less than 50 characters"),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(500, "Description must be less than 500 characters"),
+  quantity: z.coerce
+    .number({ required_error: "Quantity is required", invalid_type_error: "Quantity must be a number" })
+    .int()
+    .min(0, "Quantity must be 0 or greater"),
+  mass_per_item: z.coerce
+    .number({ required_error: "Mass per item is required", invalid_type_error: "Mass per item must be a number" })
+    .min(0, "Mass must be 0 or greater"),
+  weekly_rate: z.coerce
+    .number({ required_error: "Weekly rate is required", invalid_type_error: "Weekly rate must be a number" })
+    .min(0, "Rate must be 0 or greater"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -81,7 +94,7 @@ const AddScaffold = () => {
       status: "available",
       part_number: "",
       description: "",
-      quantity: 0,
+      quantity: undefined,
       mass_per_item: undefined,
       weekly_rate: undefined,
     },
@@ -102,11 +115,11 @@ const AddScaffold = () => {
     const scaffoldData = {
       scaffold_type: values.scaffold_type,
       status: values.status,
-      part_number: values.part_number || null,
-      description: values.description || null,
+      part_number: values.part_number,
+      description: values.description,
       quantity: values.quantity,
-      mass_per_item: values.mass_per_item || null,
-      weekly_rate: values.weekly_rate || null,
+      mass_per_item: values.mass_per_item,
+      weekly_rate: values.weekly_rate,
     };
 
     await createScaffold.mutateAsync(scaffoldData);
@@ -200,7 +213,7 @@ const AddScaffold = () => {
                           <FormItem>
                             <FormLabel>Quantity</FormLabel>
                             <FormControl>
-                              <Input type="number" min="0" {...field} />
+                              <Input type="number" min="0" {...field} value={field.value ?? ""} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
