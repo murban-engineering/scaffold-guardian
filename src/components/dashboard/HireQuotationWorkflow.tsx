@@ -357,6 +357,69 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }));
   }, [header.quotationNo, deliverySequence]);
 
+  const deliveryStorageKey = useMemo(() => {
+    if (savedQuotationId) {
+      return `hire-delivery-history:${savedQuotationId}`;
+    }
+    if (header.quotationNo) {
+      return `hire-delivery-history:${header.quotationNo}`;
+    }
+    return null;
+  }, [savedQuotationId, header.quotationNo]);
+
+  useEffect(() => {
+    if (!deliveryStorageKey) return;
+    const stored = window.localStorage.getItem(deliveryStorageKey);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as {
+        deliveryHistory?: DeliveryRecord[];
+        inventoryDeducted?: boolean;
+        deliverySequence?: number;
+        remainingQuantities?: Record<string, number>;
+        currentDeliveryDispatched?: boolean;
+      };
+      if (parsed.deliveryHistory) {
+        setDeliveryHistory(parsed.deliveryHistory);
+      }
+      if (parsed.inventoryDeducted !== undefined) {
+        setInventoryDeducted(parsed.inventoryDeducted);
+      } else if (parsed.deliveryHistory?.length) {
+        setInventoryDeducted(true);
+      }
+      if (parsed.deliverySequence) {
+        setDeliverySequence(parsed.deliverySequence);
+      }
+      if (parsed.remainingQuantities) {
+        setRemainingQuantities(parsed.remainingQuantities);
+      }
+      if (parsed.currentDeliveryDispatched !== undefined) {
+        setCurrentDeliveryDispatched(parsed.currentDeliveryDispatched);
+      }
+    } catch (error) {
+      console.error("Failed to load delivery history from storage:", error);
+    }
+  }, [deliveryStorageKey]);
+
+  useEffect(() => {
+    if (!deliveryStorageKey) return;
+    const payload = {
+      deliveryHistory,
+      inventoryDeducted,
+      deliverySequence,
+      remainingQuantities,
+      currentDeliveryDispatched,
+    };
+    window.localStorage.setItem(deliveryStorageKey, JSON.stringify(payload));
+  }, [
+    deliveryStorageKey,
+    deliveryHistory,
+    inventoryDeducted,
+    deliverySequence,
+    remainingQuantities,
+    currentDeliveryDispatched,
+  ]);
+
   useEffect(() => {
     setRemainingQuantities((prev) => {
       const next = { ...prev };
