@@ -61,6 +61,7 @@ const AddScaffold = () => {
   const deleteScaffold = useDeleteScaffold();
   const { data: existingScaffolds } = useScaffolds();
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isSubmitting = createScaffold.isPending || updateScaffold.isPending;
 
   const handleSidebarItemClick = (item: string) => {
@@ -112,6 +113,7 @@ const AddScaffold = () => {
     const scaffold = existingScaffolds?.find(s => s.id === scaffoldId);
     if (scaffold) {
       setSelectedScaffoldId(scaffoldId);
+      setShowDeleteConfirm(false);
       form.setValue("scaffold_type", scaffold.scaffold_type);
       form.setValue("part_number", scaffold.part_number || "");
       form.setValue("description", scaffold.description || "");
@@ -125,6 +127,17 @@ const AddScaffold = () => {
     if (type === "remove" && !selectedScaffoldId && existingScaffolds?.length) {
       handlePresetSelect(existingScaffolds[0].id);
     }
+    if (type !== "remove") {
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleDeleteRequest = () => {
+    if (!selectedScaffoldId) {
+      toast.error("Select an inventory item to delete.");
+      return;
+    }
+    setShowDeleteConfirm(true);
   };
 
   const handleDeleteSelected = async () => {
@@ -136,11 +149,10 @@ const AddScaffold = () => {
     const label = scaffold
       ? `${scaffold.part_number ?? "Item"} - ${scaffold.description ?? "No description"}`
       : "this item";
-    const confirmed = window.confirm(`Delete ${label} from inventory? This cannot be undone.`);
-    if (!confirmed) return;
 
     await deleteScaffold.mutateAsync(selectedScaffoldId);
     setSelectedScaffoldId(null);
+    setShowDeleteConfirm(false);
     form.reset({
       scaffold_type: "system",
       status: "available",
@@ -270,12 +282,40 @@ const AddScaffold = () => {
                                 type="button"
                                 variant="destructive"
                                 className="justify-start gap-2 sm:col-span-2"
-                                onClick={handleDeleteSelected}
+                                onClick={handleDeleteRequest}
                                 disabled={deleteScaffold.isPending}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 {deleteScaffold.isPending ? "Deleting..." : "Delete Inventory Item"}
                               </Button>
+                              {showDeleteConfirm && (
+                                <div className="sm:col-span-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                                  <p className="font-medium">
+                                    Are you sure you want to delete this inventory item?
+                                  </p>
+                                  <p className="text-xs text-destructive/80">
+                                    This action cannot be undone.
+                                  </p>
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      onClick={handleDeleteSelected}
+                                      disabled={deleteScaffold.isPending}
+                                    >
+                                      {deleteScaffold.isPending ? "Deleting..." : "Confirm Delete"}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => setShowDeleteConfirm(false)}
+                                      disabled={deleteScaffold.isPending}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </FormControl>
                           <p className="text-xs text-muted-foreground mt-2">
