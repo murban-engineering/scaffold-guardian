@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { useCreateScaffold, useScaffolds, useUpdateScaffold } from "@/hooks/useScaffolds";
+import { useCreateScaffold, useDeleteScaffold, useScaffolds, useUpdateScaffold } from "@/hooks/useScaffolds";
 
 const formSchema = z.object({
   scaffold_type: z.enum(["frame", "tube_coupler", "mobile", "suspended", "cantilever", "system"]),
@@ -58,6 +58,7 @@ const AddScaffold = () => {
   const navigate = useNavigate();
   const createScaffold = useCreateScaffold();
   const updateScaffold = useUpdateScaffold();
+  const deleteScaffold = useDeleteScaffold();
   const { data: existingScaffolds } = useScaffolds();
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
 
@@ -116,6 +117,32 @@ const AddScaffold = () => {
       form.setValue("mass_per_item", scaffold.mass_per_item || undefined);
       form.setValue("weekly_rate", scaffold.weekly_rate || undefined);
     }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!selectedScaffoldId) {
+      toast.error("Select an inventory item to delete.");
+      return;
+    }
+    const scaffold = existingScaffolds?.find((item) => item.id === selectedScaffoldId);
+    const label = scaffold
+      ? `${scaffold.part_number ?? "Item"} - ${scaffold.description ?? "No description"}`
+      : "this item";
+    const confirmed = window.confirm(`Delete ${label} from inventory? This cannot be undone.`);
+    if (!confirmed) return;
+
+    await deleteScaffold.mutateAsync(selectedScaffoldId);
+    setSelectedScaffoldId(null);
+    form.reset({
+      scaffold_type: "system",
+      status: "available",
+      part_number: "",
+      description: "",
+      adjustment_type: "add",
+      quantity: undefined,
+      mass_per_item: undefined,
+      weekly_rate: undefined,
+    });
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -200,6 +227,20 @@ const AddScaffold = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={handleDeleteSelected}
+                          disabled={deleteScaffold.isPending}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {deleteScaffold.isPending ? "Deleting..." : "Delete selected inventory item"}
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Choose an item above to enable deletion.
+                        </p>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-2">
                         Or fill in the details manually below
                       </p>

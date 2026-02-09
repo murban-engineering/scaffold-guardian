@@ -175,6 +175,30 @@ export const useUpdateScaffold = () => {
   });
 };
 
+export const useDeleteScaffold = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("scaffolds")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+      toast.success("Scaffold deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete scaffold: ${error.message}`);
+    },
+  });
+};
+
 export interface InventoryDeductionItem {
   scaffoldId: string;
   quantity: number;
