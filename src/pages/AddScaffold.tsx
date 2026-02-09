@@ -2,9 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 import {
   Form,
@@ -24,7 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { useCreateScaffold, useScaffolds } from "@/hooks/useScaffolds";
+import { useCreateScaffold, useScaffolds, useUpdateScaffold } from "@/hooks/useScaffolds";
 
 const formSchema = z.object({
   scaffold_type: z.enum(["frame", "tube_coupler", "mobile", "suspended", "cantilever", "system"]),
@@ -37,6 +39,7 @@ const formSchema = z.object({
     .string()
     .min(1, "Description is required")
     .max(500, "Description must be less than 500 characters"),
+  adjustment_type: z.enum(["add", "remove"]).default("add"),
   quantity: z.coerce
     .number({ required_error: "Quantity is required", invalid_type_error: "Quantity must be a number" })
     .int()
@@ -54,7 +57,9 @@ type FormValues = z.infer<typeof formSchema>;
 const AddScaffold = () => {
   const navigate = useNavigate();
   const createScaffold = useCreateScaffold();
+  const updateScaffold = useUpdateScaffold();
   const { data: existingScaffolds } = useScaffolds();
+  const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -94,6 +99,7 @@ const AddScaffold = () => {
       status: "available",
       part_number: "",
       description: "",
+      adjustment_type: "add",
       quantity: undefined,
       mass_per_item: undefined,
       weekly_rate: undefined,
@@ -103,6 +109,7 @@ const AddScaffold = () => {
   const handlePresetSelect = (scaffoldId: string) => {
     const scaffold = existingScaffolds?.find(s => s.id === scaffoldId);
     if (scaffold) {
+      setSelectedScaffoldId(scaffoldId);
       form.setValue("scaffold_type", scaffold.scaffold_type);
       form.setValue("part_number", scaffold.part_number || "");
       form.setValue("description", scaffold.description || "");
@@ -112,6 +119,30 @@ const AddScaffold = () => {
   };
 
   const onSubmit = async (values: FormValues) => {
+    if (values.adjustment_type === "remove") {
+      const selectedScaffold = existingScaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId);
+      if (!selectedScaffold) {
+        toast.error("Select an existing inventory item before removing quantity.");
+        return;
+      }
+      const currentQuantity = selectedScaffold.quantity ?? 0;
+      const removeQuantity = values.quantity ?? 0;
+      if (removeQuantity <= 0) {
+        toast.error("Removal quantity must be greater than 0.");
+        return;
+      }
+      if (removeQuantity > currentQuantity) {
+        toast.error(`Cannot remove ${removeQuantity}. Only ${currentQuantity} available.`);
+        return;
+      }
+      await updateScaffold.mutateAsync({
+        id: selectedScaffold.id,
+        quantity: currentQuantity - removeQuantity,
+      });
+      navigate("/");
+      return;
+    }
+
     const scaffoldData = {
       scaffold_type: values.scaffold_type,
       status: values.status,
@@ -173,6 +204,41 @@ const AddScaffold = () => {
                         Or fill in the details manually below
                       </p>
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="adjustment_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Inventory Adjustment</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose how to adjust inventory" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="add">
+                                <span className="flex items-center gap-2">
+                                  <Plus className="h-4 w-4" />
+                                  Add to inventory
+                                </span>
+                              </SelectItem>
+                              <SelectItem value="remove">
+                                <span className="flex items-center gap-2">
+                                  <Minus className="h-4 w-4" />
+                                  Remove from inventory
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Choose remove to deduct quantities from an existing inventory item.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
