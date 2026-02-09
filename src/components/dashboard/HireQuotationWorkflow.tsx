@@ -675,8 +675,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     for (const item of equipmentItems) {
       const orderedQty = getOrderedQuantity(item);
       const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
+      const maxAllowed =
+        item.originalQuantity > 0
+          ? Math.max(item.originalQuantity - (item.previouslyDelivered || 0), 0)
+          : orderedQty;
       if (deliveredQty > orderedQty) {
         toast.error(`Delivery Qty cannot exceed Order Qty for ${item.description || item.itemCode}.`);
+        return false;
+      }
+      if (deliveredQty > maxAllowed) {
+        toast.error(
+          `Delivery Qty cannot exceed original ordered amount for ${item.description || item.itemCode}.`
+        );
         return false;
       }
     }
@@ -816,6 +826,16 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
     // Update remaining quantities for next delivery
     setRemainingQuantities(balanceQuantities);
+    setDeliveryQuantities((prev) => {
+      const next = { ...prev };
+      equipmentItems.forEach((item) => {
+        if (balanceQuantities[item.id] != null) {
+          next[item.id] = String(balanceQuantities[item.id]);
+        }
+      });
+      return next;
+    });
+    setLastDeliveredQuantities(deliveredQuantities);
     setCurrentDeliveryDispatched(true);
     
     toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
