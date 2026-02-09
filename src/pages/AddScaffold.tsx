@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -108,6 +108,10 @@ const AddScaffold = () => {
       weekly_rate: undefined,
     },
   });
+  const adjustmentType = form.watch("adjustment_type");
+  const quantityValue = form.watch("quantity");
+  const selectedScaffold = existingScaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId);
+  const currentQuantity = selectedScaffold?.quantity ?? 0;
 
   const handlePresetSelect = (scaffoldId: string) => {
     const scaffold = existingScaffolds?.find(s => s.id === scaffoldId);
@@ -145,11 +149,6 @@ const AddScaffold = () => {
       toast.error("Select an inventory item to delete.");
       return;
     }
-    const scaffold = existingScaffolds?.find((item) => item.id === selectedScaffoldId);
-    const label = scaffold
-      ? `${scaffold.part_number ?? "Item"} - ${scaffold.description ?? "No description"}`
-      : "this item";
-
     await deleteScaffold.mutateAsync(selectedScaffoldId);
     setSelectedScaffoldId(null);
     setShowDeleteConfirm(false);
@@ -165,14 +164,30 @@ const AddScaffold = () => {
     });
   };
 
+  useEffect(() => {
+    if (adjustmentType !== "remove") {
+      form.clearErrors("quantity");
+      return;
+    }
+    if (!selectedScaffold) {
+      return;
+    }
+    if ((quantityValue ?? 0) > currentQuantity) {
+      form.setError("quantity", {
+        type: "validate",
+        message: `Cannot deduct more than ${currentQuantity} in inventory.`,
+      });
+      return;
+    }
+    form.clearErrors("quantity");
+  }, [adjustmentType, currentQuantity, form, quantityValue, selectedScaffold]);
+
   const onSubmit = async (values: FormValues) => {
     if (values.adjustment_type === "remove") {
-      const selectedScaffold = existingScaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId);
       if (!selectedScaffold) {
         toast.error("Select an existing inventory item before removing quantity.");
         return;
       }
-      const currentQuantity = selectedScaffold.quantity ?? 0;
       const removeQuantity = values.quantity ?? 0;
       if (removeQuantity <= 0) {
         toast.error("Removal quantity must be greater than 0.");
@@ -249,6 +264,9 @@ const AddScaffold = () => {
                       </Select>
                       <p className="text-xs text-muted-foreground mt-2">
                         Or fill in the details manually below
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Current inventory quantity: {currentQuantity}
                       </p>
                     </div>
 
@@ -365,7 +383,13 @@ const AddScaffold = () => {
                           <FormItem>
                             <FormLabel>Quantity</FormLabel>
                             <FormControl>
-                              <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                              <Input
+                                type="number"
+                                min="0"
+                                max={adjustmentType === "remove" ? currentQuantity : undefined}
+                                {...field}
+                                value={field.value ?? ""}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -431,7 +455,7 @@ const AddScaffold = () => {
                       >
                         {isSubmitting
                           ? "Saving..."
-                          : form.getValues("adjustment_type") === "remove"
+                          : adjustmentType === "remove"
                           ? "Deduct Inventory"
                           : "Add Inventory"}
                       </Button>
