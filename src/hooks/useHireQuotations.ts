@@ -21,6 +21,26 @@ export interface QuotationLineItem {
   updated_at: string;
 }
 
+
+export interface HireReturnBilling {
+  id: string;
+  quotation_id: string;
+  line_item_id: string | null;
+  scaffold_id: string | null;
+  part_number: string | null;
+  description: string | null;
+  item_condition: "dirty" | "damaged" | "lost";
+  quantity: number;
+  list_hire_price: number;
+  selling_price: number;
+  charge_multiplier: number;
+  charge_amount: number;
+  billing_month: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface HireQuotation {
   id: string;
   quotation_number: string;
@@ -52,6 +72,7 @@ export interface HireQuotation {
   created_at: string;
   updated_at: string;
   line_items?: QuotationLineItem[];
+  return_billings?: HireReturnBilling[];
 }
 
 export interface CreateQuotationInput {
@@ -101,7 +122,8 @@ export const useHireQuotations = () => {
         .from("hire_quotations")
         .select(`
           *,
-          line_items:quotation_line_items(*)
+          line_items:quotation_line_items(*),
+          return_billings:hire_return_billings(*)
         `)
         .order("created_at", { ascending: false });
 
@@ -121,7 +143,8 @@ export const useHireQuotation = (id: string | null) => {
         .from("hire_quotations")
         .select(`
           *,
-          line_items:quotation_line_items(*)
+          line_items:quotation_line_items(*),
+          return_billings:hire_return_billings(*)
         `)
         .eq("id", id)
         .maybeSingle();
