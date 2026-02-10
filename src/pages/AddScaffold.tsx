@@ -50,12 +50,6 @@ const formSchema = z.object({
   weekly_rate: z.coerce
     .number({ required_error: "Weekly rate is required", invalid_type_error: "Weekly rate must be a number" })
     .min(0, "Rate must be 0 or greater"),
-  unit_price: z.coerce
-    .number({ required_error: "Unit price is required", invalid_type_error: "Unit price must be a number" })
-    .min(0, "Unit price must be 0 or greater"),
-  selling_price: z.coerce
-    .number({ required_error: "Selling price is required", invalid_type_error: "Selling price must be a number" })
-    .min(0, "Selling price must be 0 or greater"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -116,8 +110,6 @@ const AddScaffold = () => {
       quantity: undefined,
       mass_per_item: undefined,
       weekly_rate: undefined,
-      unit_price: undefined,
-      selling_price: undefined,
     },
   });
   const adjustmentType = form.watch("adjustment_type");
@@ -135,8 +127,6 @@ const AddScaffold = () => {
       form.setValue("description", scaffold.description || "");
       form.setValue("mass_per_item", scaffold.mass_per_item || undefined);
       form.setValue("weekly_rate", scaffold.weekly_rate || undefined);
-      form.setValue("unit_price", scaffold.unit_price || scaffold.weekly_rate || undefined);
-      form.setValue("selling_price", scaffold.selling_price || undefined);
     }
   };
 
@@ -175,8 +165,6 @@ const AddScaffold = () => {
       quantity: undefined,
       mass_per_item: undefined,
       weekly_rate: undefined,
-      unit_price: undefined,
-      selling_price: undefined,
     });
   };
 
@@ -229,8 +217,6 @@ const AddScaffold = () => {
       quantity: values.quantity,
       mass_per_item: values.mass_per_item,
       weekly_rate: values.weekly_rate,
-      unit_price: values.unit_price,
-      selling_price: values.selling_price,
     };
 
     await createScaffold.mutateAsync(scaffoldData);
@@ -393,7 +379,7 @@ const AddScaffold = () => {
                       )}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="quantity"
@@ -421,12 +407,12 @@ const AddScaffold = () => {
                           <FormItem>
                             <FormLabel>Mass per Item (kg)</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01" 
                                 placeholder="0.00"
-                                {...field}
+                                {...field} 
                                 value={field.value ?? ""}
                               />
                             </FormControl>
@@ -442,54 +428,12 @@ const AddScaffold = () => {
                           <FormItem>
                             <FormLabel>Weekly Rate (Ksh)</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                step="0.01" 
                                 placeholder="0.00"
-                                {...field}
-                                value={field.value ?? ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="unit_price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Unit Price (ZAR)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                value={field.value ?? ""}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="selling_price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Selling Price (ZAR)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
+                                {...field} 
                                 value={field.value ?? ""}
                               />
                             </FormControl>

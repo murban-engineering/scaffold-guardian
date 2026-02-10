@@ -13,7 +13,6 @@ import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, S
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
-import { supabase } from "@/integrations/supabase/client";
 import {
   generateDeliveryNotePDF,
   generateHireLoadingNotePDF,
@@ -113,9 +112,6 @@ type ReturnItem = {
   dirty: string;
   damaged: string;
   scrap: string;
-  unitPrice: number;
-  sellingPrice: number;
-  lineItemId: string | null;
 };
 
 const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
@@ -487,13 +483,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           dirty: existing?.dirty ?? "0",
           damaged: existing?.damaged ?? "0",
           scrap: existing?.scrap ?? "0",
-          unitPrice: parseNumber(item.weeklyRate),
-          sellingPrice: scaffolds?.find((scaffold) => scaffold.id === item.scaffoldId)?.selling_price ?? 0,
-          lineItemId: initialQuotation?.line_items?.find((line) => line.part_number === item.itemCode)?.id ?? null,
         };
       })
     );
-  }, [equipmentItems, initialQuotation?.line_items, scaffolds]);
+  }, [equipmentItems]);
 
   const stepIndex = steps.findIndex((step) => step.key === activeStep);
 
@@ -704,7 +697,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         description: scaffold.description || scaffold.scaffold_type,
         unit: "pcs",
         qtyDelivered: String(qty),
-        weeklyRate: String(scaffold.unit_price ?? scaffold.weekly_rate ?? 0),
+        weeklyRate: String(scaffold.weekly_rate || 0),
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
@@ -1553,101 +1546,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       if (maintenanceEntries.length) {
         await createMaintenanceLogs.mutateAsync(maintenanceEntries);
       }
-
-      if (savedQuotationId) {
-        const dirtyDamagedLostEntries = returnItems.flatMap((item) => {
-          const dirtyQty = parseNumber(item.dirty);
-          const damagedQty = parseNumber(item.damaged);
-          const lostQty = parseNumber(item.scrap);
-
-          const listHirePrice = Math.max(item.unitPrice, 0);
-          const sellingPrice = Math.max(item.sellingPrice, 0);
-
-          const charges = [] as {
-            quotation_id: string;
-            line_item_id: string | null;
-            scaffold_id: string | null;
-            part_number: string;
-            description: string;
-            item_condition: "dirty" | "damaged" | "lost";
-            quantity: number;
-            list_hire_price: number;
-            selling_price: number;
-            charge_multiplier: number;
-            charge_amount: number;
-            billing_month: string;
-            created_by: string;
-          }[];
-
-          if (dirtyQty > 0) {
-            charges.push({
-              quotation_id: savedQuotationId,
-              line_item_id: item.lineItemId,
-              scaffold_id: item.scaffoldId,
-              part_number: item.itemCode,
-              description: item.description,
-              item_condition: "dirty",
-              quantity: dirtyQty,
-              list_hire_price: listHirePrice,
-              selling_price: sellingPrice,
-              charge_multiplier: 2,
-              charge_amount: dirtyQty * listHirePrice * 2,
-              billing_month: getToday(),
-              created_by: reportedByUserId,
-            });
-          }
-
-          if (damagedQty > 0) {
-            charges.push({
-              quotation_id: savedQuotationId,
-              line_item_id: item.lineItemId,
-              scaffold_id: item.scaffoldId,
-              part_number: item.itemCode,
-              description: item.description,
-              item_condition: "damaged",
-              quantity: damagedQty,
-              list_hire_price: listHirePrice,
-              selling_price: sellingPrice,
-              charge_multiplier: 4,
-              charge_amount: damagedQty * listHirePrice * 4,
-              billing_month: getToday(),
-              created_by: reportedByUserId,
-            });
-          }
-
-          if (lostQty > 0) {
-            charges.push({
-              quotation_id: savedQuotationId,
-              line_item_id: item.lineItemId,
-              scaffold_id: item.scaffoldId,
-              part_number: item.itemCode,
-              description: item.description,
-              item_condition: "lost",
-              quantity: lostQty,
-              list_hire_price: listHirePrice,
-              selling_price: sellingPrice,
-              charge_multiplier: 1,
-              charge_amount: lostQty * sellingPrice,
-              billing_month: getToday(),
-              created_by: reportedByUserId,
-            });
-          }
-
-          return charges;
-        });
-
-        if (dirtyDamagedLostEntries.length > 0) {
-          const { error: billingError } = await supabase
-            .from("hire_return_billings")
-            .insert(dirtyDamagedLostEntries);
-          if (billingError) {
-            throw billingError;
-          }
-        }
-      }
-
       setReturnProcessed(true);
-      toast.success("Hire return processed successfully and return billing policy applied.");
+      toast.success("Hire return processed successfully!");
     } catch (error) {
       console.error("Failed to process return:", error);
     }
@@ -2131,7 +2031,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                           return (
                             <SelectItem key={scaffold.id} value={scaffold.id}>
                               {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                              (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.unit_price ?? scaffold.weekly_rate ?? 0)}/week)
+                              (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
                             </SelectItem>
                           );
                         })
@@ -2813,7 +2713,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <h4 className="font-semibold mb-1">Hire Return</h4>
               <p className="text-sm text-muted-foreground">
                 Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and lost (scrap) items are logged to maintenance and billed in accounting.
+                while damaged and scrap items are logged to maintenance.
               </p>
             </div>
 
@@ -2826,7 +2726,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <th className="px-3 py-2 text-center font-medium">Good</th>
                     <th className="px-3 py-2 text-center font-medium">Dirty</th>
                     <th className="px-3 py-2 text-center font-medium">Damaged</th>
-                    <th className="px-3 py-2 text-center font-medium">Lost</th>
+                    <th className="px-3 py-2 text-center font-medium">Scrap</th>
                     <th className="px-3 py-2 text-center font-medium">Returned</th>
                   </tr>
                 </thead>
