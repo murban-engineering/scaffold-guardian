@@ -207,85 +207,6 @@ export type Database = {
           },
         ]
       }
-      hire_return_billings: {
-        Row: {
-          billing_month: string
-          charge_amount: number
-          charge_multiplier: number
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          item_condition: string
-          line_item_id: string | null
-          list_hire_price: number
-          part_number: string | null
-          quantity: number
-          quotation_id: string
-          scaffold_id: string | null
-          selling_price: number
-          updated_at: string
-        }
-        Insert: {
-          billing_month: string
-          charge_amount: number
-          charge_multiplier: number
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          item_condition: string
-          line_item_id?: string | null
-          list_hire_price: number
-          part_number?: string | null
-          quantity: number
-          quotation_id: string
-          scaffold_id?: string | null
-          selling_price?: number
-          updated_at?: string
-        }
-        Update: {
-          billing_month?: string
-          charge_amount?: number
-          charge_multiplier?: number
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          item_condition?: string
-          line_item_id?: string | null
-          list_hire_price?: number
-          part_number?: string | null
-          quantity?: number
-          quotation_id?: string
-          scaffold_id?: string | null
-          selling_price?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hire_return_billings_line_item_id_fkey"
-            columns: ["line_item_id"]
-            isOneToOne: false
-            referencedRelation: "quotation_line_items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hire_return_billings_quotation_id_fkey"
-            columns: ["quotation_id"]
-            isOneToOne: false
-            referencedRelation: "hire_quotations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hire_return_billings_scaffold_id_fkey"
-            columns: ["scaffold_id"]
-            isOneToOne: false
-            referencedRelation: "scaffolds"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       maintenance_logs: {
         Row: {
           assigned_to: string | null
@@ -458,8 +379,6 @@ export type Database = {
           status: Database["public"]["Enums"]["scaffold_status"]
           updated_at: string
           weekly_rate: number | null
-          unit_price: number | null
-          selling_price: number | null
         }
         Insert: {
           created_at?: string
@@ -480,8 +399,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
           weekly_rate?: number | null
-          unit_price?: number | null
-          selling_price?: number | null
         }
         Update: {
           created_at?: string
@@ -502,8 +419,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["scaffold_status"]
           updated_at?: string
           weekly_rate?: number | null
-          unit_price?: number | null
-          selling_price?: number | null
         }
         Relationships: [
           {
@@ -604,8 +519,6 @@ export type Database = {
           p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           p_status?: Database["public"]["Enums"]["scaffold_status"]
           p_weekly_rate?: number
-          p_unit_price?: number
-          p_selling_price?: number
         }
         Returns: string
       }

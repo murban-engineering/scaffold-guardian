@@ -30,7 +30,6 @@ const Accounting = () => {
   const invoices = useMemo(() => {
     return approvedQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
-      const returnBillings = quotation.return_billings ?? [];
       const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
       const subtotal = lineItems.reduce((sum, item) => {
         if (item.weekly_total != null) {
@@ -42,8 +41,6 @@ const Accounting = () => {
         return sum + Math.max(weeklyRate * (1 - discountRate), 0) * quantity;
       }, 0);
 
-      const returnCharge = returnBillings.reduce((sum, billing) => sum + (billing.charge_amount ?? 0), 0);
-
       return {
         id: quotation.id,
         invoiceNumber: `INV-${format(billingDate, "yyyyMM")}-${String(index + 1).padStart(4, "0")}`,
@@ -52,13 +49,11 @@ const Accounting = () => {
         site: quotation.site_name || "No site name",
         itemCount,
         subtotal,
-        returnCharge,
-        totalDue: subtotal + returnCharge,
       };
     });
   }, [approvedQuotations, billingDate]);
 
-  const totalMonthBilling = invoices.reduce((sum, invoice) => sum + invoice.totalDue, 0);
+  const totalMonthBilling = invoices.reduce((sum, invoice) => sum + invoice.subtotal, 0);
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -97,7 +92,7 @@ const Accounting = () => {
       <main className="ml-0 md:ml-64">
         <Header
           title="Accounting"
-          subtitle="Bills are generated monthly, with return-condition policy charges applied after hire return processing."
+          subtitle="Approved client quotations are automatically prepared for month-end billing and invoice generation."
         />
 
         <div className="space-y-6 p-6">
@@ -147,9 +142,7 @@ const Accounting = () => {
                           <TableHead>Client</TableHead>
                           <TableHead>Site</TableHead>
                           <TableHead className="text-right">Items</TableHead>
-                          <TableHead className="text-right">Hire Amount</TableHead>
-                          <TableHead className="text-right">Return Charges</TableHead>
-                          <TableHead className="text-right">Total Due</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -163,9 +156,7 @@ const Accounting = () => {
                             <TableCell>{invoice.client}</TableCell>
                             <TableCell>{invoice.site}</TableCell>
                             <TableCell className="text-right">{invoice.itemCount}</TableCell>
-                            <TableCell className="text-right">{currency.format(invoice.subtotal)}</TableCell>
-                            <TableCell className="text-right">{currency.format(invoice.returnCharge)}</TableCell>
-                            <TableCell className="text-right font-semibold">{currency.format(invoice.totalDue)}</TableCell>
+                            <TableCell className="text-right font-semibold">{currency.format(invoice.subtotal)}</TableCell>
                             <TableCell>
                               <Badge variant="secondary">Scheduled {format(billingDate, "dd MMM")}</Badge>
                             </TableCell>
@@ -176,9 +167,9 @@ const Accounting = () => {
                   </div>
 
                   <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    Monthly billing automation rule: approved quotations are billed at month-end. Once hire return is processed,
-                    additional charges are added by policy: dirty equipment at 2× list hire price, damaged at 4× list hire price,
-                    and lost equipment at selling price. Item unit prices are sourced from inventory and stored in the database.
+                    Monthly billing automation rule: when a client quotation status is approved, all linked line items are included
+                    in the client invoice and queued for generation on {format(billingDate, "dd MMM yyyy")}. This invoice draft
+                    can then be finalized and sent by your finance team.
                   </div>
                 </div>
               ) : (
