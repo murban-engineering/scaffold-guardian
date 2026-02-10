@@ -229,6 +229,18 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
       ${data.remarks ? `<div class="remarks"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
+      <div class="delivery-terms">
+        <p><strong>IMPORTANT:</strong> Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+        <ul>
+          <li><span class="term-header">The Hirer undertakes:</span> to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</li>
+          <li><span class="term-header">The Hirer shall ensure:</span> that all goods are used in accordance with Otno's instructions.</li>
+          <li><span class="term-header">The Hirer shall not use:</span> any goods that are non-standard or unusual and will report their existence to the Owner.</li>
+          <li><span class="term-header">Dirty Equipment:</span> Will be charged for at 2X the list hire price of the item.</li>
+          <li><span class="term-header">Damaged Equipment:</span> Will be charged for at 4X the list hire price of the item.</li>
+          <li><span class="term-header">Lost Equipment:</span> Will be charged for at the selling price of the item.</li>
+        </ul>
+      </div>
+
       <div class="signature-section">
         <div class="signature-box">
           <p><strong>Delivered By:</strong></p>
@@ -270,6 +282,30 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f5f5; font-weight: bold; }
         .total-row { font-weight: bold; background: #f9f9f9; }
+        .delivery-terms {
+          border: 1px solid #333;
+          border-radius: 6px;
+          padding: 10px;
+          margin-top: 12px;
+          margin-bottom: 20px;
+          background: #fcfcfc;
+        }
+        .delivery-terms p {
+          margin-bottom: 8px;
+          line-height: 1.4;
+        }
+        .delivery-terms ul {
+          margin: 0;
+          padding-left: 16px;
+        }
+        .delivery-terms li {
+          margin-bottom: 6px;
+          line-height: 1.4;
+        }
+        .term-header {
+          font-weight: 700;
+          text-decoration: underline;
+        }
         .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
         .signature-box { border-top: 1px solid #333; padding-top: 10px; }
         .signature-box p { margin-bottom: 5px; }
