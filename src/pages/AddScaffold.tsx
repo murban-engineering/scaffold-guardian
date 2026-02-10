@@ -89,6 +89,10 @@ const AddScaffold = () => {
       navigate("/revenue");
       return;
     }
+    if (item === "accounting") {
+      navigate("/accounting");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
       return;

@@ -91,6 +91,10 @@ const Index = () => {
       navigate("/previous-clients");
       return;
     }
+    if (item === "accounting") {
+      navigate("/accounting");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
       return;

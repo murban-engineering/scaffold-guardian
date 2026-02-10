@@ -103,6 +103,10 @@ const Settings = () => {
     }
     if (item === "revenue") {
       navigate("/revenue");
+      return;
+    }
+    if (item === "accounting") {
+      navigate("/accounting");
     }
   };
 
