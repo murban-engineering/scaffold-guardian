@@ -73,6 +73,10 @@ const Revenue = () => {
       navigate("/maintenance-logs");
       return;
     }
+    if (item === "accounting") {
+      navigate("/accounting");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
     }

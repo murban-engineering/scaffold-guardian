@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import AddScaffold from "./pages/AddScaffold";
 import MaintenanceLogs from "./pages/MaintenanceLogs";
 import Revenue from "./pages/Revenue";
+import Accounting from "./pages/Accounting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -96,6 +97,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Revenue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounting"
+              element={
+                <ProtectedRoute>
+                  <Accounting />
                 </ProtectedRoute>
               }
             />
