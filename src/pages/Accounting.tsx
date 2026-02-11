@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-type BillingMode = "month-end";
+type BillingMode = "month-end" | "custom-date";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -20,23 +22,35 @@ const currency = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 2,
 });
 
+const asDateOrToday = (value: string) => {
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
 const Accounting = () => {
   const navigate = useNavigate();
   const { data: quotations = [], isLoading } = useHireQuotations();
   const { data: maintenanceLogs = [] } = useMaintenanceLogs();
   const { data: scaffolds = [] } = useScaffolds();
   const [billingMode, setBillingMode] = useState<BillingMode>("month-end");
+  const [customBillingDate, setCustomBillingDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [invoiceLookupDate, setInvoiceLookupDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [selectedClient, setSelectedClient] = useState("all-clients");
 
-  const completedQuotations = useMemo(() => {
-    return quotations.filter((quotation) => quotation.status?.toLowerCase() === "completed");
+  const dispatchReadyQuotations = useMemo(() => {
+    return quotations.filter((quotation) => {
+      const status = quotation.status?.toLowerCase() ?? "";
+      const hasDeliveredItems = (quotation.line_items ?? []).some((item) => (item.delivered_quantity ?? 0) > 0);
+      return status === "dispatched" || status === "completed" || hasDeliveredItems;
+    });
   }, [quotations]);
 
   const billingDate = useMemo(() => {
-    if (billingMode === "month-end") {
-      return endOfMonth(new Date());
+    if (billingMode === "custom-date") {
+      return asDateOrToday(customBillingDate);
     }
     return endOfMonth(new Date());
-  }, [billingMode]);
+  }, [billingMode, customBillingDate]);
 
   const surchargeByQuotation = useMemo(() => {
     const scaffoldById = new Map(scaffolds.map((scaffold) => [scaffold.id, scaffold]));
@@ -76,7 +90,7 @@ const Accounting = () => {
   }, [maintenanceLogs, scaffolds]);
 
   const invoices = useMemo(() => {
-    return completedQuotations.map((quotation, index) => {
+    return dispatchReadyQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
       const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
       const subtotal = lineItems.reduce((sum, item) => {
@@ -92,22 +106,38 @@ const Accounting = () => {
       const quotationNumber = quotation.quotation_number || "Draft";
       const surcharge = surchargeByQuotation.get(quotationNumber) ?? 0;
       const total = subtotal + surcharge;
+      const client = quotation.company_name || quotation.site_manager_name || "Unnamed client";
 
       return {
         id: quotation.id,
-        invoiceNumber: `INV-${format(billingDate, "yyyyMM")}-${String(index + 1).padStart(4, "0")}`,
+        invoiceNumber: `INV-${format(billingDate, "yyyyMMdd")}-${String(index + 1).padStart(4, "0")}`,
         quotationNumber,
-        client: quotation.company_name || quotation.site_manager_name || "Unnamed client",
+        client,
         site: quotation.site_name || "No site name",
         itemCount,
         subtotal,
         surcharge,
         total,
+        amountDue: total,
+        generatedDate: format(billingDate, "yyyy-MM-dd"),
       };
     });
-  }, [completedQuotations, billingDate, surchargeByQuotation]);
+  }, [dispatchReadyQuotations, billingDate, surchargeByQuotation]);
+
+  const uniqueClients = useMemo(() => {
+    return Array.from(new Set(invoices.map((invoice) => invoice.client))).sort((a, b) => a.localeCompare(b));
+  }, [invoices]);
+
+  const invoiceLookupResults = useMemo(() => {
+    return invoices.filter((invoice) => {
+      const matchesDate = invoice.generatedDate === invoiceLookupDate;
+      const matchesClient = selectedClient === "all-clients" || invoice.client === selectedClient;
+      return matchesDate && matchesClient;
+    });
+  }, [invoices, invoiceLookupDate, selectedClient]);
 
   const totalMonthBilling = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+  const totalDueForLookup = invoiceLookupResults.reduce((sum, invoice) => sum + invoice.amountDue, 0);
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -146,31 +176,44 @@ const Accounting = () => {
       <main className="ml-0 md:ml-64">
         <Header
           title="Accounting"
-          subtitle="Billing is managed in KES and invoices are generated after hire return completion."
+          subtitle="Dispatched workflows automatically flow into billing. Generate monthly or date-specific invoices in KES."
         />
 
         <div className="space-y-6 p-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
+          <div className="grid gap-4 xl:grid-cols-4">
+            <Card className="xl:col-span-2">
               <CardHeader>
-                <CardTitle>Billing option</CardTitle>
-                <CardDescription>Billing trigger policy</CardDescription>
+                <CardTitle>Billing setup</CardTitle>
+                <CardDescription>Choose monthly billing or generate invoice at a custom date.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <Select value={billingMode} onValueChange={(value) => setBillingMode(value as BillingMode)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select billing option" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="month-end">Bill at end of every month</SelectItem>
+                    <SelectItem value="month-end">Monthly billing (end of month)</SelectItem>
+                    <SelectItem value="custom-date">Generate invoice on selected date</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {billingMode === "custom-date" ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Invoice date</p>
+                    <Input
+                      type="date"
+                      value={customBillingDate}
+                      onChange={(event) => setCustomBillingDate(event.target.value)}
+                    />
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader>
-                <CardTitle>Billing cycle</CardTitle>
-                <CardDescription>Next invoice run date</CardDescription>
+                <CardTitle>Billing date</CardTitle>
+                <CardDescription>Current invoice run date</CardDescription>
               </CardHeader>
               <CardContent className="text-2xl font-semibold">{format(billingDate, "dd MMM yyyy")}</CardContent>
             </Card>
@@ -185,9 +228,87 @@ const Accounting = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Auto-generated monthly invoices</CardTitle>
+              <CardTitle>Invoice lookup</CardTitle>
+              <CardDescription>Open any client's invoice by date and see amount due.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Invoice date</p>
+                  <Input
+                    type="date"
+                    value={invoiceLookupDate}
+                    onChange={(event) => setInvoiceLookupDate(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Client</p>
+                  <Select value={selectedClient} onValueChange={setSelectedClient}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All clients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all-clients">All clients</SelectItem>
+                      {uniqueClients.map((client) => (
+                        <SelectItem key={client} value={client}>
+                          {client}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Card className="border-dashed">
+                  <CardContent className="flex h-full items-center justify-between py-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Amount due on {format(asDateOrToday(invoiceLookupDate), "dd MMM yyyy")}</p>
+                      <p className="text-2xl font-semibold">{currency.format(totalDueForLookup)}</p>
+                    </div>
+                    <Button variant="outline" onClick={() => setSelectedClient("all-clients")}>Reset</Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Site</TableHead>
+                      <TableHead className="text-right">Amount due</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoiceLookupResults.length ? (
+                      invoiceLookupResults.map((invoice) => (
+                        <TableRow key={`lookup-${invoice.id}`}>
+                          <TableCell>
+                            <div className="font-medium">{invoice.invoiceNumber}</div>
+                            <div className="text-xs text-muted-foreground">{invoice.generatedDate}</div>
+                          </TableCell>
+                          <TableCell>{invoice.client}</TableCell>
+                          <TableCell>{invoice.site}</TableCell>
+                          <TableCell className="text-right font-semibold">{currency.format(invoice.amountDue)}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                          No invoices found for this date/client selection.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Dispatch-ready billing queue</CardTitle>
               <CardDescription>
-                Only completed hire returns are invoiced. Amounts include conditional charges based on return condition policy.
+                Workflows appear here once dispatch is done (or after return completion). Amounts include return-condition policy charges.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -232,12 +353,12 @@ const Accounting = () => {
                   </div>
 
                   <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    Billing policy applied in accounting (KES): Dirty equipment is charged at 2× list hire price, damaged equipment is charged at 4× list hire price, and scrap equipment is charged at unit price. Invoices are generated once hire return is completed and are queued for {format(billingDate, "dd MMM yyyy")}.
+                    Billing policy applied in accounting (KES): Dirty equipment is charged at 2× list hire price, damaged equipment is charged at 4× list hire price, and scrap equipment is charged at unit price.
                   </div>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No completed hire returns found. Once a hire return is completed, its invoice will automatically appear here.
+                  No dispatched workflows yet. Once a dispatch is completed in Hire Delivery, its invoice will automatically appear here.
                 </div>
               )}
             </CardContent>

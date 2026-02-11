@@ -881,6 +881,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             items: quantityUpdates,
           });
         }
+
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          status: "dispatched",
+        });
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
       }
@@ -2421,50 +2426,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   <div className="flex flex-wrap gap-2">
                     {!inventoryDeducted ? (
                       <Button
-                        onClick={async () => {
-                          const success = await handleEquipmentHired();
-                          if (success) {
-                            // Create and add delivery record
-                            const newDelivery = createDeliveryRecord();
-                            newDelivery.status = "dispatched";
-                            setDeliveryHistory(prev => [newDelivery, ...prev]);
-                            setCurrentDeliveryDispatched(true);
-                            
-                            // Update remaining quantities
-                            const balanceQuantities: Record<string, number> = {};
-                            equipmentItems.forEach(item => {
-                              const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
-                              const orderedQty = getOrderedQuantity(item);
-                              balanceQuantities[item.id] = Math.max(orderedQty - deliveredQty, 0);
-                            });
-                            setRemainingQuantities(balanceQuantities);
-                            
-                            // Save to database
-                            if (savedQuotationId) {
-                              try {
-                                const quantityUpdates = equipmentItems
-                                  .filter(item => item.itemCode)
-                                  .map(item => ({
-                                    part_number: item.itemCode,
-                                    delivered_quantity: (item.previouslyDelivered || 0) + parseNumber(deliveryQuantities[item.id] ?? "0"),
-                                    balance_quantity: balanceQuantities[item.id] ?? 0,
-                                  }));
-                                
-                                if (quantityUpdates.length > 0) {
-                                  await updateLineItemQuantities.mutateAsync({
-                                    quotation_id: savedQuotationId,
-                                    items: quantityUpdates,
-                                  });
-                                }
-                              } catch (error) {
-                                console.error("Failed to save delivery quantities:", error);
-                              }
-                            }
-                            
-                            toast.success(`Delivery ${deliveryNote.deliveryNoteNo} dispatched!`);
-                          }
-                        }}
-                        disabled={deductInventory.isPending}
+                        onClick={handleDispatchDelivery}
+                        disabled={deductInventory.isPending || updateQuotation.isPending}
                         className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
                       >
                         <Truck className="h-4 w-4 mr-2" />
