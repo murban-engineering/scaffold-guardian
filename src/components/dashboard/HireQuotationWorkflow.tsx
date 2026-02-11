@@ -33,7 +33,24 @@ type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "deliver
 
 type QuotationHeader = {
   quotationNo: string;
+  clientId: string;
   dateCreated: string;
+  // Section 1 - Applicant
+  tradingName: string;
+  postalAddress: string;
+  postalCode: string;
+  physicalAddress: string;
+  physicalCode: string;
+  companyEmail: string;
+  landline1: string;
+  landline2: string;
+  faxNumber: string;
+  siteContactPerson: string;
+  accountsContact: string;
+  accountsEmail: string;
+  statementDelivery: string;
+  legalEntity: string;
+  // Legacy fields (mapped)
   clientCompanyName: string;
   clientName: string;
   clientPhone: string;
@@ -219,7 +236,22 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   });
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
+    clientId: "",
     dateCreated: getToday(),
+    tradingName: "",
+    postalAddress: "",
+    postalCode: "",
+    physicalAddress: "",
+    physicalCode: "",
+    companyEmail: "",
+    landline1: "",
+    landline2: "",
+    faxNumber: "",
+    siteContactPerson: "",
+    accountsContact: "",
+    accountsEmail: "",
+    statementDelivery: "",
+    legalEntity: "",
     clientCompanyName: "",
     clientName: "",
     clientPhone: "",
@@ -263,25 +295,35 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       : getToday();
 
     setSavedQuotationId(initialQuotation.id);
-    setHeader(prev => ({
-      ...prev,
-      quotationNo: initialQuotation.quotation_number || prev.quotationNo,
-      dateCreated: createdDate,
-      clientCompanyName: initialQuotation.company_name ?? "",
-      clientName: initialQuotation.site_manager_name ?? "",
-      clientPhone: initialQuotation.site_manager_phone ?? "",
-      clientEmail: initialQuotation.site_manager_email ?? "",
-      siteName: initialQuotation.site_name ?? "",
-      siteAddress: initialQuotation.site_address ?? "",
-      officialOrdersUsed: initialQuotation.official_order_required ? "yes" : "no",
-      bulkOrdersUsed: initialQuotation.bulk_order_required ? "yes" : "no",
-      telephonicOrders: initialQuotation.telephonic_order_acceptable ? "yes" : "no",
-      specialTransportArrangement: initialQuotation.transport_arrangement ?? "",
-      projectTypes: initialQuotation.project_type ?? [],
-      marketSegments: initialQuotation.market_segment ?? [],
-      customerOrderNo: initialQuotation.account_number ?? "",
-      createdBy: prev.createdBy || profile?.full_name || "",
-    }));
+    setHeader(prev => {
+      const qNum = initialQuotation.quotation_number || prev.quotationNo;
+      const derivedClientId = qNum ? qNum.replace("HSQ-", "CL-") : "";
+      return {
+        ...prev,
+        quotationNo: qNum,
+        clientId: derivedClientId,
+        dateCreated: createdDate,
+        tradingName: initialQuotation.company_name ?? "",
+        clientCompanyName: initialQuotation.company_name ?? "",
+        clientName: initialQuotation.site_manager_name ?? "",
+        clientPhone: initialQuotation.site_manager_phone ?? "",
+        clientEmail: initialQuotation.site_manager_email ?? "",
+        companyEmail: initialQuotation.site_manager_email ?? "",
+        siteContactPerson: initialQuotation.site_manager_name ?? "",
+        landline1: initialQuotation.site_manager_phone ?? "",
+        siteName: initialQuotation.site_name ?? "",
+        siteAddress: initialQuotation.site_address ?? "",
+        physicalAddress: initialQuotation.site_address ?? "",
+        officialOrdersUsed: initialQuotation.official_order_required ? "yes" : "no",
+        bulkOrdersUsed: initialQuotation.bulk_order_required ? "yes" : "no",
+        telephonicOrders: initialQuotation.telephonic_order_acceptable ? "yes" : "no",
+        specialTransportArrangement: initialQuotation.transport_arrangement ?? "",
+        projectTypes: initialQuotation.project_type ?? [],
+        marketSegments: initialQuotation.market_segment ?? [],
+        customerOrderNo: initialQuotation.account_number ?? "",
+        createdBy: prev.createdBy || profile?.full_name || "",
+      };
+    });
 
     setDiscounts([
       { type: "Tonnage", product: "", hireDiscount: String(initialQuotation.tonnage_discount ?? ""), salesDiscount: "", rate: "" },
@@ -628,8 +670,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   };
 
   const validateHeader = () => {
-    if (!header.clientCompanyName || !header.clientName || !header.clientPhone || !header.siteName) {
-      toast.error("Please complete required client and site fields before continuing.");
+    if (!header.tradingName && !header.clientCompanyName) {
+      toast.error("Trading Name / Company Name is required.");
+      return false;
+    }
+    if (!header.siteContactPerson && !header.clientName) {
+      toast.error("Site Contact Person is required.");
+      return false;
+    }
+    if (!header.landline1 && !header.clientPhone) {
+      toast.error("At least one telephone number is required.");
+      return false;
+    }
+    if (!header.siteName) {
+      toast.error("Site Name is required.");
       return false;
     }
     return true;
@@ -643,28 +697,42 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     try {
+      const companyName = header.tradingName || header.clientCompanyName;
+      const contactName = header.siteContactPerson || header.clientName;
+      const contactPhone = header.landline1 || header.clientPhone;
+      const contactEmail = header.companyEmail || header.clientEmail;
+
       if (!savedQuotationId) {
         const quotation = await createQuotation.mutateAsync({
-          company_name: header.clientCompanyName,
+          company_name: companyName,
           site_name: header.siteName,
-          site_address: header.siteAddress,
-          site_manager_name: header.clientName,
-          site_manager_phone: header.clientPhone,
-          site_manager_email: header.clientEmail,
+          site_address: header.physicalAddress || header.siteAddress,
+          site_manager_name: contactName,
+          site_manager_phone: contactPhone,
+          site_manager_email: contactEmail,
           delivery_address: header.siteLocation,
         });
         setSavedQuotationId(quotation.id);
-        setHeader(prev => ({ ...prev, quotationNo: quotation.quotation_number }));
-        toast.success(`Quotation ${quotation.quotation_number} created and saved!`);
+        const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+        setHeader(prev => ({
+          ...prev,
+          quotationNo: quotation.quotation_number,
+          clientId,
+          clientCompanyName: companyName,
+          clientName: contactName,
+          clientPhone: contactPhone,
+          clientEmail: contactEmail,
+        }));
+        toast.success(`Quotation ${quotation.quotation_number} created! Client ID: ${clientId}`);
       } else {
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
-          company_name: header.clientCompanyName,
+          company_name: companyName,
           site_name: header.siteName,
-          site_address: header.siteAddress,
-          site_manager_name: header.clientName,
-          site_manager_phone: header.clientPhone,
-          site_manager_email: header.clientEmail,
+          site_address: header.physicalAddress || header.siteAddress,
+          site_manager_name: contactName,
+          site_manager_phone: contactPhone,
+          site_manager_email: contactEmail,
           delivery_address: header.siteLocation,
         });
       }
@@ -1732,6 +1800,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
   };
+
+  const availableScaffolds = scaffolds?.filter((s: Scaffold) =>
     (s.quantity ?? 0) > 0 && s.status === "available"
   ) || [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
@@ -1808,285 +1878,418 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           })}
         </div>
 
-        {/* Step 1: Client Details */}
+        {/* Step 1: Client Details - Trade Account Application Form */}
         {activeStep === "client" && (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label>Quotation No</Label>
-                <Input value={header.quotationNo || "Will be generated on save"} readOnly className="bg-muted" />
+            {/* Header Row */}
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <h3 className="text-base font-semibold mb-3">Trade Account Application</h3>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label>Quotation No (HSQ)</Label>
+                  <Input value={header.quotationNo || "Auto-generated on save"} readOnly className="bg-muted" />
+                </div>
+                <div>
+                  <Label>Client ID</Label>
+                  <Input value={header.clientId || "Auto-generated from HSQ"} readOnly className="bg-muted" />
+                </div>
+                <div>
+                  <Label>Date Created</Label>
+                  <Input value={header.dateCreated} readOnly className="bg-muted" />
+                </div>
               </div>
-              <div>
-                <Label>Date Created</Label>
-                <Input value={header.dateCreated} readOnly className="bg-muted" />
+            </div>
+
+            {/* Section 1 - Applicant */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Section 1 — Applicant Details</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label htmlFor="tradingName">Trading Name *</Label>
+                  <Input
+                    id="tradingName"
+                    value={header.tradingName}
+                    onChange={(e) => setHeader(prev => ({ ...prev, tradingName: e.target.value }))}
+                    placeholder="Company / Trading name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postalAddress">Postal Address</Label>
+                  <Input
+                    id="postalAddress"
+                    value={header.postalAddress}
+                    onChange={(e) => setHeader(prev => ({ ...prev, postalAddress: e.target.value }))}
+                    placeholder="P.O. Box ..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Input
+                    id="postalCode"
+                    value={header.postalCode}
+                    onChange={(e) => setHeader(prev => ({ ...prev, postalCode: e.target.value }))}
+                    placeholder="Code"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="physicalAddress">Physical Address</Label>
+                  <Input
+                    id="physicalAddress"
+                    value={header.physicalAddress}
+                    onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
+                    placeholder="Street address"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="physicalCode">Physical Code</Label>
+                  <Input
+                    id="physicalCode"
+                    value={header.physicalCode}
+                    onChange={(e) => setHeader(prev => ({ ...prev, physicalCode: e.target.value }))}
+                    placeholder="Code"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="companyEmail">Company Email</Label>
+                  <Input
+                    id="companyEmail"
+                    type="email"
+                    value={header.companyEmail}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
+                    placeholder="info@company.co.ke"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="landline1">Landline 1 *</Label>
+                  <Input
+                    id="landline1"
+                    value={header.landline1}
+                    onChange={(e) => setHeader(prev => ({ ...prev, landline1: e.target.value }))}
+                    placeholder="+254 ..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="landline2">Landline 2</Label>
+                  <Input
+                    id="landline2"
+                    value={header.landline2}
+                    onChange={(e) => setHeader(prev => ({ ...prev, landline2: e.target.value }))}
+                    placeholder="+254 ..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="faxNumber">Fax Number</Label>
+                  <Input
+                    id="faxNumber"
+                    value={header.faxNumber}
+                    onChange={(e) => setHeader(prev => ({ ...prev, faxNumber: e.target.value }))}
+                    placeholder="Fax"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="siteContactPerson">Site Contact Person *</Label>
+                  <Input
+                    id="siteContactPerson"
+                    value={header.siteContactPerson}
+                    onChange={(e) => setHeader(prev => ({ ...prev, siteContactPerson: e.target.value }))}
+                    placeholder="Full name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="accountsContact">Accounts Contact</Label>
+                  <Input
+                    id="accountsContact"
+                    value={header.accountsContact}
+                    onChange={(e) => setHeader(prev => ({ ...prev, accountsContact: e.target.value }))}
+                    placeholder="Accounts person"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="accountsEmail">Accounts Email</Label>
+                  <Input
+                    id="accountsEmail"
+                    type="email"
+                    value={header.accountsEmail}
+                    onChange={(e) => setHeader(prev => ({ ...prev, accountsEmail: e.target.value }))}
+                    placeholder="accounts@company.co.ke"
+                  />
+                </div>
+                <div>
+                  <Label>Statements Delivered To</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={header.statementDelivery === "physical"}
+                        onCheckedChange={(checked) =>
+                          setHeader(prev => ({ ...prev, statementDelivery: checked ? "physical" : "" }))
+                        }
+                      />
+                      Physical Address
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={header.statementDelivery === "postal"}
+                        onCheckedChange={(checked) =>
+                          setHeader(prev => ({ ...prev, statementDelivery: checked ? "postal" : "" }))
+                        }
+                      />
+                      Postal Address
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <Label>Legal Entity</Label>
+                  <Select
+                    value={header.legalEntity}
+                    onValueChange={(value) => setHeader(prev => ({ ...prev, legalEntity: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select entity type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public_company">Public Company</SelectItem>
+                      <SelectItem value="private_company">Private Company</SelectItem>
+                      <SelectItem value="partnership">Partnership</SelectItem>
+                      <SelectItem value="close_corporation">Close Corporation</SelectItem>
+                      <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="clientCompanyName">Client Company Name *</Label>
-                <Input
-                  id="clientCompanyName"
-                  value={header.clientCompanyName}
-                  onChange={(e) => setHeader(prev => ({ ...prev, clientCompanyName: e.target.value }))}
-                  placeholder="Company name"
-                />
+            </div>
+
+            {/* Site Details */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="siteName">Site Name *</Label>
+                  <Input
+                    id="siteName"
+                    value={header.siteName}
+                    onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
+                    placeholder="Project / Site name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="siteLocation">Site Location</Label>
+                  <Input
+                    id="siteLocation"
+                    value={header.siteLocation}
+                    onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
+                    placeholder="City or area"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="siteAddress">Site Address</Label>
+                  <Textarea
+                    id="siteAddress"
+                    rows={2}
+                    value={header.siteAddress}
+                    onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
+                    placeholder="Full site address"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
+                  <Input
+                    id="customerOrderNo"
+                    value={header.customerOrderNo}
+                    onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
+                    placeholder="Order / Account number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="createdBy">Created By</Label>
+                  <Input
+                    id="createdBy"
+                    value={header.createdBy}
+                    onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
+                    placeholder="User name"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="quoteNumber">Quote Number</Label>
-                <Input id="quoteNumber" value={header.quotationNo || "Will be generated on save"} readOnly className="bg-muted" />
-              </div>
-              <div>
-                <Label htmlFor="clientName">Contact Person *</Label>
-                <Input
-                  id="clientName"
-                  value={header.clientName}
-                  onChange={(e) => setHeader(prev => ({ ...prev, clientName: e.target.value }))}
-                  placeholder="Contact name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientPhone">Client Phone *</Label>
-                <Input
-                  id="clientPhone"
-                  value={header.clientPhone}
-                  onChange={(e) => setHeader(prev => ({ ...prev, clientPhone: e.target.value }))}
-                  placeholder="Phone"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientEmail">Client Email</Label>
-                <Input
-                  id="clientEmail"
-                  type="email"
-                  value={header.clientEmail}
-                  onChange={(e) => setHeader(prev => ({ ...prev, clientEmail: e.target.value }))}
-                  placeholder="Email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="officeTel">Office Tel</Label>
-                <Input
-                  id="officeTel"
-                  value={header.officeTel}
-                  onChange={(e) => setHeader(prev => ({ ...prev, officeTel: e.target.value }))}
-                  placeholder="Office telephone"
-                />
-              </div>
-              <div>
-                <Label htmlFor="officeEmail">Office Email</Label>
-                <Input
-                  id="officeEmail"
-                  type="email"
-                  value={header.officeEmail}
-                  onChange={(e) => setHeader(prev => ({ ...prev, officeEmail: e.target.value }))}
-                  placeholder="Office email"
-                />
-              </div>
-              <div>
-                <Label htmlFor="siteName">Site Name *</Label>
-                <Input
-                  id="siteName"
-                  value={header.siteName}
-                  onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
-                  placeholder="Site name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="siteLocation">Site Location</Label>
-                <Input
-                  id="siteLocation"
-                  value={header.siteLocation}
-                  onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
-                  placeholder="City or area"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="siteAddress">Site Address</Label>
-                <Textarea
-                  id="siteAddress"
-                  rows={2}
-                  value={header.siteAddress}
-                  onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="customerOrderNo">Customer Order Number</Label>
-                <Input
-                  id="customerOrderNo"
-                  value={header.customerOrderNo}
-                  onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
-                  placeholder="Order number"
-                />
-              </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Ordering</p>
-                <div className="mt-3 grid gap-4 md:grid-cols-2">
-                  {[
-                    { label: "Official orders used?", field: "officialOrdersUsed" },
-                    { label: "Bulk orders used?", field: "bulkOrdersUsed" },
-                    { label: "New order for every quote", field: "newOrderForEveryQuote" },
-                    { label: "Telephonic orders", field: "telephonicOrders" },
-                    { label: "Person's name as order", field: "personsNameAsOrder" },
-                    { label: "Requisition number used?", field: "requisitionNumberUsed" },
-                  ].map(item => (
-                    <div key={item.field}>
-                      <Label className="text-sm">{item.label}</Label>
-                      <div className="mt-2 flex items-center gap-4">
-                        <label className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={header[item.field as keyof QuotationHeader] === "yes"}
-                            onCheckedChange={(checked) =>
-                              handleYesNoChange(item.field as keyof QuotationHeader, checked ? "yes" : "")
-                            }
-                          />
-                          Yes
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <Checkbox
-                            checked={header[item.field as keyof QuotationHeader] === "no"}
-                            onCheckedChange={(checked) =>
-                              handleYesNoChange(item.field as keyof QuotationHeader, checked ? "no" : "")
-                            }
-                          />
-                          No
-                        </label>
-                      </div>
+            </div>
+
+            {/* Ordering */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Ordering</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                {[
+                  { label: "Official orders used?", field: "officialOrdersUsed" },
+                  { label: "Bulk orders used?", field: "bulkOrdersUsed" },
+                  { label: "New order for every quote", field: "newOrderForEveryQuote" },
+                  { label: "Telephonic orders", field: "telephonicOrders" },
+                  { label: "Person's name as order", field: "personsNameAsOrder" },
+                  { label: "Requisition number used?", field: "requisitionNumberUsed" },
+                ].map(item => (
+                  <div key={item.field}>
+                    <Label className="text-sm">{item.label}</Label>
+                    <div className="mt-2 flex items-center gap-4">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={header[item.field as keyof QuotationHeader] === "yes"}
+                          onCheckedChange={(checked) =>
+                            handleYesNoChange(item.field as keyof QuotationHeader, checked ? "yes" : "")
+                          }
+                        />
+                        Yes
+                      </label>
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={header[item.field as keyof QuotationHeader] === "no"}
+                          onCheckedChange={(checked) =>
+                            handleYesNoChange(item.field as keyof QuotationHeader, checked ? "no" : "")
+                          }
+                        />
+                        No
+                      </label>
                     </div>
-                  ))}
-                  <div>
-                    <Label htmlFor="personsName">Person's Name</Label>
-                    <Input
-                      id="personsName"
-                      value={header.personsName}
-                      onChange={(e) => setHeader(prev => ({ ...prev, personsName: e.target.value }))}
-                      placeholder="Name"
-                    />
                   </div>
-                  <div>
-                    <Label htmlFor="requisitionNo">Requisition Number</Label>
-                    <Input
-                      id="requisitionNo"
-                      value={header.requisitionNo}
-                      onChange={(e) => setHeader(prev => ({ ...prev, requisitionNo: e.target.value }))}
-                      placeholder="Requisition number"
-                    />
-                  </div>
+                ))}
+                <div>
+                  <Label htmlFor="personsName">Person's Name</Label>
+                  <Input
+                    id="personsName"
+                    value={header.personsName}
+                    onChange={(e) => setHeader(prev => ({ ...prev, personsName: e.target.value }))}
+                    placeholder="Name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="requisitionNo">Requisition Number</Label>
+                  <Input
+                    id="requisitionNo"
+                    value={header.requisitionNo}
+                    onChange={(e) => setHeader(prev => ({ ...prev, requisitionNo: e.target.value }))}
+                    placeholder="Requisition number"
+                  />
                 </div>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Transport</p>
-                <div className="mt-3 grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="fixedRateAgreed">Fixed Rate Agreed</Label>
-                    <Input
-                      id="fixedRateAgreed"
-                      value={header.fixedRateAgreed}
-                      onChange={(e) => setHeader(prev => ({ ...prev, fixedRateAgreed: e.target.value }))}
-                      placeholder="Fixed rate"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="returns">Returns</Label>
-                    <Input
-                      id="returns"
-                      value={header.returns}
-                      onChange={(e) => setHeader(prev => ({ ...prev, returns: e.target.value }))}
-                      placeholder="Return details"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="delivery">Delivery</Label>
-                    <Input
-                      id="delivery"
-                      value={header.delivery}
-                      onChange={(e) => setHeader(prev => ({ ...prev, delivery: e.target.value }))}
-                      placeholder="Delivery details"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="specialTransportArrangement">Special Transport Arrangement</Label>
-                    <Textarea
-                      id="specialTransportArrangement"
-                      rows={2}
-                      value={header.specialTransportArrangement}
-                      onChange={(e) => setHeader(prev => ({ ...prev, specialTransportArrangement: e.target.value }))}
-                      placeholder="Special arrangements"
-                    />
-                  </div>
+            </div>
+
+            {/* Transport */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Transport</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="fixedRateAgreed">Fixed Rate Agreed</Label>
+                  <Input
+                    id="fixedRateAgreed"
+                    value={header.fixedRateAgreed}
+                    onChange={(e) => setHeader(prev => ({ ...prev, fixedRateAgreed: e.target.value }))}
+                    placeholder="Fixed rate"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="returns">Returns</Label>
+                  <Input
+                    id="returns"
+                    value={header.returns}
+                    onChange={(e) => setHeader(prev => ({ ...prev, returns: e.target.value }))}
+                    placeholder="Return details"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="delivery">Delivery</Label>
+                  <Input
+                    id="delivery"
+                    value={header.delivery}
+                    onChange={(e) => setHeader(prev => ({ ...prev, delivery: e.target.value }))}
+                    placeholder="Delivery details"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="specialTransportArrangement">Special Transport Arrangement</Label>
+                  <Textarea
+                    id="specialTransportArrangement"
+                    rows={2}
+                    value={header.specialTransportArrangement}
+                    onChange={(e) => setHeader(prev => ({ ...prev, specialTransportArrangement: e.target.value }))}
+                    placeholder="Special arrangements"
+                  />
                 </div>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Discounts</p>
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/40">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Type</th>
-                        <th className="px-3 py-2 text-left font-medium">Product</th>
-                        <th className="px-3 py-2 text-left font-medium">Hire Discount</th>
-                        <th className="px-3 py-2 text-left font-medium">Sales Discount</th>
-                        <th className="px-3 py-2 text-left font-medium">Rate</th>
+            </div>
+
+            {/* Discounts */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Discounts</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Type</th>
+                      <th className="px-3 py-2 text-left font-medium">Product</th>
+                      <th className="px-3 py-2 text-left font-medium">Hire Discount</th>
+                      <th className="px-3 py-2 text-left font-medium">Sales Discount</th>
+                      <th className="px-3 py-2 text-left font-medium">Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {discounts.map((line, index) => (
+                      <tr key={line.type} className="border-b border-border">
+                        <td className="px-3 py-2 font-medium">{line.type}</td>
+                        <td className="px-3 py-2">
+                          <Input
+                            value={line.product}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDiscounts(prev =>
+                                prev.map((item, idx) => (idx === index ? { ...item, product: value } : item))
+                              );
+                            }}
+                            placeholder="Product"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <Input
+                            value={line.hireDiscount}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDiscounts(prev =>
+                                prev.map((item, idx) => (idx === index ? { ...item, hireDiscount: value } : item))
+                              );
+                            }}
+                            placeholder="%"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <Input
+                            value={line.salesDiscount}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDiscounts(prev =>
+                                prev.map((item, idx) => (idx === index ? { ...item, salesDiscount: value } : item))
+                              );
+                            }}
+                            placeholder="%"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <Input
+                            value={line.rate}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setDiscounts(prev =>
+                                prev.map((item, idx) => (idx === index ? { ...item, rate: value } : item))
+                              );
+                            }}
+                            placeholder="Rate"
+                          />
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {discounts.map((line, index) => (
-                        <tr key={line.type} className="border-b border-border">
-                          <td className="px-3 py-2 font-medium">{line.type}</td>
-                          <td className="px-3 py-2">
-                            <Input
-                              value={line.product}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setDiscounts(prev =>
-                                  prev.map((item, idx) => (idx === index ? { ...item, product: value } : item))
-                                );
-                              }}
-                              placeholder="Product"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              value={line.hireDiscount}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setDiscounts(prev =>
-                                  prev.map((item, idx) => (idx === index ? { ...item, hireDiscount: value } : item))
-                                );
-                              }}
-                              placeholder="%"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              value={line.salesDiscount}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setDiscounts(prev =>
-                                  prev.map((item, idx) => (idx === index ? { ...item, salesDiscount: value } : item))
-                                );
-                              }}
-                              placeholder="%"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <Input
-                              value={line.rate}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setDiscounts(prev =>
-                                  prev.map((item, idx) => (idx === index ? { ...item, rate: value } : item))
-                                );
-                              }}
-                              placeholder="Rate"
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Project Type</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
+            </div>
+
+            {/* Project Type & Market Segmentation */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-3 text-primary">Project Type</h4>
+                <div className="grid gap-2">
                   {["Building", "Education", "Healthcare", "Office Blocks"].map(value => (
                     <label key={value} className="flex items-center gap-2 text-sm">
                       <Checkbox
@@ -2098,9 +2301,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   ))}
                 </div>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Market Segmentation</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-3 text-primary">Market Segmentation</h4>
+                <div className="grid gap-2">
                   {["Residential", "Shopping Centres", "Tourism / Hotels"].map(value => (
                     <label key={value} className="flex items-center gap-2 text-sm">
                       <Checkbox
@@ -2112,9 +2315,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   ))}
                 </div>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Civils</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-3 text-primary">Civils</h4>
+                <div className="grid gap-2">
                   {["Infrastructure", "Mines", "Petrochemical"].map(value => (
                     <label key={value} className="flex items-center gap-2 text-sm">
                       <Checkbox
@@ -2126,9 +2329,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   ))}
                 </div>
               </div>
-              <div className="md:col-span-2 rounded-lg border border-border p-4">
-                <p className="text-sm font-semibold">Scaffolding</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-3 text-primary">Scaffolding</h4>
+                <div className="grid gap-2">
                   {["Building Industry", "Civils Industry", "Industrial Industry"].map(value => (
                     <label key={value} className="flex items-center gap-2 text-sm">
                       <Checkbox
@@ -2140,16 +2343,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   ))}
                 </div>
               </div>
-              <div>
-                <Label htmlFor="createdBy">Created By</Label>
-                <Input
-                  id="createdBy"
-                  value={header.createdBy}
-                  onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
-                  placeholder="User name"
-                />
-              </div>
             </div>
+
             <div className="flex items-center justify-between border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">* Required fields</p>
               <Button 
