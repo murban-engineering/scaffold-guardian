@@ -24,6 +24,7 @@ export interface Scaffold {
   quantity: number | null;
   mass_per_item: number | null;
   weekly_rate: number | null;
+  unit_price: number | null;
   sites?: {
     name: string;
     location: string;
