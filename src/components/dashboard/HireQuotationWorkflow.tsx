@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
+import { FileText, Truck, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
@@ -26,7 +26,7 @@ import {
 } from "@/lib/pdfGenerator";
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 
-type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "calculation" | "return";
+type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -120,7 +120,6 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: Truck },
-  { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
 
@@ -1405,29 +1404,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     toast.success("Invoice opened for printing");
   };
 
-  const handleCalculationSave = async () => {
-    if (!hasValidDateRange || numberOfWeeks < 1) {
-      toast.error("Please enter a valid hire date and return date.");
-      return;
-    }
-
-    if (savedQuotationId) {
-      try {
-        await updateQuotation.mutateAsync({
-          id: savedQuotationId,
-          hire_weeks: numberOfWeeks,
-          notes: calculation.paymentTerms,
-          status: "completed",
-        });
-      } catch (error) {
-        console.error("Failed to finalize quotation:", error);
-      }
-    }
-
-    toast.success("Hire quotation completed and saved!");
-    setActiveStep("return");
-  };
-
   const handleReturnQuantityChange = (
     id: string,
     field: keyof Omit<ReturnItem, "id" | "scaffoldId" | "itemCode" | "description" | "totalDelivered">,
@@ -1546,6 +1522,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       if (maintenanceEntries.length) {
         await createMaintenanceLogs.mutateAsync(maintenanceEntries);
       }
+      if (savedQuotationId) {
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          hire_weeks: Math.max(numberOfWeeks, 1),
+          notes: calculation.paymentTerms,
+          status: "completed",
+        });
+      }
       setReturnProcessed(true);
       toast.success("Hire return processed successfully!");
     } catch (error) {
@@ -1592,13 +1576,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Create quotations with equipment from inventory → generate hire quotation report → confirm delivery quantities → generate delivery notes → calculate hire totals → process hire returns
+          Create quotations with equipment from inventory → generate hire quotation report → confirm delivery quantities → generate delivery notes → process hire returns
           {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -2577,135 +2561,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           </div>
         )}
 
-        {/* Step 6: Calculation */}
-        {activeStep === "calculation" && (
-          <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="hireDate">Hire Date *</Label>
-                <Input
-                  id="hireDate"
-                  type="date"
-                  value={calculation.hireDate}
-                  onChange={(e) => setCalculation(prev => ({ ...prev, hireDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="returnDate">Return Date *</Label>
-                <Input
-                  id="returnDate"
-                  type="date"
-                  min={calculation.hireDate || undefined}
-                  value={calculation.returnDate}
-                  onChange={(e) => setCalculation(prev => ({ ...prev, returnDate: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="vatRate">VAT Rate (%)</Label>
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="vatEnabled"
-                    checked={calculation.vatEnabled}
-                    onCheckedChange={(checked) => setCalculation(prev => ({ ...prev, vatEnabled: !!checked }))}
-                  />
-                  <Label htmlFor="vatEnabled" className="text-sm">Include VAT</Label>
-                  {calculation.vatEnabled && (
-                    <Input
-                      id="vatRate"
-                      type="number"
-                      min="0"
-                      className="w-20"
-                      value={calculation.vatRate}
-                      onChange={(e) => setCalculation(prev => ({ ...prev, vatRate: e.target.value }))}
-                    />
-                  )}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="discountRate">Discount (%)</Label>
-                <Input
-                  id="discountRate"
-                  type="number"
-                  min="0"
-                  value={calculation.discountRate}
-                  onChange={(e) => setCalculation(prev => ({ ...prev, discountRate: e.target.value }))}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="paymentTerms">Payment Terms</Label>
-                <Textarea
-                  id="paymentTerms"
-                  rows={2}
-                  value={calculation.paymentTerms}
-                  onChange={(e) => setCalculation(prev => ({ ...prev, paymentTerms: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            {/* Calculation Summary */}
-            <div className="rounded-lg border border-border overflow-hidden">
-              <div className="bg-muted/40 px-4 py-2 font-semibold">Invoice Summary</div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between">
-                  <span>Weekly Hire Total</span>
-                  <span>{formatCurrency(weeklyHireTotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Number of Days</span>
-                  <span>{numberOfDays}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Converted Weeks</span>
-                  <span>× {numberOfWeeks}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span>Total for Hire Period</span>
-                  <span>{formatCurrency(hireTotalForWeeks)}</span>
-                </div>
-                {calculation.vatEnabled && (
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>VAT ({calculation.vatRate}%)</span>
-                    <span>{formatCurrency(vatAmount)}</span>
-                  </div>
-                )}
-                {discountRate > 0 && (
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Discount ({calculation.discountRate}%)</span>
-                    <span>-{formatCurrency(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t pt-2 text-lg font-bold">
-                  <span>Grand Total</span>
-                  <span className="text-primary">{formatCurrency(grandTotal)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2 text-lg font-bold">
-                  <span>Payment Total</span>
-                  <span className="text-primary">{formatCurrency(paymentTotal)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-border pt-4">
-              <Button type="button" variant="outline" onClick={handleBack}>
-                Back
-              </Button>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={handlePrintQuotation}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Invoice
-                </Button>
-                <Button 
-                  type="button" 
-                  onClick={handleCalculationSave}
-                  disabled={updateQuotation.isPending}
-                >
-                  {updateQuotation.isPending ? "Finalizing..." : "Continue to Returns"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
@@ -2713,7 +2568,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <h4 className="font-semibold mb-1">Hire Return</h4>
               <p className="text-sm text-muted-foreground">
                 Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and scrap items are logged to maintenance.
+                while damaged and scrap items are logged to maintenance. Quotation completion is finalized after this return is processed.
               </p>
             </div>
 
@@ -2806,9 +2661,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               <Button
                 type="button"
                 onClick={handleProcessReturn}
-                disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+                disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending || updateQuotation.isPending}
               >
-                {returnProcessed ? "Return Processed" : "Process Return"}
+                {returnProcessed
+                  ? "Return Processed"
+                  : updateQuotation.isPending
+                    ? "Finalizing..."
+                    : "Process Return"}
               </Button>
             </div>
           </div>
