@@ -15,6 +15,20 @@ import { Button } from "@/components/ui/button";
 
 type BillingMode = "month-end" | "custom-date";
 
+type AccountingInvoice = {
+  id: string;
+  invoiceNumber: string;
+  quotationNumber: string;
+  client: string;
+  site: string;
+  itemCount: number;
+  subtotal: number;
+  surcharge: number;
+  total: number;
+  amountDue: number;
+  generatedDate: string;
+};
+
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
   currency: "KES",
@@ -25,6 +39,90 @@ const currency = new Intl.NumberFormat("en-KE", {
 const asDateOrToday = (value: string) => {
   const parsed = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) => {
+  const reportWindow = window.open("", "_blank");
+  if (!reportWindow) {
+    alert("Please allow popups for this site to print reports");
+    return;
+  }
+
+  const hasPolicyCharge = invoice.surcharge > 0;
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <title>Client Accounting Report - ${escapeHtml(invoice.client)}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+          h1 { margin: 0 0 6px; }
+          h2 { margin: 22px 0 8px; font-size: 18px; }
+          .meta { margin: 0 0 16px; color: #444; }
+          .meta p { margin: 3px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #d8d8d8; padding: 8px; text-align: left; }
+          th { background: #f5f5f5; }
+          .text-right { text-align: right; }
+          .summary { margin-top: 16px; max-width: 420px; margin-left: auto; }
+          .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e8e8e8; }
+          .summary-row.total { font-weight: 700; border-top: 2px solid #333; border-bottom: none; margin-top: 8px; padding-top: 10px; }
+          .footnote { margin-top: 12px; font-size: 12px; color: #444; }
+        </style>
+      </head>
+      <body>
+        <h1>Client Dispatch & Return Report</h1>
+        <p class="meta">Generated for accounting date: ${escapeHtml(selectedDate)}</p>
+        <div class="meta">
+          <p><strong>Client:</strong> ${escapeHtml(invoice.client)}</p>
+          <p><strong>Site:</strong> ${escapeHtml(invoice.site)}</p>
+          <p><strong>Invoice:</strong> ${escapeHtml(invoice.invoiceNumber)}</p>
+          <p><strong>Quotation:</strong> ${escapeHtml(invoice.quotationNumber)}</p>
+        </div>
+
+        <h2>Charges</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="text-right">Amount (KES)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hire per week charges</td>
+              <td class="text-right">${currency.format(invoice.subtotal)}</td>
+            </tr>
+            <tr>
+              <td>Hire return policy charges</td>
+              <td class="text-right">${currency.format(invoice.surcharge)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="summary">
+          <div class="summary-row"><span>Hire per week</span><strong>${currency.format(invoice.subtotal)}</strong></div>
+          <div class="summary-row"><span>Return policy charges</span><strong>${currency.format(invoice.surcharge)}</strong></div>
+          <div class="summary-row total"><span>Total due</span><span>${currency.format(invoice.total)}</span></div>
+        </div>
+
+        ${hasPolicyCharge ? '<p class="footnote">Return-condition policy charges included: dirty equipment at 2× list hire, damaged at 4× list hire, scrap at unit price.</p>' : ""}
+      </body>
+    </html>
+  `;
+
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+  reportWindow.focus();
+  reportWindow.print();
 };
 
 const Accounting = () => {
@@ -89,7 +187,7 @@ const Accounting = () => {
     return surchargeMap;
   }, [maintenanceLogs, scaffolds]);
 
-  const invoices = useMemo(() => {
+  const invoices = useMemo<AccountingInvoice[]>(() => {
     return dispatchReadyQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
       const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
@@ -301,6 +399,60 @@ const Accounting = () => {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Client reports</CardTitle>
+              <CardDescription>
+                Print a client report for dispatched workflows on the selected date, including weekly hire and return policy charges.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {invoiceLookupResults.length ? (
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Invoice</TableHead>
+                        <TableHead className="text-right">Hire per week</TableHead>
+                        <TableHead className="text-right">Policy charge</TableHead>
+                        <TableHead className="text-right">Total due</TableHead>
+                        <TableHead className="text-right">Report</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoiceLookupResults.map((invoice) => (
+                        <TableRow key={`report-${invoice.id}`}>
+                          <TableCell>{invoice.client}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{invoice.invoiceNumber}</div>
+                            <div className="text-xs text-muted-foreground">{invoice.generatedDate}</div>
+                          </TableCell>
+                          <TableCell className="text-right">{currency.format(invoice.subtotal)}</TableCell>
+                          <TableCell className="text-right">{currency.format(invoice.surcharge)}</TableCell>
+                          <TableCell className="text-right font-semibold">{currency.format(invoice.total)}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openPrintableReport(invoice, invoiceLookupDate)}
+                            >
+                              Print report
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  Select a billing date and client above to generate printable dispatch and return reports.
+                </div>
+              )}
             </CardContent>
           </Card>
 
