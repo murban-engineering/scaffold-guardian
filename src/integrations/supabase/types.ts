@@ -383,6 +383,7 @@ export type Database = {
           serial_number: string | null
           site_id: string | null
           status: Database["public"]["Enums"]["scaffold_status"]
+          unit_price: number | null
           updated_at: string
           weekly_rate: number | null
         }
@@ -403,6 +404,7 @@ export type Database = {
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
+          unit_price?: number | null
           updated_at?: string
           weekly_rate?: number | null
         }
@@ -423,6 +425,7 @@ export type Database = {
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
+          unit_price?: number | null
           updated_at?: string
           weekly_rate?: number | null
         }
