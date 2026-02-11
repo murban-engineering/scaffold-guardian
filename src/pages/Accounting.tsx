@@ -66,6 +66,18 @@ const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
 const COMPANY_EMAIL = "otnoacess@gmail.com";
+const HIRE_QUOTATION_BASE_NUMBER = 1000;
+
+const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
+  const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
+
+  if (Number.isFinite(quotedSequence) && quotedSequence >= HIRE_QUOTATION_BASE_NUMBER) {
+    const invoiceSequence = quotedSequence - HIRE_QUOTATION_BASE_NUMBER;
+    return `INV-${String(invoiceSequence).padStart(4, "0")}`;
+  }
+
+  return `INV-${String(fallbackSequence).padStart(4, "0")}`;
+};
 
 const calculateBillableWeeks = (dispatchDateValue: string, billingDateValue: Date) => {
   const dispatchDate = asDateOrToday(dispatchDateValue);
@@ -403,7 +415,7 @@ const Accounting = () => {
 
       return {
         id: quotation.id,
-        invoiceNumber: `INV-${format(billingDate, "yyyyMMdd")}-${String(index + 1).padStart(4, "0")}`,
+        invoiceNumber: deriveInvoiceNumber(quotationNumber, index),
         quotationNumber,
         quotationCreatedBy: quotation.created_by || "-",
         quotationCreatedDate: format(asDateOrToday(quotation.created_at), "yyyy-MM-dd"),
