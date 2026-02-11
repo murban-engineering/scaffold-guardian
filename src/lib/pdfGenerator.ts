@@ -230,14 +230,18 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       ${data.remarks ? `<div class="remarks"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
       <div class="delivery-terms">
-        <p><strong>IMPORTANT:</strong> Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+        <h4>IMPORTANT</h4>
+        <p>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
         <ul>
-          <li><span class="term-header">The Hirer undertakes:</span> to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</li>
-          <li><span class="term-header">The Hirer shall ensure:</span> that all goods are used in accordance with Otno's instructions.</li>
-          <li><span class="term-header">The Hirer shall not use:</span> any goods that are non-standard or unusual and will report their existence to the Owner.</li>
-          <li><span class="term-header">Dirty Equipment:</span> Will be charged for at 2X the list hire price of the item.</li>
-          <li><span class="term-header">Damaged Equipment:</span> Will be charged for at 4X the list hire price of the item.</li>
-          <li><span class="term-header">Lost Equipment:</span> Will be charged for at the selling price of the item.</li>
+          <li>The Hirer undertakes: to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</li>
+          <li>The Hirer shall ensure: that all goods are used in accordance with Otno's instructions.</li>
+          <li>The Hirer shall not use: any goods that are non-standard or unusual and will report their existence to the Owner.</li>
+        </ul>
+        <h4>Pricing</h4>
+        <ul>
+          <li>Dirty Equipment: Will be charged for at 2X the list hire price of the item.</li>
+          <li>Damaged Equipment: Will be charged for at 4X the list hire price of the item.</li>
+          <li>Lost Equipment: Will be charged for at the selling price of the item.</li>
         </ul>
       </div>
 
@@ -294,17 +298,19 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           margin-bottom: 8px;
           line-height: 1.4;
         }
+        .delivery-terms h4 {
+          margin-bottom: 8px;
+          font-size: 13px;
+          text-transform: uppercase;
+        }
         .delivery-terms ul {
           margin: 0;
           padding-left: 16px;
+          margin-bottom: 10px;
         }
         .delivery-terms li {
           margin-bottom: 6px;
           line-height: 1.4;
-        }
-        .term-header {
-          font-weight: 700;
-          text-decoration: underline;
         }
         .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
         .signature-box { border-top: 1px solid #333; padding-top: 10px; }
