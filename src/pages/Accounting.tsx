@@ -388,11 +388,10 @@ const Accounting = () => {
     return months;
   };
 
-  const openMonthlyInvoice = (invoice: ClientInvoice, monthStart: Date, monthEnd: Date, monthLabel: string) => {
+  const openMonthlyInvoice = (invoice: ClientInvoice, _monthStart: Date, monthEnd: Date, monthLabel: string) => {
     const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
-    // Calculate weeks within this specific month period
-    const elapsedDays = differenceInCalendarDays(monthEnd, monthStart) + 1;
-    const weeks = Math.max(Math.ceil(elapsedDays / 7), 1);
+    // Weeks from dispatch date to end of this month
+    const weeks = calculateBillableWeeks(invoice.dispatchDate, monthEnd);
     const monthInvoice: ClientInvoice = {
       ...invoice,
       hireWeeks: weeks,
