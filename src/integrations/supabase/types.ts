@@ -302,6 +302,8 @@ export type Database = {
           part_number: string | null
           quantity: number
           quotation_id: string
+          return_balance_quantity: number | null
+          returned_quantity: number | null
           scaffold_id: string | null
           total_mass: number | null
           updated_at: string
@@ -319,6 +321,8 @@ export type Database = {
           part_number?: string | null
           quantity?: number
           quotation_id: string
+          return_balance_quantity?: number | null
+          returned_quantity?: number | null
           scaffold_id?: string | null
           total_mass?: number | null
           updated_at?: string
@@ -336,6 +340,8 @@ export type Database = {
           part_number?: string | null
           quantity?: number
           quotation_id?: string
+          return_balance_quantity?: number | null
+          returned_quantity?: number | null
           scaffold_id?: string | null
           total_mass?: number | null
           updated_at?: string
@@ -377,7 +383,6 @@ export type Database = {
           serial_number: string | null
           site_id: string | null
           status: Database["public"]["Enums"]["scaffold_status"]
-          unit_price: number | null
           updated_at: string
           weekly_rate: number | null
         }
@@ -398,7 +403,6 @@ export type Database = {
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
-          unit_price?: number | null
           updated_at?: string
           weekly_rate?: number | null
         }
@@ -419,7 +423,6 @@ export type Database = {
           serial_number?: string | null
           site_id?: string | null
           status?: Database["public"]["Enums"]["scaffold_status"]
-          unit_price?: number | null
           updated_at?: string
           weekly_rate?: number | null
         }
@@ -522,7 +525,6 @@ export type Database = {
           p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           p_status?: Database["public"]["Enums"]["scaffold_status"]
           p_weekly_rate?: number
-          p_unit_price?: number
         }
         Returns: string
       }

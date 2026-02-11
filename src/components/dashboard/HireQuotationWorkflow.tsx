@@ -10,21 +10,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Truck, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
-import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, useUpdateLineItemReturnQuantities, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
   generateDeliveryNotePDF,
   generateHireLoadingNotePDF,
   generateHireQuotationReportPDF,
+  generateHireReturnNotePDF,
   generateQuotationPDF,
   generateYardVerificationNotePDF,
   DeliveryNoteData,
   HireLoadingNoteData,
   HireQuotationReportData,
+  HireReturnNoteData,
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
+import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 
 type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "return";
 
@@ -108,10 +111,13 @@ type ReturnItem = {
   itemCode: string;
   description: string;
   totalDelivered: number;
+  previouslyReturned: number;
+  returnBalance: number;
   good: string;
   dirty: string;
   damaged: string;
   scrap: string;
+  massPerItem: number;
 };
 
 const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
@@ -190,6 +196,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const addLineItems = useAddLineItems();
   const clearLineItems = useClearLineItems();
   const updateLineItemQuantities = useUpdateLineItemQuantities();
+  const updateLineItemReturnQuantities = useUpdateLineItemReturnQuantities();
   const createMaintenanceLogs = useCreateMaintenanceLogs();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
@@ -198,8 +205,18 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [returnProcessed, setReturnProcessed] = useState(false);
   const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]); // Track all deliveries
-  const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false); // Track if current delivery is dispatched
+  const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false);
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
+  const [returnSequence, setReturnSequence] = useState(1);
+  const [returnHistory, setReturnHistory] = useState<ReturnRecord[]>([]);
+  const [returnNote, setReturnNote] = useState({
+    returnNoteNo: "",
+    returnDate: getToday(),
+    returnedBy: "",
+    receivedBy: "",
+    vehicleNo: "",
+    remarks: "",
+  });
   const [header, setHeader] = useState<QuotationHeader>(() => ({
     quotationNo: "",
     dateCreated: getToday(),
@@ -472,16 +489,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
         const existing = prev.find((entry) => entry.id === item.id);
+        const totalDelivered = parseNumber(item.qtyDelivered);
         return {
           id: item.id,
           scaffoldId: item.scaffoldId,
           itemCode: item.itemCode,
           description: item.description,
-          totalDelivered: parseNumber(item.qtyDelivered),
+          totalDelivered,
+          previouslyReturned: existing?.previouslyReturned ?? 0,
+          returnBalance: existing?.returnBalance ?? totalDelivered,
           good: existing?.good ?? "0",
           dirty: existing?.dirty ?? "0",
           damaged: existing?.damaged ?? "0",
           scrap: existing?.scrap ?? "0",
+          massPerItem: parseNumber(item.massPerItem),
         };
       })
     );
@@ -1409,13 +1430,32 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     toast.success("Invoice opened for printing");
   };
 
+  const deriveReturnNoteNumber = (quotationNo: string, seq: number) => {
+    if (!quotationNo) return "RN-0001";
+    const parts = quotationNo.match(/\d+/g);
+    const lastPart = parts?.[parts.length - 1];
+    if (!lastPart) return "RN-0001";
+    const num = Number.parseInt(lastPart, 10);
+    if (Number.isNaN(num)) return "RN-0001";
+    const base = "RN-" + String(num).padStart(4, "0");
+    if (seq > 1) return base + "-" + String.fromCharCode(64 + seq);
+    return base;
+  };
+
+  useEffect(() => {
+    setReturnNote(prev => ({
+      ...prev,
+      returnNoteNo: deriveReturnNoteNumber(header.quotationNo, returnSequence),
+    }));
+  }, [header.quotationNo, returnSequence]);
+
   const handleReturnQuantityChange = (
     id: string,
-    field: keyof Omit<ReturnItem, "id" | "scaffoldId" | "itemCode" | "description" | "totalDelivered">,
+    field: "good" | "dirty" | "damaged" | "scrap",
     value: string
   ) => {
     if (returnProcessed) {
-      toast.error("Return has already been processed for this hire.");
+      toast.error("Return has already been processed for this batch.");
       return;
     }
 
@@ -1429,8 +1469,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           parseNumber(nextItem.damaged) +
           parseNumber(nextItem.scrap);
 
-        if (totalReturned > item.totalDelivered) {
-          toast.error(`Returned quantity for ${item.description || item.itemCode} exceeds hired amount.`);
+        if (totalReturned > item.returnBalance) {
+          toast.error(`Cannot return more than balance (${item.returnBalance}) for ${item.description || item.itemCode}.`);
           return item;
         }
 
@@ -1441,7 +1481,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
   const handleProcessReturn = async () => {
     if (returnProcessed) {
-      toast.error("Return has already been processed for this hire.");
+      toast.error("Return has already been processed for this batch.");
       return;
     }
 
@@ -1451,11 +1491,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     const hasReturn = returnItems.some((item) =>
-      parseNumber(item.good) +
-        parseNumber(item.dirty) +
-        parseNumber(item.damaged) +
-        parseNumber(item.scrap) >
-      0
+      parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0
     );
 
     if (!hasReturn) {
@@ -1464,13 +1500,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     }
 
     for (const item of returnItems) {
-      const totalReturned =
-        parseNumber(item.good) +
-        parseNumber(item.dirty) +
-        parseNumber(item.damaged) +
-        parseNumber(item.scrap);
-      if (totalReturned > item.totalDelivered) {
-        toast.error(`Returned quantity for ${item.description || item.itemCode} exceeds delivered amount.`);
+      const totalReturned = parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap);
+      if (totalReturned > item.returnBalance) {
+        toast.error(`Cannot return more than balance (${item.returnBalance}) for ${item.description || item.itemCode}.`);
         return;
       }
     }
@@ -1506,14 +1538,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           { condition: "damaged", qty: parseNumber(item.damaged) },
           { condition: "scrap", qty: parseNumber(item.scrap) },
         ];
-
         return entries
           .filter((entry) => entry.qty > 0)
           .map((entry) => ({
             scaffold_id: item.scaffoldId || "",
-            issue_description: `Return condition: ${entry.condition}. Quantity: ${entry.qty}. Quotation: ${
-              header.quotationNo || "N/A"
-            }. Client: ${header.clientCompanyName || "N/A"}.`,
+            issue_description: `Return condition: ${entry.condition}. Quantity: ${entry.qty}. Quotation: ${header.quotationNo || "N/A"}. Client: ${header.clientCompanyName || "N/A"}.`,
             reported_by: reportedByUserId,
             priority: conditionPriority[entry.condition],
           }));
@@ -1527,7 +1556,71 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       if (maintenanceEntries.length) {
         await createMaintenanceLogs.mutateAsync(maintenanceEntries);
       }
+
+      // Create return record for history
+      const returnRecordItems = returnItems
+        .map((item) => {
+          const good = parseNumber(item.good);
+          const dirty = parseNumber(item.dirty);
+          const damaged = parseNumber(item.damaged);
+          const scrap = parseNumber(item.scrap);
+          const totalReturned = good + dirty + damaged + scrap;
+          const balanceAfter = item.returnBalance - totalReturned;
+          return {
+            itemCode: item.itemCode,
+            description: item.description,
+            good, dirty, damaged, scrap, totalReturned,
+            balanceAfter,
+            massPerItem: item.massPerItem,
+            totalMass: totalReturned * item.massPerItem,
+          };
+        })
+        .filter((item) => item.totalReturned > 0);
+
+      const newReturn: ReturnRecord = {
+        id: crypto.randomUUID(),
+        returnNoteNumber: returnNote.returnNoteNo,
+        returnDate: returnNote.returnDate,
+        returnedBy: returnNote.returnedBy,
+        receivedBy: returnNote.receivedBy,
+        vehicleNo: returnNote.vehicleNo,
+        status: "processed",
+        items: returnRecordItems,
+        totalReturned: returnRecordItems.reduce((s, i) => s + i.totalReturned, 0),
+        totalMass: returnRecordItems.reduce((s, i) => s + i.totalMass, 0),
+        createdAt: new Date().toISOString(),
+      };
+      setReturnHistory((prev) => [newReturn, ...prev]);
+
+      // Update return balances
+      const updatedReturnItems = returnItems.map((item) => {
+        const totalReturned = parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap);
+        const newPreviouslyReturned = item.previouslyReturned + totalReturned;
+        const newReturnBalance = item.returnBalance - totalReturned;
+        return { ...item, previouslyReturned: newPreviouslyReturned, returnBalance: newReturnBalance, good: "0", dirty: "0", damaged: "0", scrap: "0" };
+      });
+      setReturnItems(updatedReturnItems);
+
+      // Save return quantities to database
       if (savedQuotationId) {
+        const returnUpdates = returnItems
+          .filter((item) => item.itemCode)
+          .map((item) => {
+            const totalReturned = parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap);
+            return {
+              part_number: item.itemCode,
+              returned_quantity: item.previouslyReturned + totalReturned,
+              return_balance_quantity: item.returnBalance - totalReturned,
+            };
+          });
+        if (returnUpdates.length > 0) {
+          await updateLineItemReturnQuantities.mutateAsync({ quotation_id: savedQuotationId, items: returnUpdates });
+        }
+      }
+
+      // Check if all items are fully returned
+      const allReturned = updatedReturnItems.every((item) => item.returnBalance <= 0);
+      if (allReturned && savedQuotationId) {
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           hire_weeks: Math.max(numberOfWeeks, 1),
@@ -1535,14 +1628,110 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           status: "completed",
         });
       }
+
       setReturnProcessed(true);
-      toast.success("Hire return processed successfully!");
+      toast.success("Hire return batch processed successfully!");
     } catch (error) {
       console.error("Failed to process return:", error);
     }
   };
 
-  const availableScaffolds = scaffolds?.filter(s => 
+  const handleReturnBalance = useCallback(() => {
+    const nextSequence = returnSequence + 1;
+    setReturnSequence(nextSequence);
+    setReturnProcessed(false);
+    setReturnNote((prev) => ({
+      ...prev,
+      returnNoteNo: deriveReturnNoteNumber(header.quotationNo, nextSequence),
+      returnDate: getToday(),
+      returnedBy: "",
+      receivedBy: "",
+      vehicleNo: "",
+      remarks: "",
+    }));
+    toast.info("Starting return batch " + nextSequence + ". Enter return quantities.");
+  }, [returnSequence, header.quotationNo]);
+
+  const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
+    const data: HireReturnNoteData = {
+      quotationNumber: header.quotationNo,
+      returnNoteNumber: record.returnNoteNumber,
+      dateCreated: header.dateCreated,
+      returnDate: record.returnDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      contactEmail: header.clientEmail,
+      officeTel: header.officeTel,
+      officeEmail: header.officeEmail,
+      returnedBy: record.returnedBy,
+      receivedBy: record.receivedBy,
+      vehicleNo: record.vehicleNo,
+      remarks: "",
+      createdBy: header.createdBy,
+      items: record.items.map((item) => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        totalDelivered: 0,
+        good: item.good,
+        dirty: item.dirty,
+        damaged: item.damaged,
+        scrap: item.scrap,
+        totalReturned: item.totalReturned,
+        balanceAfter: item.balanceAfter,
+        massPerItem: item.massPerItem,
+        totalMass: item.totalMass,
+      })),
+    };
+    generateHireReturnNotePDF(data);
+    toast.success("Return note opened for printing");
+  }, [header]);
+
+  const handlePrintCurrentReturnNote = () => {
+    const data: HireReturnNoteData = {
+      quotationNumber: header.quotationNo,
+      returnNoteNumber: returnNote.returnNoteNo,
+      dateCreated: header.dateCreated,
+      returnDate: returnNote.returnDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteLocation: header.siteLocation,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      contactEmail: header.clientEmail,
+      officeTel: header.officeTel,
+      officeEmail: header.officeEmail,
+      returnedBy: returnNote.returnedBy,
+      receivedBy: returnNote.receivedBy,
+      vehicleNo: returnNote.vehicleNo,
+      remarks: returnNote.remarks,
+      createdBy: header.createdBy,
+      items: returnItems
+        .filter((item) => parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0)
+        .map((item) => {
+          const good = parseNumber(item.good);
+          const dirty = parseNumber(item.dirty);
+          const damaged = parseNumber(item.damaged);
+          const scrap = parseNumber(item.scrap);
+          const totalReturned = good + dirty + damaged + scrap;
+          return {
+            partNumber: item.itemCode,
+            description: item.description,
+            totalDelivered: item.totalDelivered,
+            good, dirty, damaged, scrap, totalReturned,
+            balanceAfter: item.returnBalance - totalReturned,
+            massPerItem: item.massPerItem,
+            totalMass: totalReturned * item.massPerItem,
+          };
+        }),
+    };
+    generateHireReturnNotePDF(data);
+    toast.success("Return note opened for printing");
+  };
     (s.quantity ?? 0) > 0 && s.status === "available"
   ) || [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();

@@ -88,11 +88,11 @@ const calculateBillableWeeks = (dispatchDateValue: string, billingDateValue: Dat
 
 const escapeHtml = (value: string) =>
   value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#39;");
 
 const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) => {
   const reportWindow = window.open("", "_blank");
