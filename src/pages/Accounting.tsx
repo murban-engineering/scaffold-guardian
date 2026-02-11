@@ -373,20 +373,26 @@ const Accounting = () => {
   const generateMonthlyInvoices = (invoice: ClientInvoice) => {
     const dispatchDate = asDateOrToday(invoice.dispatchDate);
     const bd = asDateOrToday(billingDate);
-    const months: { label: string; endDate: Date }[] = [];
+    const months: { label: string; startDate: Date; endDate: Date }[] = [];
     let current = startOfMonth(dispatchDate);
     while (isBefore(current, bd) || format(current, "yyyy-MM") === format(bd, "yyyy-MM")) {
+      const monthStart = startOfMonth(current);
       const monthEnd = endOfMonth(current);
-      const effectiveEnd = isBefore(monthEnd, bd) ? monthEnd : bd;
-      months.push({ label: format(current, "MMMM yyyy"), endDate: effectiveEnd });
+      // Period start: dispatch date for first month, otherwise month start
+      const periodStart = isBefore(monthStart, dispatchDate) ? dispatchDate : monthStart;
+      // Period end: billing date if in current month, otherwise month end
+      const periodEnd = isBefore(monthEnd, bd) ? monthEnd : bd;
+      months.push({ label: format(current, "MMMM yyyy"), startDate: periodStart, endDate: periodEnd });
       current = addMonths(current, 1);
     }
     return months;
   };
 
-  const openMonthlyInvoice = (invoice: ClientInvoice, monthEnd: Date, monthLabel: string) => {
+  const openMonthlyInvoice = (invoice: ClientInvoice, monthStart: Date, monthEnd: Date, monthLabel: string) => {
     const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
-    const weeks = calculateBillableWeeks(invoice.dispatchDate, monthEnd);
+    // Calculate weeks within this specific month period
+    const elapsedDays = differenceInCalendarDays(monthEnd, monthStart) + 1;
+    const weeks = Math.max(Math.ceil(elapsedDays / 7), 1);
     const monthInvoice: ClientInvoice = {
       ...invoice,
       hireWeeks: weeks,
@@ -548,7 +554,7 @@ const Accounting = () => {
                               <Select onValueChange={(monthIdx) => {
                                 const months = generateMonthlyInvoices(inv);
                                 const m = months[Number(monthIdx)];
-                                if (m) openMonthlyInvoice(inv, m.endDate, m.label);
+                                if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
                               }}>
                                 <SelectTrigger className="h-8 w-[130px] text-xs">
                                   <SelectValue placeholder="Monthly" />
