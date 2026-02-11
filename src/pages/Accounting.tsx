@@ -27,6 +27,24 @@ type AccountingInvoice = {
   total: number;
   amountDue: number;
   generatedDate: string;
+  hireWeeks: number;
+  hireBreakdown: {
+    item: string;
+    quantity: number;
+    weeklyRate: number;
+    discountRate: number;
+    effectiveWeeklyRate: number;
+    weeks: number;
+    lineTotal: number;
+  }[];
+  policyBreakdown: {
+    item: string;
+    condition: "dirty" | "damaged" | "scrap";
+    quantity: number;
+    basePrice: number;
+    multiplierLabel: string;
+    lineTotal: number;
+  }[];
 };
 
 const currency = new Intl.NumberFormat("en-KE", {
@@ -57,6 +75,50 @@ const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) =
   }
 
   const hasPolicyCharge = invoice.surcharge > 0;
+  const hireBreakdownRows =
+    invoice.hireBreakdown.length > 0
+      ? invoice.hireBreakdown
+          .map(
+            (line) => `
+            <tr>
+              <td>${escapeHtml(line.item)}</td>
+              <td class="text-right">${line.quantity}</td>
+              <td class="text-right">${currency.format(line.weeklyRate)}</td>
+              <td class="text-right">${line.discountRate.toFixed(2)}%</td>
+              <td class="text-right">${line.weeks}</td>
+              <td class="text-right">${currency.format(line.lineTotal)}</td>
+            </tr>
+          `
+          )
+          .join("")
+      : `
+        <tr>
+          <td colspan="6">No dispatched hire items found.</td>
+        </tr>
+      `;
+
+  const policyBreakdownRows =
+    invoice.policyBreakdown.length > 0
+      ? invoice.policyBreakdown
+          .map(
+            (line) => `
+            <tr>
+              <td>${escapeHtml(line.item)}</td>
+              <td>${escapeHtml(line.condition)}</td>
+              <td class="text-right">${line.quantity}</td>
+              <td class="text-right">${currency.format(line.basePrice)}</td>
+              <td>${escapeHtml(line.multiplierLabel)}</td>
+              <td class="text-right">${currency.format(line.lineTotal)}</td>
+            </tr>
+          `
+          )
+          .join("")
+      : `
+        <tr>
+          <td colspan="6">No return-policy charges recorded.</td>
+        </tr>
+      `;
+
   const html = `
     <!doctype html>
     <html>
@@ -66,6 +128,8 @@ const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) =
           body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
           h1 { margin: 0 0 6px; }
           h2 { margin: 22px 0 8px; font-size: 18px; }
+          .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+          .logo { width: 120px; height: auto; object-fit: contain; }
           .meta { margin: 0 0 16px; color: #444; }
           .meta p { margin: 3px 0; }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -79,14 +143,54 @@ const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) =
         </style>
       </head>
       <body>
-        <h1>Client Dispatch & Return Report</h1>
+        <div class="report-header">
+          <h1>Client Dispatch & Return Report</h1>
+          <img src="${window.location.origin}/otn-logo.png" alt="OTNOS logo" class="logo" />
+        </div>
         <p class="meta">Generated for accounting date: ${escapeHtml(selectedDate)}</p>
         <div class="meta">
           <p><strong>Client:</strong> ${escapeHtml(invoice.client)}</p>
           <p><strong>Site:</strong> ${escapeHtml(invoice.site)}</p>
           <p><strong>Invoice:</strong> ${escapeHtml(invoice.invoiceNumber)}</p>
           <p><strong>Quotation:</strong> ${escapeHtml(invoice.quotationNumber)}</p>
+          <p><strong>Hire weeks:</strong> ${invoice.hireWeeks}</p>
         </div>
+
+        <h2>Equipment hired by client</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-right">Qty taken</th>
+              <th class="text-right">Weekly price</th>
+              <th class="text-right">Discount</th>
+              <th class="text-right">Weeks</th>
+              <th class="text-right">Figure (KES)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hireBreakdownRows}
+          </tbody>
+        </table>
+
+        <p class="footnote">Hire figure formula per line: quantity × (weekly rate − discount) × weeks.</p>
+
+        <h2>Return policy breakdown</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Condition</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Price used</th>
+              <th>Multiplier policy</th>
+              <th class="text-right">Figure (KES)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${policyBreakdownRows}
+          </tbody>
+        </table>
 
         <h2>Charges</h2>
         <table>
@@ -150,9 +254,15 @@ const Accounting = () => {
     return endOfMonth(new Date());
   }, [billingMode, customBillingDate]);
 
-  const surchargeByQuotation = useMemo(() => {
+  const surchargeDetailsByQuotation = useMemo(() => {
     const scaffoldById = new Map(scaffolds.map((scaffold) => [scaffold.id, scaffold]));
-    const surchargeMap = new Map<string, number>();
+    const surchargeMap = new Map<
+      string,
+      {
+        total: number;
+        entries: AccountingInvoice["policyBreakdown"];
+      }
+    >();
 
     for (const log of maintenanceLogs) {
       const message = log.issue_description ?? "";
@@ -167,20 +277,39 @@ const Accounting = () => {
       if (!quotationNumber || !Number.isFinite(quantity) || quantity <= 0) continue;
 
       const scaffold = scaffoldById.get(log.scaffold_id);
+      const itemLabel = scaffold?.description || scaffold?.part_number || "Unknown item";
       const listHirePrice = scaffold?.weekly_rate ?? 0;
       const unitPrice = (scaffold as { unit_price?: number | null } | undefined)?.unit_price ?? 0;
 
       let charge = 0;
+      let basePrice = 0;
+      let multiplierLabel = "";
       if (condition === "dirty") {
         charge = quantity * listHirePrice * 2;
+        basePrice = listHirePrice;
+        multiplierLabel = "x2 list hire price";
       } else if (condition === "damaged") {
         charge = quantity * listHirePrice * 4;
+        basePrice = listHirePrice;
+        multiplierLabel = "x4 list hire price";
       } else if (condition === "scrap") {
         charge = quantity * unitPrice;
+        basePrice = unitPrice;
+        multiplierLabel = "x1 unit price";
       }
 
       if (charge > 0) {
-        surchargeMap.set(quotationNumber, (surchargeMap.get(quotationNumber) ?? 0) + charge);
+        const existing = surchargeMap.get(quotationNumber) ?? { total: 0, entries: [] };
+        existing.total += charge;
+        existing.entries.push({
+          item: itemLabel,
+          condition: condition as "dirty" | "damaged" | "scrap",
+          quantity,
+          basePrice,
+          multiplierLabel,
+          lineTotal: charge,
+        });
+        surchargeMap.set(quotationNumber, existing);
       }
     }
 
@@ -190,19 +319,30 @@ const Accounting = () => {
   const invoices = useMemo<AccountingInvoice[]>(() => {
     return dispatchReadyQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
-      const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-      const subtotal = lineItems.reduce((sum, item) => {
-        if (item.weekly_total != null) {
-          return sum + item.weekly_total;
-        }
-        const quantity = item.quantity ?? 0;
+      const hireWeeks = Math.max(quotation.hire_weeks ?? 1, 1);
+      const hireBreakdown = lineItems.map((item) => {
+        const quantity = item.delivered_quantity && item.delivered_quantity > 0 ? item.delivered_quantity : item.quantity ?? 0;
         const weeklyRate = item.weekly_rate ?? 0;
-        const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
-        return sum + Math.max(weeklyRate * (1 - discountRate), 0) * quantity;
-      }, 0);
+        const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100);
+        const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
+        const lineTotal = quantity * effectiveWeeklyRate * hireWeeks;
+
+        return {
+          item: item.description || item.part_number || "Unnamed item",
+          quantity,
+          weeklyRate,
+          discountRate,
+          effectiveWeeklyRate,
+          weeks: hireWeeks,
+          lineTotal,
+        };
+      });
+      const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+      const subtotal = hireBreakdown.reduce((sum, item) => sum + item.lineTotal, 0);
 
       const quotationNumber = quotation.quotation_number || "Draft";
-      const surcharge = surchargeByQuotation.get(quotationNumber) ?? 0;
+      const surchargeDetails = surchargeDetailsByQuotation.get(quotationNumber) ?? { total: 0, entries: [] };
+      const surcharge = surchargeDetails.total;
       const total = subtotal + surcharge;
       const client = quotation.company_name || quotation.site_manager_name || "Unnamed client";
 
@@ -218,9 +358,12 @@ const Accounting = () => {
         total,
         amountDue: total,
         generatedDate: format(billingDate, "yyyy-MM-dd"),
+        hireWeeks,
+        hireBreakdown,
+        policyBreakdown: surchargeDetails.entries,
       };
     });
-  }, [dispatchReadyQuotations, billingDate, surchargeByQuotation]);
+  }, [dispatchReadyQuotations, billingDate, surchargeDetailsByQuotation]);
 
   const uniqueClients = useMemo(() => {
     return Array.from(new Set(invoices.map((invoice) => invoice.client))).sort((a, b) => a.localeCompare(b));
