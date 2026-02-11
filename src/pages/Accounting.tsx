@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { endOfMonth, format } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
@@ -7,7 +7,6 @@ import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -16,25 +15,21 @@ const currency = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 2,
 });
 
-const BILLING_POLICY = [
-  { key: "dirty", label: "Dirty Equipment", multiplierLabel: "2X list hire price" },
-  { key: "damaged", label: "Damaged Equipment", multiplierLabel: "4X list hire price" },
-  { key: "scrap", label: "Scrap Equipment", multiplierLabel: "Unit price" },
-] as const;
-
 const Accounting = () => {
   const navigate = useNavigate();
   const { data: quotations = [], isLoading } = useHireQuotations();
-  const [billingMode, setBillingMode] = useState("month-end");
 
-  const returnProcessedQuotations = useMemo(() => {
-    return quotations.filter((quotation) => quotation.status?.toLowerCase() === "completed");
+  const approvedQuotations = useMemo(() => {
+    return quotations.filter((quotation) => {
+      const status = quotation.status?.toLowerCase();
+      return status === "approved" || status === "converted" || status === "completed";
+    });
   }, [quotations]);
 
   const billingDate = useMemo(() => endOfMonth(new Date()), []);
 
   const invoices = useMemo(() => {
-    return returnProcessedQuotations.map((quotation, index) => {
+    return approvedQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
       const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
       const subtotal = lineItems.reduce((sum, item) => {
@@ -57,7 +52,7 @@ const Accounting = () => {
         subtotal,
       };
     });
-  }, [returnProcessedQuotations, billingDate]);
+  }, [approvedQuotations, billingDate]);
 
   const totalMonthBilling = invoices.reduce((sum, invoice) => sum + invoice.subtotal, 0);
 
@@ -98,7 +93,7 @@ const Accounting = () => {
       <main className="ml-0 md:ml-64">
         <Header
           title="Accounting"
-          subtitle="Month-end billing in Kenya Shilling (KES), with invoices generated after hire return is processed."
+          subtitle="Approved client quotations are automatically prepared for month-end billing and invoice generation."
         />
 
         <div className="space-y-6 p-6">
@@ -106,26 +101,16 @@ const Accounting = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Billing cycle</CardTitle>
-                <CardDescription>Automatic billing date</CardDescription>
+                <CardDescription>Automatic month-end billing date</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-2xl font-semibold">{format(billingDate, "dd MMM yyyy")}</div>
-                <div>
-                  <Select value={billingMode} onValueChange={setBillingMode}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose billing mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="month-end">Bill at end of every month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <CardContent className="text-2xl font-semibold">
+                {format(billingDate, "dd MMM yyyy")}
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Invoices ready</CardTitle>
-                <CardDescription>Hire returns already processed</CardDescription>
+                <CardTitle>Clients queued</CardTitle>
+                <CardDescription>Approved clients linked to items</CardDescription>
               </CardHeader>
               <CardContent className="text-2xl font-semibold">{invoices.length}</CardContent>
             </Card>
@@ -140,25 +125,9 @@ const Accounting = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Billing policy</CardTitle>
-              <CardDescription>Charges applied after hire return by equipment condition</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                {BILLING_POLICY.map((rule) => (
-                  <li key={rule.key} className="rounded-md border border-border px-3 py-2">
-                    <span className="font-semibold">{rule.label}:</span> {rule.multiplierLabel}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Generated invoices (KES)</CardTitle>
+              <CardTitle>Auto-generated monthly invoices</CardTitle>
               <CardDescription>
-                Invoices are queued only after hire return is completed, then billed automatically at month-end.
+                Invoice drafts are created automatically for approved clients using their quotation line items.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -174,7 +143,7 @@ const Accounting = () => {
                           <TableHead>Client</TableHead>
                           <TableHead>Site</TableHead>
                           <TableHead className="text-right">Items</TableHead>
-                          <TableHead className="text-right">Amount (KES)</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -199,13 +168,14 @@ const Accounting = () => {
                   </div>
 
                   <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    Invoicing rule: once a hire return is processed and the quotation status becomes completed, the client is
-                    queued automatically for month-end KES billing.
+                    Monthly billing automation rule: when a client quotation status is approved, all linked line items are included
+                    in the client invoice and queued for generation on {format(billingDate, "dd MMM yyyy")}. This invoice draft
+                    can then be finalized and sent by your finance team.
                   </div>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No completed hire returns found yet. Process a hire return to generate an invoice in accounting.
+                  No approved clients found. Once a quotation is approved, it will automatically appear here for month-end billing.
                 </div>
               )}
             </CardContent>
