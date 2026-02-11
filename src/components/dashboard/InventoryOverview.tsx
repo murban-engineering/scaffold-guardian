@@ -75,6 +75,7 @@ const InventoryOverview = () => {
                 <TableHead className="text-center">Qty</TableHead>
                 <TableHead className="text-center">Mass</TableHead>
                 <TableHead className="text-right">Weekly Rate</TableHead>
+                <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -95,6 +96,9 @@ const InventoryOverview = () => {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(item.weekly_rate)}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(item.unit_price)}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge
