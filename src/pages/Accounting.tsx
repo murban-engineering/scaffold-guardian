@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { differenceInCalendarDays, format } from "date-fns";
+import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Printer, CalendarDays, DollarSign, Users } from "lucide-react";
+import { Printer, CalendarDays, DollarSign, Users, Search, FileText } from "lucide-react";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -73,6 +73,7 @@ type ClientInvoice = {
   id: string;
   invoiceNumber: string;
   quotationNumber: string;
+  accountNumber: string;
   client: string;
   site: string;
   siteAddress: string;
@@ -233,6 +234,7 @@ const Accounting = () => {
   const { data: scaffolds = [] } = useScaffolds();
   const [billingDate, setBillingDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selectedClient, setSelectedClient] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Only quotations with dispatched items
   // Only quotations explicitly dispatched via Hire Delivery are eligible for billing
@@ -327,6 +329,7 @@ const Accounting = () => {
         id: q.id,
         invoiceNumber: deriveInvoiceNumber(qNum, idx),
         quotationNumber: qNum,
+        accountNumber: q.account_number || "-",
         client: q.company_name || q.site_manager_name || "Unnamed client",
         site: q.site_name || "-",
         siteAddress: q.site_address || "",
@@ -351,12 +354,53 @@ const Accounting = () => {
     [invoices]
   );
 
-  const filteredInvoices = useMemo(
-    () => selectedClient === "all" ? invoices : invoices.filter((i) => i.client === selectedClient),
-    [invoices, selectedClient]
-  );
+  const filteredInvoices = useMemo(() => {
+    let result = selectedClient === "all" ? invoices : invoices.filter((i) => i.client === selectedClient);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((i) =>
+        i.client.toLowerCase().includes(q) ||
+        i.site.toLowerCase().includes(q) ||
+        i.quotationNumber.toLowerCase().includes(q) ||
+        i.accountNumber.toLowerCase().includes(q) ||
+        i.invoiceNumber.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [invoices, selectedClient, searchQuery]);
 
-  const totalBilling = filteredInvoices.reduce((s, i) => s + i.grandTotal, 0);
+  // Generate monthly invoices from dispatch date to billing date
+  const generateMonthlyInvoices = (invoice: ClientInvoice) => {
+    const dispatchDate = asDateOrToday(invoice.dispatchDate);
+    const bd = asDateOrToday(billingDate);
+    const months: { label: string; endDate: Date }[] = [];
+    let current = startOfMonth(dispatchDate);
+    while (isBefore(current, bd) || format(current, "yyyy-MM") === format(bd, "yyyy-MM")) {
+      const monthEnd = endOfMonth(current);
+      const effectiveEnd = isBefore(monthEnd, bd) ? monthEnd : bd;
+      months.push({ label: format(current, "MMMM yyyy"), endDate: effectiveEnd });
+      current = addMonths(current, 1);
+    }
+    return months;
+  };
+
+  const openMonthlyInvoice = (invoice: ClientInvoice, monthEnd: Date, monthLabel: string) => {
+    const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
+    const weeks = calculateBillableWeeks(invoice.dispatchDate, monthEnd);
+    const monthInvoice: ClientInvoice = {
+      ...invoice,
+      hireWeeks: weeks,
+      invoiceNumber: `${invoice.invoiceNumber}-${format(monthEnd, "MMyy")}`,
+      hireBreakdown: invoice.hireBreakdown.map((l) => ({
+        ...l,
+        weeks,
+        lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
+      })),
+      hireTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0),
+      grandTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0) + invoice.policyTotal,
+    };
+    openInvoicePrint(monthInvoice, monthBillingDate);
+  };
 
   const handleSidebarItemClick = (item: string) => {
     const routes: Record<string, string> = {
@@ -386,7 +430,7 @@ const Accounting = () => {
 
         <div className="space-y-6 p-6">
           {/* Controls */}
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="pt-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -420,9 +464,17 @@ const Accounting = () => {
             </Card>
 
             <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">Active Clients</p>
-                <p className="text-3xl font-bold">{filteredInvoices.length}</p>
+              <CardContent className="pt-6 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Search className="h-4 w-4" />
+                  Search
+                </div>
+                <Input
+                  type="text"
+                  placeholder="Client, site, quotation no..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </CardContent>
             </Card>
 
@@ -432,7 +484,8 @@ const Accounting = () => {
                   <DollarSign className="h-4 w-4" />
                   Total Billing (KES)
                 </div>
-                <p className="text-3xl font-bold">{currency.format(totalBilling)}</p>
+                <p className="text-3xl font-bold">{currency.format(filteredInvoices.reduce((s, i) => s + i.grandTotal, 0))}</p>
+                <p className="text-xs text-muted-foreground mt-1">{filteredInvoices.length} active client(s)</p>
               </CardContent>
             </Card>
           </div>
@@ -482,14 +535,33 @@ const Accounting = () => {
                           </TableCell>
                           <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openInvoicePrint(inv, billingDate)}
-                            >
-                              <Printer className="h-3.5 w-3.5 mr-1" />
-                              Print
-                            </Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openInvoicePrint(inv, billingDate)}
+                                title="Print invoice to billing date"
+                              >
+                                <Printer className="h-3.5 w-3.5 mr-1" />
+                                Print
+                              </Button>
+                              <Select onValueChange={(monthIdx) => {
+                                const months = generateMonthlyInvoices(inv);
+                                const m = months[Number(monthIdx)];
+                                if (m) openMonthlyInvoice(inv, m.endDate, m.label);
+                              }}>
+                                <SelectTrigger className="h-8 w-[130px] text-xs">
+                                  <SelectValue placeholder="Monthly" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {generateMonthlyInvoices(inv).map((m, idx) => (
+                                    <SelectItem key={idx} value={String(idx)}>
+                                      {m.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
