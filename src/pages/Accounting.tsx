@@ -8,10 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const currency = new Intl.NumberFormat("en-ZA", {
+const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
-  currency: "ZAR",
+  currency: "KES",
   minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 const Accounting = () => {
