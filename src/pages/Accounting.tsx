@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { endOfMonth, format } from "date-fns";
+import { differenceInCalendarDays, endOfMonth, format } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
@@ -19,6 +19,8 @@ type AccountingInvoice = {
   id: string;
   invoiceNumber: string;
   quotationNumber: string;
+  quotationCreatedBy: string;
+  quotationCreatedDate: string;
   client: string;
   site: string;
   itemCount: number;
@@ -27,6 +29,7 @@ type AccountingInvoice = {
   total: number;
   amountDue: number;
   generatedDate: string;
+  dispatchDate: string;
   hireWeeks: number;
   hireBreakdown: {
     item: string;
@@ -57,6 +60,18 @@ const currency = new Intl.NumberFormat("en-KE", {
 const asDateOrToday = (value: string) => {
   const parsed = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+};
+
+const COMPANY_NAME = "OTNO Access Solutions";
+const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
+const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+const COMPANY_EMAIL = "otnoacess@gmail.com";
+
+const calculateBillableWeeks = (dispatchDateValue: string, billingDateValue: Date) => {
+  const dispatchDate = asDateOrToday(dispatchDateValue);
+  const billingDate = billingDateValue;
+  const elapsedDays = differenceInCalendarDays(billingDate, dispatchDate);
+  return Math.max(Math.ceil((elapsedDays + 1) / 7), 1);
 };
 
 const escapeHtml = (value: string) =>
@@ -128,8 +143,16 @@ const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) =
           body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
           h1 { margin: 0 0 6px; }
           h2 { margin: 22px 0 8px; font-size: 18px; }
-          .report-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+          .report-header { display: flex; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; gap: 16px; }
           .logo { width: 120px; height: auto; object-fit: contain; }
+          .header-content p { margin: 2px 0; color: #444; }
+          .header-content .report-title { font-weight: 700; margin-top: 6px; color: #111; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+          .info-section { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
+          .info-section h3 { margin: 0 0 8px; font-size: 22px; }
+          .info-row { display: flex; margin-bottom: 4px; }
+          .info-label { width: 150px; font-weight: 700; color: #444; }
+          .info-value { flex: 1; }
           .meta { margin: 0 0 16px; color: #444; }
           .meta p { margin: 3px 0; }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -144,17 +167,42 @@ const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) =
       </head>
       <body>
         <div class="report-header">
-          <h1>Client Dispatch & Return Report</h1>
           <img src="${window.location.origin}/otn-logo.png" alt="OTNOS logo" class="logo" />
+          <div class="header-content">
+            <h1>${COMPANY_NAME}</h1>
+            <p>Email: ${COMPANY_EMAIL}</p>
+            <p>${COMPANY_ADDRESS}</p>
+            <p>${COMPANY_LOCATION}</p>
+            <p class="report-title">Client Dispatch & Return Report</p>
+          </div>
         </div>
-        <p class="meta">Generated for accounting date: ${escapeHtml(selectedDate)}</p>
-        <div class="meta">
-          <p><strong>Client:</strong> ${escapeHtml(invoice.client)}</p>
-          <p><strong>Site:</strong> ${escapeHtml(invoice.site)}</p>
-          <p><strong>Invoice:</strong> ${escapeHtml(invoice.invoiceNumber)}</p>
-          <p><strong>Quotation:</strong> ${escapeHtml(invoice.quotationNumber)}</p>
-          <p><strong>Hire weeks:</strong> ${invoice.hireWeeks}</p>
+
+        <div class="info-grid">
+          <div class="info-section">
+            <h3>Client Details</h3>
+            <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${escapeHtml(invoice.client)}</span></div>
+            <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Email:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Office Tel:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Office Email:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">${escapeHtml(invoice.site)}</span></div>
+            <div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">-</span></div>
+            <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">-</span></div>
+          </div>
+          <div class="info-section">
+            <h3>OTNO Access Details</h3>
+            <div class="info-row"><span class="info-label">Invoice No:</span><span class="info-value">${escapeHtml(invoice.invoiceNumber)}</span></div>
+            <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${escapeHtml(invoice.quotationNumber)}</span></div>
+            <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${escapeHtml(invoice.quotationCreatedDate)}</span></div>
+            <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${escapeHtml(invoice.quotationCreatedBy)}</span></div>
+            <div class="info-row"><span class="info-label">Dispatch Date:</span><span class="info-value">${escapeHtml(invoice.dispatchDate)}</span></div>
+            <div class="info-row"><span class="info-label">Billing Date:</span><span class="info-value">${escapeHtml(selectedDate)}</span></div>
+            <div class="info-row"><span class="info-label">Billed Weeks:</span><span class="info-value">${invoice.hireWeeks}</span></div>
+          </div>
         </div>
+
+        <p class="meta">Billing weeks are calculated from dispatch date (${escapeHtml(invoice.dispatchDate)}) to selected accounting date (${escapeHtml(selectedDate)}).</p>
 
         <h2>Equipment hired by client</h2>
         <table>
@@ -319,7 +367,14 @@ const Accounting = () => {
   const invoices = useMemo<AccountingInvoice[]>(() => {
     return dispatchReadyQuotations.map((quotation, index) => {
       const lineItems = quotation.line_items ?? [];
-      const hireWeeks = Math.max(quotation.hire_weeks ?? 1, 1);
+      const dispatchLineDates = lineItems
+        .filter((item) => (item.delivered_quantity ?? 0) > 0)
+        .map((item) => item.updated_at)
+        .filter(Boolean)
+        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+      const dispatchDateRaw = dispatchLineDates[0] ?? quotation.updated_at ?? quotation.created_at;
+      const dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+      const hireWeeks = calculateBillableWeeks(dispatchDate, billingDate);
       const hireBreakdown = lineItems.map((item) => {
         const quantity = item.delivered_quantity && item.delivered_quantity > 0 ? item.delivered_quantity : item.quantity ?? 0;
         const weeklyRate = item.weekly_rate ?? 0;
@@ -350,6 +405,8 @@ const Accounting = () => {
         id: quotation.id,
         invoiceNumber: `INV-${format(billingDate, "yyyyMMdd")}-${String(index + 1).padStart(4, "0")}`,
         quotationNumber,
+        quotationCreatedBy: quotation.created_by || "-",
+        quotationCreatedDate: format(asDateOrToday(quotation.created_at), "yyyy-MM-dd"),
         client,
         site: quotation.site_name || "No site name",
         itemCount,
@@ -358,6 +415,7 @@ const Accounting = () => {
         total,
         amountDue: total,
         generatedDate: format(billingDate, "yyyy-MM-dd"),
+        dispatchDate,
         hireWeeks,
         hireBreakdown,
         policyBreakdown: surchargeDetails.entries,
