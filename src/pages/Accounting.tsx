@@ -239,11 +239,11 @@ const Accounting = () => {
   const [selectedClient, setSelectedClient] = useState("all");
 
   // Only quotations with dispatched items
+  // Only quotations explicitly dispatched via Hire Delivery are eligible for billing
   const activeQuotations = useMemo(() => {
     return quotations.filter((q) => {
       const status = q.status?.toLowerCase() ?? "";
-      const hasDelivered = (q.line_items ?? []).some((li) => (li.delivered_quantity ?? 0) > 0);
-      return status === "dispatched" || status === "completed" || hasDelivered;
+      return status === "dispatched" || status === "completed";
     });
   }, [quotations]);
 
