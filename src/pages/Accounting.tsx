@@ -1,54 +1,18 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { differenceInCalendarDays, endOfMonth, format } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import { useScaffolds } from "@/hooks/useScaffolds";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
-type BillingMode = "month-end" | "custom-date";
-
-type AccountingInvoice = {
-  id: string;
-  invoiceNumber: string;
-  quotationNumber: string;
-  quotationCreatedBy: string;
-  quotationCreatedDate: string;
-  client: string;
-  site: string;
-  itemCount: number;
-  subtotal: number;
-  surcharge: number;
-  total: number;
-  amountDue: number;
-  generatedDate: string;
-  dispatchDate: string;
-  hireWeeks: number;
-  hireBreakdown: {
-    item: string;
-    quantity: number;
-    weeklyRate: number;
-    discountRate: number;
-    effectiveWeeklyRate: number;
-    weeks: number;
-    lineTotal: number;
-  }[];
-  policyBreakdown: {
-    item: string;
-    condition: "dirty" | "damaged" | "scrap";
-    quantity: number;
-    basePrice: number;
-    multiplierLabel: string;
-    lineTotal: number;
-  }[];
-};
+import { Printer, CalendarDays, DollarSign, Users } from "lucide-react";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -66,227 +30,204 @@ const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
 const COMPANY_EMAIL = "otnoacess@gmail.com";
-const HIRE_QUOTATION_BASE_NUMBER = 1000;
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
-
-  if (Number.isFinite(quotedSequence) && quotedSequence >= HIRE_QUOTATION_BASE_NUMBER) {
-    const invoiceSequence = quotedSequence - HIRE_QUOTATION_BASE_NUMBER;
-    return `INV-${String(invoiceSequence).padStart(4, "0")}`;
+  if (Number.isFinite(quotedSequence) && quotedSequence >= 1000) {
+    return `INV-${String(quotedSequence - 1000).padStart(4, "0")}`;
   }
-
   return `INV-${String(fallbackSequence).padStart(4, "0")}`;
 };
 
-const calculateBillableWeeks = (dispatchDateValue: string, billingDateValue: Date) => {
+const calculateBillableWeeks = (dispatchDateValue: string, billingDate: Date) => {
   const dispatchDate = asDateOrToday(dispatchDateValue);
-  const billingDate = billingDateValue;
   const elapsedDays = differenceInCalendarDays(billingDate, dispatchDate);
   return Math.max(Math.ceil((elapsedDays + 1) / 7), 1);
 };
 
 const escapeHtml = (value: string) =>
-  value
-    .split("&").join("&amp;")
-    .split("<").join("&lt;")
-    .split(">").join("&gt;")
-    .split('"').join("&quot;")
-    .split("'").join("&#39;");
+  value.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#39;");
 
-const openPrintableReport = (invoice: AccountingInvoice, selectedDate: string) => {
-  const reportWindow = window.open("", "_blank");
-  if (!reportWindow) {
-    alert("Please allow popups for this site to print reports");
-    return;
-  }
+type HireLineBreakdown = {
+  partNumber: string;
+  item: string;
+  quantity: number;
+  weeklyRate: number;
+  discountRate: number;
+  effectiveWeeklyRate: number;
+  weeks: number;
+  lineTotal: number;
+};
 
-  const hasPolicyCharge = invoice.surcharge > 0;
-  const hireBreakdownRows =
-    invoice.hireBreakdown.length > 0
-      ? invoice.hireBreakdown
-          .map(
-            (line) => `
-            <tr>
-              <td>${escapeHtml(line.item)}</td>
-              <td class="text-right">${line.quantity}</td>
-              <td class="text-right">${currency.format(line.weeklyRate)}</td>
-              <td class="text-right">${line.discountRate.toFixed(2)}%</td>
-              <td class="text-right">${line.weeks}</td>
-              <td class="text-right">${currency.format(line.lineTotal)}</td>
-            </tr>
-          `
-          )
-          .join("")
-      : `
-        <tr>
-          <td colspan="6">No dispatched hire items found.</td>
-        </tr>
-      `;
+type PolicyLineBreakdown = {
+  partNumber: string;
+  item: string;
+  condition: "dirty" | "damaged" | "scrap";
+  quantity: number;
+  basePrice: number;
+  multiplierLabel: string;
+  lineTotal: number;
+};
 
-  const policyBreakdownRows =
-    invoice.policyBreakdown.length > 0
-      ? invoice.policyBreakdown
-          .map(
-            (line) => `
-            <tr>
-              <td>${escapeHtml(line.item)}</td>
-              <td>${escapeHtml(line.condition)}</td>
-              <td class="text-right">${line.quantity}</td>
-              <td class="text-right">${currency.format(line.basePrice)}</td>
-              <td>${escapeHtml(line.multiplierLabel)}</td>
-              <td class="text-right">${currency.format(line.lineTotal)}</td>
-            </tr>
-          `
-          )
-          .join("")
-      : `
-        <tr>
-          <td colspan="6">No return-policy charges recorded.</td>
-        </tr>
-      `;
+type ClientInvoice = {
+  id: string;
+  invoiceNumber: string;
+  quotationNumber: string;
+  client: string;
+  site: string;
+  siteAddress: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  dispatchDate: string;
+  hireWeeks: number;
+  hireTotal: number;
+  policyTotal: number;
+  grandTotal: number;
+  hireBreakdown: HireLineBreakdown[];
+  policyBreakdown: PolicyLineBreakdown[];
+  createdBy: string;
+  createdDate: string;
+};
 
-  const html = `
-    <!doctype html>
-    <html>
-      <head>
-        <title>Client Accounting Report - ${escapeHtml(invoice.client)}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
-          h1 { margin: 0 0 6px; }
-          h2 { margin: 22px 0 8px; font-size: 18px; }
-          .report-header { display: flex; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; gap: 16px; }
-          .logo { width: 120px; height: auto; object-fit: contain; }
-          .header-content p { margin: 2px 0; color: #444; }
-          .header-content .report-title { font-weight: 700; margin-top: 6px; color: #111; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-          .info-section { border: 1px solid #ddd; border-radius: 8px; padding: 12px; }
-          .info-section h3 { margin: 0 0 8px; font-size: 22px; }
-          .info-row { display: flex; margin-bottom: 4px; }
-          .info-label { width: 150px; font-weight: 700; color: #444; }
-          .info-value { flex: 1; }
-          .meta { margin: 0 0 16px; color: #444; }
-          .meta p { margin: 3px 0; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th, td { border: 1px solid #d8d8d8; padding: 8px; text-align: left; }
-          th { background: #f5f5f5; }
-          .text-right { text-align: right; }
-          .summary { margin-top: 16px; max-width: 420px; margin-left: auto; }
-          .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e8e8e8; }
-          .summary-row.total { font-weight: 700; border-top: 2px solid #333; border-bottom: none; margin-top: 8px; padding-top: 10px; }
-          .footnote { margin-top: 12px; font-size: 12px; color: #444; }
-        </style>
-      </head>
-      <body>
-        <div class="report-header">
-          <img src="${window.location.origin}/otn-logo.png" alt="OTNOS logo" class="logo" />
-          <div class="header-content">
-            <h1>${COMPANY_NAME}</h1>
-            <p>Email: ${COMPANY_EMAIL}</p>
-            <p>${COMPANY_ADDRESS}</p>
-            <p>${COMPANY_LOCATION}</p>
-            <p class="report-title">Client Dispatch & Return Report</p>
-          </div>
-        </div>
+const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
+  const win = window.open("", "_blank");
+  if (!win) { alert("Please allow popups to print invoices"); return; }
 
-        <div class="info-grid">
-          <div class="info-section">
-            <h3>Client Details</h3>
-            <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${escapeHtml(invoice.client)}</span></div>
-            <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Email:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Office Tel:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Office Email:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">${escapeHtml(invoice.site)}</span></div>
-            <div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">-</span></div>
-            <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">-</span></div>
-          </div>
-          <div class="info-section">
-            <h3>OTNO Access Details</h3>
-            <div class="info-row"><span class="info-label">Invoice No:</span><span class="info-value">${escapeHtml(invoice.invoiceNumber)}</span></div>
-            <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${escapeHtml(invoice.quotationNumber)}</span></div>
-            <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${escapeHtml(invoice.quotationCreatedDate)}</span></div>
-            <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${escapeHtml(invoice.quotationCreatedBy)}</span></div>
-            <div class="info-row"><span class="info-label">Dispatch Date:</span><span class="info-value">${escapeHtml(invoice.dispatchDate)}</span></div>
-            <div class="info-row"><span class="info-label">Billing Date:</span><span class="info-value">${escapeHtml(selectedDate)}</span></div>
-            <div class="info-row"><span class="info-label">Billed Weeks:</span><span class="info-value">${invoice.hireWeeks}</span></div>
-          </div>
-        </div>
+  const hireRows = invoice.hireBreakdown.length > 0
+    ? invoice.hireBreakdown.map(l => `
+      <tr>
+        <td>${escapeHtml(l.partNumber)}</td>
+        <td>${escapeHtml(l.item)}</td>
+        <td class="r">${l.quantity}</td>
+        <td class="r">${currency.format(l.weeklyRate)}</td>
+        <td class="r">${l.discountRate.toFixed(1)}%</td>
+        <td class="r">${currency.format(l.effectiveWeeklyRate)}</td>
+        <td class="r">${l.weeks}</td>
+        <td class="r">${currency.format(l.lineTotal)}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="8" class="c">No hire items.</td></tr>`;
 
-        <p class="meta">Billing weeks are calculated from dispatch date (${escapeHtml(invoice.dispatchDate)}) to selected accounting date (${escapeHtml(selectedDate)}).</p>
+  const policyRows = invoice.policyBreakdown.length > 0
+    ? invoice.policyBreakdown.map(l => `
+      <tr>
+        <td>${escapeHtml(l.partNumber)}</td>
+        <td>${escapeHtml(l.item)}</td>
+        <td class="cap">${escapeHtml(l.condition)}</td>
+        <td class="r">${l.quantity}</td>
+        <td class="r">${currency.format(l.basePrice)}</td>
+        <td>${escapeHtml(l.multiplierLabel)}</td>
+        <td class="r">${currency.format(l.lineTotal)}</td>
+      </tr>`).join("")
+    : `<tr><td colspan="7" class="c">No return-policy charges.</td></tr>`;
 
-        <h2>Equipment hired by client</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th class="text-right">Qty taken</th>
-              <th class="text-right">Weekly price</th>
-              <th class="text-right">Discount</th>
-              <th class="text-right">Weeks</th>
-              <th class="text-right">Figure (KES)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${hireBreakdownRows}
-          </tbody>
-        </table>
+  const vatRate = 0.16;
+  const subtotalBeforeVat = invoice.grandTotal;
+  const vatAmount = subtotalBeforeVat * vatRate;
+  const totalWithVat = subtotalBeforeVat + vatAmount;
 
-        <p class="footnote">Hire figure formula per line: quantity × (weekly rate − discount) × weeks.</p>
+  const html = `<!doctype html><html><head>
+    <title>Invoice ${escapeHtml(invoice.invoiceNumber)}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
+      h1{margin:0 0 4px;font-size:22px}
+      h2{margin:20px 0 6px;font-size:15px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      .hdr{display:flex;align-items:flex-start;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:14px;gap:14px}
+      .logo{width:100px;height:auto}
+      .hdr-txt p{margin:2px 0;color:#555}
+      .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+      .box{border:1px solid #ddd;border-radius:6px;padding:10px}
+      .box h3{margin:0 0 6px;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px}
+      .row{display:flex;margin-bottom:3px}.lbl{width:130px;font-weight:700;color:#555}.val{flex:1}
+      table{width:100%;border-collapse:collapse;margin-top:8px}
+      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+      th{background:#f5f5f5;font-size:11px}
+      .r{text-align:right}.c{text-align:center}.cap{text-transform:capitalize}
+      .sum{max-width:360px;margin:14px 0 0 auto}
+      .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
+      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
+      .ft{margin-top:10px;font-size:11px;color:#555}
+      .policy-box{border:1px solid #333;border-radius:6px;padding:10px;margin-top:14px;background:#fcfcfc}
+      .policy-box h4{margin:0 0 6px;font-size:12px;text-transform:uppercase}
+      .policy-box ul{margin:0;padding-left:16px}.policy-box li{margin-bottom:4px}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      @media print{.print-bar{display:none}}
+    </style></head><body>
+    <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
+    <div class="hdr">
+      <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+      <div class="hdr-txt">
+        <h1>${COMPANY_NAME}</h1>
+        <p>Email: ${COMPANY_EMAIL}</p>
+        <p>${COMPANY_ADDRESS}</p>
+        <p>${COMPANY_LOCATION}</p>
+        <p><strong>HIRE INVOICE</strong></p>
+      </div>
+    </div>
 
-        <h2>Return policy breakdown</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Condition</th>
-              <th class="text-right">Qty</th>
-              <th class="text-right">Price used</th>
-              <th>Multiplier policy</th>
-              <th class="text-right">Figure (KES)</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${policyBreakdownRows}
-          </tbody>
-        </table>
+    <div class="grid2">
+      <div class="box">
+        <h3>Client Details</h3>
+        <div class="row"><span class="lbl">Company:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
+        <div class="row"><span class="lbl">Site:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
+        <div class="row"><span class="lbl">Site Address:</span><span class="val">${escapeHtml(invoice.siteAddress || "-")}</span></div>
+        <div class="row"><span class="lbl">Contact:</span><span class="val">${escapeHtml(invoice.contactName || "-")}</span></div>
+        <div class="row"><span class="lbl">Phone:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
+        <div class="row"><span class="lbl">Email:</span><span class="val">${escapeHtml(invoice.contactEmail || "-")}</span></div>
+      </div>
+      <div class="box">
+        <h3>Invoice Details</h3>
+        <div class="row"><span class="lbl">Invoice No:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>
+        <div class="row"><span class="lbl">Quotation No:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
+        <div class="row"><span class="lbl">Date Created:</span><span class="val">${escapeHtml(invoice.createdDate)}</span></div>
+        <div class="row"><span class="lbl">Created By:</span><span class="val">${escapeHtml(invoice.createdBy)}</span></div>
+        <div class="row"><span class="lbl">Dispatch Date:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+        <div class="row"><span class="lbl">Billing Date:</span><span class="val">${escapeHtml(billingDateStr)}</span></div>
+        <div class="row"><span class="lbl">Billed Weeks:</span><span class="val">${invoice.hireWeeks}</span></div>
+      </div>
+    </div>
 
-        <h2>Charges</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th class="text-right">Amount (KES)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Hire per week charges</td>
-              <td class="text-right">${currency.format(invoice.subtotal)}</td>
-            </tr>
-            <tr>
-              <td>Hire return policy charges</td>
-              <td class="text-right">${currency.format(invoice.surcharge)}</td>
-            </tr>
-          </tbody>
-        </table>
+    <h2>A. Weekly Hire Charges</h2>
+    <table>
+      <thead><tr>
+        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weekly Rate</th>
+        <th class="r">Discount</th><th class="r">Effective Rate</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+      </tr></thead>
+      <tbody>${hireRows}</tbody>
+    </table>
 
-        <div class="summary">
-          <div class="summary-row"><span>Hire per week</span><strong>${currency.format(invoice.subtotal)}</strong></div>
-          <div class="summary-row"><span>Return policy charges</span><strong>${currency.format(invoice.surcharge)}</strong></div>
-          <div class="summary-row total"><span>Total due</span><span>${currency.format(invoice.total)}</span></div>
-        </div>
+    <h2>B. Return Condition Charges</h2>
+    <table>
+      <thead><tr>
+        <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
+        <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
+      </tr></thead>
+      <tbody>${policyRows}</tbody>
+    </table>
 
-        ${hasPolicyCharge ? '<p class="footnote">Return-condition policy charges included: dirty equipment at 2× list hire, damaged at 4× list hire, scrap at unit price.</p>' : ""}
-      </body>
-    </html>
-  `;
+    <div class="sum">
+      <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+      <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
+      <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
+      <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+      <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+    </div>
 
-  reportWindow.document.write(html);
-  reportWindow.document.close();
-  reportWindow.focus();
-  reportWindow.print();
+    <div class="policy-box">
+      <h4>Return Condition Billing Policy</h4>
+      <ul>
+        <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
+        <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
+        <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
+      </ul>
+    </div>
+
+    <p class="ft">Invoice generated on ${escapeHtml(billingDateStr)} by ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
+  </body></html>`;
+
+  win.document.write(html);
+  win.document.close();
 };
 
 const Accounting = () => {
@@ -294,189 +235,146 @@ const Accounting = () => {
   const { data: quotations = [], isLoading } = useHireQuotations();
   const { data: maintenanceLogs = [] } = useMaintenanceLogs();
   const { data: scaffolds = [] } = useScaffolds();
-  const [billingMode, setBillingMode] = useState<BillingMode>("month-end");
-  const [customBillingDate, setCustomBillingDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [invoiceLookupDate, setInvoiceLookupDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [selectedClient, setSelectedClient] = useState("all-clients");
+  const [billingDate, setBillingDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [selectedClient, setSelectedClient] = useState("all");
 
-  const dispatchReadyQuotations = useMemo(() => {
-    return quotations.filter((quotation) => {
-      const status = quotation.status?.toLowerCase() ?? "";
-      const hasDeliveredItems = (quotation.line_items ?? []).some((item) => (item.delivered_quantity ?? 0) > 0);
-      return status === "dispatched" || status === "completed" || hasDeliveredItems;
+  // Only quotations with dispatched items
+  const activeQuotations = useMemo(() => {
+    return quotations.filter((q) => {
+      const status = q.status?.toLowerCase() ?? "";
+      const hasDelivered = (q.line_items ?? []).some((li) => (li.delivered_quantity ?? 0) > 0);
+      return status === "dispatched" || status === "completed" || hasDelivered;
     });
   }, [quotations]);
 
-  const billingDate = useMemo(() => {
-    if (billingMode === "custom-date") {
-      return asDateOrToday(customBillingDate);
-    }
-    return endOfMonth(new Date());
-  }, [billingMode, customBillingDate]);
-
-  const surchargeDetailsByQuotation = useMemo(() => {
-    const scaffoldById = new Map(scaffolds.map((scaffold) => [scaffold.id, scaffold]));
-    const surchargeMap = new Map<
-      string,
-      {
-        total: number;
-        entries: AccountingInvoice["policyBreakdown"];
-      }
-    >();
+  // Return policy surcharges from maintenance logs
+  const surchargeMap = useMemo(() => {
+    const scaffoldById = new Map(scaffolds.map((s) => [s.id, s]));
+    const map = new Map<string, { total: number; entries: PolicyLineBreakdown[] }>();
 
     for (const log of maintenanceLogs) {
-      const message = log.issue_description ?? "";
-      const match = message.match(
+      const match = (log.issue_description ?? "").match(
         /Return condition:\s*(dirty|damaged|scrap)\.\s*Quantity:\s*(\d+(?:\.\d+)?)\.\s*Quotation:\s*([^.]+)\./i
       );
       if (!match) continue;
 
-      const condition = match[1].toLowerCase();
+      const condition = match[1].toLowerCase() as "dirty" | "damaged" | "scrap";
       const quantity = Number.parseFloat(match[2]);
       const quotationNumber = match[3].trim();
       if (!quotationNumber || !Number.isFinite(quantity) || quantity <= 0) continue;
 
       const scaffold = scaffoldById.get(log.scaffold_id);
+      const partNumber = scaffold?.part_number || "-";
       const itemLabel = scaffold?.description || scaffold?.part_number || "Unknown item";
       const listHirePrice = scaffold?.weekly_rate ?? 0;
       const unitPrice = (scaffold as { unit_price?: number | null } | undefined)?.unit_price ?? 0;
 
-      let charge = 0;
-      let basePrice = 0;
-      let multiplierLabel = "";
+      let charge = 0, basePrice = 0, multiplierLabel = "";
       if (condition === "dirty") {
         charge = quantity * listHirePrice * 2;
         basePrice = listHirePrice;
-        multiplierLabel = "x2 list hire price";
+        multiplierLabel = "2× hire price";
       } else if (condition === "damaged") {
         charge = quantity * listHirePrice * 4;
         basePrice = listHirePrice;
-        multiplierLabel = "x4 list hire price";
+        multiplierLabel = "4× hire price";
       } else if (condition === "scrap") {
         charge = quantity * unitPrice;
         basePrice = unitPrice;
-        multiplierLabel = "x1 unit price";
+        multiplierLabel = "Selling price";
       }
 
       if (charge > 0) {
-        const existing = surchargeMap.get(quotationNumber) ?? { total: 0, entries: [] };
+        const existing = map.get(quotationNumber) ?? { total: 0, entries: [] };
         existing.total += charge;
-        existing.entries.push({
-          item: itemLabel,
-          condition: condition as "dirty" | "damaged" | "scrap",
-          quantity,
-          basePrice,
-          multiplierLabel,
-          lineTotal: charge,
-        });
-        surchargeMap.set(quotationNumber, existing);
+        existing.entries.push({ partNumber, item: itemLabel, condition, quantity, basePrice, multiplierLabel, lineTotal: charge });
+        map.set(quotationNumber, existing);
       }
     }
-
-    return surchargeMap;
+    return map;
   }, [maintenanceLogs, scaffolds]);
 
-  const invoices = useMemo<AccountingInvoice[]>(() => {
-    return dispatchReadyQuotations.map((quotation, index) => {
-      const lineItems = quotation.line_items ?? [];
-      const dispatchLineDates = lineItems
-        .filter((item) => (item.delivered_quantity ?? 0) > 0)
-        .map((item) => item.updated_at)
-        .filter(Boolean)
-        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-      const dispatchDateRaw = dispatchLineDates[0] ?? quotation.updated_at ?? quotation.created_at;
+  // Build invoices
+  const invoices = useMemo<ClientInvoice[]>(() => {
+    const bd = asDateOrToday(billingDate);
+    return activeQuotations.map((q, idx) => {
+      const lineItems = q.line_items ?? [];
+      const dispatchDates = lineItems
+        .filter((li) => (li.delivered_quantity ?? 0) > 0)
+        .map((li) => li.updated_at).filter(Boolean).sort();
+      const dispatchDateRaw = dispatchDates[0] ?? q.updated_at ?? q.created_at;
       const dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
-      const hireWeeks = calculateBillableWeeks(dispatchDate, billingDate);
-      const hireBreakdown = lineItems.map((item) => {
-        const quantity = item.delivered_quantity && item.delivered_quantity > 0 ? item.delivered_quantity : item.quantity ?? 0;
-        const weeklyRate = item.weekly_rate ?? 0;
-        const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100);
-        const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
-        const lineTotal = quantity * effectiveWeeklyRate * hireWeeks;
+      const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
 
+      const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
+        const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
+        const weeklyRate = li.weekly_rate ?? 0;
+        const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
+        const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
         return {
-          item: item.description || item.part_number || "Unnamed item",
-          quantity,
+          partNumber: li.part_number || "-",
+          item: li.description || li.part_number || "Unnamed",
+          quantity: qty,
           weeklyRate,
           discountRate,
           effectiveWeeklyRate,
           weeks: hireWeeks,
-          lineTotal,
+          lineTotal: qty * effectiveWeeklyRate * hireWeeks,
         };
       });
-      const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-      const subtotal = hireBreakdown.reduce((sum, item) => sum + item.lineTotal, 0);
 
-      const quotationNumber = quotation.quotation_number || "Draft";
-      const surchargeDetails = surchargeDetailsByQuotation.get(quotationNumber) ?? { total: 0, entries: [] };
-      const surcharge = surchargeDetails.total;
-      const total = subtotal + surcharge;
-      const client = quotation.company_name || quotation.site_manager_name || "Unnamed client";
+      const hireTotal = hireBreakdown.reduce((s, l) => s + l.lineTotal, 0);
+      const qNum = q.quotation_number || "Draft";
+      const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
       return {
-        id: quotation.id,
-        invoiceNumber: deriveInvoiceNumber(quotationNumber, index),
-        quotationNumber,
-        quotationCreatedBy: quotation.created_by || "-",
-        quotationCreatedDate: format(asDateOrToday(quotation.created_at), "yyyy-MM-dd"),
-        client,
-        site: quotation.site_name || "No site name",
-        itemCount,
-        subtotal,
-        surcharge,
-        total,
-        amountDue: total,
-        generatedDate: format(billingDate, "yyyy-MM-dd"),
+        id: q.id,
+        invoiceNumber: deriveInvoiceNumber(qNum, idx),
+        quotationNumber: qNum,
+        client: q.company_name || q.site_manager_name || "Unnamed client",
+        site: q.site_name || "-",
+        siteAddress: q.site_address || "",
+        contactName: q.site_manager_name || "",
+        contactPhone: q.site_manager_phone || "",
+        contactEmail: q.site_manager_email || "",
         dispatchDate,
         hireWeeks,
+        hireTotal,
+        policyTotal: surcharge.total,
+        grandTotal: hireTotal + surcharge.total,
         hireBreakdown,
-        policyBreakdown: surchargeDetails.entries,
+        policyBreakdown: surcharge.entries,
+        createdBy: q.created_by || "-",
+        createdDate: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
       };
     });
-  }, [dispatchReadyQuotations, billingDate, surchargeDetailsByQuotation]);
+  }, [activeQuotations, billingDate, surchargeMap]);
 
-  const uniqueClients = useMemo(() => {
-    return Array.from(new Set(invoices.map((invoice) => invoice.client))).sort((a, b) => a.localeCompare(b));
-  }, [invoices]);
+  const uniqueClients = useMemo(
+    () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
+    [invoices]
+  );
 
-  const invoiceLookupResults = useMemo(() => {
-    return invoices.filter((invoice) => {
-      const matchesDate = invoice.generatedDate === invoiceLookupDate;
-      const matchesClient = selectedClient === "all-clients" || invoice.client === selectedClient;
-      return matchesDate && matchesClient;
-    });
-  }, [invoices, invoiceLookupDate, selectedClient]);
+  const filteredInvoices = useMemo(
+    () => selectedClient === "all" ? invoices : invoices.filter((i) => i.client === selectedClient),
+    [invoices, selectedClient]
+  );
 
-  const totalMonthBilling = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-  const totalDueForLookup = invoiceLookupResults.reduce((sum, invoice) => sum + invoice.amountDue, 0);
+  const totalBilling = filteredInvoices.reduce((s, i) => s + i.grandTotal, 0);
 
   const handleSidebarItemClick = (item: string) => {
-    if (item === "dashboard") {
-      navigate("/", { state: { activeItem: "dashboard" }, replace: true });
-      return;
-    }
-    if (item === "inventory" || item === "workforce") {
+    const routes: Record<string, string> = {
+      dashboard: "/",
+      sites: "/sites",
+      "previous-clients": "/previous-clients",
+      maintenance: "/maintenance-logs",
+      revenue: "/revenue",
+      settings: "/settings",
+    };
+    if (["inventory", "workforce"].includes(item)) {
       navigate("/", { state: { activeItem: item }, replace: true });
-      return;
-    }
-    if (item === "sites") {
-      navigate("/sites");
-      return;
-    }
-    if (item === "previous-clients") {
-      navigate("/previous-clients");
-      return;
-    }
-    if (item === "maintenance") {
-      navigate("/maintenance-logs");
-      return;
-    }
-    if (item === "revenue") {
-      navigate("/revenue");
-      return;
-    }
-    if (item === "settings") {
-      navigate("/settings");
+    } else if (routes[item]) {
+      navigate(routes[item]);
     }
   };
 
@@ -487,173 +385,114 @@ const Accounting = () => {
       <main className="ml-0 md:ml-64">
         <Header
           title="Accounting"
-          subtitle="Dispatched workflows automatically flow into billing. Generate monthly or date-specific invoices in KES."
+          subtitle="Billing starts automatically from dispatch date. Select a date to generate invoices."
         />
 
         <div className="space-y-6 p-6">
-          <div className="grid gap-4 xl:grid-cols-4">
-            <Card className="xl:col-span-2">
-              <CardHeader>
-                <CardTitle>Billing setup</CardTitle>
-                <CardDescription>Choose monthly billing or generate invoice at a custom date.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Select value={billingMode} onValueChange={(value) => setBillingMode(value as BillingMode)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select billing option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="month-end">Monthly billing (end of month)</SelectItem>
-                    <SelectItem value="custom-date">Generate invoice on selected date</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {billingMode === "custom-date" ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Invoice date</p>
-                    <Input
-                      type="date"
-                      value={customBillingDate}
-                      onChange={(event) => setCustomBillingDate(event.target.value)}
-                    />
-                  </div>
-                ) : null}
+          {/* Controls */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card>
+              <CardContent className="pt-6 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <CalendarDays className="h-4 w-4" />
+                  Billing Date
+                </div>
+                <Input
+                  type="date"
+                  value={billingDate}
+                  onChange={(e) => setBillingDate(e.target.value)}
+                />
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Billing date</CardTitle>
-                <CardDescription>Current invoice run date</CardDescription>
-              </CardHeader>
-              <CardContent className="text-2xl font-semibold">{format(billingDate, "dd MMM yyyy")}</CardContent>
+              <CardContent className="pt-6 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  Filter Client
+                </div>
+                <Select value={selectedClient} onValueChange={setSelectedClient}>
+                  <SelectTrigger><SelectValue placeholder="All clients" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Clients</SelectItem>
+                    {uniqueClients.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
             </Card>
+
             <Card>
-              <CardHeader>
-                <CardTitle>Projected billing (KES)</CardTitle>
-                <CardDescription>Includes return-condition policy charges</CardDescription>
-              </CardHeader>
-              <CardContent className="text-2xl font-semibold">{currency.format(totalMonthBilling)}</CardContent>
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground">Active Clients</p>
+                <p className="text-3xl font-bold">{filteredInvoices.length}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <DollarSign className="h-4 w-4" />
+                  Total Billing (KES)
+                </div>
+                <p className="text-3xl font-bold">{currency.format(totalBilling)}</p>
+              </CardContent>
             </Card>
           </div>
 
+          {/* Client Invoices */}
           <Card>
             <CardHeader>
-              <CardTitle>Invoice lookup</CardTitle>
-              <CardDescription>Open any client's invoice by date and see amount due.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Invoice date</p>
-                  <Input
-                    type="date"
-                    value={invoiceLookupDate}
-                    onChange={(event) => setInvoiceLookupDate(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Client</p>
-                  <Select value={selectedClient} onValueChange={setSelectedClient}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All clients" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all-clients">All clients</SelectItem>
-                      {uniqueClients.map((client) => (
-                        <SelectItem key={client} value={client}>
-                          {client}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Card className="border-dashed">
-                  <CardContent className="flex h-full items-center justify-between py-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Amount due on {format(asDateOrToday(invoiceLookupDate), "dd MMM yyyy")}</p>
-                      <p className="text-2xl font-semibold">{currency.format(totalDueForLookup)}</p>
-                    </div>
-                    <Button variant="outline" onClick={() => setSelectedClient("all-clients")}>Reset</Button>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Site</TableHead>
-                      <TableHead className="text-right">Amount due</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoiceLookupResults.length ? (
-                      invoiceLookupResults.map((invoice) => (
-                        <TableRow key={`lookup-${invoice.id}`}>
-                          <TableCell>
-                            <div className="font-medium">{invoice.invoiceNumber}</div>
-                            <div className="text-xs text-muted-foreground">{invoice.generatedDate}</div>
-                          </TableCell>
-                          <TableCell>{invoice.client}</TableCell>
-                          <TableCell>{invoice.site}</TableCell>
-                          <TableCell className="text-right font-semibold">{currency.format(invoice.amountDue)}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                          No invoices found for this date/client selection.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Client reports</CardTitle>
-              <CardDescription>
-                Print a client report for dispatched workflows on the selected date, including weekly hire and return policy charges.
-              </CardDescription>
+              <CardTitle>Client Billing</CardTitle>
             </CardHeader>
             <CardContent>
-              {invoiceLookupResults.length ? (
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : filteredInvoices.length ? (
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Client</TableHead>
                         <TableHead>Invoice</TableHead>
-                        <TableHead className="text-right">Hire per week</TableHead>
-                        <TableHead className="text-right">Policy charge</TableHead>
-                        <TableHead className="text-right">Total due</TableHead>
-                        <TableHead className="text-right">Report</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Site</TableHead>
+                        <TableHead>Dispatch Date</TableHead>
+                        <TableHead className="text-right">Weeks</TableHead>
+                        <TableHead className="text-right">Hire (KES)</TableHead>
+                        <TableHead className="text-right">Policy (KES)</TableHead>
+                        <TableHead className="text-right">Total (KES)</TableHead>
+                        <TableHead className="text-center">Invoice</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {invoiceLookupResults.map((invoice) => (
-                        <TableRow key={`report-${invoice.id}`}>
-                          <TableCell>{invoice.client}</TableCell>
+                      {filteredInvoices.map((inv) => (
+                        <TableRow key={inv.id}>
                           <TableCell>
-                            <div className="font-medium">{invoice.invoiceNumber}</div>
-                            <div className="text-xs text-muted-foreground">{invoice.generatedDate}</div>
+                            <div className="font-medium">{inv.invoiceNumber}</div>
+                            <div className="text-xs text-muted-foreground">{inv.quotationNumber}</div>
                           </TableCell>
-                          <TableCell className="text-right">{currency.format(invoice.subtotal)}</TableCell>
-                          <TableCell className="text-right">{currency.format(invoice.surcharge)}</TableCell>
-                          <TableCell className="text-right font-semibold">{currency.format(invoice.total)}</TableCell>
+                          <TableCell className="font-medium">{inv.client}</TableCell>
+                          <TableCell>{inv.site}</TableCell>
+                          <TableCell>{inv.dispatchDate}</TableCell>
+                          <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                          <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                           <TableCell className="text-right">
+                            {inv.policyTotal > 0 ? (
+                              <span className="text-destructive font-medium">{currency.format(inv.policyTotal)}</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
+                          <TableCell className="text-center">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => openPrintableReport(invoice, invoiceLookupDate)}
+                              onClick={() => openInvoicePrint(inv, billingDate)}
                             >
-                              Print report
+                              <Printer className="h-3.5 w-3.5 mr-1" />
+                              Print
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -662,72 +501,18 @@ const Accounting = () => {
                   </Table>
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  Select a billing date and client above to generate printable dispatch and return reports.
+                <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                  No dispatched quotations found. Billing appears here once goods are dispatched.
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Dispatch-ready billing queue</CardTitle>
-              <CardDescription>
-                Workflows appear here once dispatch is done (or after return completion). Amounts include return-condition policy charges.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading accounting pipeline...</p>
-              ) : invoices.length ? (
-                <div className="space-y-4">
-                  <div className="overflow-x-auto rounded-lg border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Invoice</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Site</TableHead>
-                          <TableHead className="text-right">Items</TableHead>
-                          <TableHead className="text-right">Hire amount</TableHead>
-                          <TableHead className="text-right">Policy charge</TableHead>
-                          <TableHead className="text-right">Invoice total</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {invoices.map((invoice) => (
-                          <TableRow key={invoice.id}>
-                            <TableCell>
-                              <div className="font-medium">{invoice.invoiceNumber}</div>
-                              <div className="text-xs text-muted-foreground">From quotation {invoice.quotationNumber}</div>
-                            </TableCell>
-                            <TableCell>{invoice.client}</TableCell>
-                            <TableCell>{invoice.site}</TableCell>
-                            <TableCell className="text-right">{invoice.itemCount}</TableCell>
-                            <TableCell className="text-right">{currency.format(invoice.subtotal)}</TableCell>
-                            <TableCell className="text-right">{currency.format(invoice.surcharge)}</TableCell>
-                            <TableCell className="text-right font-semibold">{currency.format(invoice.total)}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary">Ready {format(billingDate, "dd MMM")}</Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                    Billing policy applied in accounting (KES): Dirty equipment is charged at 2× list hire price, damaged equipment is charged at 4× list hire price, and scrap equipment is charged at unit price.
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No dispatched workflows yet. Once a dispatch is completed in Hire Delivery, its invoice will automatically appear here.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Policy reminder */}
+          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+            <strong>Billing Policy:</strong> Dirty equipment → 2× list hire price · Damaged equipment → 4× list hire price · Scrap equipment → selling price (unit price).
+            <span className="ml-2">All invoices include 16% VAT.</span>
+          </div>
         </div>
       </main>
     </div>
