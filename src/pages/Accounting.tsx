@@ -100,13 +100,10 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <td>${escapeHtml(l.partNumber)}</td>
         <td>${escapeHtml(l.item)}</td>
         <td class="r">${l.quantity}</td>
-        <td class="r">${currency.format(l.weeklyRate)}</td>
-        <td class="r">${l.discountRate.toFixed(1)}%</td>
-        <td class="r">${currency.format(l.effectiveWeeklyRate)}</td>
         <td class="r">${l.weeks}</td>
         <td class="r">${currency.format(l.lineTotal)}</td>
       </tr>`).join("")
-    : `<tr><td colspan="8" class="c">No hire items.</td></tr>`;
+    : `<tr><td colspan="5" class="c">No hire items.</td></tr>`;
 
   const policyRows = invoice.policyBreakdown.length > 0
     ? invoice.policyBreakdown.map(l => `
@@ -191,8 +188,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     <h2>A. Weekly Hire Charges</h2>
     <table>
       <thead><tr>
-        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weekly Rate</th>
-        <th class="r">Discount</th><th class="r">Effective Rate</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
       </tr></thead>
       <tbody>${hireRows}</tbody>
     </table>
