@@ -12,6 +12,8 @@ export interface QuotationLineItem {
   quantity: number;
   delivered_quantity: number;
   balance_quantity: number;
+  returned_quantity: number;
+  return_balance_quantity: number;
   hire_discount: number | null;
   mass_per_item: number | null;
   weekly_rate: number;
@@ -289,12 +291,17 @@ export interface UpdateLineItemQuantityInput {
   balance_quantity: number;
 }
 
+export interface UpdateLineItemReturnQuantityInput {
+  part_number: string;
+  returned_quantity: number;
+  return_balance_quantity: number;
+}
+
 export const useUpdateLineItemQuantities = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ quotation_id, items }: { quotation_id: string; items: UpdateLineItemQuantityInput[] }): Promise<void> => {
-      // Update each line item's delivered and balance quantities by part_number
       for (const item of items) {
         const { error } = await supabase
           .from("quotation_line_items")
@@ -314,6 +321,34 @@ export const useUpdateLineItemQuantities = () => {
     },
     onError: (error) => {
       toast.error(`Failed to update delivery quantities: ${error.message}`);
+    },
+  });
+};
+
+export const useUpdateLineItemReturnQuantities = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ quotation_id, items }: { quotation_id: string; items: UpdateLineItemReturnQuantityInput[] }): Promise<void> => {
+      for (const item of items) {
+        const { error } = await supabase
+          .from("quotation_line_items")
+          .update({
+            returned_quantity: item.returned_quantity,
+            return_balance_quantity: item.return_balance_quantity,
+          })
+          .eq("quotation_id", quotation_id)
+          .eq("part_number", item.part_number);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { quotation_id }) => {
+      queryClient.invalidateQueries({ queryKey: ["hire-quotations"] });
+      queryClient.invalidateQueries({ queryKey: ["hire-quotation", quotation_id] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to update return quantities: ${error.message}`);
     },
   });
 };

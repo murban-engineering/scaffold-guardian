@@ -99,6 +99,40 @@ export interface HireLoadingNoteData {
   }>;
 }
 
+export interface HireReturnNoteData {
+  quotationNumber: string;
+  returnNoteNumber: string;
+  dateCreated: string;
+  returnDate: string;
+  companyName: string;
+  siteName: string;
+  siteLocation: string;
+  siteAddress: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  officeTel: string;
+  officeEmail: string;
+  returnedBy: string;
+  receivedBy: string;
+  vehicleNo: string;
+  remarks: string;
+  createdBy?: string;
+  items: Array<{
+    partNumber: string | null;
+    description: string | null;
+    totalDelivered: number;
+    good: number;
+    dirty: number;
+    damaged: number;
+    scrap: number;
+    totalReturned: number;
+    balanceAfter: number;
+    massPerItem: number | null;
+    totalMass: number | null;
+  }>;
+}
+
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
@@ -940,6 +974,147 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </body>
     </html>
   `;
+
+  printWindow.document.write(withPrintOption(html));
+  printWindow.document.close();
+};
+
+export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Please allow popups for this site to generate PDFs");
+    return;
+  }
+
+  const totalReturned = data.items.reduce((sum, item) => sum + item.totalReturned, 0);
+  const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
+
+  const itemRows = data.items.map((item, idx) =>
+    "<tr>" +
+    "<td>" + (idx + 1) + "</td>" +
+    "<td>" + (item.partNumber || "-") + "</td>" +
+    "<td>" + (item.description || "-") + "</td>" +
+    '<td class="text-right">' + item.totalDelivered + "</td>" +
+    '<td class="text-right">' + item.good + "</td>" +
+    '<td class="text-right">' + item.dirty + "</td>" +
+    '<td class="text-right">' + item.damaged + "</td>" +
+    '<td class="text-right">' + item.scrap + "</td>" +
+    '<td class="text-right">' + item.totalReturned + "</td>" +
+    '<td class="text-right">' + item.balanceAfter + "</td>" +
+    "</tr>"
+  ).join("");
+
+  const remarksHtml = data.remarks
+    ? '<div class="remarks"><strong>Remarks:</strong> ' + data.remarks + "</div>"
+    : "";
+
+  const returnNotePage = (copyLabel: string) =>
+    '<div class="return-note-page">' +
+    '<div class="header">' +
+    '<img src="' + window.location.origin + '/otn-logo.png" alt="OTN Logo" class="header-logo" />' +
+    '<div class="header-content">' +
+    "<h1>" + COMPANY_NAME + "</h1>" +
+    "<p>Email: otnoacess@gmail.com</p>" +
+    "<p>" + COMPANY_ADDRESS + "</p>" +
+    "<p>" + COMPANY_LOCATION + "</p>" +
+    "<p><strong>Hire Return Note</strong></p>" +
+    '<p class="copy-label">' + copyLabel + "</p>" +
+    "</div></div>" +
+    '<div class="info-grid">' +
+    '<div class="info-section">' +
+    "<h3>Client Details</h3>" +
+    '<div class="info-row"><span class="info-label">Company:</span><span class="info-value">' + data.companyName + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Contact:</span><span class="info-value">' + data.contactName + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Phone:</span><span class="info-value">' + data.contactPhone + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Email:</span><span class="info-value">' + (data.contactEmail || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Office Tel:</span><span class="info-value">' + (data.officeTel || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Office Email:</span><span class="info-value">' + (data.officeEmail || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">' + data.siteName + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">' + (data.siteLocation || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">' + (data.siteAddress || "-") + "</span></div>" +
+    "</div>" +
+    '<div class="info-section">' +
+    "<h3>OTNO Access Details</h3>" +
+    '<div class="info-row"><span class="info-label">Return Note No:</span><span class="info-value">' + data.returnNoteNumber + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">' + data.quotationNumber + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Return Date:</span><span class="info-value">' + data.returnDate + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">' + data.dateCreated + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">' + (data.vehicleNo || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Created By:</span><span class="info-value">' + (data.createdBy || "-") + "</span></div>" +
+    "</div></div>" +
+    "<table><thead><tr>" +
+    "<th>#</th><th>Part Number</th><th>Description</th>" +
+    '<th class="text-right">Delivered</th><th class="text-right">Good</th>' +
+    '<th class="text-right">Dirty</th><th class="text-right">Damaged</th>' +
+    '<th class="text-right">Scrap</th><th class="text-right">Total Returned</th>' +
+    '<th class="text-right">Balance</th>' +
+    "</tr></thead><tbody>" +
+    itemRows +
+    '<tr class="total-row"><td colspan="8">Total Returned</td>' +
+    '<td class="text-right">' + totalReturned + "</td><td>-</td></tr>" +
+    '<tr class="total-row"><td colspan="9">Total Mass</td>' +
+    '<td class="text-right">' + formatMass(totalMass) + "</td></tr>" +
+    "</tbody></table>" +
+    remarksHtml +
+    '<div class="return-terms">' +
+    "<h4>RETURN CONDITIONS</h4><ul>" +
+    "<li><strong>Good:</strong> Equipment returned in good working condition — returned to available inventory.</li>" +
+    "<li><strong>Dirty:</strong> Equipment returned dirty — will be charged at 2× the list hire price.</li>" +
+    "<li><strong>Damaged:</strong> Equipment returned damaged — will be charged at 4× the list hire price.</li>" +
+    "<li><strong>Scrap:</strong> Equipment written off — will be charged at the selling price of the item.</li>" +
+    "</ul><p>Please check that the equipment count agrees with the above. All errors are to be clearly noted.</p></div>" +
+    '<div class="signature-section">' +
+    '<div class="signature-box">' +
+    "<p><strong>Returned By (Client):</strong></p>" +
+    "<p>Name: " + (data.returnedBy || "_______________") + "</p>" +
+    "<p>Signature: _______________</p><p>Date: _______________</p></div>" +
+    '<div class="signature-box">' +
+    "<p><strong>Received By (OTNO):</strong></p>" +
+    "<p>Name: " + (data.receivedBy || "_______________") + "</p>" +
+    "<p>Signature: _______________</p><p>Date: _______________</p></div>" +
+    "</div></div>";
+
+  const styles =
+    "* { margin: 0; padding: 0; box-sizing: border-box; }" +
+    "body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }" +
+    ".header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }" +
+    ".header-logo { width: 100px; height: auto; margin-right: 20px; }" +
+    ".header-content { flex: 1; }" +
+    ".header-content h1 { font-size: 24px; margin-bottom: 5px; }" +
+    ".header-content p { color: #666; }" +
+    ".copy-label { font-weight: bold; color: #111; margin-top: 4px; }" +
+    ".info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }" +
+    ".info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }" +
+    ".info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }" +
+    ".info-row { display: flex; margin-bottom: 5px; }" +
+    ".info-label { font-weight: bold; width: 140px; color: #555; }" +
+    ".info-value { flex: 1; }" +
+    "table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }" +
+    "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }" +
+    "th { background: #f5f5f5; font-weight: bold; }" +
+    ".text-right { text-align: right; }" +
+    ".total-row { font-weight: bold; background: #f9f9f9; }" +
+    ".signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }" +
+    ".signature-box { border-top: 1px solid #333; padding-top: 10px; }" +
+    ".signature-box p { margin-bottom: 5px; }" +
+    ".remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }" +
+    ".return-terms { border: 1px solid #333; border-radius: 6px; padding: 10px; margin-top: 12px; margin-bottom: 20px; background: #fcfcfc; }" +
+    ".return-terms h4 { margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }" +
+    ".return-terms ul { margin: 0; padding-left: 16px; margin-bottom: 10px; }" +
+    ".return-terms li { margin-bottom: 6px; line-height: 1.4; }" +
+    ".return-terms p { margin-bottom: 8px; line-height: 1.4; }" +
+    ".return-note-page { page-break-after: always; }" +
+    ".return-note-page:last-child { page-break-after: auto; }" +
+    "@media print { body { padding: 0; } }";
+
+  const html =
+    "<!DOCTYPE html><html><head>" +
+    "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
+    "<style>" + styles + "</style>" +
+    "</head><body>" +
+    returnNotePage("Company Copy") +
+    returnNotePage("Client Copy") +
+    "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
