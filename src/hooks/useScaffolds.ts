@@ -124,6 +124,7 @@ export const useCreateScaffold = () => {
       quantity?: number;
       mass_per_item?: number | null;
       weekly_rate?: number | null;
+      unit_price?: number | null;
     }) => {
       // Use the upsert function to add to existing quantity if part_number matches
       const { data, error } = await supabase.rpc("upsert_scaffold", {
@@ -134,6 +135,7 @@ export const useCreateScaffold = () => {
         p_quantity: scaffold.quantity || 0,
         p_mass_per_item: scaffold.mass_per_item || null,
         p_weekly_rate: scaffold.weekly_rate || null,
+        p_unit_price: scaffold.unit_price ?? null,
       });
 
       if (error) throw error;

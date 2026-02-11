@@ -519,18 +519,32 @@ export type Database = {
         Args: { new_quantity: number; scaffold_id: string }
         Returns: undefined
       }
-      upsert_scaffold: {
-        Args: {
-          p_description?: string
-          p_mass_per_item?: number
-          p_part_number?: string
-          p_quantity?: number
-          p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
-          p_status?: Database["public"]["Enums"]["scaffold_status"]
-          p_weekly_rate?: number
-        }
-        Returns: string
-      }
+      upsert_scaffold:
+        | {
+            Args: {
+              p_description?: string
+              p_mass_per_item?: number
+              p_part_number?: string
+              p_quantity?: number
+              p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
+              p_status?: Database["public"]["Enums"]["scaffold_status"]
+              p_weekly_rate?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_description?: string
+              p_mass_per_item?: number
+              p_part_number?: string
+              p_quantity?: number
+              p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
+              p_status?: Database["public"]["Enums"]["scaffold_status"]
+              p_unit_price?: number
+              p_weekly_rate?: number
+            }
+            Returns: string
+          }
     }
     Enums: {
       app_role: "admin" | "supervisor" | "inspector" | "worker"
