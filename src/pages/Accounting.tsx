@@ -376,13 +376,9 @@ const Accounting = () => {
     const months: { label: string; startDate: Date; endDate: Date }[] = [];
     let current = startOfMonth(dispatchDate);
     while (isBefore(current, bd) || format(current, "yyyy-MM") === format(bd, "yyyy-MM")) {
-      const monthStart = startOfMonth(current);
       const monthEnd = endOfMonth(current);
-      // Period start: dispatch date for first month, otherwise month start
-      const periodStart = isBefore(monthStart, dispatchDate) ? dispatchDate : monthStart;
-      // Period end: billing date if in current month, otherwise month end
-      const periodEnd = isBefore(monthEnd, bd) ? monthEnd : bd;
-      months.push({ label: format(current, "MMMM yyyy"), startDate: periodStart, endDate: periodEnd });
+      // Always use the full end of month as the billing date for monthly invoices
+      months.push({ label: format(current, "MMMM yyyy"), startDate: startOfMonth(current), endDate: monthEnd });
       current = addMonths(current, 1);
     }
     return months;
