@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
+import { FileText, Truck, Calculator, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, HireQuotation } from "@/hooks/useHireQuotations";
@@ -17,14 +17,16 @@ import {
   generateDeliveryNotePDF,
   generateHireLoadingNotePDF,
   generateHireQuotationReportPDF,
+  generateQuotationPDF,
   generateYardVerificationNotePDF,
   DeliveryNoteData,
   HireLoadingNoteData,
   HireQuotationReportData,
+  QuotationCalculationData,
 } from "@/lib/pdfGenerator";
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 
-type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "return";
+type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "calculation" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -91,6 +93,14 @@ type DeliveryNote = {
   remarks: string;
 };
 
+type QuotationCalculation = {
+  hireDate: string;
+  returnDate: string;
+  vatEnabled: boolean;
+  vatRate: string;
+  discountRate: string;
+  paymentTerms: string;
+};
 
 type ReturnItem = {
   id: string;
@@ -110,6 +120,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: Truck },
+  { key: "calculation", title: "Calculation", description: "Weeks + totals", icon: Calculator },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
 
@@ -448,6 +459,14 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     setLastDeliveredQuantities(null);
   }, [equipmentItems]);
   
+  const [calculation, setCalculation] = useState<QuotationCalculation>({
+    hireDate: getToday(),
+    returnDate: getToday(),
+    vatEnabled: true,
+    vatRate: "16",
+    discountRate: "0",
+    paymentTerms: "Payment due within 30 days from invoice date.",
+  });
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
 
   useEffect(() => {
@@ -534,6 +553,26 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       setEquipmentQuantity(String(remainingSelectedQty));
     }
   }, [equipmentQuantity, remainingSelectedQty, selectedScaffoldId]);
+
+  const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
+  const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
+  const hasValidDateRange =
+    !!hireDateValue &&
+    !!returnDateValue &&
+    !Number.isNaN(hireDateValue.getTime()) &&
+    !Number.isNaN(returnDateValue.getTime()) &&
+    returnDateValue >= hireDateValue;
+  const numberOfDays = hasValidDateRange && hireDateValue && returnDateValue
+    ? Math.floor((returnDateValue.getTime() - hireDateValue.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    : 0;
+  const numberOfWeeks = numberOfDays > 0 ? Math.ceil(numberOfDays / 7) : 0;
+  const hireTotalForWeeks = weeklyHireTotal * numberOfWeeks;
+  const vatRate = parseNumber(calculation.vatRate) / 100;
+  const vatAmount = calculation.vatEnabled ? hireTotalForWeeks * vatRate : 0;
+  const grandTotal = hireTotalForWeeks + vatAmount;
+  const discountRate = parseNumber(calculation.discountRate) / 100;
+  const discountAmount = grandTotal * discountRate;
+  const paymentTotal = Math.max(grandTotal - discountAmount, 0);
 
   const goToStep = (next: StepKey) => setActiveStep(next);
 
@@ -1321,6 +1360,74 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     handleNext();
   };
 
+  const handlePrintQuotation = () => {
+    if (!equipmentItems.length) {
+      toast.error("No equipment items to include in invoice");
+      return;
+    }
+
+    const data: QuotationCalculationData = {
+      quotationNumber: header.quotationNo,
+      dateCreated: header.dateCreated,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      contactEmail: header.clientEmail,
+      createdBy: header.createdBy,
+      items: equipmentItems.map(item => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        quantity: parseNumber(item.qtyDelivered),
+        weeklyRate: parseNumber(item.weeklyRate),
+        weeklyTotal: (() => {
+          const rate = parseNumber(item.weeklyRate);
+          const qty = parseNumber(item.qtyDelivered);
+          const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
+          const hireRate = Math.max(rate * (1 - discountRate), 0);
+          return qty * hireRate;
+        })(),
+      })),
+      hireWeeks: numberOfWeeks,
+      weeklyTotal: weeklyHireTotal,
+      totalForPeriod: hireTotalForWeeks,
+      vatRate: parseNumber(calculation.vatRate),
+      vatAmount: vatAmount,
+      grandTotal: grandTotal,
+      discountRate: parseNumber(calculation.discountRate),
+      discountAmount: discountAmount,
+      paymentTotal: paymentTotal,
+      paymentTerms: calculation.paymentTerms,
+    };
+
+    generateQuotationPDF(data);
+    toast.success("Invoice opened for printing");
+  };
+
+  const handleCalculationSave = async () => {
+    if (!hasValidDateRange || numberOfWeeks < 1) {
+      toast.error("Please enter a valid hire date and return date.");
+      return;
+    }
+
+    if (savedQuotationId) {
+      try {
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          hire_weeks: numberOfWeeks,
+          notes: calculation.paymentTerms,
+          status: "completed",
+        });
+      } catch (error) {
+        console.error("Failed to finalize quotation:", error);
+      }
+    }
+
+    toast.success("Hire quotation completed and saved!");
+    setActiveStep("return");
+  };
+
   const handleReturnQuantityChange = (
     id: string,
     field: keyof Omit<ReturnItem, "id" | "scaffoldId" | "itemCode" | "description" | "totalDelivered">,
@@ -1439,15 +1546,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       if (maintenanceEntries.length) {
         await createMaintenanceLogs.mutateAsync(maintenanceEntries);
       }
-      if (savedQuotationId) {
-        await updateQuotation.mutateAsync({
-          id: savedQuotationId,
-          status: "completed",
-          notes: "Return processed. Ready for month-end billing.",
-        });
-      }
       setReturnProcessed(true);
-      toast.success("Hire return processed successfully! Invoice is now queued in accounting.");
+      toast.success("Hire return processed successfully!");
     } catch (error) {
       console.error("Failed to process return:", error);
     }
@@ -1492,7 +1592,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Create quotations with equipment from inventory → generate hire quotation report → confirm delivery quantities → generate delivery notes → process hire returns
+          Create quotations with equipment from inventory → generate hire quotation report → confirm delivery quantities → generate delivery notes → calculate hire totals → process hire returns
           {header.quotationNo && <span className="ml-2 font-medium text-primary">({header.quotationNo})</span>}
         </p>
       </CardHeader>
@@ -2477,14 +2577,143 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           </div>
         )}
 
-        {/* Step 6: Hire Return */}
+        {/* Step 6: Calculation */}
+        {activeStep === "calculation" && (
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="hireDate">Hire Date *</Label>
+                <Input
+                  id="hireDate"
+                  type="date"
+                  value={calculation.hireDate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, hireDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="returnDate">Return Date *</Label>
+                <Input
+                  id="returnDate"
+                  type="date"
+                  min={calculation.hireDate || undefined}
+                  value={calculation.returnDate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, returnDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="vatRate">VAT Rate (%)</Label>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="vatEnabled"
+                    checked={calculation.vatEnabled}
+                    onCheckedChange={(checked) => setCalculation(prev => ({ ...prev, vatEnabled: !!checked }))}
+                  />
+                  <Label htmlFor="vatEnabled" className="text-sm">Include VAT</Label>
+                  {calculation.vatEnabled && (
+                    <Input
+                      id="vatRate"
+                      type="number"
+                      min="0"
+                      className="w-20"
+                      value={calculation.vatRate}
+                      onChange={(e) => setCalculation(prev => ({ ...prev, vatRate: e.target.value }))}
+                    />
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="discountRate">Discount (%)</Label>
+                <Input
+                  id="discountRate"
+                  type="number"
+                  min="0"
+                  value={calculation.discountRate}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, discountRate: e.target.value }))}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="paymentTerms">Payment Terms</Label>
+                <Textarea
+                  id="paymentTerms"
+                  rows={2}
+                  value={calculation.paymentTerms}
+                  onChange={(e) => setCalculation(prev => ({ ...prev, paymentTerms: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Calculation Summary */}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="bg-muted/40 px-4 py-2 font-semibold">Invoice Summary</div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between">
+                  <span>Weekly Hire Total</span>
+                  <span>{formatCurrency(weeklyHireTotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Number of Days</span>
+                  <span>{numberOfDays}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Converted Weeks</span>
+                  <span>× {numberOfWeeks}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span>Total for Hire Period</span>
+                  <span>{formatCurrency(hireTotalForWeeks)}</span>
+                </div>
+                {calculation.vatEnabled && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>VAT ({calculation.vatRate}%)</span>
+                    <span>{formatCurrency(vatAmount)}</span>
+                  </div>
+                )}
+                {discountRate > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Discount ({calculation.discountRate}%)</span>
+                    <span>-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                  <span>Grand Total</span>
+                  <span className="text-primary">{formatCurrency(grandTotal)}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                  <span>Payment Total</span>
+                  <span className="text-primary">{formatCurrency(paymentTotal)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={handlePrintQuotation}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Invoice
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={handleCalculationSave}
+                  disabled={updateQuotation.isPending}
+                >
+                  {updateQuotation.isPending ? "Finalizing..." : "Continue to Returns"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
             <div className="rounded-lg border border-border p-4 bg-muted/30">
               <h4 className="font-semibold mb-1">Hire Return</h4>
               <p className="text-sm text-muted-foreground">
                 Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and scrap items are logged to maintenance for accounting penalties.
+                while damaged and scrap items are logged to maintenance.
               </p>
             </div>
 
