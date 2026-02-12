@@ -10,6 +10,7 @@ import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
 import MaintenanceLogOverview from "@/components/dashboard/MaintenanceLogOverview";
 import AIChatAssistant from "@/components/dashboard/AIChatAssistant";
+import DashboardCalendar from "@/components/dashboard/DashboardCalendar";
 
 import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
@@ -148,28 +149,49 @@ const Index = () => {
           <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
             {/* Quick Actions with Hire Quotation Button */}
             <div className="space-y-4">
-              <div className="rounded-3xl border border-border/70 bg-card p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Quotation Center</p>
-                <h2 className="mt-2 text-xl font-bold tracking-tight">Manage hire quotation workflow</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Create new client quotations quickly or resume saved drafts.</p>
-                <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <Button
-                    size="lg"
-                    onClick={handleStartNewQuotation}
-                    className="gap-2 rounded-xl bg-primary px-6 shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/95"
-                  >
-                    <FileText className="h-5 w-5" />
-                    New Hire Quotation
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => setShowContinueDialog(true)}
-                    className="gap-2 rounded-xl border-border bg-background px-6 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-muted"
-                  >
-                    <FolderClock className="h-5 w-5" />
-                    Continue Quotation
-                  </Button>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+                {/* Date + Quotation Actions */}
+                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-6 text-white shadow-lg">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+                        {new Date().toLocaleDateString("en-US", { weekday: "long" })}
+                      </p>
+                      <p className="mt-1 text-5xl font-bold leading-none tracking-tight">
+                        {new Date().getDate()}
+                      </p>
+                      <p className="mt-2 text-sm text-white/70">
+                        {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                      </p>
+                      <p className="mt-1 text-lg font-medium text-white/90">
+                        {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        size="lg"
+                        onClick={handleStartNewQuotation}
+                        className="gap-2 rounded-xl bg-white px-6 text-[hsl(172_50%_26%)] shadow-md transition-all hover:-translate-y-0.5 hover:bg-white/90"
+                      >
+                        <FileText className="h-5 w-5" />
+                        New Hire Quotation
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        onClick={() => setShowContinueDialog(true)}
+                        className="gap-2 rounded-xl border-white/30 bg-white/10 px-6 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
+                      >
+                        <FolderClock className="h-5 w-5" />
+                        Continue Quotation
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mini Calendar */}
+                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 text-white shadow-lg">
+                  <DashboardCalendar />
                 </div>
               </div>
               <QuickActions />
