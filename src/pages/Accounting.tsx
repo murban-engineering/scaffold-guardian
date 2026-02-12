@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Printer, CalendarDays, DollarSign, Users, Search, FileText } from "lucide-react";
+import { Printer, CalendarDays, DollarSign, Users, Search, FileText, ClipboardList } from "lucide-react";
+import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -572,6 +573,97 @@ const Accounting = () => {
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
                   No dispatched quotations found. Billing appears here once goods are dispatched.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Hire Quotations Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Hire Quotations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : filteredInvoices.length ? (
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Quotation No</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Site</TableHead>
+                        <TableHead>Site Address</TableHead>
+                        <TableHead className="text-right">Items</TableHead>
+                        <TableHead className="text-center">Print</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices.map((inv) => {
+                        const q = activeQuotations.find((aq) => aq.id === inv.id);
+                        const lineItems = q?.line_items ?? [];
+                        return (
+                          <TableRow key={inv.id}>
+                            <TableCell className="font-mono font-medium">{inv.quotationNumber}</TableCell>
+                            <TableCell className="font-medium">{inv.client}</TableCell>
+                            <TableCell>{inv.site}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{inv.siteAddress || "-"}</TableCell>
+                            <TableCell className="text-right">{lineItems.length}</TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const reportData: HireQuotationReportData = {
+                                    companyName: inv.client,
+                                    contactName: inv.contactName,
+                                    contactPhone: inv.contactPhone,
+                                    contactEmail: inv.contactEmail,
+                                    officeTel: "",
+                                    officeEmail: "",
+                                    siteName: inv.site,
+                                    siteLocation: inv.siteAddress,
+                                    siteAddress: inv.siteAddress,
+                                    quotationNumber: inv.quotationNumber,
+                                    dateCreated: inv.createdDate,
+                                    createdBy: inv.createdBy,
+                                    discountRate: 0,
+                                    items: lineItems.map((li) => {
+                                      const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
+                                      const rate = li.weekly_rate ?? 0;
+                                      const disc = li.hire_discount ?? 0;
+                                      const effectiveRate = rate * (1 - Math.min(Math.max(disc, 0), 100) / 100);
+                                      return {
+                                        partNumber: li.part_number || "-",
+                                        description: li.description || "-",
+                                        quantity: qty,
+                                        massPerItem: li.mass_per_item ?? 0,
+                                        weeklyRate: rate,
+                                        weeklyTotal: effectiveRate * qty,
+                                        discountRate: disc,
+                                      };
+                                    }),
+                                  };
+                                  generateHireQuotationReportPDF(reportData);
+                                }}
+                              >
+                                <Printer className="h-3.5 w-3.5 mr-1" />
+                                Print Quotation
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                  No dispatched quotations found.
                 </div>
               )}
             </CardContent>
