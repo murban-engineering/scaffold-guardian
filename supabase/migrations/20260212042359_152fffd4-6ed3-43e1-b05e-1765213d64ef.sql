@@ -1,0 +1,1 @@
+SELECT setval('quotation_number_seq', 1003, true);
