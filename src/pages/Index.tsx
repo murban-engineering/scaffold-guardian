@@ -9,6 +9,7 @@ import ActiveSites from "@/components/dashboard/ActiveSites";
 import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
 import MaintenanceLogOverview from "@/components/dashboard/MaintenanceLogOverview";
+import AIChatAssistant from "@/components/dashboard/AIChatAssistant";
 
 import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
@@ -353,6 +354,7 @@ const Index = () => {
           </div>
         )}
       </main>
+      <AIChatAssistant />
     </div>
   );
 };
