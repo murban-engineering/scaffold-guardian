@@ -589,7 +589,23 @@ const Accounting = () => {
             <CardContent>
               {isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : filteredInvoices.length ? (
+              ) : (() => {
+                const allQuotations = quotations.filter((q) => {
+                  if (searchQuery.trim()) {
+                    const s = searchQuery.trim().toLowerCase();
+                    return (
+                      (q.company_name || "").toLowerCase().includes(s) ||
+                      (q.site_name || "").toLowerCase().includes(s) ||
+                      (q.quotation_number || "").toLowerCase().includes(s) ||
+                      (q.site_manager_name || "").toLowerCase().includes(s)
+                    );
+                  }
+                  if (selectedClient !== "all") {
+                    return (q.company_name || q.site_manager_name || "Unnamed client") === selectedClient;
+                  }
+                  return true;
+                });
+                return allQuotations.length ? (
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <Table>
                     <TableHeader>
@@ -598,20 +614,26 @@ const Accounting = () => {
                         <TableHead>Client</TableHead>
                         <TableHead>Site</TableHead>
                         <TableHead>Site Address</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead className="text-right">Items</TableHead>
                         <TableHead className="text-center">Print</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredInvoices.map((inv) => {
-                        const q = activeQuotations.find((aq) => aq.id === inv.id);
-                        const lineItems = q?.line_items ?? [];
+                      {allQuotations.map((q) => {
+                        const lineItems = q.line_items ?? [];
+                        const client = q.company_name || q.site_manager_name || "Unnamed client";
                         return (
-                          <TableRow key={inv.id}>
-                            <TableCell className="font-mono font-medium">{inv.quotationNumber}</TableCell>
-                            <TableCell className="font-medium">{inv.client}</TableCell>
-                            <TableCell>{inv.site}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{inv.siteAddress || "-"}</TableCell>
+                          <TableRow key={q.id}>
+                            <TableCell className="font-mono font-medium">{q.quotation_number || "Draft"}</TableCell>
+                            <TableCell className="font-medium">{client}</TableCell>
+                            <TableCell>{q.site_name || "-"}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{q.site_address || "-"}</TableCell>
+                            <TableCell>
+                              <Badge variant={q.status === "dispatched" || q.status === "completed" ? "default" : "secondary"} className="capitalize">
+                                {q.status || "draft"}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="text-right">{lineItems.length}</TableCell>
                             <TableCell className="text-center">
                               <Button
@@ -619,18 +641,18 @@ const Accounting = () => {
                                 variant="outline"
                                 onClick={() => {
                                   const reportData: HireQuotationReportData = {
-                                    companyName: inv.client,
-                                    contactName: inv.contactName,
-                                    contactPhone: inv.contactPhone,
-                                    contactEmail: inv.contactEmail,
+                                    companyName: client,
+                                    contactName: q.site_manager_name || "",
+                                    contactPhone: q.site_manager_phone || "",
+                                    contactEmail: q.site_manager_email || "",
                                     officeTel: "",
                                     officeEmail: "",
-                                    siteName: inv.site,
-                                    siteLocation: inv.siteAddress,
-                                    siteAddress: inv.siteAddress,
-                                    quotationNumber: inv.quotationNumber,
-                                    dateCreated: inv.createdDate,
-                                    createdBy: inv.createdBy,
+                                    siteName: q.site_name || "",
+                                    siteLocation: q.site_address || "",
+                                    siteAddress: q.site_address || "",
+                                    quotationNumber: q.quotation_number || "Draft",
+                                    dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
+                                    createdBy: q.created_by || "-",
                                     discountRate: 0,
                                     items: lineItems.map((li) => {
                                       const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
@@ -663,9 +685,10 @@ const Accounting = () => {
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                  No dispatched quotations found.
+                  No quotations found.
                 </div>
-              )}
+              );
+              })()}
             </CardContent>
           </Card>
 
