@@ -478,6 +478,40 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     currentDeliveryDispatched,
   ]);
 
+  // Return history localStorage persistence
+  const returnStorageKey = useMemo(() => {
+    if (savedQuotationId) return `hire-return-history:${savedQuotationId}`;
+    if (header.quotationNo) return `hire-return-history:${header.quotationNo}`;
+    return null;
+  }, [savedQuotationId, header.quotationNo]);
+
+  useEffect(() => {
+    if (!returnStorageKey) return;
+    const stored = window.localStorage.getItem(returnStorageKey);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as {
+        returnHistory?: ReturnRecord[];
+        returnProcessed?: boolean;
+        returnSequence?: number;
+        returnItems?: ReturnItem[];
+      };
+      if (parsed.returnHistory?.length) setReturnHistory(parsed.returnHistory);
+      if (parsed.returnProcessed !== undefined) setReturnProcessed(parsed.returnProcessed);
+      if (parsed.returnSequence) setReturnSequence(parsed.returnSequence);
+      if (parsed.returnItems?.length) {
+        setReturnItems(prev => prev.map(item => {
+          const saved = parsed.returnItems?.find(s => s.id === item.id);
+          return saved ? { ...item, previouslyReturned: saved.previouslyReturned, returnBalance: saved.returnBalance } : item;
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to load return history from storage:", error);
+    }
+  }, [returnStorageKey]);
+
+  // Return save effect is placed after returnItems declaration below
+
   useEffect(() => {
     setRemainingQuantities((prev) => {
       const next = { ...prev };
@@ -549,6 +583,17 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       })
     );
   }, [equipmentItems]);
+
+  // Persist return history to localStorage (after returnItems is declared)
+  useEffect(() => {
+    if (!returnStorageKey) return;
+    window.localStorage.setItem(returnStorageKey, JSON.stringify({
+      returnHistory,
+      returnProcessed,
+      returnSequence,
+      returnItems,
+    }));
+  }, [returnStorageKey, returnHistory, returnProcessed, returnSequence, returnItems]);
 
   const stepIndex = steps.findIndex((step) => step.key === activeStep);
 
@@ -2912,24 +2957,86 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
         {activeStep === "return" && (
           <div className="space-y-6">
             <div className="rounded-lg border border-border p-4 bg-muted/30">
-              <h4 className="font-semibold mb-1">Hire Return</h4>
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="font-semibold">Hire Return</h4>
+                {returnSequence > 1 && (
+                  <Badge variant="secondary">Batch {returnSequence}</Badge>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and scrap items are logged to maintenance. Quotation completion is finalized after this return is processed.
+                while damaged and scrap items are logged to maintenance.
               </p>
             </div>
 
+            {/* Return Note Details Form */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Return Note Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <Label>Return Note Number</Label>
+                    <Input value={returnNote.returnNoteNo} readOnly className="bg-muted" />
+                  </div>
+                  <div>
+                    <Label>Return Date</Label>
+                    <Input
+                      type="date"
+                      value={returnNote.returnDate}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnDate: e.target.value }))}
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Vehicle Number</Label>
+                    <Input
+                      value={returnNote.vehicleNo}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
+                      placeholder="e.g. KBZ 123A"
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Returned By</Label>
+                    <Input
+                      value={returnNote.returnedBy}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnedBy: e.target.value }))}
+                      placeholder="Name of person returning"
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Received By</Label>
+                    <Input
+                      value={returnNote.receivedBy}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, receivedBy: e.target.value }))}
+                      placeholder="Name of person receiving"
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Return Items Table */}
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr>
                     <th className="px-3 py-2 text-left font-medium">Item</th>
                     <th className="px-3 py-2 text-center font-medium">Delivered</th>
+                    <th className="px-3 py-2 text-center font-medium">Prev. Returned</th>
+                    <th className="px-3 py-2 text-center font-medium">Balance</th>
                     <th className="px-3 py-2 text-center font-medium">Good</th>
                     <th className="px-3 py-2 text-center font-medium">Dirty</th>
                     <th className="px-3 py-2 text-center font-medium">Damaged</th>
                     <th className="px-3 py-2 text-center font-medium">Scrap</th>
-                    <th className="px-3 py-2 text-center font-medium">Returned</th>
+                    <th className="px-3 py-2 text-center font-medium">This Return</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2939,20 +3046,37 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                       parseNumber(item.dirty) +
                       parseNumber(item.damaged) +
                       parseNumber(item.scrap);
+                    const fullyReturned = item.returnBalance <= 0;
                     return (
-                      <tr key={item.id} className="border-b border-border">
+                      <tr key={item.id} className={`border-b border-border ${fullyReturned ? "bg-green-50/50 dark:bg-green-950/20" : ""}`}>
                         <td className="px-3 py-2">
-                          <div className="font-medium">{item.description || item.itemCode}</div>
-                          <div className="text-xs text-muted-foreground">{item.itemCode || "—"}</div>
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium">{item.description || item.itemCode}</div>
+                              <div className="text-xs text-muted-foreground">{item.itemCode || "—"}</div>
+                            </div>
+                            {fullyReturned && (
+                              <Badge variant="outline" className="text-xs border-green-500/50 bg-green-500/10 text-green-600">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Done
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-3 py-2 text-center font-semibold">{item.totalDelivered}</td>
+                        <td className="px-3 py-2 text-center text-muted-foreground">{item.previouslyReturned}</td>
+                        <td className="px-3 py-2 text-center">
+                          <span className={`font-semibold ${item.returnBalance > 0 ? "text-amber-600" : "text-green-600"}`}>
+                            {item.returnBalance}
+                          </span>
+                        </td>
                         <td className="px-3 py-2 text-center">
                           <Input
                             type="number"
                             min="0"
                             value={item.good}
                             onChange={(e) => handleReturnQuantityChange(item.id, "good", e.target.value)}
-                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+                            disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -2962,7 +3086,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.dirty}
                             onChange={(e) => handleReturnQuantityChange(item.id, "dirty", e.target.value)}
-                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+                            disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -2972,7 +3096,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.damaged}
                             onChange={(e) => handleReturnQuantityChange(item.id, "damaged", e.target.value)}
-                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+                            disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -2982,7 +3106,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                             min="0"
                             value={item.scrap}
                             onChange={(e) => handleReturnQuantityChange(item.id, "scrap", e.target.value)}
-                            disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending}
+                            disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
                             className="h-8 text-center"
                           />
                         </td>
@@ -2992,7 +3116,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   })}
                   {!returnItems.length && (
                     <tr>
-                      <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
+                      <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
                         No hire items available for return yet.
                       </td>
                     </tr>
@@ -3001,10 +3125,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
               </table>
             </div>
 
-            <div className="flex items-center justify-between border-t border-border pt-4">
-              <Button type="button" variant="outline" onClick={handleBack}>
-                Back
-              </Button>
+            {/* Process Return + Print Buttons */}
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 onClick={handleProcessReturn}
@@ -3015,6 +3137,95 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   : updateQuotation.isPending
                     ? "Finalizing..."
                     : "Process Return"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handlePrintCurrentReturnNote}
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Return Note
+              </Button>
+            </div>
+
+            {/* Return History Section */}
+            <ReturnHistorySection
+              returns={returnHistory}
+              onPrintReturnNote={handlePrintReturnNoteFromHistory}
+              onReturnBalance={handleReturnBalance}
+              hasRemainingBalance={returnItems.some(item => item.returnBalance > 0) && returnProcessed}
+              totalReturned={returnItems.reduce((sum, item) => sum + item.previouslyReturned, 0)}
+              totalDelivered={returnItems.reduce((sum, item) => sum + item.totalDelivered, 0)}
+            />
+
+            {/* Persistent Hire Return Report */}
+            {returnHistory.length > 0 && (
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Hire Return Report — Cumulative Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto rounded-lg border border-border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/40">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">Item</th>
+                          <th className="px-3 py-2 text-right font-medium">Good</th>
+                          <th className="px-3 py-2 text-right font-medium">Dirty</th>
+                          <th className="px-3 py-2 text-right font-medium">Damaged</th>
+                          <th className="px-3 py-2 text-right font-medium">Scrap</th>
+                          <th className="px-3 py-2 text-right font-medium">Total</th>
+                          <th className="px-3 py-2 text-right font-medium">Mass (kg)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const cumulative: Record<string, { itemCode: string; description: string; good: number; dirty: number; damaged: number; scrap: number; total: number; mass: number }> = {};
+                          returnHistory.forEach(r => r.items.forEach(item => {
+                            const key = item.itemCode || item.description;
+                            if (!cumulative[key]) cumulative[key] = { itemCode: item.itemCode, description: item.description, good: 0, dirty: 0, damaged: 0, scrap: 0, total: 0, mass: 0 };
+                            cumulative[key].good += item.good;
+                            cumulative[key].dirty += item.dirty;
+                            cumulative[key].damaged += item.damaged;
+                            cumulative[key].scrap += item.scrap;
+                            cumulative[key].total += item.totalReturned;
+                            cumulative[key].mass += item.totalMass;
+                          }));
+                          return Object.values(cumulative).map((item, idx) => (
+                            <tr key={idx} className="border-b border-border/50">
+                              <td className="px-3 py-2">
+                                <span className="font-medium">{item.itemCode}</span>
+                                <span className="text-muted-foreground ml-1">- {item.description}</span>
+                              </td>
+                              <td className="px-3 py-2 text-right text-green-600">{item.good}</td>
+                              <td className="px-3 py-2 text-right text-amber-600">{item.dirty}</td>
+                              <td className="px-3 py-2 text-right text-red-600">{item.damaged}</td>
+                              <td className="px-3 py-2 text-right text-red-800">{item.scrap}</td>
+                              <td className="px-3 py-2 text-right font-semibold">{item.total}</td>
+                              <td className="px-3 py-2 text-right text-muted-foreground">{item.mass.toFixed(2)}</td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={() => returnHistory.length > 0 && handlePrintReturnNoteFromHistory(returnHistory[0])}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print Latest Return Note
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
               </Button>
             </div>
           </div>
