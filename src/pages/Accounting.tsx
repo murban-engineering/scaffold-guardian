@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { useMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import { useScaffolds } from "@/hooks/useScaffolds";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -237,6 +239,17 @@ const Accounting = () => {
   const [selectedClient, setSelectedClient] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch profiles to resolve created_by UUIDs to names
+  const { data: profilesMap = new Map<string, string>() } = useQuery({
+    queryKey: ["profiles-name-map"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("user_id, full_name");
+      const map = new Map<string, string>();
+      (data ?? []).forEach((p) => map.set(p.user_id, p.full_name));
+      return map;
+    },
+  });
+
   // Only quotations with dispatched items
   // Only quotations explicitly dispatched via Hire Delivery are eligible for billing
   const activeQuotations = useMemo(() => {
@@ -344,7 +357,7 @@ const Accounting = () => {
         grandTotal: hireTotal + surcharge.total,
         hireBreakdown,
         policyBreakdown: surcharge.entries,
-        createdBy: q.created_by || "-",
+        createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
       };
     });
@@ -652,7 +665,7 @@ const Accounting = () => {
                                     siteAddress: q.site_address || "",
                                     quotationNumber: q.quotation_number || "Draft",
                                     dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
-                                    createdBy: q.created_by || "-",
+                                    createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
                                     discountRate: 0,
                                     items: lineItems.map((li) => {
                                       const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
