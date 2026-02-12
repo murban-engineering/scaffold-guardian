@@ -11,6 +11,7 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnLogo from "@/assets/otn-logo.png";
@@ -32,6 +33,7 @@ const menuItems = [
   { id: "inventory", label: "Inventory", icon: Package },
   { id: "previous-clients", label: "Previous Clients", icon: FolderClock },
   { id: "accounting", label: "Accounting", icon: ReceiptText },
+  { id: "otnoai", label: "OTNOAI", icon: Bot },
   { id: "sites", label: "Sites", icon: MapPin },
   { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
   { id: "workforce", label: "Workforce", icon: Users },
