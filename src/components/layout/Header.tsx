@@ -21,30 +21,29 @@ const Header = ({ title, subtitle }: HeaderProps) => {
     navigate("/auth");
   };
 
-  // Get display role
-  const displayRole = roles.includes("admin") 
-    ? "Admin" 
-    : roles.includes("supervisor") 
-    ? "Supervisor" 
+  const displayRole = roles.includes("admin")
+    ? "Admin"
+    : roles.includes("supervisor")
+    ? "Supervisor"
     : roles.includes("inspector")
     ? "Inspector"
     : "Worker";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur-lg">
+    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="space-y-1">
+        <div className="space-y-0.5">
+          {subtitle && <p className="text-sm font-medium text-primary">{subtitle.split('.')[0]}</p>}
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
-          {subtitle && <p className="text-sm text-muted-foreground/90">{subtitle}</p>}
         </div>
 
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           {/* Search */}
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search scaffolds, sites..."
-              className="h-11 rounded-full border-border/70 bg-card pl-9 shadow-sm transition focus-visible:ring-2"
+              placeholder="Search..."
+              className="h-10 rounded-xl border-border/60 bg-card pl-9 shadow-sm transition focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
 
@@ -52,26 +51,26 @@ const Header = ({ title, subtitle }: HeaderProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-11 w-11 self-start rounded-full border border-border/70 bg-card shadow-sm hover:bg-muted sm:self-auto"
+            className="relative h-10 w-10 self-start rounded-xl border border-border/60 bg-card shadow-sm hover:bg-muted sm:self-auto"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-              <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center bg-destructive p-0 text-xs text-destructive-foreground">
+              <Badge className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center bg-danger p-0 text-xs text-danger-foreground">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
             )}
           </Button>
 
           {/* User */}
-          <div className="flex items-center gap-3 rounded-full border border-border/70 bg-card px-2 py-1 shadow-sm">
+          <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-card px-3 py-1.5 shadow-sm">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
+              <p className="text-sm font-medium text-foreground">{profile?.full_name || "User"}</p>
               <p className="text-xs text-muted-foreground">{displayRole}</p>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/90 shadow-sm">
-              <User className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary shadow-sm">
+              <User className="h-4 w-4 text-primary-foreground" />
             </div>
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={handleSignOut} title="Sign out">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground" onClick={handleSignOut} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

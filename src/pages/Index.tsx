@@ -116,7 +116,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-100 via-background to-background">
+    <div className="min-h-screen bg-background">
       <Sidebar
         activeItem={activeItem}
         onItemClick={handleSidebarItemClick}
