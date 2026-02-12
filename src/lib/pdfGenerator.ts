@@ -265,7 +265,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
       <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
         <strong>COMMENTS</strong><br />
-        Quotes exclude transport to and from site.
+        Quotes exclude transport to and from site.<br />
+        Four (4) weeks hire deposit required upfront.
       </div>
 
       <div class="delivery-terms">
@@ -773,7 +774,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
       <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
         <strong>COMMENTS</strong><br />
-        Quotes exclude transport to and from site.
+        Quotes exclude transport to and from site.<br />
+        Four (4) weeks hire deposit required upfront.
       </div>
 
       <div class="terms">
