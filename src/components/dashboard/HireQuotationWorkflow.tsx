@@ -1891,7 +1891,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -1901,22 +1901,32 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 key={step.key}
                 type="button"
                 onClick={() => goToStep(step.key)}
-                className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition ${
+                className={`group relative flex items-center gap-3 rounded-xl border-2 px-4 py-4 text-left transition-all duration-200 ${
                   isActive
-                    ? "border-primary bg-primary/5"
-                    : "border-border bg-background hover:border-primary/40"
+                    ? "border-primary bg-primary/8 shadow-[0_0_0_3px_hsl(var(--primary)/0.12)]"
+                    : "border-border/60 bg-background hover:border-primary/50 hover:bg-primary/4 hover:shadow-md"
                 }`}
               >
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                    isComplete ? "bg-success text-success-foreground" : isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
+                    isComplete
+                      ? "bg-primary/15 text-primary"
+                      : isActive
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted/70 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  {isComplete ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : (
+                    <Icon className="h-5 w-5" />
+                  )}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">{step.title}</p>
-                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                <div className="min-w-0">
+                  <p className={`text-sm font-semibold leading-tight transition-colors duration-200 ${
+                    isActive ? "text-primary" : "text-foreground group-hover:text-primary"
+                  }`}>{step.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground truncate">{step.description}</p>
                 </div>
               </button>
             );
