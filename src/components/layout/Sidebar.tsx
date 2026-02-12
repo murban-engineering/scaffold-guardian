@@ -1,17 +1,17 @@
 import {
-  LayoutDashboard,
-  Package,
+  LayoutGrid,
+  PackageSearch,
   FolderClock,
-  MapPin,
-  Users,
-  Settings,
+  MapPinned,
+  UsersRound,
+  SlidersHorizontal,
   LogOut,
   ClipboardCheck,
-  ReceiptText,
+  Receipt,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Bot,
+  BotMessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnLogo from "@/assets/otn-logo.png";
@@ -29,14 +29,14 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "inventory", label: "Inventory", icon: Package },
+  { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
+  { id: "inventory", label: "Inventory", icon: PackageSearch },
   { id: "previous-clients", label: "Previous Clients", icon: FolderClock },
-  { id: "accounting", label: "Accounting", icon: ReceiptText },
-  { id: "otnoai", label: "OTNOAI", icon: Bot },
-  { id: "sites", label: "Sites", icon: MapPin },
+  { id: "accounting", label: "Accounting", icon: Receipt },
+  { id: "otnoai", label: "OTNOAI", icon: BotMessageSquare },
+  { id: "sites", label: "Sites", icon: MapPinned },
   { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
-  { id: "workforce", label: "Workforce", icon: Users },
+  { id: "workforce", label: "Workforce", icon: UsersRound },
 ];
 
 const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
@@ -117,7 +117,7 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
           onClick={() => handleItemClick("settings", closeOnSelect)}
           title={collapsed && !closeOnSelect ? "Settings" : undefined}
         >
-          <Settings className="h-5 w-5 shrink-0" />
+          <SlidersHorizontal className="h-5 w-5 shrink-0" />
           <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Settings</span>
         </button>
         <button
