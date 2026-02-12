@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, Users, Plus, Trash2, Printer, Package, RotateCcw, CheckCircle2, Clock, History } from "lucide-react";
+import { FileText, Truck, UserRoundPen, Plus, Trash2, Printer, PackageSearch, RotateCcw, CheckCircle2, Clock, History, ClipboardSignature, ScanBarcode, FileCheck2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, useUpdateLineItemReturnQuantities, HireQuotation } from "@/hooks/useHireQuotations";
@@ -137,12 +137,12 @@ type ReturnItem = {
   massPerItem: number;
 };
 
-const steps: { key: StepKey; title: string; description: string; icon: typeof Users }[] = [
-  { key: "client", title: "Client Details", description: "Quotation header", icon: Users },
-  { key: "equipment", title: "Equipment", description: "Select from inventory", icon: Package },
-  { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileText },
+const steps: { key: StepKey; title: string; description: string; icon: typeof UserRoundPen }[] = [
+  { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
+  { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
+  { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileCheck2 },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
-  { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: Truck },
+  { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: ClipboardList },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
 
@@ -2418,7 +2418,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
           <div className="space-y-6">
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Package className="h-4 w-4" />
+                <PackageSearch className="h-4 w-4" />
                 Select Equipment from Inventory
               </h4>
               <div className="grid gap-4 md:grid-cols-3">
@@ -2742,7 +2742,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Package className="h-4 w-4" />
+                  <PackageSearch className="h-4 w-4" />
                   Equipment Items ({balanceDeliveryItems.length})
                 </CardTitle>
               </CardHeader>

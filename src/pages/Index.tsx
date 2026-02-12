@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, MapPin, ClipboardCheck, AlertTriangle, Users, Wrench, FileText, FolderClock } from "lucide-react";
+import { PackageSearch, MapPinned, ClipboardCheck, ShieldAlert, UsersRound, Wrench, FileText, FolderClock } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/dashboard/StatCard";
@@ -204,7 +204,7 @@ const Index = () => {
                 value={isLoading ? "..." : stats?.totalScaffolds || 0}
                 change={stats?.totalScaffolds ? "+12 this month" : "Add scaffolds to get started"}
                 changeType={stats?.totalScaffolds ? "positive" : "neutral"}
-                icon={Package}
+                icon={PackageSearch}
                 iconBg="primary"
               />
               <StatCard
@@ -212,7 +212,7 @@ const Index = () => {
                 value={isLoading ? "..." : stats?.activeSites || 0}
                 change={stats?.activeSites ? "2 starting soon" : "Create your first site"}
                 changeType="neutral"
-                icon={MapPin}
+                icon={MapPinned}
                 iconBg="accent"
               />
               <StatCard
@@ -234,7 +234,7 @@ const Index = () => {
                 value={isLoading ? "..." : stats?.safetyAlerts || 0}
                 change={stats?.safetyAlerts ? "Needs attention" : "No alerts"}
                 changeType={stats?.safetyAlerts ? "negative" : "positive"}
-                icon={AlertTriangle}
+                icon={ShieldAlert}
                 iconBg="danger"
               />
               <StatCard
@@ -242,7 +242,7 @@ const Index = () => {
                 value={isLoading ? "..." : stats?.activeWorkers || 0}
                 change="Team members"
                 changeType="neutral"
-                icon={Users}
+                icon={UsersRound}
                 iconBg="accent"
               />
               <StatCard
