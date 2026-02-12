@@ -263,6 +263,11 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
       ${data.remarks ? `<div class="remarks"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
+      <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
+        <strong>COMMENTS</strong><br />
+        Quotes exclude transport to and from site.
+      </div>
+
       <div class="delivery-terms">
         <h4>IMPORTANT</h4>
         <p>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
@@ -766,9 +771,13 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </tbody>
       </table>
 
+      <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
+        <strong>COMMENTS</strong><br />
+        Quotes exclude transport to and from site.
+      </div>
+
       <div class="terms">
         <strong>TERMS:</strong><br />
-        Quote does not include transport to and from site.<br />
         Order confirmation is through deposit payment before collection.<br />
         Four (4) weeks deposit is required upfront.<br />
         Items not currently available in our yard will not be billed.<br />
