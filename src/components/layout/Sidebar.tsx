@@ -64,18 +64,18 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   const sidebarContent = (closeOnSelect: boolean) => (
     <>
       {/* Logo */}
-      <div className="border-b border-sidebar-border/70 p-4">
+      <div className="border-b border-sidebar-border p-5">
         <div className={cn("flex items-center", collapsed && !closeOnSelect ? "justify-center" : "justify-between")}>
-          <img 
-            src={otnLogo} 
-            alt="OTN Logo" 
-            className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-10" : "w-28")}
+          <img
+            src={otnLogo}
+            alt="OTN Logo"
+            className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-10" : "w-24")}
           />
           {!closeOnSelect && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full border border-sidebar-border/80 bg-sidebar-accent/40 text-sidebar-foreground hover:bg-sidebar-accent"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={() => setCollapsed((prev) => !prev)}
             >
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -85,7 +85,7 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
           {visibleMenuItems.map((item) => (
             <li key={item.id}>
@@ -107,10 +107,10 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="border-t border-sidebar-border/70 p-3">
+      <div className="border-t border-sidebar-border p-3">
         <button
           className={cn(
-            "sidebar-item w-full mb-2",
+            "sidebar-item w-full mb-1",
             collapsed && !closeOnSelect && "justify-center px-2",
             activeItem === "settings" && "sidebar-item-active"
           )}
@@ -122,7 +122,7 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
         </button>
         <button
           className={cn(
-            "sidebar-item w-full text-destructive/80 hover:bg-destructive/10 hover:text-destructive",
+            "sidebar-item w-full text-danger/70 hover:bg-danger/10 hover:text-danger",
             collapsed && !closeOnSelect && "justify-center px-2"
           )}
           onClick={handleLogout}
@@ -144,20 +144,21 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
           size="icon"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
+          className="bg-card shadow-md"
         >
           <Menu className="h-5 w-5" />
         </Button>
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-      <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground shadow-2xl">
-        <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
-      </SheetContent>
-    </Sheet>
+        <SheetContent side="left" className="w-72 bg-card p-0 text-foreground shadow-2xl">
+          <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
+        </SheetContent>
+      </Sheet>
 
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border/70 bg-sidebar shadow-xl transition-all duration-300 md:flex",
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300 md:flex",
           collapsed ? "w-20" : "w-64"
         )}
       >
