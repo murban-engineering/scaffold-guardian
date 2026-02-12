@@ -57,13 +57,17 @@ const Index = () => {
       ? "Inventory"
       : activeItem === "workforce"
         ? "Workforce"
-        : "Dashboard";
+        : activeItem === "otnoai"
+          ? "OTNOAI"
+          : "Dashboard";
   const headerSubtitle =
     activeItem === "inventory"
       ? "Live view of your scaffold stock levels."
       : activeItem === "workforce"
         ? "Track the team members currently signed in to your workspace."
-        : `Welcome back, ${profile?.full_name?.split(' ')[0] || "there"}. Here's your scaffold operations overview.`;
+        : activeItem === "otnoai"
+          ? "Your AI-powered assistant for inventory, sites, and maintenance."
+          : `Welcome back, ${profile?.full_name?.split(' ')[0] || "there"}. Here's your scaffold operations overview.`;
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
@@ -132,6 +136,12 @@ const Index = () => {
           <div className="mx-auto w-full max-w-7xl px-6 py-8">
             <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
               <SignedInUsers />
+            </div>
+          </div>
+        ) : activeItem === "otnoai" ? (
+          <div className="mx-auto w-full max-w-7xl px-6 py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur overflow-hidden" style={{ height: "calc(100vh - 160px)" }}>
+              <AIChatAssistant embedded />
             </div>
           </div>
         ) : (
@@ -354,7 +364,6 @@ const Index = () => {
           </div>
         )}
       </main>
-      <AIChatAssistant />
     </div>
   );
 };
