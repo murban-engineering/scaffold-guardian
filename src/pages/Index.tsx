@@ -21,8 +21,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const Index = () => {
+  useRealtimeSync();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeItem, setActiveItem] = useState(() => {
