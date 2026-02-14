@@ -757,6 +757,12 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     toast.success("Site details auto-filled from client information");
   };
 
+  const getSelectedSiteNumber = () => {
+    if (!selectedDeliverySiteId) return "";
+    const site = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    return site?.site_number || "";
+  };
+
   const handleSelectDeliverySite = (siteId: string) => {
     setSelectedDeliverySiteId(siteId);
     const site = clientSites?.find(s => s.id === siteId);
@@ -1195,6 +1201,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vehicleNo: delivery.vehicleNo,
       remarks: "",
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -1220,6 +1228,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       noteTitle: `Hire Loading Note (${delivery.deliveryNoteNumber})`,
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
@@ -1256,6 +1266,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vehicleNo: deliveryNote.vehicleNo,
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
@@ -1353,6 +1365,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactName: header.clientName,
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       noteTitle: noteType === "balance" ? "Hire Loading Note (Balance)" : "Hire Loading Note",
       items: [],
     };
@@ -1475,19 +1489,22 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
 
   const handlePrintYardVerificationNote = () => {
     const data: DeliveryNoteData = {
-      quotationNumber: "",
-      deliveryNoteNumber: "",
-      dateCreated: "",
-      deliveryDate: "",
-      companyName: "",
-      siteName: "",
-      siteAddress: "",
-      contactName: "",
-      contactPhone: "",
-      deliveredBy: "",
-      receivedBy: "",
-      vehicleNo: "",
-      remarks: "",
+      quotationNumber: header.quotationNo,
+      deliveryNoteNumber: deliveryNote.deliveryNoteNo,
+      dateCreated: header.dateCreated,
+      deliveryDate: deliveryNote.deliveryDate,
+      companyName: header.clientCompanyName,
+      siteName: header.siteName,
+      siteAddress: header.siteAddress,
+      contactName: header.clientName,
+      contactPhone: header.clientPhone,
+      deliveredBy: deliveryNote.deliveredBy,
+      receivedBy: deliveryNote.receivedBy,
+      vehicleNo: deliveryNote.vehicleNo,
+      remarks: deliveryNote.remarks,
+      createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: [],
     };
 
@@ -1514,6 +1531,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       discountRate: parseNumber(hireQuotationDiscount),
       comments: quotationComments,
       items: equipmentItems.map(item => ({
@@ -1607,6 +1626,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       contactPhone: header.clientPhone,
       contactEmail: header.clientEmail,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -1878,6 +1899,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vehicleNo: record.vehicleNo,
       remarks: "",
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: record.items.map((item) => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -1916,6 +1939,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       vehicleNo: returnNote.vehicleNo,
       remarks: returnNote.remarks,
       createdBy: header.createdBy,
+      clientId: header.clientId,
+      siteId: getSelectedSiteNumber(),
       items: returnItems
         .filter((item) => parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0)
         .map((item) => {

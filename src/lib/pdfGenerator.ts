@@ -15,6 +15,8 @@ export interface DeliveryNoteData {
   vehicleNo: string;
   remarks: string;
   createdBy?: string;
+  clientId?: string;
+  siteId?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -35,6 +37,8 @@ export interface QuotationCalculationData {
   contactPhone: string;
   contactEmail: string;
   createdBy?: string;
+  clientId?: string;
+  siteId?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -69,6 +73,8 @@ export interface HireQuotationReportData {
   createdBy: string;
   discountRate: number;
   comments?: string;
+  clientId?: string;
+  siteId?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -91,6 +97,8 @@ export interface HireLoadingNoteData {
   contactPhone: string;
   createdBy: string;
   noteTitle?: string;
+  clientId?: string;
+  siteId?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -119,6 +127,8 @@ export interface HireReturnNoteData {
   vehicleNo: string;
   remarks: string;
   createdBy?: string;
+  clientId?: string;
+  siteId?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -137,6 +147,12 @@ export interface HireReturnNoteData {
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+const COMPANY_PIN = "P052471711M";
+
+const formatTimestamp = () => {
+  const now = new Date();
+  return now.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
+};
 
 const formatCurrency = (value: number) =>
   `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -207,6 +223,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
+          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
           <p><strong>Hire Delivery Note</strong></p>
         </div>
       </div>
@@ -216,10 +233,13 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <h3>Delivery Information</h3>
           <div class="info-row"><span class="info-label">Delivery Note No:</span><span class="info-value">${data.deliveryNoteNumber}</span></div>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
+          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
           <div class="info-row"><span class="info-label">Delivery Date:</span><span class="info-value">${data.deliveryDate}</span></div>
           <div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">${data.vehicleNo || "-"}</span></div>
           <div class="info-row"><span class="info-label">Delivered By:</span><span class="info-value">${data.deliveredBy || "-"}</span></div>
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
         </div>
         <div class="info-section">
           <h3>Client Details</h3>
@@ -392,6 +412,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
+          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
           <p><strong>${noteTitle}</strong></p>
           <p class="copy-label">${copyLabel}</p>
         </div>
@@ -410,8 +431,11 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         <div class="info-section">
           <h3>OTNO Access Details</h3>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
+          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
           <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
         </div>
       </div>
 
@@ -551,6 +575,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <p>Email: otnoacess@gmail.com</p>
             <p>${COMPANY_ADDRESS}</p>
             <p>${COMPANY_LOCATION}</p>
+            <p><strong>PIN: ${COMPANY_PIN}</strong></p>
           </div>
           <div class="yard-note-meta">T.B.OD32</div>
         </div>
@@ -563,6 +588,12 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <td class="value">${data.deliveryNoteNumber || ""}</td>
           </tr>
           <tr>
+            <td class="label">Client ID:</td>
+            <td class="value">${data.clientId || ""}</td>
+            <td class="label">Site ID:</td>
+            <td class="value">${data.siteId || ""}</td>
+          </tr>
+          <tr>
             <td class="label">Site:</td>
             <td class="value">${data.siteName || ""}</td>
             <td class="label">Date:</td>
@@ -571,6 +602,12 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
           <tr>
             <td class="label">Vehicle Reg:</td>
             <td class="value">${data.vehicleNo || ""}</td>
+            <td class="label">Created By:</td>
+            <td class="value">${data.createdBy || ""}</td>
+          </tr>
+          <tr>
+            <td class="label">Printed:</td>
+            <td class="value">${formatTimestamp()}</td>
             <td class="label">Branch:</td>
             <td class="value">${data.siteName || ""}</td>
           </tr>
@@ -695,6 +732,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
+          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
           <p><strong>Hire Quotation</strong></p>
         </div>
       </div>
@@ -715,8 +753,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <div class="info-section">
           <h3>OTNO Access Details</h3>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
+          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
           <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
         </div>
       </div>
 
@@ -867,6 +908,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <p>Email: otnoacess@gmail.com</p>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
+          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
           <p><strong>Hire Quotation</strong></p>
         </div>
       </div>
@@ -875,9 +917,12 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
         <div class="info-section">
           <h3>Quotation Details</h3>
           <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
+          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
           <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${data.dateCreated}</span></div>
           <div class="info-row"><span class="info-label">Hire Period:</span><span class="info-value">${data.hireWeeks} week(s)</span></div>
           <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
+          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
         </div>
         <div class="info-section">
           <h3>Client Information</h3>
@@ -1028,6 +1073,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<p>Email: otnoacess@gmail.com</p>" +
     "<p>" + COMPANY_ADDRESS + "</p>" +
     "<p>" + COMPANY_LOCATION + "</p>" +
+    "<p><strong>PIN: " + COMPANY_PIN + "</strong></p>" +
     "<p><strong>Hire Return Note</strong></p>" +
     '<p class="copy-label">' + copyLabel + "</p>" +
     "</div></div>" +
@@ -1048,10 +1094,13 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<h3>OTNO Access Details</h3>" +
     '<div class="info-row"><span class="info-label">Return Note No:</span><span class="info-value">' + data.returnNoteNumber + "</span></div>" +
     '<div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">' + data.quotationNumber + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">' + (data.clientId || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">' + (data.siteId || "-") + "</span></div>" +
     '<div class="info-row"><span class="info-label">Return Date:</span><span class="info-value">' + data.returnDate + "</span></div>" +
     '<div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">' + data.dateCreated + "</span></div>" +
     '<div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">' + (data.vehicleNo || "-") + "</span></div>" +
     '<div class="info-row"><span class="info-label">Created By:</span><span class="info-value">' + (data.createdBy || "-") + "</span></div>" +
+    '<div class="info-row"><span class="info-label">Printed:</span><span class="info-value">' + formatTimestamp() + "</span></div>" +
     "</div></div>" +
     "<table><thead><tr>" +
     "<th>#</th><th>Part Number</th><th>Description</th>" +

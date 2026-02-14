@@ -163,6 +163,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <p>Email: ${COMPANY_EMAIL}</p>
         <p>${COMPANY_ADDRESS}</p>
         <p>${COMPANY_LOCATION}</p>
+        <p><strong>PIN: P052471711M</strong></p>
         <p><strong>HIRE INVOICE</strong></p>
       </div>
     </div>
@@ -186,6 +187,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <div class="row"><span class="lbl">Dispatch Date:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
         <div class="row"><span class="lbl">Billing Date:</span><span class="val">${escapeHtml(billingDateStr)}</span></div>
         <div class="row"><span class="lbl">Billed Weeks:</span><span class="val">${invoice.hireWeeks}</span></div>
+        <div class="row"><span class="lbl">Printed:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
       </div>
     </div>
 
@@ -667,6 +669,7 @@ const Accounting = () => {
                                     dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
                                     createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
                                     discountRate: 0,
+                                    clientId: q.quotation_number ? q.quotation_number.replace("HSQ-", "CL-") : "",
                                     items: lineItems.map((li) => {
                                       const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
                                       const rate = li.weekly_rate ?? 0;
