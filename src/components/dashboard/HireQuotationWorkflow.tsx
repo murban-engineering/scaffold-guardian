@@ -239,6 +239,60 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     siteOpenedBy: "",
     notes: "",
   });
+  const [siteMasterForm, setSiteMasterForm] = useState({
+    // Invoicing
+    companyNameOnInvoice: "",
+    officeTel: "",
+    officeEmail: "",
+    smName: "",
+    smCell: "",
+    smEmail: "",
+    // Ordering
+    customerOrderNumber: "",
+    officialOrdersUsed: "",
+    bulkOrdersUsed: "",
+    newOrderEveryQuote: "",
+    telephonicOrders: "",
+    personsNameAsOrder: "",
+    personsName: "",
+    requisitionNumberUsed: "",
+    requisitionNumber: "",
+    // Transport
+    fixedRateAgreed: "",
+    transportReturns: "",
+    transportDeliveries: "",
+    specialTransportArrangement: "",
+    // Discounts
+    tonnageProduct: "", tonnageHireDiscount: "", tonnageSalesDiscount: "", tonnageRate: "",
+    basketProduct: "", basketHireDiscount: "", basketSalesDiscount: "", basketRate: "",
+    straightHireProduct: "", straightHireHireDiscount: "", straightHireSalesDiscount: "", straightHireRate: "",
+    nettProduct: "", nettHireDiscount: "", nettSalesDiscount: "", nettRate: "",
+    quoteNumber: "",
+    // Project Type / Market Segmentation
+    ptBuilding: false, ptEducation: false, ptHealthcare: false, ptOfficeBlocks: false,
+    ptResidential: false, ptShoppingCentres: false, ptTourismHotels: false,
+    msCivils: false, msInfrastructure: false, msMines: false, msPetrochemical: false,
+    scScaffolding: false, scBuildingIndustry: false, scCivilsIndustry: false, scIndustrialIndustry: false,
+    // Internal Information
+    customerAccountNo: "",
+    accountType30Day: false,
+    accountTypeDeposit: false,
+    moneyPaidDeposit: "",
+    paymentEFT: false,
+    paymentCreditCard: false,
+    customerCurrent: "",
+    creditLimit: "",
+    currentProforma: "",
+    balanceAvailable: "",
+    otnoSalesman: "",
+    internalSiteName: "",
+    internalDate: "",
+    internalSiteAddress: "",
+    // Administrator
+    siteOpenedBy: "",
+    adminDate: "",
+    siteNumber: "",
+  });
   const [returnProcessed, setReturnProcessed] = useState(false);
   const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]); // Track all deliveries
@@ -753,6 +807,56 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       siteManagerPhone: header.landline1 || header.clientPhone || prev.siteManagerPhone,
       siteManagerEmail: header.companyEmail || header.clientEmail || prev.siteManagerEmail,
       siteOpenedBy: header.createdBy || prev.siteOpenedBy,
+    }));
+    // Auto-fill site master form from client/header details
+    setSiteMasterForm(prev => ({
+      ...prev,
+      companyNameOnInvoice: header.tradingName || header.clientCompanyName || prev.companyNameOnInvoice,
+      officeTel: header.landline1 || header.officeTel || prev.officeTel,
+      officeEmail: header.companyEmail || header.officeEmail || prev.officeEmail,
+      smName: header.siteContactPerson || header.clientName || prev.smName,
+      smCell: header.clientPhone || header.landline1 || prev.smCell,
+      smEmail: header.clientEmail || header.companyEmail || prev.smEmail,
+      customerOrderNumber: header.customerOrderNo || prev.customerOrderNumber,
+      officialOrdersUsed: header.officialOrdersUsed || prev.officialOrdersUsed,
+      bulkOrdersUsed: header.bulkOrdersUsed || prev.bulkOrdersUsed,
+      newOrderEveryQuote: header.newOrderForEveryQuote || prev.newOrderEveryQuote,
+      telephonicOrders: header.telephonicOrders || prev.telephonicOrders,
+      personsNameAsOrder: header.personsNameAsOrder || prev.personsNameAsOrder,
+      personsName: header.personsName || prev.personsName,
+      requisitionNumberUsed: header.requisitionNumberUsed || prev.requisitionNumberUsed,
+      requisitionNumber: header.requisitionNo || prev.requisitionNumber,
+      fixedRateAgreed: header.fixedRateAgreed || prev.fixedRateAgreed,
+      transportReturns: header.returns || prev.transportReturns,
+      transportDeliveries: header.delivery || prev.transportDeliveries,
+      specialTransportArrangement: header.specialTransportArrangement || prev.specialTransportArrangement,
+      tonnageHireDiscount: discounts[0]?.hireDiscount || prev.tonnageHireDiscount,
+      basketHireDiscount: discounts[1]?.hireDiscount || prev.basketHireDiscount,
+      straightHireHireDiscount: discounts[2]?.hireDiscount || prev.straightHireHireDiscount,
+      nettHireDiscount: discounts[3]?.hireDiscount || prev.nettHireDiscount,
+      quoteNumber: header.quotationNo || prev.quoteNumber,
+      ptBuilding: header.projectTypes.includes("Building") || prev.ptBuilding,
+      ptEducation: header.projectTypes.includes("Education") || prev.ptEducation,
+      ptHealthcare: header.projectTypes.includes("Healthcare") || prev.ptHealthcare,
+      ptOfficeBlocks: header.projectTypes.includes("Office Blocks") || prev.ptOfficeBlocks,
+      ptResidential: header.projectTypes.includes("Residential") || prev.ptResidential,
+      ptShoppingCentres: header.projectTypes.includes("Shopping Centres") || prev.ptShoppingCentres,
+      ptTourismHotels: header.projectTypes.includes("Tourism / Hotels") || prev.ptTourismHotels,
+      msCivils: header.civilsSegments?.includes("Civils") || header.marketSegments?.includes("Civils") || prev.msCivils,
+      msInfrastructure: header.civilsSegments?.includes("Infrastructure") || header.marketSegments?.includes("Infrastructure") || prev.msInfrastructure,
+      msMines: header.civilsSegments?.includes("Mines") || header.marketSegments?.includes("Mines") || prev.msMines,
+      msPetrochemical: header.civilsSegments?.includes("Petrochemical") || header.marketSegments?.includes("Petrochemical") || prev.msPetrochemical,
+      scScaffolding: header.scaffoldingSegments?.includes("Scaffolding") || prev.scScaffolding,
+      scBuildingIndustry: header.scaffoldingSegments?.includes("Building Industry") || prev.scBuildingIndustry,
+      scCivilsIndustry: header.scaffoldingSegments?.includes("Civils Industry") || prev.scCivilsIndustry,
+      scIndustrialIndustry: header.scaffoldingSegments?.includes("Industrial Industry") || prev.scIndustrialIndustry,
+      otnoSalesman: header.createdBy || prev.otnoSalesman,
+      internalSiteName: header.siteName || prev.internalSiteName,
+      internalSiteAddress: header.siteAddress || header.physicalAddress || prev.internalSiteAddress,
+      internalDate: header.dateCreated || prev.internalDate,
+      siteOpenedBy: header.createdBy || prev.siteOpenedBy,
+      adminDate: header.dateCreated || prev.adminDate,
+      siteNumber: deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : ""),
     }));
     toast.success("Site details auto-filled from client information");
   };
@@ -2813,15 +2917,19 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             <div className="rounded-lg border border-border bg-muted/30 p-4">
               <h4 className="font-semibold mb-2 flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                Site Master Plan
+                Site Master — Customer Information
               </h4>
               <p className="text-sm text-muted-foreground">
-                Manage multiple sites for this client. The first site is auto-filled from client details. 
-                Add additional sites (e.g., NK-0001-A, NK-0001-B) for clients with multiple locations.
+                Complete all sections below. Data is auto-filled from client details. Add additional sites at the bottom.
               </p>
+              {savedQuotationId && (
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={handleAutoFillSiteFromClient}>
+                  <UserRoundPen className="h-4 w-4 mr-1" />
+                  Auto-fill from Client Details
+                </Button>
+              )}
             </div>
 
-            {/* Auto-fill first site if none exist */}
             {!savedQuotationId && (
               <div className="rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 p-4 text-center">
                 <p className="text-sm text-muted-foreground">Please save the client details first (Step 1) before managing sites.</p>
@@ -2832,7 +2940,339 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
             )}
 
             {savedQuotationId && (
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Invoicing */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Invoicing</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="md:col-span-2">
+                        <Label>Company name to appear on invoice</Label>
+                        <Input value={siteMasterForm.companyNameOnInvoice} onChange={(e) => setSiteMasterForm(p => ({ ...p, companyNameOnInvoice: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Office Tel</Label>
+                        <Input value={siteMasterForm.officeTel} onChange={(e) => setSiteMasterForm(p => ({ ...p, officeTel: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Office Email</Label>
+                        <Input value={siteMasterForm.officeEmail} onChange={(e) => setSiteMasterForm(p => ({ ...p, officeEmail: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">Site Manager's contact details</p>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div>
+                          <Label>Name</Label>
+                          <Input value={siteMasterForm.smName} onChange={(e) => setSiteMasterForm(p => ({ ...p, smName: e.target.value }))} />
+                        </div>
+                        <div>
+                          <Label>Cell</Label>
+                          <Input value={siteMasterForm.smCell} onChange={(e) => setSiteMasterForm(p => ({ ...p, smCell: e.target.value }))} />
+                        </div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input value={siteMasterForm.smEmail} onChange={(e) => setSiteMasterForm(p => ({ ...p, smEmail: e.target.value }))} />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Ordering */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Ordering</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Customer Order Number</Label>
+                        <Input value={siteMasterForm.customerOrderNumber} onChange={(e) => setSiteMasterForm(p => ({ ...p, customerOrderNumber: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Persons name</Label>
+                        <Input value={siteMasterForm.personsName} onChange={(e) => setSiteMasterForm(p => ({ ...p, personsName: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Requisition number</Label>
+                        <Input value={siteMasterForm.requisitionNumber} onChange={(e) => setSiteMasterForm(p => ({ ...p, requisitionNumber: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-x-8 gap-y-2 md:grid-cols-2">
+                      {[
+                        { label: "Official orders used?", field: "officialOrdersUsed" as const },
+                        { label: "Bulk orders used?", field: "bulkOrdersUsed" as const },
+                        { label: "New order for every quote?", field: "newOrderEveryQuote" as const },
+                        { label: "Telephonic orders?", field: "telephonicOrders" as const },
+                        { label: "Persons name as order?", field: "personsNameAsOrder" as const },
+                        { label: "Requisition number used?", field: "requisitionNumberUsed" as const },
+                      ].map(({ label, field }) => (
+                        <div key={field} className="flex items-center justify-between py-1">
+                          <span className="text-sm">{label}</span>
+                          <div className="flex items-center gap-3">
+                            <label className="flex items-center gap-1 text-sm">
+                              <Checkbox checked={siteMasterForm[field] === "yes"} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, [field]: c ? "yes" : "" }))} /> Yes
+                            </label>
+                            <label className="flex items-center gap-1 text-sm">
+                              <Checkbox checked={siteMasterForm[field] === "no"} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, [field]: c ? "no" : "" }))} /> No
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transport */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Transport</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Fixed Rate Agreed</Label>
+                        <Input value={siteMasterForm.fixedRateAgreed} onChange={(e) => setSiteMasterForm(p => ({ ...p, fixedRateAgreed: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Returns</Label>
+                        <Input value={siteMasterForm.transportReturns} onChange={(e) => setSiteMasterForm(p => ({ ...p, transportReturns: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Deliveries</Label>
+                        <Input value={siteMasterForm.transportDeliveries} onChange={(e) => setSiteMasterForm(p => ({ ...p, transportDeliveries: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Special Transport Arrangement</Label>
+                        <Input value={siteMasterForm.specialTransportArrangement} onChange={(e) => setSiteMasterForm(p => ({ ...p, specialTransportArrangement: e.target.value }))} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Discounts */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Discounts</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/40">
+                          <tr>
+                            <th className="px-4 py-3 text-left font-semibold">Type</th>
+                            <th className="px-4 py-3 text-left font-semibold">Product</th>
+                            <th className="px-4 py-3 text-left font-semibold">Hire Discount</th>
+                            <th className="px-4 py-3 text-left font-semibold">Sales Discount</th>
+                            <th className="px-4 py-3 text-left font-semibold">Rate</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { type: "Tonnage", prefix: "tonnage" as const },
+                            { type: "Basket", prefix: "basket" as const },
+                            { type: "Straight Hire", prefix: "straightHire" as const },
+                            { type: "Nett", prefix: "nett" as const },
+                          ].map(({ type, prefix }) => (
+                            <tr key={type} className="border-t border-border">
+                              <td className="px-4 py-2 font-medium">{type}</td>
+                              <td className="px-4 py-2">
+                                <Input className="h-8" value={siteMasterForm[`${prefix}Product`]} onChange={(e) => setSiteMasterForm(p => ({ ...p, [`${prefix}Product`]: e.target.value }))} />
+                              </td>
+                              <td className="px-4 py-2">
+                                <Input className="h-8" value={siteMasterForm[`${prefix}HireDiscount`]} onChange={(e) => setSiteMasterForm(p => ({ ...p, [`${prefix}HireDiscount`]: e.target.value }))} />
+                              </td>
+                              <td className="px-4 py-2">
+                                <Input className="h-8" value={siteMasterForm[`${prefix}SalesDiscount`]} onChange={(e) => setSiteMasterForm(p => ({ ...p, [`${prefix}SalesDiscount`]: e.target.value }))} />
+                              </td>
+                              <td className="px-4 py-2">
+                                <Input className="h-8" value={siteMasterForm[`${prefix}Rate`]} onChange={(e) => setSiteMasterForm(p => ({ ...p, [`${prefix}Rate`]: e.target.value }))} />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="px-4 py-3 border-t border-border">
+                      <div className="flex items-center gap-3">
+                        <Label className="whitespace-nowrap">Quote Number</Label>
+                        <Input className="max-w-xs" value={siteMasterForm.quoteNumber} onChange={(e) => setSiteMasterForm(p => ({ ...p, quoteNumber: e.target.value }))} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Project Type / Market Segmentation */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Project Type &amp; Market Segmentation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-6 md:grid-cols-4">
+                      <div>
+                        <p className="text-sm font-semibold mb-2">Building</p>
+                        {[
+                          { label: "Building", field: "ptBuilding" as const },
+                          { label: "Education", field: "ptEducation" as const },
+                          { label: "Healthcare", field: "ptHealthcare" as const },
+                          { label: "Office Blocks", field: "ptOfficeBlocks" as const },
+                          { label: "Residential", field: "ptResidential" as const },
+                          { label: "Shopping Centres", field: "ptShoppingCentres" as const },
+                          { label: "Tourism / Hotels", field: "ptTourismHotels" as const },
+                        ].map(({ label, field }) => (
+                          <label key={field} className="flex items-center gap-2 text-sm py-0.5">
+                            <Checkbox checked={siteMasterForm[field]} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, [field]: !!c }))} />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold mb-2">Civils</p>
+                        {[
+                          { label: "Civils", field: "msCivils" as const },
+                          { label: "Infrastructure", field: "msInfrastructure" as const },
+                          { label: "Mines", field: "msMines" as const },
+                          { label: "Petrochemical", field: "msPetrochemical" as const },
+                        ].map(({ label, field }) => (
+                          <label key={field} className="flex items-center gap-2 text-sm py-0.5">
+                            <Checkbox checked={siteMasterForm[field]} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, [field]: !!c }))} />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold mb-2">Scaffolding</p>
+                        {[
+                          { label: "Scaffolding", field: "scScaffolding" as const },
+                          { label: "Building Industry", field: "scBuildingIndustry" as const },
+                          { label: "Civils Industry", field: "scCivilsIndustry" as const },
+                          { label: "Industrial Industry", field: "scIndustrialIndustry" as const },
+                        ].map(({ label, field }) => (
+                          <label key={field} className="flex items-center gap-2 text-sm py-0.5">
+                            <Checkbox checked={siteMasterForm[field]} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, [field]: !!c }))} />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* NOTE section */}
+                <div className="rounded-lg border border-border bg-muted/20 p-4 text-xs text-muted-foreground space-y-1">
+                  <p className="font-semibold text-foreground text-sm">NOTE</p>
+                  <ul className="list-disc pl-4 space-y-0.5">
+                    <li>All OTNO equipment delivered to site conforms to our international Standards Organization (ISO) – Quality Management System.</li>
+                    <li>Please do not accept any dirty or damaged equipment from our drivers.</li>
+                    <li>Please ensure that EVERY ITEM is checked, counted and signed for.</li>
+                    <li>It is your responsibility to load and off-load our trucks – please have labour and or a crane available.</li>
+                    <li>Please ensure that you are issued with a "Request for Collection" reference number when you instruct our offices to collect equipment.</li>
+                  </ul>
+                </div>
+
+                {/* Internal Information */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Internal Information — Sales Representative</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Customer Account No.</Label>
+                        <Input value={siteMasterForm.customerAccountNo} onChange={(e) => setSiteMasterForm(p => ({ ...p, customerAccountNo: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Account Type</Label>
+                        <div className="flex items-center gap-4 mt-2">
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={siteMasterForm.accountType30Day} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, accountType30Day: !!c, accountTypeDeposit: false }))} />
+                            30 Day Account
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={siteMasterForm.accountTypeDeposit} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, accountTypeDeposit: !!c, accountType30Day: false }))} />
+                            Deposit Account
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Money paid: Deposit (R)</Label>
+                        <Input value={siteMasterForm.moneyPaidDeposit} onChange={(e) => setSiteMasterForm(p => ({ ...p, moneyPaidDeposit: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Payment</Label>
+                        <div className="flex items-center gap-4 mt-2">
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={siteMasterForm.paymentEFT} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, paymentEFT: !!c }))} />
+                            EFT
+                          </label>
+                          <label className="flex items-center gap-2 text-sm">
+                            <Checkbox checked={siteMasterForm.paymentCreditCard} onCheckedChange={(c) => setSiteMasterForm(p => ({ ...p, paymentCreditCard: !!c }))} />
+                            Credit Card
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Customer current</Label>
+                        <Input value={siteMasterForm.customerCurrent} onChange={(e) => setSiteMasterForm(p => ({ ...p, customerCurrent: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Credit limit</Label>
+                        <Input value={siteMasterForm.creditLimit} onChange={(e) => setSiteMasterForm(p => ({ ...p, creditLimit: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Current proforma</Label>
+                        <Input value={siteMasterForm.currentProforma} onChange={(e) => setSiteMasterForm(p => ({ ...p, currentProforma: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Balance available</Label>
+                        <Input value={siteMasterForm.balanceAvailable} onChange={(e) => setSiteMasterForm(p => ({ ...p, balanceAvailable: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>OTNO Salesman</Label>
+                        <Input value={siteMasterForm.otnoSalesman} onChange={(e) => setSiteMasterForm(p => ({ ...p, otnoSalesman: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Date</Label>
+                        <Input type="date" value={siteMasterForm.internalDate} onChange={(e) => setSiteMasterForm(p => ({ ...p, internalDate: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Site Name</Label>
+                        <Input value={siteMasterForm.internalSiteName} onChange={(e) => setSiteMasterForm(p => ({ ...p, internalSiteName: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Site Address</Label>
+                        <Input value={siteMasterForm.internalSiteAddress} onChange={(e) => setSiteMasterForm(p => ({ ...p, internalSiteAddress: e.target.value }))} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Administrator section */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base text-primary">Administrator — to complete this section</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div>
+                        <Label>Site opened by</Label>
+                        <Input value={siteMasterForm.siteOpenedBy} onChange={(e) => setSiteMasterForm(p => ({ ...p, siteOpenedBy: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Date</Label>
+                        <Input type="date" value={siteMasterForm.adminDate} onChange={(e) => setSiteMasterForm(p => ({ ...p, adminDate: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>Site Number</Label>
+                        <Input value={siteMasterForm.siteNumber} readOnly className="bg-muted font-mono" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Existing Sites Table */}
                 {(clientSites?.length ?? 0) > 0 && (
                   <Card>
@@ -2890,82 +3330,44 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                 {/* Add New Site Form */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">Add New Site</CardTitle>
-                      <Button type="button" variant="outline" size="sm" onClick={handleAutoFillSiteFromClient}>
-                        <UserRoundPen className="h-4 w-4 mr-1" />
-                        Auto-fill from Client Details
-                      </Button>
-                    </div>
+                    <CardTitle className="text-base">Add New Site</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <Label>Site Name *</Label>
-                        <Input
-                          value={newSite.siteName}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteName: e.target.value }))}
-                          placeholder="Site / Project name"
-                        />
+                        <Input value={newSite.siteName} onChange={(e) => setNewSite(prev => ({ ...prev, siteName: e.target.value }))} placeholder="Site / Project name" />
                       </div>
                       <div>
                         <Label>Site Location</Label>
-                        <Input
-                          value={newSite.siteLocation}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteLocation: e.target.value }))}
-                          placeholder="City or area"
-                        />
+                        <Input value={newSite.siteLocation} onChange={(e) => setNewSite(prev => ({ ...prev, siteLocation: e.target.value }))} placeholder="City or area" />
                       </div>
                       <div className="md:col-span-2">
                         <Label>Site Address</Label>
-                        <Input
-                          value={newSite.siteAddress}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteAddress: e.target.value }))}
-                          placeholder="Full address"
-                        />
+                        <Input value={newSite.siteAddress} onChange={(e) => setNewSite(prev => ({ ...prev, siteAddress: e.target.value }))} placeholder="Full address" />
                       </div>
                       <div>
                         <Label>Site Manager Name</Label>
-                        <Input
-                          value={newSite.siteManagerName}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerName: e.target.value }))}
-                          placeholder="Manager name"
-                        />
+                        <Input value={newSite.siteManagerName} onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerName: e.target.value }))} placeholder="Manager name" />
                       </div>
                       <div>
                         <Label>Manager Phone</Label>
-                        <Input
-                          value={newSite.siteManagerPhone}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerPhone: e.target.value }))}
-                          placeholder="+254 ..."
-                        />
+                        <Input value={newSite.siteManagerPhone} onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerPhone: e.target.value }))} placeholder="+254 ..." />
                       </div>
                       <div>
                         <Label>Manager Email</Label>
-                        <Input
-                          value={newSite.siteManagerEmail}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerEmail: e.target.value }))}
-                          placeholder="email@example.com"
-                        />
+                        <Input value={newSite.siteManagerEmail} onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerEmail: e.target.value }))} placeholder="email@example.com" />
                       </div>
                       <div>
                         <Label>Site Opened By</Label>
-                        <Input
-                          value={newSite.siteOpenedBy}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteOpenedBy: e.target.value }))}
-                          placeholder="Name"
-                        />
+                        <Input value={newSite.siteOpenedBy} onChange={(e) => setNewSite(prev => ({ ...prev, siteOpenedBy: e.target.value }))} placeholder="Name" />
                       </div>
                     </div>
                     <div className="flex items-center gap-3 pt-2">
                       <Badge variant="secondary" className="text-sm font-mono">
                         Next: {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
                       </Badge>
-                      <Button
-                        type="button"
-                        onClick={handleAddClientSite}
-                        disabled={createClientSite.isPending || !newSite.siteName}
-                      >
+                      <Button type="button" onClick={handleAddClientSite} disabled={createClientSite.isPending || !newSite.siteName}>
                         <Plus className="h-4 w-4 mr-1" />
                         {createClientSite.isPending ? "Adding..." : "Add Site"}
                       </Button>
