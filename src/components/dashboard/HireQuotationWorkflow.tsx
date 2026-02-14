@@ -30,7 +30,7 @@ import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
 
-type StepKey = "client" | "equipment" | "quotation" | "hire-delivery" | "delivery" | "return";
+type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -142,6 +142,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileCheck2 },
+  { key: "site-master", title: "Site Master Plan", description: "Manage client sites", icon: MapPin },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: ClipboardList },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
@@ -613,6 +614,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       returnItems,
     }));
   }, [returnStorageKey, returnHistory, returnProcessed, returnSequence, returnItems]);
+
+  // Auto-fill site form from client details when entering site-master step
+  useEffect(() => {
+    if (activeStep === "site-master" && savedQuotationId && !clientSites?.length && !newSite.siteName) {
+      handleAutoFillSiteFromClient();
+    }
+  }, [activeStep, savedQuotationId, clientSites?.length]);
 
   const stepIndex = steps.findIndex((step) => step.key === activeStep);
 
@@ -1972,7 +1980,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Step Navigation */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
@@ -2245,163 +2253,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Site Master Plan */}
-            <div className="rounded-lg border-2 border-dashed border-primary/30 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-semibold text-primary flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Site Master Plan
-                </h4>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowSiteMasterPlan(!showSiteMasterPlan)}
-                  disabled={!savedQuotationId}
-                >
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {showSiteMasterPlan ? "Hide Sites" : "Manage Sites"}
-                </Button>
-              </div>
-              {!savedQuotationId && (
-                <p className="text-xs text-muted-foreground">Save the client details first, then you can add multiple sites for this client.</p>
-              )}
-              {savedQuotationId && !showSiteMasterPlan && (
-                <p className="text-xs text-muted-foreground">
-                  {clientSites?.length ? `${clientSites.length} site(s) registered.` : "No sites registered yet. Click 'Manage Sites' to add."}
-                </p>
-              )}
-              {showSiteMasterPlan && savedQuotationId && (
-                <div className="space-y-4">
-                  {/* Existing Sites */}
-                  {(clientSites?.length ?? 0) > 0 && (
-                    <div className="overflow-x-auto rounded-lg border border-border">
-                      <table className="w-full text-sm">
-                        <thead className="bg-muted/40">
-                          <tr>
-                            <th className="px-3 py-2 text-left font-medium">Site ID</th>
-                            <th className="px-3 py-2 text-left font-medium">Site Name</th>
-                            <th className="px-3 py-2 text-left font-medium">Location</th>
-                            <th className="px-3 py-2 text-left font-medium">Manager</th>
-                            <th className="px-3 py-2 text-left font-medium">Phone</th>
-                            <th className="px-3 py-2 text-center font-medium">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {clientSites?.map((site) => (
-                            <tr key={site.id} className="border-t border-border hover:bg-muted/30">
-                              <td className="px-3 py-2">
-                                <Badge variant="outline" className="font-mono text-xs">
-                                  {site.site_number}
-                                </Badge>
-                              </td>
-                              <td className="px-3 py-2 font-medium">{site.site_name}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{site.site_location || "—"}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{site.site_manager_name || "—"}</td>
-                              <td className="px-3 py-2 text-muted-foreground">{site.site_manager_phone || "—"}</td>
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-destructive hover:text-destructive"
-                                  onClick={() => deleteClientSite.mutate({ id: site.id, quotation_id: site.quotation_id })}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Add New Site Form */}
-                  <div className="rounded-lg bg-muted/20 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h5 className="text-sm font-medium">Add New Site</h5>
-                      <Button type="button" variant="ghost" size="sm" onClick={handleAutoFillSiteFromClient}>
-                        <UserRoundPen className="h-3 w-3 mr-1" />
-                        Auto-fill from Client
-                      </Button>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div>
-                        <Label className="text-xs">Site Name *</Label>
-                        <Input
-                          value={newSite.siteName}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteName: e.target.value }))}
-                          placeholder="Site / Project name"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Site Location</Label>
-                        <Input
-                          value={newSite.siteLocation}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteLocation: e.target.value }))}
-                          placeholder="City or area"
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label className="text-xs">Site Address</Label>
-                        <Input
-                          value={newSite.siteAddress}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteAddress: e.target.value }))}
-                          placeholder="Full address"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Site Manager Name</Label>
-                        <Input
-                          value={newSite.siteManagerName}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerName: e.target.value }))}
-                          placeholder="Manager name"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Manager Phone</Label>
-                        <Input
-                          value={newSite.siteManagerPhone}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerPhone: e.target.value }))}
-                          placeholder="+254 ..."
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Manager Email</Label>
-                        <Input
-                          value={newSite.siteManagerEmail}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerEmail: e.target.value }))}
-                          placeholder="email@example.com"
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Site Opened By</Label>
-                        <Input
-                          value={newSite.siteOpenedBy}
-                          onChange={(e) => setNewSite(prev => ({ ...prev, siteOpenedBy: e.target.value }))}
-                          placeholder="Name"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 pt-2">
-                      <Badge variant="secondary" className="text-xs font-mono">
-                        {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
-                      </Badge>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleAddClientSite}
-                        disabled={createClientSite.isPending || !newSite.siteName}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        {createClientSite.isPending ? "Adding..." : "Add Site"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Ordering */}
@@ -2904,14 +2755,194 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   Print Hire Quotation
                 </Button>
                 <Button type="button" onClick={handleHireQuotationSave}>
-                  Continue to Hire Delivery Note
+                  Continue to Site Master Plan
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 4: Hire Delivery Note */}
+        {/* Step 4: Site Master Plan */}
+        {activeStep === "site-master" && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-border bg-muted/30 p-4">
+              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Site Master Plan
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Manage multiple sites for this client. The first site is auto-filled from client details. 
+                Add additional sites (e.g., NK-0001-A, NK-0001-B) for clients with multiple locations.
+              </p>
+            </div>
+
+            {/* Auto-fill first site if none exist */}
+            {!savedQuotationId && (
+              <div className="rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 p-4 text-center">
+                <p className="text-sm text-muted-foreground">Please save the client details first (Step 1) before managing sites.</p>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => goToStep("client")}>
+                  Go to Client Details
+                </Button>
+              </div>
+            )}
+
+            {savedQuotationId && (
+              <div className="space-y-4">
+                {/* Existing Sites Table */}
+                {(clientSites?.length ?? 0) > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Registered Sites ({clientSites?.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40">
+                            <tr>
+                              <th className="px-4 py-3 text-left font-semibold">Site ID</th>
+                              <th className="px-4 py-3 text-left font-semibold">Site Name</th>
+                              <th className="px-4 py-3 text-left font-semibold">Location</th>
+                              <th className="px-4 py-3 text-left font-semibold">Address</th>
+                              <th className="px-4 py-3 text-left font-semibold">Manager</th>
+                              <th className="px-4 py-3 text-left font-semibold">Phone</th>
+                              <th className="px-4 py-3 text-left font-semibold">Email</th>
+                              <th className="px-4 py-3 text-center font-semibold">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientSites?.map((site) => (
+                              <tr key={site.id} className="border-t border-border hover:bg-muted/30">
+                                <td className="px-4 py-3">
+                                  <Badge variant="outline" className="font-mono text-xs">
+                                    {site.site_number}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3 font-medium">{site.site_name}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{site.site_location || "—"}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{site.site_address || "—"}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{site.site_manager_name || "—"}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{site.site_manager_phone || "—"}</td>
+                                <td className="px-4 py-3 text-muted-foreground">{site.site_manager_email || "—"}</td>
+                                <td className="px-4 py-3 text-center">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={() => deleteClientSite.mutate({ id: site.id, quotation_id: site.quotation_id })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Add New Site Form */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Add New Site</CardTitle>
+                      <Button type="button" variant="outline" size="sm" onClick={handleAutoFillSiteFromClient}>
+                        <UserRoundPen className="h-4 w-4 mr-1" />
+                        Auto-fill from Client Details
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Site Name *</Label>
+                        <Input
+                          value={newSite.siteName}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteName: e.target.value }))}
+                          placeholder="Site / Project name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Location</Label>
+                        <Input
+                          value={newSite.siteLocation}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteLocation: e.target.value }))}
+                          placeholder="City or area"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Site Address</Label>
+                        <Input
+                          value={newSite.siteAddress}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteAddress: e.target.value }))}
+                          placeholder="Full address"
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Manager Name</Label>
+                        <Input
+                          value={newSite.siteManagerName}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerName: e.target.value }))}
+                          placeholder="Manager name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Manager Phone</Label>
+                        <Input
+                          value={newSite.siteManagerPhone}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerPhone: e.target.value }))}
+                          placeholder="+254 ..."
+                        />
+                      </div>
+                      <div>
+                        <Label>Manager Email</Label>
+                        <Input
+                          value={newSite.siteManagerEmail}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerEmail: e.target.value }))}
+                          placeholder="email@example.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Opened By</Label>
+                        <Input
+                          value={newSite.siteOpenedBy}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteOpenedBy: e.target.value }))}
+                          placeholder="Name"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 pt-2">
+                      <Badge variant="secondary" className="text-sm font-mono">
+                        Next: {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
+                      </Badge>
+                      <Button
+                        type="button"
+                        onClick={handleAddClientSite}
+                        disabled={createClientSite.isPending || !newSite.siteName}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        {createClientSite.isPending ? "Adding..." : "Add Site"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button type="button" onClick={handleNext}>
+                Continue to Hire Delivery Note
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Hire Delivery Note */}
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
             {/* Header with Delivery Number Badge */}
