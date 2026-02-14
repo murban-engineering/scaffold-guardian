@@ -58,6 +58,71 @@ export type Database = {
           },
         ]
       }
+      client_sites: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          quotation_id: string
+          site_address: string | null
+          site_location: string | null
+          site_manager_email: string | null
+          site_manager_name: string | null
+          site_manager_phone: string | null
+          site_name: string
+          site_number: string
+          site_open_date: string | null
+          site_opened_by: string | null
+          site_suffix: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          quotation_id: string
+          site_address?: string | null
+          site_location?: string | null
+          site_manager_email?: string | null
+          site_manager_name?: string | null
+          site_manager_phone?: string | null
+          site_name: string
+          site_number: string
+          site_open_date?: string | null
+          site_opened_by?: string | null
+          site_suffix?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          quotation_id?: string
+          site_address?: string | null
+          site_location?: string | null
+          site_manager_email?: string | null
+          site_manager_name?: string | null
+          site_manager_phone?: string | null
+          site_name?: string
+          site_number?: string
+          site_open_date?: string | null
+          site_opened_by?: string | null
+          site_suffix?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_sites_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "hire_quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hire_quotations: {
         Row: {
           account_number: string | null
