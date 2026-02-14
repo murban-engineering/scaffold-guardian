@@ -68,6 +68,7 @@ export interface HireQuotationReportData {
   officeEmail: string;
   createdBy: string;
   discountRate: number;
+  comments?: string;
   items: Array<{
     partNumber: string | null;
     description: string | null;
@@ -774,8 +775,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
       <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
         <strong>COMMENTS</strong><br />
-        Quotes exclude transport to and from site.<br />
-        Four (4) weeks hire deposit required upfront.
+        ${(data.comments || "Quotes exclude transport to and from site.\nFour (4) weeks hire deposit required upfront.").split("\n").join("<br />")}
       </div>
 
       <div class="terms">
