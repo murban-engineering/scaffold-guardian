@@ -244,6 +244,9 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]); // Track all deliveries
   const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false);
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
+  const [quotationComments, setQuotationComments] = useState(
+    "Quotes exclude transport to and from site.\nFour (4) weeks hire deposit required upfront."
+  );
   const [returnSequence, setReturnSequence] = useState(1);
   const [returnHistory, setReturnHistory] = useState<ReturnRecord[]>([]);
   const [returnNote, setReturnNote] = useState({
@@ -1512,6 +1515,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
       discountRate: parseNumber(hireQuotationDiscount),
+      comments: quotationComments,
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2743,6 +2747,22 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                   This discount will be applied to the printed hire quotation total.
                 </p>
               </div>
+            </div>
+
+            {/* Editable Comments Section */}
+            <div className="rounded-lg border border-border p-4 space-y-2">
+              <Label htmlFor="quotationComments" className="text-sm font-semibold">Comments</Label>
+              <Textarea
+                id="quotationComments"
+                value={quotationComments}
+                onChange={(e) => setQuotationComments(e.target.value)}
+                rows={4}
+                placeholder="Enter quotation comments..."
+                className="resize-y"
+              />
+              <p className="text-xs text-muted-foreground">
+                These comments will appear on the printed Hire Quotation report.
+              </p>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
