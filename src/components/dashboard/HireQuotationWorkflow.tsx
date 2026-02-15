@@ -299,7 +299,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false);
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [quotationComments, setQuotationComments] = useState(
-    "Quotes exclude transport to and from site.\nFour (4) weeks hire deposit required upfront."
+    "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments."
   );
   const [returnSequence, setReturnSequence] = useState(1);
   const [returnHistory, setReturnHistory] = useState<ReturnRecord[]>([]);
