@@ -164,7 +164,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <p>${COMPANY_ADDRESS}</p>
         <p>${COMPANY_LOCATION}</p>
         <p><strong>PIN: P052471711M</strong></p>
-        <p><strong>HIRE INVOICE</strong></p>
+        <p><strong>DDS (Dirty, Damaged, Scrap) INVOICE</strong></p>
       </div>
     </div>
 
@@ -226,6 +226,95 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     </div>
 
     <p class="ft">Invoice generated on ${escapeHtml(billingDateStr)} by ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
+  </body></html>`;
+
+  win.document.write(html);
+  win.document.close();
+};
+
+const openScrapReport = (invoice: ClientInvoice) => {
+  const scrapItems = invoice.policyBreakdown.filter(l => l.condition === "scrap");
+  if (!scrapItems.length) {
+    alert("No scrap items found for this client.");
+    return;
+  }
+  const win = window.open("", "_blank");
+  if (!win) { alert("Please allow popups to print reports"); return; }
+
+  const rows = scrapItems.map(l => `
+    <tr>
+      <td>${escapeHtml(l.partNumber)}</td>
+      <td>${escapeHtml(l.item)}</td>
+      <td class="r">${l.quantity}</td>
+      <td class="r">${currency.format(l.basePrice)}</td>
+      <td class="r">${currency.format(l.lineTotal)}</td>
+    </tr>`).join("");
+
+  const totalScrap = scrapItems.reduce((s, l) => s + l.lineTotal, 0);
+  const vatAmount = totalScrap * 0.16;
+  const totalWithVat = totalScrap + vatAmount;
+
+  const html = `<!doctype html><html><head>
+    <title>Scrap Report - ${escapeHtml(invoice.client)}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
+      h1{margin:0 0 4px;font-size:22px}
+      h2{margin:20px 0 6px;font-size:15px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      .hdr{display:flex;align-items:flex-start;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:14px;gap:14px}
+      .logo{width:100px;height:auto}
+      .hdr-txt p{margin:2px 0;color:#555}
+      .row{display:flex;margin-bottom:3px}.lbl{width:130px;font-weight:700;color:#555}.val{flex:1}
+      .info{border:1px solid #ddd;border-radius:6px;padding:10px;margin-bottom:14px}
+      .info h3{margin:0 0 6px;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-top:8px}
+      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+      th{background:#f5f5f5;font-size:11px}
+      .r{text-align:right}
+      .sum{max-width:360px;margin:14px 0 0 auto}
+      .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
+      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
+      .ft{margin-top:10px;font-size:11px;color:#555}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      @media print{.print-bar{display:none}}
+    </style></head><body>
+    <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Scrap Report</button></div>
+    <div class="hdr">
+      <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+      <div class="hdr-txt">
+        <h1>${COMPANY_NAME}</h1>
+        <p>Email: ${COMPANY_EMAIL}</p>
+        <p>${COMPANY_ADDRESS}</p>
+        <p>${COMPANY_LOCATION}</p>
+        <p><strong>PIN: P052471711M</strong></p>
+        <p><strong>SCRAP ITEMS REPORT</strong></p>
+      </div>
+    </div>
+
+    <div class="info">
+      <h3>Client Details</h3>
+      <div class="row"><span class="lbl">Company:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
+      <div class="row"><span class="lbl">Site:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
+      <div class="row"><span class="lbl">Quotation No:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
+      <div class="row"><span class="lbl">Created By:</span><span class="val">${escapeHtml(invoice.createdBy)}</span></div>
+      <div class="row"><span class="lbl">Printed:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
+    </div>
+
+    <h2>Scrap Items</h2>
+    <table>
+      <thead><tr>
+        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Unit Price (KES)</th><th class="r">Amount (KES)</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+    <div class="sum">
+      <div class="sum-row"><span>Scrap Total</span><strong>${currency.format(totalScrap)}</strong></div>
+      <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+      <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+    </div>
+
+    <p class="ft">Scrap report generated by ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
   </body></html>`;
 
   win.document.write(html);
@@ -528,7 +617,7 @@ const Accounting = () => {
                         <TableHead className="text-right">Hire (KES)</TableHead>
                         <TableHead className="text-right">Policy (KES)</TableHead>
                         <TableHead className="text-right">Total (KES)</TableHead>
-                        <TableHead className="text-center">Invoice</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -557,10 +646,20 @@ const Accounting = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => openInvoicePrint(inv, billingDate)}
-                                title="Print invoice to billing date"
+                                title="Print DDS invoice to billing date"
                               >
                                 <Printer className="h-3.5 w-3.5 mr-1" />
-                                Print
+                                DDS Invoice
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openScrapReport(inv)}
+                                title="Print scrap items report"
+                                disabled={inv.policyBreakdown.filter(l => l.condition === "scrap").length === 0}
+                              >
+                                <FileText className="h-3.5 w-3.5 mr-1" />
+                                Scrap
                               </Button>
                               <Select onValueChange={(monthIdx) => {
                                 const months = generateMonthlyInvoices(inv);
