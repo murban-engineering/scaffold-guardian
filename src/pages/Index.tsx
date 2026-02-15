@@ -31,6 +31,7 @@ const Index = () => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
     return stateItem ?? "dashboard";
   });
+  const [globalSearch, setGlobalSearch] = useState("");
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
@@ -127,12 +128,12 @@ const Index = () => {
       />
 
       <main className="ml-0 md:ml-64">
-        <Header title={headerTitle} subtitle={headerSubtitle} />
+        <Header title={headerTitle} subtitle={headerSubtitle} searchValue={globalSearch} onSearchChange={(v) => { setGlobalSearch(v); if (v.trim() && activeItem === "dashboard") setActiveItem("inventory"); }} />
 
         {activeItem === "inventory" ? (
           <div className="mx-auto w-full max-w-7xl px-6 py-8">
             <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
-              <InventoryOverview />
+              <InventoryOverview externalSearch={globalSearch} />
             </div>
           </div>
         ) : activeItem === "workforce" ? (
