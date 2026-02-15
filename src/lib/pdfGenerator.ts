@@ -287,7 +287,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
         <strong>COMMENTS</strong><br />
         Quotes exclude transport to and from site.<br />
-        Four (4) weeks hire deposit required upfront.
+        One month deposit is required upfront.<br />
+        We do not accept cash payments.
       </div>
 
       <div class="delivery-terms">
@@ -816,14 +817,15 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
       <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
         <strong>COMMENTS</strong><br />
-        ${(data.comments || "Quotes exclude transport to and from site.\nFour (4) weeks hire deposit required upfront.").split("\n").join("<br />")}
+        ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br />")}
       </div>
 
       <div class="terms">
         <strong>TERMS:</strong><br />
         Order confirmation is through deposit payment before collection.<br />
-        Four (4) weeks deposit is required upfront.<br />
+        One month deposit is required upfront.<br />
         Items not currently available in our yard will not be billed.<br />
+        We do not accept cash payments.<br />
         <strong>Note:</strong><br />
         All transactions are subject to our Standard Terms of Trade.<br />
         By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
@@ -996,8 +998,9 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
         <strong>TERMS:</strong><br />
         Quote does not include transport to and from site.<br />
         Order confirmation is through deposit payment before collection.<br />
-        Four (4) weeks deposit is required upfront.<br />
-        Items not currently available in our yard will not be billed<br />
+        One month deposit is required upfront.<br />
+        Items not currently available in our yard will not be billed.<br />
+        We do not accept cash payments.<br />
         <strong>Note:</strong><br />
         All transactions are subject to our Standard Terms of Trade.<br />
         By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
