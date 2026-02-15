@@ -9,9 +9,11 @@ import { useNavigate } from "react-router-dom";
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
-const Header = ({ title, subtitle }: HeaderProps) => {
+const Header = ({ title, subtitle, searchValue, onSearchChange }: HeaderProps) => {
   const { profile, signOut, roles } = useAuth();
   const { data: unreadCount = 0 } = useUnreadAlertCount();
   const navigate = useNavigate();
@@ -43,6 +45,8 @@ const Header = ({ title, subtitle }: HeaderProps) => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search..."
+              value={searchValue ?? ""}
+              onChange={(e) => onSearchChange?.(e.target.value)}
               className="h-10 rounded-xl border-border/60 bg-card pl-9 shadow-sm transition focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>

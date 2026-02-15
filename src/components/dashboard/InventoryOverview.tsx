@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Package, ArrowRight, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,14 @@ const getGroupKey = (description: string | null): string => {
   return "ZZZ_Other";
 };
 
-const InventoryOverview = () => {
+const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
   const [search, setSearch] = useState("");
+
+  // Sync with external search from header
+  useEffect(() => {
+    if (externalSearch !== undefined) setSearch(externalSearch);
+  }, [externalSearch]);
 
   const filteredAndGrouped = useMemo(() => {
     if (!scaffolds) return [];

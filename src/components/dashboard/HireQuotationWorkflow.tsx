@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -2072,22 +2072,53 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
     (s.quantity ?? 0) > 0 && s.status === "available"
   ) || [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
+  /** Derive a grouping key from the description so similar items cluster together. */
+  const getEquipmentGroupKey = (description: string | null): string => {
+    if (!description) return "ZZZ_Other";
+    const d = description.toLowerCase();
+    if (d.includes("standard")) return "A_Standards";
+    if (d.includes("reinf") && d.includes("ledger")) return "C_Reinforced Ledgers";
+    if (d.includes("ledger")) return "B_Ledgers";
+    if (d.includes("toe board")) return "E_Toe Boards";
+    if (d.includes("hook-on board") || d.includes("board")) return "D_Hook-on Boards";
+    if (d.includes("trapdoor")) return "F_Trapdoors";
+    if (d.includes("staircase")) return "G_Staircases";
+    if (d.includes("ladder")) return "H_Ladders";
+    if (d.includes("coupler") || d.includes("connector") || d.includes("sleeve")) return "I_Couplers & Connectors";
+    if (d.includes("base") || d.includes("jack")) return "J_Base Plates & Jacks";
+    if (d.includes("castor")) return "K_Castors";
+    if (d.includes("prop")) return "L_Props";
+    if (d.includes("fork head")) return "M_Fork Heads";
+    if (d.includes("scaffold tube") || d.includes("tube")) return "N_Scaffold Tubes";
+    return "ZZZ_Other";
+  };
+
   const filteredScaffolds = (() => {
-    if (!normalizedItemCodeSearch) return availableScaffolds;
-    const matches = availableScaffolds.filter((scaffold) => {
-      const partNumber = scaffold.part_number?.toLowerCase() ?? "";
-      const description = scaffold.description?.toLowerCase() ?? "";
-      const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
-      return (
-        partNumber.includes(normalizedItemCodeSearch) ||
-        description.includes(normalizedItemCodeSearch) ||
-        scaffoldType.includes(normalizedItemCodeSearch)
-      );
+    let list = availableScaffolds;
+    if (normalizedItemCodeSearch) {
+      const matches = availableScaffolds.filter((scaffold) => {
+        const partNumber = scaffold.part_number?.toLowerCase() ?? "";
+        const description = scaffold.description?.toLowerCase() ?? "";
+        const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
+        return (
+          partNumber.includes(normalizedItemCodeSearch) ||
+          description.includes(normalizedItemCodeSearch) ||
+          scaffoldType.includes(normalizedItemCodeSearch)
+        );
+      });
+      if (matches.length) {
+        const matchIds = new Set(matches.map(match => match.id));
+        const remaining = availableScaffolds.filter(scaffold => !matchIds.has(scaffold.id));
+        list = [...matches, ...remaining];
+      }
+    }
+    // Sort by group then description
+    return [...list].sort((a, b) => {
+      const ga = getEquipmentGroupKey(a.description ?? a.scaffold_type);
+      const gb = getEquipmentGroupKey(b.description ?? b.scaffold_type);
+      if (ga !== gb) return ga.localeCompare(gb);
+      return (a.description ?? "").localeCompare(b.description ?? "");
     });
-    if (!matches.length) return availableScaffolds;
-    const matchIds = new Set(matches.map(match => match.id));
-    const remaining = availableScaffolds.filter(scaffold => !matchIds.has(scaffold.id));
-    return [...matches, ...remaining];
   })();
 
   const handleItemCodeSearchChange = (value: string) => {
@@ -2670,21 +2701,35 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
                     <SelectTrigger>
                       <SelectValue placeholder={scaffoldsLoading ? "Loading inventory..." : "Choose from inventory"} />
                     </SelectTrigger>
-                    <SelectContent className="max-h-64 overflow-y-auto">
+                    <SelectContent className="max-h-64 overflow-y-auto bg-background z-50">
                       {filteredScaffolds.length > 0 ? (
-                        filteredScaffolds.map(scaffold => {
-                          const alreadyAdded = equipmentItems.reduce((total, item) => {
-                            if (item.scaffoldId !== scaffold.id) return total;
-                            return total + parseNumber(item.qtyDelivered);
-                          }, 0);
-                          const remainingQty = Math.max((scaffold.quantity ?? 0) - alreadyAdded, 0);
-                          return (
-                            <SelectItem key={scaffold.id} value={scaffold.id}>
-                              {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                              (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
-                            </SelectItem>
-                          );
-                        })
+                        (() => {
+                          let lastGroup = "";
+                          return filteredScaffolds.map(scaffold => {
+                            const group = getEquipmentGroupKey(scaffold.description ?? scaffold.scaffold_type);
+                            const groupLabel = group.replace(/^[A-Z]+_/, "");
+                            const showHeader = group !== lastGroup;
+                            lastGroup = group;
+                            const alreadyAdded = equipmentItems.reduce((total, item) => {
+                              if (item.scaffoldId !== scaffold.id) return total;
+                              return total + parseNumber(item.qtyDelivered);
+                            }, 0);
+                            const remainingQty = Math.max((scaffold.quantity ?? 0) - alreadyAdded, 0);
+                            return (
+                              <React.Fragment key={scaffold.id}>
+                                {showHeader && (
+                                  <div className="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary bg-muted/50 border-b border-border sticky top-0">
+                                    {groupLabel}
+                                  </div>
+                                )}
+                                <SelectItem value={scaffold.id}>
+                                  {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
+                                  (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                                </SelectItem>
+                              </React.Fragment>
+                            );
+                          });
+                        })()
                       ) : (
                         <div className="px-3 py-2 text-xs text-muted-foreground">
                           No inventory items match that code.
