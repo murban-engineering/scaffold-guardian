@@ -30,7 +30,7 @@ import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
 
-type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
+export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
 type QuotationHeader = {
   quotationNo: string;
@@ -142,7 +142,6 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileCheck2 },
-  { key: "site-master", title: "Site Master Plan", description: "Manage client sites", icon: MapPin },
   { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
   { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: ClipboardList },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
@@ -203,9 +202,10 @@ export type ProcessedClient = {
 type HireQuotationWorkflowProps = {
   onClientProcessed?: (client: ProcessedClient) => void;
   initialQuotation?: HireQuotation | null;
+  initialStep?: StepKey;
 };
 
-const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuotationWorkflowProps) => {
+const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialStep }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const deductInventory = useDeductScaffoldInventory();
@@ -219,7 +219,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation }: HireQuot
   const createMaintenanceLogs = useCreateMaintenanceLogs();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
-  const [activeStep, setActiveStep] = useState<StepKey>("client");
+  const [activeStep, setActiveStep] = useState<StepKey>(initialStep || "client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
 
   // Site Master Plan state
