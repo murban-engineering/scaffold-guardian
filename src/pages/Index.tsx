@@ -97,7 +97,6 @@ const Index = () => {
   };
 
   const handleContinueQuotation = (quotation: HireQuotation) => {
-  const handleContinueQuotation = (quotation: HireQuotation) => {
     setSelectedQuotation(quotation);
     setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
