@@ -142,8 +142,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileCheck2 },
-  { key: "hire-delivery", title: "Hire Delivery Note", description: "Confirm quantities", icon: Truck },
-  { key: "delivery", title: "Yard Verification Report", description: "Generate report", icon: ClipboardList },
+  { key: "hire-delivery", title: "Hire Loading", description: "Confirm quantities", icon: Truck },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
 
@@ -1434,7 +1433,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
       return next;
     });
 
-    toast.success("Hire delivery note opened for printing");
+    toast.success("Hire loading note opened for printing");
   };
 
   const handlePrintHireLoadingNote = (noteType: "current" | "balance") => {
@@ -3424,20 +3423,20 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
                 Back
               </Button>
               <Button type="button" onClick={handleNext}>
-                Continue to Hire Delivery Note
+                Continue to Hire Loading
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 5: Hire Delivery Note */}
+        {/* Step 4: Hire Loading */}
         {activeStep === "hire-delivery" && (
           <div className="space-y-6">
             {/* Header with Delivery Number Badge */}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-semibold">Hire Delivery Note</h3>
+                  <h3 className="text-xl font-semibold">Hire Loading</h3>
                   <Badge variant="outline" className="gap-1 text-sm">
                     <Truck className="h-3 w-3" />
                     {deliveryNote.deliveryNoteNo}
@@ -3709,13 +3708,13 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
                 Back
               </Button>
               <Button type="button" onClick={handleNext} disabled={!inventoryDeducted}>
-                {inventoryDeducted ? "Continue to Yard Verification Report" : "Dispatch delivery first"}
+                {inventoryDeducted ? "Continue to Hire Return" : "Dispatch delivery first"}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 5: Yard Verification Report */}
+        {/* Yard Verification Report (accessible from sidebar) */}
         {activeStep === "delivery" && (
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -3744,19 +3743,11 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
               </p>
             </div>
 
-            <div className="flex items-center justify-between border-t border-border pt-4">
-              <Button type="button" variant="outline" onClick={handleBack}>
-                Back
+            <div className="flex items-center justify-end border-t border-border pt-4">
+              <Button type="button" onClick={handlePrintYardVerificationNote}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Yard Verification Report
               </Button>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={handlePrintYardVerificationNote}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Yard Verification Report
-                </Button>
-                <Button type="button" onClick={handleDeliverySave}>
-                  Continue
-                </Button>
-              </div>
             </div>
           </div>
         )}
