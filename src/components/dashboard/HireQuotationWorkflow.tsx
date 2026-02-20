@@ -209,9 +209,16 @@ type HireQuotationWorkflowProps = {
   initialQuotation?: HireQuotation | null;
   initialStep?: StepKey;
   initialClientMode?: ClientEntryMode;
+  initialExistingClient?: HireQuotation | null;
 };
 
-const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialStep, initialClientMode = "new" }: HireQuotationWorkflowProps) => {
+const HireQuotationWorkflow = ({
+  onClientProcessed,
+  initialQuotation,
+  initialStep,
+  initialClientMode = "new",
+  initialExistingClient,
+}: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const deductInventory = useDeductScaffoldInventory();
@@ -987,6 +994,12 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
     setClientLookupQuery(derivedClientId || quotation.company_name || "");
     toast.success("Client credentials loaded. Enter the new site details to continue.");
   };
+
+  useEffect(() => {
+    if (!initialExistingClient) return;
+    setClientEntryMode("existing");
+    handleSelectPreviousClient(initialExistingClient);
+  }, [initialExistingClient]);
 
   const validateHeader = () => {
     if (!header.tradingName && !header.clientCompanyName) {

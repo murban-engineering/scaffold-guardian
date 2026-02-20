@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PackageSearch, MapPinned, ClipboardCheck, ShieldAlert, UsersRound, Wrench, FileText, FolderClock } from "lucide-react";
+import { PackageSearch, MapPinned, ClipboardCheck, ShieldAlert, UsersRound, Wrench, FileText, FolderClock, Building2 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/dashboard/StatCard";
@@ -24,6 +24,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,6 +46,7 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
+  const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
   const [workflowInitialClientMode, setWorkflowInitialClientMode] = useState<"new" | "existing">("new");
   const { profile, hasRole, loading: authLoading } = useAuth();
@@ -97,21 +101,38 @@ const Index = () => {
     return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
   };
 
+  const existingClientOptions = hireQuotations
+    .filter((quotation) => (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
+    .reduce<HireQuotation[]>((acc, quotation) => {
+      const companyKey = (quotation.company_name || "").trim().toLowerCase();
+      const clientId = quotation.quotation_number.replace("HSQ-", "CL-").toLowerCase();
+      const key = `${companyKey}|${clientId}`;
+      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${entry.quotation_number.replace("HSQ-", "CL-").toLowerCase()}` === key)) {
+        return acc;
+      }
+      acc.push(quotation);
+      return acc;
+    }, [])
+    .slice(0, 10);
+
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
+    setSelectedExistingClient(null);
     setWorkflowInitialStep(undefined);
     setWorkflowInitialClientMode("new");
     setShowQuotationDialog(true);
   };
 
-  const handleStartExistingClientOrder = () => {
+  const handleStartExistingClientOrder = (quotation?: HireQuotation) => {
     setSelectedQuotation(null);
+    setSelectedExistingClient(quotation ?? null);
     setWorkflowInitialStep(undefined);
     setWorkflowInitialClientMode("existing");
     setShowQuotationDialog(true);
   };
 
   const handleContinueQuotation = (quotation: HireQuotation) => {
+    setSelectedExistingClient(null);
     setSelectedQuotation(quotation);
     setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
@@ -229,19 +250,46 @@ const Index = () => {
                           Hire Quotation Actions
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuContent align="end" className="w-72">
                         <DropdownMenuItem onClick={handleStartNewQuotation} className="cursor-pointer">
                           <FileText className="mr-2 h-4 w-4" />
                           New Hire Quotation
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleStartExistingClientOrder} className="cursor-pointer">
-                          <FileText className="mr-2 h-4 w-4" />
-                          Existing Client New Site
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setShowContinueDialog(true)} className="cursor-pointer">
                           <FolderClock className="mr-2 h-4 w-4" />
                           Continue Quotation
                         </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer">
+                            <Building2 className="mr-2 h-4 w-4" />
+                            Existing Client New Quotation
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                            {existingClientOptions.length ? (
+                              existingClientOptions.map((quotation) => {
+                                const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+                                return (
+                                  <DropdownMenuItem
+                                    key={quotation.id}
+                                    className="cursor-pointer"
+                                    onClick={() => handleStartExistingClientOrder(quotation)}
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-medium">
+                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
+                                      </p>
+                                      <p className="truncate text-xs text-muted-foreground">
+                                        {clientId} • {quotation.site_manager_name || "No contact"}
+                                      </p>
+                                    </div>
+                                  </DropdownMenuItem>
+                                );
+                              })
+                            ) : (
+                              <DropdownMenuItem disabled>No existing clients available</DropdownMenuItem>
+                            )}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -343,6 +391,7 @@ const Index = () => {
             setShowQuotationDialog(open);
             if (!open) {
               setSelectedQuotation(null);
+              setSelectedExistingClient(null);
               setWorkflowInitialStep(undefined);
               setWorkflowInitialClientMode("new");
             }
@@ -356,6 +405,7 @@ const Index = () => {
               initialQuotation={selectedQuotation}
               initialStep={workflowInitialStep}
               initialClientMode={workflowInitialClientMode}
+              initialExistingClient={selectedExistingClient}
               onClientProcessed={(client) => {
                 setProcessedClient(client);
                 setShowQuotationDialog(false);
