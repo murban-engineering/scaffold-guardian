@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
@@ -14,7 +14,7 @@ const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
-  const [selectedClient, setSelectedClient] = useState<string>("all-clients");
+  const [selectedClient, setSelectedClient] = useState<string>("");
 
   const activeQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
@@ -48,29 +48,39 @@ const Sites = () => {
         (quotation.line_items ?? [])
           .filter((item) => (item.delivered_quantity ?? 0) > 0)
           .map((item) => ({
-            itemLabel: item.description || item.part_number || "Unknown item",
-            itemCode: item.part_number || "—",
+            itemDescription: item.description || item.part_number || "Unknown item",
             quantity: item.delivered_quantity,
             client: quotation.company_name || quotation.site_manager_name || "Unknown client",
-            site: quotation.site_name || "No site name",
-            quotationId: quotation.quotation_number || quotation.id,
-            status: quotation.status || "Unknown",
           }))
       )
-      .sort((a, b) => {
-        const itemCompare = a.itemLabel.localeCompare(b.itemLabel);
-        if (itemCompare !== 0) return itemCompare;
-        return a.client.localeCompare(b.client);
-      });
+      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
   }, [removalReportQuotations]);
 
-  const filteredRemovalReportRows = useMemo(() => {
-    if (selectedClient === "all-clients") {
-      return removalReportRows;
+  useEffect(() => {
+    if (!clientOptions.length) {
+      setSelectedClient("");
+      return;
     }
 
+    if (!selectedClient || !clientOptions.includes(selectedClient)) {
+      setSelectedClient(clientOptions[0]);
+    }
+  }, [clientOptions, selectedClient]);
+
+  const filteredRemovalReportRows = useMemo(() => {
     return removalReportRows.filter((row) => row.client === selectedClient);
   }, [removalReportRows, selectedClient]);
+
+  const summarizedRemovalRows = useMemo(() => {
+    const groupedRows = filteredRemovalReportRows.reduce<Record<string, number>>((acc, row) => {
+      acc[row.itemDescription] = (acc[row.itemDescription] ?? 0) + row.quantity;
+      return acc;
+    }, {});
+
+    return Object.entries(groupedRows)
+      .map(([itemDescription, quantity]) => ({ itemDescription, quantity }))
+      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
+  }, [filteredRemovalReportRows]);
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
@@ -116,22 +126,22 @@ const Sites = () => {
   };
 
   const handlePrintRemovalReport = () => {
-    if (!filteredRemovalReportRows.length) {
+    if (!selectedClient) {
+      window.alert("Select a client to print the removal report.");
+      return;
+    }
+
+    if (!summarizedRemovalRows.length) {
       window.alert("No inventory removal records available to print yet.");
       return;
     }
 
-    const tableRows = filteredRemovalReportRows
+    const tableRows = summarizedRemovalRows
       .map(
         (row) => `
           <tr>
-            <td>${row.itemLabel}</td>
-            <td>${row.itemCode}</td>
+            <td>${row.itemDescription}</td>
             <td>${row.quantity}</td>
-            <td>${row.client}</td>
-            <td>${row.site}</td>
-            <td>${row.quotationId}</td>
-            <td>${row.status}</td>
           </tr>
         `
       )
@@ -179,17 +189,12 @@ const Sites = () => {
             <button type="button" class="print-button" onclick="window.print()">Print report</button>
           </div>
           <h1>Inventory Removal Report</h1>
-          <p>Dispatched and completed client records, grouped by hire quotation.</p>
+          <p>Client: <strong>${selectedClient}</strong></p>
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Item Code</th>
-                <th>Qty</th>
-                <th>Client</th>
-                <th>Site</th>
-                <th>Hire Quotation ID</th>
-                <th>Status</th>
+                <th>Item Description</th>
+                <th>Quantity Removed</th>
               </tr>
             </thead>
             <tbody>
@@ -245,7 +250,6 @@ const Sites = () => {
                           <SelectValue placeholder="Choose a client" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all-clients">All eligible clients</SelectItem>
                           {clientOptions.map((client) => (
                             <SelectItem key={client} value={client}>
                               {client}
@@ -258,38 +262,21 @@ const Sites = () => {
                       <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Item</TableHead>
-                          <TableHead>Item Code</TableHead>
-                          <TableHead>Qty</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Site</TableHead>
-                          <TableHead>Hire Quotation ID</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>Item Description</TableHead>
+                          <TableHead>Quantity Removed</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredRemovalReportRows.map((row, index) => (
-                          <TableRow key={`${row.quotationId}-${row.itemCode}-${index}`}>
-                            <TableCell>
-                              <div className="font-medium">{row.itemLabel}</div>
-                              <div className="text-xs text-muted-foreground">{row.itemCode}</div>
-                            </TableCell>
-                            <TableCell>{row.itemCode}</TableCell>
+                        {summarizedRemovalRows.map((row) => (
+                          <TableRow key={`${selectedClient}-${row.itemDescription}`}>
+                            <TableCell className="font-medium">{row.itemDescription}</TableCell>
                             <TableCell>{row.quantity}</TableCell>
-                            <TableCell>{row.client}</TableCell>
-                            <TableCell>{row.site}</TableCell>
-                            <TableCell className="font-mono text-xs">{row.quotationId}</TableCell>
-                            <TableCell>
-                              <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold uppercase text-primary">
-                                {row.status}
-                              </span>
-                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                       </Table>
                     </div>
-                    {!filteredRemovalReportRows.length ? (
+                    {!summarizedRemovalRows.length ? (
                       <p className="text-sm text-muted-foreground">
                         No report rows found for the selected client.
                       </p>
