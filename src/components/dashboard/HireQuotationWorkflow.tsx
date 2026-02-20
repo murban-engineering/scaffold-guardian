@@ -2545,7 +2545,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
               </div>
             </div>
 
-            {clientEntryMode !== "existing" && (
+            {clientEntryMode === "new" && (
               <div className="rounded-lg border border-border p-4">
                 <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
                 <div className="grid gap-4 md:grid-cols-2">

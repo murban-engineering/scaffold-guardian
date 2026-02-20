@@ -213,32 +213,30 @@ const Index = () => {
                         {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex gap-2">
                       <Button
-                        size="lg"
+                        size="sm"
                         onClick={handleStartNewQuotation}
-                        className="gap-2 rounded-xl bg-white px-6 text-[hsl(172_50%_26%)] shadow-md transition-all hover:-translate-y-0.5 hover:bg-white/90"
+                        className="gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-[hsl(172,50%,26%)] shadow transition-all hover:-translate-y-0.5 hover:bg-white/90"
                       >
-                        <FileText className="h-5 w-5" />
-                        New Hire Quotation
+                        <FileText className="h-3.5 w-3.5" />
+                        New
                       </Button>
                       <Button
-                        size="lg"
-                        variant="outline"
+                        size="sm"
                         onClick={handleStartExistingClientOrder}
-                        className="gap-2 rounded-xl border-white/30 bg-white/10 px-6 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
+                        className="gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
                       >
-                        <FileText className="h-5 w-5" />
-                        Existing Client New Site
+                        <FileText className="h-3.5 w-3.5" />
+                        Existing
                       </Button>
                       <Button
-                        size="lg"
-                        variant="outline"
+                        size="sm"
                         onClick={() => setShowContinueDialog(true)}
-                        className="gap-2 rounded-xl border-white/30 bg-white/10 px-6 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
+                        className="gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
                       >
-                        <FolderClock className="h-5 w-5" />
-                        Continue Quotation
+                        <FolderClock className="h-3.5 w-3.5" />
+                        Continue
                       </Button>
                     </div>
                   </div>
