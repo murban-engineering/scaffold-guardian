@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { MapPin, Search } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import HireQuotationWorkflow from "@/components/dashboard/HireQuotationWorkflow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 
@@ -14,7 +14,7 @@ const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [selectedClient, setSelectedClient] = useState<string>("all-clients");
 
   const activeQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
@@ -23,19 +23,34 @@ const Sites = () => {
     });
   }, [hireQuotations]);
 
+  const removalReportQuotations = useMemo(() => {
+    return hireQuotations.filter((quotation) => {
+      const status = quotation.status?.toLowerCase?.() ?? "";
+      const isEligibleStatus = status === "dispatched" || status === "completed";
+      const hasDeductedEquipment = (quotation.line_items ?? []).some((item) => (item.delivered_quantity ?? 0) > 0);
+      return isEligibleStatus && hasDeductedEquipment;
+    });
+  }, [hireQuotations]);
+
+  const clientOptions = useMemo(() => {
+    const uniqueClients = new Set(
+      removalReportQuotations.map(
+        (quotation) => quotation.company_name || quotation.site_manager_name || "Unknown client"
+      )
+    );
+
+    return Array.from(uniqueClients).sort((a, b) => a.localeCompare(b));
+  }, [removalReportQuotations]);
+
   const removalReportRows = useMemo(() => {
-    return hireQuotations
-      .filter((quotation) => {
-        const status = quotation.status?.toLowerCase?.() ?? "";
-        return status === "dispatched" || status === "returned";
-      })
+    return removalReportQuotations
       .flatMap((quotation) =>
         (quotation.line_items ?? [])
-          .filter((item) => item.quantity > 0)
+          .filter((item) => (item.delivered_quantity ?? 0) > 0)
           .map((item) => ({
             itemLabel: item.description || item.part_number || "Unknown item",
             itemCode: item.part_number || "—",
-            quantity: item.quantity,
+            quantity: item.delivered_quantity,
             client: quotation.company_name || quotation.site_manager_name || "Unknown client",
             site: quotation.site_name || "No site name",
             quotationId: quotation.quotation_number || quotation.id,
@@ -47,20 +62,15 @@ const Sites = () => {
         if (itemCompare !== 0) return itemCompare;
         return a.client.localeCompare(b.client);
       });
-  }, [hireQuotations]);
+  }, [removalReportQuotations]);
 
   const filteredRemovalReportRows = useMemo(() => {
-    const normalizedSearchTerm = clientSearchTerm.trim().toLowerCase();
-    if (!normalizedSearchTerm) {
+    if (selectedClient === "all-clients") {
       return removalReportRows;
     }
 
-    return removalReportRows.filter((row) => {
-      const matchesClient = row.client.toLowerCase().includes(normalizedSearchTerm);
-      const matchesId = row.quotationId.toLowerCase().includes(normalizedSearchTerm);
-      return matchesClient || matchesId;
-    });
-  }, [clientSearchTerm, removalReportRows]);
+    return removalReportRows.filter((row) => row.client === selectedClient);
+  }, [removalReportRows, selectedClient]);
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
@@ -169,7 +179,7 @@ const Sites = () => {
             <button type="button" class="print-button" onclick="window.print()">Print report</button>
           </div>
           <h1>Inventory Removal Report</h1>
-          <p>Dispatched and returned client records, grouped by hire quotation.</p>
+          <p>Dispatched and completed client records, grouped by hire quotation.</p>
           <table>
             <thead>
               <tr>
@@ -218,7 +228,7 @@ const Sites = () => {
                 <div>
                   <CardTitle>Inventory Removal Report</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Search by client ID or company name to review dispatched and returned items.
+                    Generate client-specific reports from dispatched and completed quotations only.
                   </p>
                 </div>
                 <Button variant="outline" onClick={handlePrintRemovalReport}>
@@ -228,14 +238,21 @@ const Sites = () => {
               <CardContent>
                 {removalReportRows.length ? (
                   <div className="space-y-4">
-                    <div className="relative max-w-md">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        value={clientSearchTerm}
-                        onChange={(event) => setClientSearchTerm(event.target.value)}
-                        placeholder="Search by client ID or company name"
-                        className="pl-10"
-                      />
+                    <div className="grid max-w-md gap-2">
+                      <label className="text-sm font-medium text-foreground">Select client</label>
+                      <Select value={selectedClient} onValueChange={setSelectedClient}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a client" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all-clients">All eligible clients</SelectItem>
+                          {clientOptions.map((client) => (
+                            <SelectItem key={client} value={client}>
+                              {client}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="rounded-lg border border-border">
                       <Table>
@@ -274,13 +291,13 @@ const Sites = () => {
                     </div>
                     {!filteredRemovalReportRows.length ? (
                       <p className="text-sm text-muted-foreground">
-                        No clients found. Try searching by quotation ID or company name.
+                        No report rows found for the selected client.
                       </p>
                     ) : null}
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    No inventory removal records yet. Completed hire quotations will appear here.
+                    No inventory removal records yet. Dispatched and completed quotations with deducted equipment will appear here.
                   </div>
                 )}
               </CardContent>
