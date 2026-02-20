@@ -1,10 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
-import { Package, ArrowRight, Search } from "lucide-react";
+import { Fragment, useState, useMemo, useEffect } from "react";
+import { Package, ArrowRight, Search, Boxes, Warehouse, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useScaffolds } from "@/hooks/useScaffolds";
+import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   Table,
   TableBody,
@@ -38,6 +41,7 @@ const getGroupKey = (description: string | null): string => {
 
 const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
+  const { data: hireQuotations } = useHireQuotations();
   const [search, setSearch] = useState("");
 
   // Sync with external search from header
@@ -64,6 +68,63 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
       return (a.description ?? "").localeCompare(b.description ?? "");
     });
   }, [scaffolds, search]);
+
+  const onHireByScaffoldId = useMemo(() => {
+    const totals = new Map<string, number>();
+    (hireQuotations ?? []).forEach((quotation) => {
+      (quotation.line_items ?? []).forEach((lineItem) => {
+        if (!lineItem.scaffold_id) return;
+        const delivered = Math.max(lineItem.delivered_quantity ?? 0, 0);
+        const returned = Math.max(lineItem.returned_quantity ?? 0, 0);
+        const activeOnHire = Math.max(delivered - returned, 0);
+        if (activeOnHire <= 0) return;
+        totals.set(
+          lineItem.scaffold_id,
+          (totals.get(lineItem.scaffold_id) ?? 0) + activeOnHire
+        );
+      });
+    });
+    return totals;
+  }, [hireQuotations]);
+
+  const inventoryMetrics = useMemo(() => {
+    return (scaffolds ?? []).map((item) => {
+      const availableStock = item.quantity ?? 0;
+      const onHire = onHireByScaffoldId.get(item.id) ?? 0;
+      const openingStock = availableStock + onHire;
+      return {
+        id: item.id,
+        availableStock,
+        onHire,
+        openingStock,
+      };
+    });
+  }, [onHireByScaffoldId, scaffolds]);
+
+  const totals = useMemo(() => {
+    return inventoryMetrics.reduce(
+      (acc, item) => {
+        acc.openingStock += item.openingStock;
+        acc.availableStock += item.availableStock;
+        acc.onHire += item.onHire;
+        return acc;
+      },
+      { openingStock: 0, availableStock: 0, onHire: 0 }
+    );
+  }, [inventoryMetrics]);
+
+  const metricsById = useMemo(() => {
+    return new Map(inventoryMetrics.map((metric) => [metric.id, metric]));
+  }, [inventoryMetrics]);
+
+  const chartData = useMemo(
+    () => [
+      { name: "Opening Stock", quantity: totals.openingStock },
+      { name: "Available", quantity: totals.availableStock },
+      { name: "On Hire", quantity: totals.onHire },
+    ],
+    [totals.availableStock, totals.onHire, totals.openingStock]
+  );
 
   const formatCurrency = (value: number | null) => {
     if (value === null || value === undefined) return "-";
@@ -114,6 +175,58 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
         />
       </div>
 
+      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Boxes className="h-4 w-4" /> Total Qty at Start
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totals.openingStock}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Warehouse className="h-4 w-4" /> Current Available Stock
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totals.availableStock}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Truck className="h-4 w-4" /> Total Qty On Hire
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totals.onHire}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Inventory Graphical Analysis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="quantity" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -128,13 +241,15 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
         <ScrollArea className="h-[400px]">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Part No.</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-center">Qty</TableHead>
-                <TableHead className="text-center">Mass</TableHead>
-                <TableHead className="text-right">Weekly Rate</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
+                <TableRow>
+                  <TableHead className="w-[100px]">Part No.</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-center">Qty at Start</TableHead>
+                  <TableHead className="text-center">Available</TableHead>
+                  <TableHead className="text-center">On Hire</TableHead>
+                  <TableHead className="text-center">Mass</TableHead>
+                  <TableHead className="text-right">Weekly Rate</TableHead>
+                  <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -146,11 +261,12 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
                   const groupLabel = group.replace(/^[A-Z]_/, "");
                   const showHeader = group !== lastGroup;
                   lastGroup = group;
+                  const rowMetrics = metricsById.get(item.id);
                   return (
-                    <>
+                    <Fragment key={item.id}>
                       {showHeader && (
                         <TableRow key={`group-${group}`} className="bg-muted/50 hover:bg-muted/50">
-                          <TableCell colSpan={7} className="py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                          <TableCell colSpan={9} className="py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                             {groupLabel}
                           </TableCell>
                         </TableRow>
@@ -163,7 +279,13 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
                           {item.description || item.scaffold_type}
                         </TableCell>
                         <TableCell className="text-center font-semibold">
-                          {item.quantity ?? 0}
+                          {rowMetrics?.openingStock ?? 0}
+                        </TableCell>
+                        <TableCell className="text-center font-semibold text-emerald-600">
+                          {rowMetrics?.availableStock ?? 0}
+                        </TableCell>
+                        <TableCell className="text-center font-semibold text-amber-600">
+                          {rowMetrics?.onHire ?? 0}
                         </TableCell>
                         <TableCell className="text-center text-muted-foreground">
                           {formatMass(item.mass_per_item)}
@@ -183,7 +305,7 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
                           </Badge>
                         </TableCell>
                       </TableRow>
-                    </>
+                    </Fragment>
                   );
                 });
               })()}
