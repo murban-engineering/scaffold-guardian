@@ -3560,14 +3560,18 @@ const HireQuotationWorkflow = ({
                         Dispatched
                       </Badge>
                     )}
-                    <Button variant="outline" onClick={() => handlePrintHireLoadingNote("current")}>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Loading Note
-                    </Button>
-                    <Button variant="outline" onClick={handlePrintDeliveryNote}>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Delivery Note
-                    </Button>
+                    {currentDeliveryDispatched && (
+                      <>
+                        <Button variant="outline" onClick={() => handlePrintHireLoadingNote("current")}>
+                          <Printer className="h-4 w-4 mr-2" />
+                          Loading Note
+                        </Button>
+                        <Button variant="outline" onClick={handlePrintDeliveryNote}>
+                          <Printer className="h-4 w-4 mr-2" />
+                          Delivery Note
+                        </Button>
+                      </>
+                    )}
                     <Button variant="outline" onClick={handlePrintYardVerificationNote}>
                       <Printer className="h-4 w-4 mr-2" />
                       Yard Verification
