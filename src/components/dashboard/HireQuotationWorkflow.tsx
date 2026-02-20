@@ -2316,6 +2316,60 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
               )}
             </div>
 
+            {clientEntryMode === "existing" && (
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="siteName">Site Name *</Label>
+                    <Input
+                      id="siteName"
+                      value={header.siteName}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
+                      placeholder="Project / Site name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteLocation">Site Location</Label>
+                    <Input
+                      id="siteLocation"
+                      value={header.siteLocation}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
+                      placeholder="City or area"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="siteAddress">Site Address</Label>
+                    <Textarea
+                      id="siteAddress"
+                      rows={2}
+                      value={header.siteAddress}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
+                      placeholder="Full site address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
+                    <Input
+                      id="customerOrderNo"
+                      value={header.customerOrderNo}
+                      onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
+                      placeholder="Order / Account number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="createdBy">Created By</Label>
+                    <Input
+                      id="createdBy"
+                      value={header.createdBy}
+                      onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
+                      placeholder="User name"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Section 1 - Applicant */}
             <div className="rounded-lg border border-border p-4">
               <h4 className="text-sm font-semibold mb-4 text-primary">Section 1 — Applicant Details</h4>
@@ -2474,58 +2528,59 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
               </div>
             </div>
 
-            {/* Site Details */}
-            <div className="rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="siteName">Site Name *</Label>
-                  <Input
-                    id="siteName"
-                    value={header.siteName}
-                    onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
-                    placeholder="Project / Site name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="siteLocation">Site Location</Label>
-                  <Input
-                    id="siteLocation"
-                    value={header.siteLocation}
-                    onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
-                    placeholder="City or area"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="siteAddress">Site Address</Label>
-                  <Textarea
-                    id="siteAddress"
-                    rows={2}
-                    value={header.siteAddress}
-                    onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
-                    placeholder="Full site address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
-                  <Input
-                    id="customerOrderNo"
-                    value={header.customerOrderNo}
-                    onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
-                    placeholder="Order / Account number"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="createdBy">Created By</Label>
-                  <Input
-                    id="createdBy"
-                    value={header.createdBy}
-                    onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
-                    placeholder="User name"
-                  />
+            {clientEntryMode !== "existing" && (
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label htmlFor="siteName">Site Name *</Label>
+                    <Input
+                      id="siteName"
+                      value={header.siteName}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
+                      placeholder="Project / Site name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="siteLocation">Site Location</Label>
+                    <Input
+                      id="siteLocation"
+                      value={header.siteLocation}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
+                      placeholder="City or area"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="siteAddress">Site Address</Label>
+                    <Textarea
+                      id="siteAddress"
+                      rows={2}
+                      value={header.siteAddress}
+                      onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
+                      placeholder="Full site address"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
+                    <Input
+                      id="customerOrderNo"
+                      value={header.customerOrderNo}
+                      onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
+                      placeholder="Order / Account number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="createdBy">Created By</Label>
+                    <Input
+                      id="createdBy"
+                      value={header.createdBy}
+                      onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
+                      placeholder="User name"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Ordering */}
             <div className="rounded-lg border border-border p-4">
