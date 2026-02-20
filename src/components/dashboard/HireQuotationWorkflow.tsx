@@ -100,6 +100,7 @@ type EquipmentItem = {
   hireDiscount: string;
   massPerItem: string;
   notes: string;
+  warehouseAvailableQty: number;
   originalQuantity: number; // Total quantity originally ordered
   previouslyDelivered: number; // Quantity already delivered in previous deliveries
   dbBalanceQuantity: number; // Balance quantity from database (remaining to deliver)
@@ -454,6 +455,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
           hireDiscount: String(item.hire_discount ?? 0),
           massPerItem: String(item.mass_per_item ?? 0),
           notes: "",
+          warehouseAvailableQty: scaffolds?.find((scaffold) => scaffold.id === item.scaffold_id)?.quantity ?? 0,
           originalQuantity: originalQty,
           previouslyDelivered: deliveredQty,
           dbBalanceQuantity: balanceQty,
@@ -473,7 +475,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
     }
     setInventoryDeducted(false);
     setReturnProcessed(false);
-  }, [initialQuotation, profile?.full_name]);
+  }, [initialQuotation, profile?.full_name, scaffolds]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
@@ -1092,6 +1094,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
+        warehouseAvailableQty: scaffold.quantity ?? 0,
         originalQuantity: qty,
         previouslyDelivered: 0,
         dbBalanceQuantity: 0,
@@ -1699,6 +1702,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
         partNumber: item.itemCode,
         description: item.description,
         quantity: parseNumber(item.qtyDelivered),
+        warehouseAvailableQty: item.warehouseAvailableQty,
         massPerItem: parseNumber(item.massPerItem) || null,
         weeklyRate: parseNumber(item.weeklyRate),
         weeklyTotal: (() => {
