@@ -38,6 +38,7 @@ const Index = () => {
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
+  const [workflowInitialClientMode, setWorkflowInitialClientMode] = useState<"new" | "existing">("new");
   const { profile, hasRole, loading: authLoading } = useAuth();
   const canViewWorkforce = hasRole("admin");
   const { data: stats, isLoading } = useDashboardStats();
@@ -93,6 +94,14 @@ const Index = () => {
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
     setWorkflowInitialStep(undefined);
+    setWorkflowInitialClientMode("new");
+    setShowQuotationDialog(true);
+  };
+
+  const handleStartExistingClientOrder = () => {
+    setSelectedQuotation(null);
+    setWorkflowInitialStep(undefined);
+    setWorkflowInitialClientMode("existing");
     setShowQuotationDialog(true);
   };
 
@@ -216,6 +225,15 @@ const Index = () => {
                       <Button
                         size="lg"
                         variant="outline"
+                        onClick={handleStartExistingClientOrder}
+                        className="gap-2 rounded-xl border-white/30 bg-white/10 px-6 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
+                      >
+                        <FileText className="h-5 w-5" />
+                        Existing Client New Site
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
                         onClick={() => setShowContinueDialog(true)}
                         className="gap-2 rounded-xl border-white/30 bg-white/10 px-6 text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-white/20"
                       >
@@ -323,6 +341,7 @@ const Index = () => {
             if (!open) {
               setSelectedQuotation(null);
               setWorkflowInitialStep(undefined);
+              setWorkflowInitialClientMode("new");
             }
           }}
         >
@@ -333,6 +352,7 @@ const Index = () => {
             <HireQuotationWorkflow 
               initialQuotation={selectedQuotation}
               initialStep={workflowInitialStep}
+              initialClientMode={workflowInitialClientMode}
               onClientProcessed={(client) => {
                 setProcessedClient(client);
                 setShowQuotationDialog(false);

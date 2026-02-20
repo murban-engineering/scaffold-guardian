@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Truck, UserRoundPen, Plus, Trash2, Printer, PackageSearch, RotateCcw, CheckCircle2, Clock, History, ClipboardSignature, ScanBarcode, FileCheck2, ClipboardList, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
-import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, useUpdateLineItemReturnQuantities, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, useUpdateLineItemReturnQuantities, useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreateMaintenanceLogs } from "@/hooks/useMaintenanceLogs";
 import {
@@ -187,6 +187,9 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
+  quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
+
 export type ProcessedClient = {
   id: string;
   clientCompanyName: string;
@@ -198,13 +201,16 @@ export type ProcessedClient = {
   processedAt: string;
 };
 
+type ClientEntryMode = "new" | "existing";
+
 type HireQuotationWorkflowProps = {
   onClientProcessed?: (client: ProcessedClient) => void;
   initialQuotation?: HireQuotation | null;
   initialStep?: StepKey;
+  initialClientMode?: ClientEntryMode;
 };
 
-const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialStep }: HireQuotationWorkflowProps) => {
+const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialStep, initialClientMode = "new" }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const deductInventory = useDeductScaffoldInventory();
@@ -216,8 +222,12 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
   const updateLineItemQuantities = useUpdateLineItemQuantities();
   const updateLineItemReturnQuantities = useUpdateLineItemReturnQuantities();
   const createMaintenanceLogs = useCreateMaintenanceLogs();
+  const { data: previousQuotations = [] } = useHireQuotations();
 
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
+  const [clientEntryMode, setClientEntryMode] = useState<ClientEntryMode>(initialClientMode);
+  const [clientLookupQuery, setClientLookupQuery] = useState("");
+
   const [activeStep, setActiveStep] = useState<StepKey>(initialStep || "client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
 
@@ -358,6 +368,10 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
   }));
 
   useEffect(() => {
+    setClientEntryMode(initialClientMode);
+  }, [initialClientMode]);
+
+  useEffect(() => {
     if (profile?.full_name && !header.createdBy) {
       setHeader(prev => ({ ...prev, createdBy: profile.full_name }));
     }
@@ -373,7 +387,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
     setSavedQuotationId(initialQuotation.id);
     setHeader(prev => {
       const qNum = initialQuotation.quotation_number || prev.quotationNo;
-      const derivedClientId = qNum ? qNum.replace("HSQ-", "CL-") : "";
+      const derivedClientId = deriveClientIdFromQuotationNumber(qNum);
       return {
         ...prev,
         quotationNo: qNum,
@@ -915,6 +929,49 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
     });
   };
 
+  const previousClientMatches = useMemo(() => {
+    const query = clientLookupQuery.trim().toLowerCase();
+    const seen = new Set<string>();
+
+    return previousQuotations.filter((quotation) => {
+      const companyName = quotation.company_name?.trim() || "";
+      const companyKey = companyName.toLowerCase();
+      const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number).toLowerCase();
+      const uniqueKey = `${companyKey}|${clientId}`;
+
+      if (seen.has(uniqueKey)) return false;
+      seen.add(uniqueKey);
+
+      if (!query) return true;
+      return companyKey.includes(query) || clientId.includes(query);
+    }).slice(0, 8);
+  }, [clientLookupQuery, previousQuotations]);
+
+  const handleSelectPreviousClient = (quotation: HireQuotation) => {
+    const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+
+    setHeader((prev) => ({
+      ...prev,
+      clientId: derivedClientId || prev.clientId,
+      tradingName: quotation.company_name ?? prev.tradingName,
+      clientCompanyName: quotation.company_name ?? prev.clientCompanyName,
+      siteContactPerson: quotation.site_manager_name ?? prev.siteContactPerson,
+      clientName: quotation.site_manager_name ?? prev.clientName,
+      landline1: quotation.site_manager_phone ?? prev.landline1,
+      clientPhone: quotation.site_manager_phone ?? prev.clientPhone,
+      companyEmail: quotation.site_manager_email ?? prev.companyEmail,
+      clientEmail: quotation.site_manager_email ?? prev.clientEmail,
+      siteName: "",
+      siteLocation: "",
+      siteAddress: "",
+      physicalAddress: "",
+      physicalCode: "",
+    }));
+
+    setClientLookupQuery(derivedClientId || quotation.company_name || "");
+    toast.success("Client credentials loaded. Enter the new site details to continue.");
+  };
+
   const validateHeader = () => {
     if (!header.tradingName && !header.clientCompanyName) {
       toast.error("Trading Name / Company Name is required.");
@@ -959,7 +1016,7 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
           delivery_address: header.siteLocation,
         });
         setSavedQuotationId(quotation.id);
-        const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+        const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,
@@ -2202,6 +2259,61 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
                   <Input value={header.dateCreated} readOnly className="bg-muted" />
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-primary">Client Mode</h4>
+                  <p className="text-xs text-muted-foreground">
+                    For repeat clients, search by Client ID or company name to preload credentials, then add a new site.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant={clientEntryMode === "new" ? "default" : "outline"} onClick={() => setClientEntryMode("new")}>
+                    New Client
+                  </Button>
+                  <Button type="button" variant={clientEntryMode === "existing" ? "default" : "outline"} onClick={() => setClientEntryMode("existing")}>
+                    Existing Client New Site
+                  </Button>
+                </div>
+              </div>
+
+              {clientEntryMode === "existing" && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <Label htmlFor="clientLookup">Search existing client</Label>
+                    <Input
+                      id="clientLookup"
+                      value={clientLookupQuery}
+                      onChange={(e) => setClientLookupQuery(e.target.value)}
+                      placeholder="Search by Client ID (CL-...) or company name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {previousClientMatches.length ? (
+                      previousClientMatches.map((quotation) => {
+                        const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number) || "No client ID";
+                        return (
+                          <button
+                            key={quotation.id}
+                            type="button"
+                            onClick={() => handleSelectPreviousClient(quotation)}
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-left transition hover:border-primary/50 hover:bg-primary/5"
+                          >
+                            <p className="text-sm font-medium">{quotation.company_name || "Unnamed company"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {clientId} • {quotation.site_manager_name || "No contact"}
+                            </p>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No previous clients found for that search.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Section 1 - Applicant */}
