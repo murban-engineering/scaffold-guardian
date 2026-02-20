@@ -2270,9 +2270,6 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="button" variant={clientEntryMode === "new" ? "default" : "outline"} onClick={() => setClientEntryMode("new")}>
-                    New Client
-                  </Button>
                   <Button type="button" variant={clientEntryMode === "existing" ? "default" : "outline"} onClick={() => setClientEntryMode("existing")}>
                     Existing Client New Site
                   </Button>
