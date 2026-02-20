@@ -778,6 +778,7 @@ const Accounting = () => {
                                         partNumber: li.part_number || "-",
                                         description: li.description || "-",
                                         quantity: qty,
+                                        warehouseAvailableQty: 0,
                                         massPerItem: li.mass_per_item ?? 0,
                                         weeklyRate: rate,
                                         weeklyTotal: effectiveRate * qty,
