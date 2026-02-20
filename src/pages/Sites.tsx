@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import HireQuotationWorkflow from "@/components/dashboard/HireQuotationWorkflow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 
@@ -13,6 +14,7 @@ const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
 
   const activeQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
@@ -25,7 +27,7 @@ const Sites = () => {
     return hireQuotations
       .filter((quotation) => {
         const status = quotation.status?.toLowerCase?.() ?? "";
-        return status !== "draft" && status !== "cancelled";
+        return status === "dispatched" || status === "returned";
       })
       .flatMap((quotation) =>
         (quotation.line_items ?? [])
@@ -37,6 +39,7 @@ const Sites = () => {
             client: quotation.company_name || quotation.site_manager_name || "Unknown client",
             site: quotation.site_name || "No site name",
             quotationId: quotation.quotation_number || quotation.id,
+            status: quotation.status || "Unknown",
           }))
       )
       .sort((a, b) => {
@@ -45,6 +48,19 @@ const Sites = () => {
         return a.client.localeCompare(b.client);
       });
   }, [hireQuotations]);
+
+  const filteredRemovalReportRows = useMemo(() => {
+    const normalizedSearchTerm = clientSearchTerm.trim().toLowerCase();
+    if (!normalizedSearchTerm) {
+      return removalReportRows;
+    }
+
+    return removalReportRows.filter((row) => {
+      const matchesClient = row.client.toLowerCase().includes(normalizedSearchTerm);
+      const matchesId = row.quotationId.toLowerCase().includes(normalizedSearchTerm);
+      return matchesClient || matchesId;
+    });
+  }, [clientSearchTerm, removalReportRows]);
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
@@ -90,12 +106,12 @@ const Sites = () => {
   };
 
   const handlePrintRemovalReport = () => {
-    if (!removalReportRows.length) {
+    if (!filteredRemovalReportRows.length) {
       window.alert("No inventory removal records available to print yet.");
       return;
     }
 
-    const tableRows = removalReportRows
+    const tableRows = filteredRemovalReportRows
       .map(
         (row) => `
           <tr>
@@ -105,6 +121,7 @@ const Sites = () => {
             <td>${row.client}</td>
             <td>${row.site}</td>
             <td>${row.quotationId}</td>
+            <td>${row.status}</td>
           </tr>
         `
       )
@@ -152,7 +169,7 @@ const Sites = () => {
             <button type="button" class="print-button" onclick="window.print()">Print report</button>
           </div>
           <h1>Inventory Removal Report</h1>
-          <p>Clients with items removed from inventory, grouped by hire quotation.</p>
+          <p>Dispatched and returned client records, grouped by hire quotation.</p>
           <table>
             <thead>
               <tr>
@@ -162,6 +179,7 @@ const Sites = () => {
                 <th>Client</th>
                 <th>Site</th>
                 <th>Hire Quotation ID</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -200,7 +218,7 @@ const Sites = () => {
                 <div>
                   <CardTitle>Inventory Removal Report</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Print a report of clients and sites for each item removed from inventory.
+                    Search by client ID or company name to review dispatched and returned items.
                   </p>
                 </div>
                 <Button variant="outline" onClick={handlePrintRemovalReport}>
@@ -209,8 +227,18 @@ const Sites = () => {
               </CardHeader>
               <CardContent>
                 {removalReportRows.length ? (
-                  <div className="rounded-lg border border-border">
-                    <Table>
+                  <div className="space-y-4">
+                    <div className="relative max-w-md">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={clientSearchTerm}
+                        onChange={(event) => setClientSearchTerm(event.target.value)}
+                        placeholder="Search by client ID or company name"
+                        className="pl-10"
+                      />
+                    </div>
+                    <div className="rounded-lg border border-border">
+                      <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Item</TableHead>
@@ -219,10 +247,11 @@ const Sites = () => {
                           <TableHead>Client</TableHead>
                           <TableHead>Site</TableHead>
                           <TableHead>Hire Quotation ID</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {removalReportRows.map((row, index) => (
+                        {filteredRemovalReportRows.map((row, index) => (
                           <TableRow key={`${row.quotationId}-${row.itemCode}-${index}`}>
                             <TableCell>
                               <div className="font-medium">{row.itemLabel}</div>
@@ -233,10 +262,21 @@ const Sites = () => {
                             <TableCell>{row.client}</TableCell>
                             <TableCell>{row.site}</TableCell>
                             <TableCell className="font-mono text-xs">{row.quotationId}</TableCell>
+                            <TableCell>
+                              <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold uppercase text-primary">
+                                {row.status}
+                              </span>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
+                    {!filteredRemovalReportRows.length ? (
+                      <p className="text-sm text-muted-foreground">
+                        No clients found. Try searching by quotation ID or company name.
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
