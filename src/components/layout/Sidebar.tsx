@@ -12,8 +12,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   BotMessageSquare,
-  MapPin,
-  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import otnLogo from "@/assets/otn-logo.png";
@@ -37,8 +35,6 @@ const menuItems = [
   { id: "accounting", label: "Accounting", icon: Receipt },
   { id: "otnoai", label: "OTNOAI", icon: BotMessageSquare },
   { id: "sites", label: "Sites", icon: MapPinned },
-  { id: "site-master", label: "Site Master Plan", icon: MapPin },
-  { id: "yard-verification", label: "Yard Verification", icon: ClipboardList },
   { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
   { id: "workforce", label: "Workforce", icon: UsersRound },
 ];
