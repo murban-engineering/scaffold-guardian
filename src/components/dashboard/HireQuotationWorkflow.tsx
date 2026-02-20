@@ -953,20 +953,34 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
     setHeader((prev) => ({
       ...prev,
       clientId: derivedClientId || prev.clientId,
-      tradingName: quotation.company_name ?? prev.tradingName,
-      clientCompanyName: quotation.company_name ?? prev.clientCompanyName,
-      siteContactPerson: quotation.site_manager_name ?? prev.siteContactPerson,
-      clientName: quotation.site_manager_name ?? prev.clientName,
-      landline1: quotation.site_manager_phone ?? prev.landline1,
-      clientPhone: quotation.site_manager_phone ?? prev.clientPhone,
-      companyEmail: quotation.site_manager_email ?? prev.companyEmail,
-      clientEmail: quotation.site_manager_email ?? prev.clientEmail,
-      siteName: "",
-      siteLocation: "",
+      tradingName: quotation.company_name ?? "",
+      clientCompanyName: quotation.company_name ?? "",
+      siteContactPerson: quotation.site_manager_name ?? "",
+      clientName: quotation.site_manager_name ?? "",
+      landline1: quotation.site_manager_phone ?? "",
+      clientPhone: quotation.site_manager_phone ?? "",
+      companyEmail: quotation.site_manager_email ?? "",
+      clientEmail: quotation.site_manager_email ?? "",
+      physicalAddress: quotation.company_address ?? "",
       siteAddress: "",
-      physicalAddress: "",
+      siteLocation: quotation.delivery_address ?? "",
+      officialOrdersUsed: quotation.official_order_required ? "yes" : "no",
+      bulkOrdersUsed: quotation.bulk_order_required ? "yes" : "no",
+      telephonicOrders: quotation.telephonic_order_acceptable ? "yes" : "no",
+      specialTransportArrangement: quotation.transport_arrangement ?? "",
+      customerOrderNo: quotation.account_number ?? "",
+      projectTypes: quotation.project_type ?? [],
+      marketSegments: quotation.market_segment ?? [],
+      siteName: "",
       physicalCode: "",
     }));
+
+    setDiscounts([
+      { type: "Tonnage", product: "", hireDiscount: String(quotation.tonnage_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Basket", product: "", hireDiscount: String(quotation.basket_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Straight Hire", product: "", hireDiscount: String(quotation.tube_clamp_discount ?? ""), salesDiscount: "", rate: "" },
+      { type: "Nett", product: "", hireDiscount: String(quotation.other_discount ?? ""), salesDiscount: "", rate: "" },
+    ]);
 
     setClientLookupQuery(derivedClientId || quotation.company_name || "");
     toast.success("Client credentials loaded. Enter the new site details to continue.");
@@ -2367,6 +2381,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
               </div>
             )}
 
+            {clientEntryMode !== "existing" && (
+            <>
             {/* Section 1 - Applicant */}
             <div className="rounded-lg border border-border p-4">
               <h4 className="text-sm font-semibold mb-4 text-primary">Section 1 — Applicant Details</h4>
@@ -2812,6 +2828,8 @@ const HireQuotationWorkflow = ({ onClientProcessed, initialQuotation, initialSte
                 </div>
               </div>
             </div>
+            </>
+            )}
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">* Required fields</p>
