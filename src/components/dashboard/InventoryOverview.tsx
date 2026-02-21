@@ -39,7 +39,7 @@ const getGroupKey = (description: string | null): string => {
   return "ZZZ_Other";
 };
 
-const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
+const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
   const { data: hireQuotations } = useHireQuotations();
   const [search, setSearch] = useState("");
@@ -146,6 +146,58 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
     return statusStyles[status] || "";
   };
 
+  if (chartOnly) {
+    return (
+      <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm animate-fade-in">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="rounded-lg bg-primary/10 p-2">
+            <Package className="h-4 w-4 text-primary" />
+          </div>
+          <h3 className="text-sm font-semibold tracking-tight">Inventory Graphical Analysis</h3>
+        </div>
+
+        {/* Summary pills */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="flex flex-col items-center rounded-xl bg-muted/60 px-3 py-2.5">
+            <Boxes className="h-4 w-4 text-muted-foreground mb-1" />
+            <span className="text-lg font-bold">{totals.openingStock}</span>
+            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">Opening Stock</span>
+          </div>
+          <div className="flex flex-col items-center rounded-xl bg-primary/8 px-3 py-2.5">
+            <Warehouse className="h-4 w-4 text-primary mb-1" />
+            <span className="text-lg font-bold text-primary">{totals.availableStock}</span>
+            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">Available</span>
+          </div>
+          <div className="flex flex-col items-center rounded-xl bg-amber-500/8 px-3 py-2.5">
+            <Truck className="h-4 w-4 text-amber-600 mb-1" />
+            <span className="text-lg font-bold text-amber-600">{totals.onHire}</span>
+            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">On Hire</span>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="h-52 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: "10px",
+                  border: "1px solid hsl(var(--border))",
+                  background: "hsl(var(--card))",
+                  fontSize: "12px",
+                }}
+              />
+              <Bar dataKey="quantity" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-xl border border-border p-6 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
@@ -207,25 +259,6 @@ const InventoryOverview = ({ externalSearch }: { externalSearch?: string }) => {
           </CardContent>
         </Card>
       </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-base">Inventory Graphical Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="quantity" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
 
       {isLoading ? (
         <div className="space-y-4">
