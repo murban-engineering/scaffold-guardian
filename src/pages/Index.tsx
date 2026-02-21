@@ -303,75 +303,76 @@ const Index = () => {
               <QuickActions />
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-              <StatCard
-                title="Total Scaffolds"
-                value={isLoading ? "..." : stats?.totalScaffolds || 0}
-                change={stats?.totalScaffolds ? "+12 this month" : "Add scaffolds to get started"}
-                changeType={stats?.totalScaffolds ? "positive" : "neutral"}
-                icon={PackageSearch}
-                iconBg="primary"
-              />
-              <StatCard
-                title="Active Sites"
-                value={isLoading ? "..." : stats?.activeSites || 0}
-                change={stats?.activeSites ? "2 starting soon" : "Create your first site"}
-                changeType="neutral"
-                icon={MapPinned}
-                iconBg="accent"
-              />
-              <StatCard
-                title="Inspections Due"
-                value={isLoading ? "..." : stats?.inspectionsDue || 0}
-                change={
-                  stats?.inspectionsDue && stats.inspectionsDue > 0
-                    ? `${stats.inspectionsDue} pending`
-                    : "All caught up"
-                }
-                changeType={
-                  stats?.inspectionsDue && stats.inspectionsDue > 0 ? "negative" : "positive"
-                }
-                icon={ClipboardCheck}
-                iconBg="success"
-              />
-              <StatCard
-                title="Safety Alerts"
-                value={isLoading ? "..." : stats?.safetyAlerts || 0}
-                change={stats?.safetyAlerts ? "Needs attention" : "No alerts"}
-                changeType={stats?.safetyAlerts ? "negative" : "positive"}
-                icon={ShieldAlert}
-                iconBg="danger"
-              />
-              <StatCard
-                title="Active Workers"
-                value={isLoading ? "..." : stats?.activeWorkers || 0}
-                change="Team members"
-                changeType="neutral"
-                icon={UsersRound}
-                iconBg="accent"
-              />
-              <StatCard
-                title="Pending Repairs"
-                value={isLoading ? "..." : stats?.pendingRepairs || 0}
-                change={stats?.pendingRepairs ? "Needs resolution" : "All resolved"}
-                changeType={stats?.pendingRepairs ? "negative" : "positive"}
-                icon={Wrench}
-                iconBg="warning"
-              />
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              {/* Left Column - Inventory */}
-              <div className="xl:col-span-2">
-                <InventoryOverview />
+            {/* Stats + Chart Row */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
+              {/* Left: Stat Cards */}
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 auto-rows-min">
+                <StatCard
+                  title="Total Scaffolds"
+                  value={isLoading ? "..." : stats?.totalScaffolds || 0}
+                  change={stats?.totalScaffolds ? "+12 this month" : "Add scaffolds to get started"}
+                  changeType={stats?.totalScaffolds ? "positive" : "neutral"}
+                  icon={PackageSearch}
+                  iconBg="primary"
+                />
+                <StatCard
+                  title="Active Sites"
+                  value={isLoading ? "..." : stats?.activeSites || 0}
+                  change={stats?.activeSites ? "2 starting soon" : "Create your first site"}
+                  changeType="neutral"
+                  icon={MapPinned}
+                  iconBg="accent"
+                />
+                <StatCard
+                  title="Inspections Due"
+                  value={isLoading ? "..." : stats?.inspectionsDue || 0}
+                  change={
+                    stats?.inspectionsDue && stats.inspectionsDue > 0
+                      ? `${stats.inspectionsDue} pending`
+                      : "All caught up"
+                  }
+                  changeType={
+                    stats?.inspectionsDue && stats.inspectionsDue > 0 ? "negative" : "positive"
+                  }
+                  icon={ClipboardCheck}
+                  iconBg="success"
+                />
+                <StatCard
+                  title="Safety Alerts"
+                  value={isLoading ? "..." : stats?.safetyAlerts || 0}
+                  change={stats?.safetyAlerts ? "Needs attention" : "No alerts"}
+                  changeType={stats?.safetyAlerts ? "negative" : "positive"}
+                  icon={ShieldAlert}
+                  iconBg="danger"
+                />
+                <StatCard
+                  title="Active Workers"
+                  value={isLoading ? "..." : stats?.activeWorkers || 0}
+                  change="Team members"
+                  changeType="neutral"
+                  icon={UsersRound}
+                  iconBg="accent"
+                />
+                <StatCard
+                  title="Pending Repairs"
+                  value={isLoading ? "..." : stats?.pendingRepairs || 0}
+                  change={stats?.pendingRepairs ? "Needs resolution" : "All resolved"}
+                  changeType={stats?.pendingRepairs ? "negative" : "positive"}
+                  icon={Wrench}
+                  iconBg="warning"
+                />
               </div>
 
-              {/* Right Column - Alerts */}
-              <div>
+              {/* Right: Inventory Chart + Alerts */}
+              <div className="space-y-6">
+                <InventoryOverview chartOnly />
                 <AlertsWidget />
               </div>
+            </div>
+
+            {/* Full Inventory Table */}
+            <div className="xl:col-span-full">
+              <InventoryOverview />
             </div>
 
             {/* Bottom Grid */}
