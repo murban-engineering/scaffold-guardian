@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { PackageSearch, MapPinned, ClipboardCheck, ShieldAlert, UsersRound, Wrench, FileText, FolderClock, Building2 } from "lucide-react";
+import { PackageSearch, MapPinned, ClipboardCheck, UsersRound, Wrench, FileText, FolderClock, Building2 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import StatCard from "@/components/dashboard/StatCard";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
 import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
-import AlertsWidget from "@/components/dashboard/AlertsWidget";
 import QuickActions from "@/components/dashboard/QuickActions";
 import MaintenanceLogOverview from "@/components/dashboard/MaintenanceLogOverview";
 import AIChatAssistant from "@/components/dashboard/AIChatAssistant";
@@ -338,14 +337,6 @@ const Index = () => {
                   iconBg="success"
                 />
                 <StatCard
-                  title="Safety Alerts"
-                  value={isLoading ? "..." : stats?.safetyAlerts || 0}
-                  change={stats?.safetyAlerts ? "Needs attention" : "No alerts"}
-                  changeType={stats?.safetyAlerts ? "negative" : "positive"}
-                  icon={ShieldAlert}
-                  iconBg="danger"
-                />
-                <StatCard
                   title="Active Workers"
                   value={isLoading ? "..." : stats?.activeWorkers || 0}
                   change="Team members"
@@ -363,10 +354,9 @@ const Index = () => {
                 />
               </div>
 
-              {/* Right: Inventory Chart + Alerts */}
+              {/* Right: Inventory Chart */}
               <div className="space-y-6">
                 <InventoryOverview chartOnly />
-                <AlertsWidget />
               </div>
             </div>
 
