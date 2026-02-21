@@ -1052,12 +1052,107 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const totalReturned = data.items.reduce((sum, item) => sum + item.totalReturned, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
-  const itemRows = data.items.map((item, idx) =>
+  // ---- Page 1: Gate Pass ----
+  const gatePassItemRows = data.items.map((item) =>
     "<tr>" +
-    "<td>" + (idx + 1) + "</td>" +
     "<td>" + (item.partNumber || "-") + "</td>" +
     "<td>" + (item.description || "-") + "</td>" +
-    '<td class="text-right">' + item.totalDelivered + "</td>" +
+    '<td class="text-center">' + item.good + "</td>" +
+    '<td class="text-center">' + item.dirty + "</td>" +
+    '<td class="text-center">' + item.damaged + "</td>" +
+    '<td class="text-center">' + item.scrap + "</td>" +
+    '<td class="text-center">' + item.totalReturned + "</td>" +
+    "</tr>"
+  ).join("");
+
+  const gatePassPage = () => `
+    <div class="page gate-pass-page">
+      <div class="gp-header">
+        <img src="${window.location.origin}/otn-logo.png" alt="OTNO Logo" class="gp-logo" />
+        <div class="gp-header-right">
+          <h1>Gate Pass</h1>
+          <h2>HIRE RETURN NOTE</h2>
+        </div>
+      </div>
+
+      <div class="gp-info-grid">
+        <div class="gp-info-left">
+          <div class="gp-row"><span class="gp-label">Return Note No.</span><span class="gp-val">${data.returnNoteNumber}</span></div>
+          <div class="gp-row"><span class="gp-label">Customer</span><span class="gp-val">${data.companyName}</span></div>
+          <div class="gp-row"><span class="gp-label">Site Name</span><span class="gp-val">${data.siteName}</span></div>
+          <div class="gp-row"><span class="gp-label">Site Address</span><span class="gp-val">${data.siteAddress || "-"}</span></div>
+        </div>
+        <div class="gp-info-right">
+          <div class="gp-row"><span class="gp-label">Date</span><span class="gp-val">${data.returnDate}</span></div>
+          <div class="gp-row"><span class="gp-label">Hire End Date</span><span class="gp-val">${data.returnDate}</span></div>
+          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val">${data.siteId || "-"}</span></div>
+          <div class="gp-row"><span class="gp-label">Quotation No.</span><span class="gp-val">${data.quotationNumber}</span></div>
+        </div>
+      </div>
+
+      <table class="gp-table">
+        <thead>
+          <tr>
+            <th>Part No.</th>
+            <th>Product Description</th>
+            <th class="text-center">Good</th>
+            <th class="text-center">Dirty</th>
+            <th class="text-center">Damaged</th>
+            <th class="text-center">Scrap</th>
+            <th class="text-center">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${gatePassItemRows}
+          <tr class="total-row">
+            <td colspan="6" class="text-right"><strong>Total Returned</strong></td>
+            <td class="text-center"><strong>${totalReturned}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="gp-customer-section">
+        <div class="gp-transport-grid">
+          <div class="gp-row"><span class="gp-label">Size of Vehicle</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Vehicle Reg. No</span><span class="gp-val">${data.vehicleNo || "_______________"}</span></div>
+          <div class="gp-row"><span class="gp-label">Time In</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Time Out</span><span class="gp-val-line"></span></div>
+        </div>
+
+        <div class="gp-sig-grid">
+          <div class="gp-sig-box">
+            <p><strong>OTNO Checker</strong></p>
+            <p>Name: ${data.receivedBy || "_______________"}</p>
+            <p>Signature: _______________</p>
+          </div>
+          <div class="gp-sig-box">
+            <p><strong>Customer / Driver</strong></p>
+            <p>Name: ${data.returnedBy || "_______________"}</p>
+            <p>Signature: _______________</p>
+          </div>
+        </div>
+
+        <div class="gp-balance-row">
+          <span>Balance still on site: <strong>Yes / No</strong></span>
+          <span style="margin-left:30px;">Is site clear: <strong>Yes / No</strong></span>
+          <span style="margin-left:30px;">Collect again: <strong>Yes / No</strong></span>
+        </div>
+        <div class="gp-row" style="margin-top:6px;"><span class="gp-label">Collection Date</span><span class="gp-val-line"></span></div>
+      </div>
+
+      <div class="gp-footer">
+        <p>${COMPANY_NAME} &bull; ${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</p>
+        <p style="font-size:9px; margin-top:4px;">Copy distribution: OTNO Blue &bull; Customer White</p>
+      </div>
+    </div>
+  `;
+
+  // ---- Page 2: System-generated Return Note ----
+  const systemItemRows = data.items.map((item) =>
+    "<tr>" +
+    "<td>" + (item.partNumber || "-") + "</td>" +
+    "<td>" + (item.description || "-") + "</td>" +
+    '<td class="text-right">' + (item.totalDelivered - item.totalReturned + item.balanceAfter) + "</td>" +
     '<td class="text-right">' + item.good + "</td>" +
     '<td class="text-right">' + item.dirty + "</td>" +
     '<td class="text-right">' + item.damaged + "</td>" +
@@ -1067,120 +1162,214 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "</tr>"
   ).join("");
 
-  const remarksHtml = data.remarks
-    ? '<div class="remarks"><strong>Remarks:</strong> ' + data.remarks + "</div>"
-    : "";
+  const systemPage = (copyLabel: string) => `
+    <div class="page system-page">
+      <div class="sys-header">
+        <img src="${window.location.origin}/otn-logo.png" alt="OTNO Logo" class="sys-logo" />
+        <div class="sys-header-center">
+          <h1>Hire Return Note</h1>
+          <p class="copy-label">${copyLabel}</p>
+        </div>
+      </div>
 
-  const returnNotePage = (copyLabel: string) =>
-    '<div class="return-note-page">' +
-    '<div class="header">' +
-    '<img src="' + window.location.origin + '/otn-logo.png" alt="OTN Logo" class="header-logo" />' +
-    '<div class="header-content">' +
-    "<h1>" + COMPANY_NAME + "</h1>" +
-    "<p>Email: otnoacess@gmail.com</p>" +
-    "<p>" + COMPANY_ADDRESS + "</p>" +
-    "<p>" + COMPANY_LOCATION + "</p>" +
-    "<p><strong>PIN: " + COMPANY_PIN + "</strong></p>" +
-    "<p><strong>Hire Return Note</strong></p>" +
-    '<p class="copy-label">' + copyLabel + "</p>" +
-    "</div></div>" +
-    '<div class="info-grid">' +
-    '<div class="info-section">' +
-    "<h3>Client Details</h3>" +
-    '<div class="info-row"><span class="info-label">Company:</span><span class="info-value">' + data.companyName + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Contact:</span><span class="info-value">' + data.contactName + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Phone:</span><span class="info-value">' + data.contactPhone + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Email:</span><span class="info-value">' + (data.contactEmail || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Office Tel:</span><span class="info-value">' + (data.officeTel || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Office Email:</span><span class="info-value">' + (data.officeEmail || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">' + data.siteName + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">' + (data.siteLocation || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">' + (data.siteAddress || "-") + "</span></div>" +
-    "</div>" +
-    '<div class="info-section">' +
-    "<h3>OTNO Access Details</h3>" +
-    '<div class="info-row"><span class="info-label">Return Note No:</span><span class="info-value">' + data.returnNoteNumber + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">' + data.quotationNumber + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">' + (data.clientId || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">' + (data.siteId || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Return Date:</span><span class="info-value">' + data.returnDate + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">' + data.dateCreated + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">' + (data.vehicleNo || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Created By:</span><span class="info-value">' + (data.createdBy || "-") + "</span></div>" +
-    '<div class="info-row"><span class="info-label">Printed:</span><span class="info-value">' + formatTimestamp() + "</span></div>" +
-    "</div></div>" +
-    "<table><thead><tr>" +
-    "<th>#</th><th>Part Number</th><th>Description</th>" +
-    '<th class="text-right">Delivered</th><th class="text-right">Good</th>' +
-    '<th class="text-right">Dirty</th><th class="text-right">Damaged</th>' +
-    '<th class="text-right">Scrap</th><th class="text-right">Total Returned</th>' +
-    '<th class="text-right">Balance</th>' +
-    "</tr></thead><tbody>" +
-    itemRows +
-    '<tr class="total-row"><td colspan="8">Total Returned</td>' +
-    '<td class="text-right">' + totalReturned + "</td><td>-</td></tr>" +
-    '<tr class="total-row"><td colspan="9">Total Mass</td>' +
-    '<td class="text-right">' + formatMass(totalMass) + "</td></tr>" +
-    "</tbody></table>" +
-    remarksHtml +
-    '<div class="return-terms">' +
-    "<h4>RETURN CONDITIONS</h4><ul>" +
-    "<li><strong>Good:</strong> Equipment returned in good working condition — returned to available inventory.</li>" +
-    "<li><strong>Dirty:</strong> Equipment returned dirty — will be charged at 2× the list hire price.</li>" +
-    "<li><strong>Damaged:</strong> Equipment returned damaged — will be charged at 4× the list hire price.</li>" +
-    "<li><strong>Scrap:</strong> Equipment written off — will be charged at the selling price of the item.</li>" +
-    "</ul><p>Please check that the equipment count agrees with the above. All errors are to be clearly noted.</p></div>" +
-    '<div class="signature-section">' +
-    '<div class="signature-box">' +
-    "<p><strong>Returned By (Client):</strong></p>" +
-    "<p>Name: " + (data.returnedBy || "_______________") + "</p>" +
-    "<p>Signature: _______________</p><p>Date: _______________</p></div>" +
-    '<div class="signature-box">' +
-    "<p><strong>Received By (OTNO):</strong></p>" +
-    "<p>Name: " + (data.receivedBy || "_______________") + "</p>" +
-    "<p>Signature: _______________</p><p>Date: _______________</p></div>" +
-    "</div></div>";
+      <div class="sys-details-grid">
+        <div class="sys-detail-box">
+          <h3>Document Details</h3>
+          <div class="sys-row"><span class="sys-label">Document No:</span><span>${data.returnNoteNumber}</span></div>
+          <div class="sys-row"><span class="sys-label">Document Type:</span><span>Hire Return Note</span></div>
+          <div class="sys-row"><span class="sys-label">Document Date:</span><span>${data.returnDate}</span></div>
+          <div class="sys-row"><span class="sys-label">Quotation No:</span><span>${data.quotationNumber}</span></div>
+          <div class="sys-row"><span class="sys-label">Client ID:</span><span>${data.clientId || "-"}</span></div>
+          <div class="sys-row"><span class="sys-label">PIN:</span><span>${COMPANY_PIN}</span></div>
+          <div class="sys-row"><span class="sys-label">Hire End Date:</span><span>${data.returnDate}</span></div>
+        </div>
+        <div class="sys-detail-box">
+          <h3>Company Details</h3>
+          <div class="sys-row"><span class="sys-label">${COMPANY_NAME}</span></div>
+          <div class="sys-row"><span class="sys-label">Address:</span><span>${COMPANY_ADDRESS}</span></div>
+          <div class="sys-row"><span class="sys-label">Location:</span><span>${COMPANY_LOCATION}</span></div>
+          <div class="sys-row"><span class="sys-label">Email:</span><span>otnoacess@gmail.com</span></div>
+          <div class="sys-row"><span class="sys-label">PIN:</span><span>${COMPANY_PIN}</span></div>
+        </div>
+      </div>
 
-  const styles =
-    "* { margin: 0; padding: 0; box-sizing: border-box; }" +
-    "body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }" +
-    ".header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }" +
-    ".header-logo { width: 100px; height: auto; margin-right: 20px; }" +
-    ".header-content { flex: 1; }" +
-    ".header-content h1 { font-size: 24px; margin-bottom: 5px; }" +
-    ".header-content p { color: #666; }" +
-    ".copy-label { font-weight: bold; color: #111; margin-top: 4px; }" +
-    ".info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }" +
-    ".info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }" +
-    ".info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }" +
-    ".info-row { display: flex; margin-bottom: 5px; }" +
-    ".info-label { font-weight: bold; width: 140px; color: #555; }" +
-    ".info-value { flex: 1; }" +
-    "table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }" +
-    "th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }" +
-    "th { background: #f5f5f5; font-weight: bold; }" +
-    ".text-right { text-align: right; }" +
-    ".total-row { font-weight: bold; background: #f9f9f9; }" +
-    ".signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }" +
-    ".signature-box { border-top: 1px solid #333; padding-top: 10px; }" +
-    ".signature-box p { margin-bottom: 5px; }" +
-    ".remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }" +
-    ".return-terms { border: 1px solid #333; border-radius: 6px; padding: 10px; margin-top: 12px; margin-bottom: 20px; background: #fcfcfc; }" +
-    ".return-terms h4 { margin-bottom: 8px; font-size: 13px; text-transform: uppercase; }" +
-    ".return-terms ul { margin: 0; padding-left: 16px; margin-bottom: 10px; }" +
-    ".return-terms li { margin-bottom: 6px; line-height: 1.4; }" +
-    ".return-terms p { margin-bottom: 8px; line-height: 1.4; }" +
-    ".return-note-page { page-break-after: always; }" +
-    ".return-note-page:last-child { page-break-after: auto; }" +
-    "@media print { body { padding: 0; } }";
+      <div class="sys-detail-box" style="margin-bottom:12px;">
+        <h3>Client &amp; Site Details</h3>
+        <div class="sys-site-grid">
+          <div>
+            <div class="sys-row"><span class="sys-label">Customer:</span><span>${data.companyName}</span></div>
+            <div class="sys-row"><span class="sys-label">Contact:</span><span>${data.contactName}</span></div>
+            <div class="sys-row"><span class="sys-label">Phone:</span><span>${data.contactPhone}</span></div>
+            <div class="sys-row"><span class="sys-label">Email:</span><span>${data.contactEmail || "-"}</span></div>
+          </div>
+          <div>
+            <div class="sys-row"><span class="sys-label">Site Name:</span><span>${data.siteName}</span></div>
+            <div class="sys-row"><span class="sys-label">Site ID:</span><span>${data.siteId || "-"}</span></div>
+            <div class="sys-row"><span class="sys-label">Site Location:</span><span>${data.siteLocation || "-"}</span></div>
+            <div class="sys-row"><span class="sys-label">Site Address:</span><span>${data.siteAddress || "-"}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-title">Equipment Details</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Part Number</th>
+            <th>Description</th>
+            <th class="text-right">On Site</th>
+            <th class="text-right">Good</th>
+            <th class="text-right">Dirty</th>
+            <th class="text-right">Damaged</th>
+            <th class="text-right">Scrap</th>
+            <th class="text-right">This Return</th>
+            <th class="text-right">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${systemItemRows}
+          <tr class="total-row">
+            <td colspan="7"><strong>Total This Return</strong></td>
+            <td class="text-right"><strong>${totalReturned}</strong></td>
+            <td></td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="8"><strong>Mass (Ton)</strong></td>
+            <td class="text-right"><strong>${(totalMass / 1000).toFixed(3)}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sys-safety">
+        <h4>SAFETY VERIFICATION</h4>
+        <div class="sys-site-grid">
+          <div>
+            <p>Vehicle safety loaded as per palletizing &amp; loading procedure</p>
+            <div class="sys-row"><span class="sys-label">Checker:</span><span>${data.receivedBy || "_______________"}</span></div>
+            <div class="sys-row"><span class="sys-label">Signature:</span><span>_______________</span></div>
+          </div>
+          <div>
+            <p><strong>Transport Charges</strong></p>
+            <div class="sys-row"><span class="sys-label">Internal Vehicle:</span><span>_______________</span></div>
+            <div class="sys-row"><span class="sys-label">External Vehicle:</span><span>_______________</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sys-signatures">
+        <div class="sig-block">
+          <p><strong>OTNO Representative</strong></p>
+          <p>Name: ${data.receivedBy || "_______________"}</p>
+          <p>Signature: _______________ &nbsp; Date: _______________</p>
+        </div>
+        <div class="sig-block">
+          <p><strong>Vehicle Reg No:</strong> ${data.vehicleNo || "_______________"}</p>
+          <p><strong>Transporter / Customer / Driver</strong></p>
+          <p>Name: ${data.returnedBy || "_______________"}</p>
+          <p>Signature: _______________ &nbsp; Date: _______________</p>
+        </div>
+        <div class="sig-block">
+          <p><strong>Customer Representative</strong></p>
+          <p>Name: _______________</p>
+          <p>Signature: _______________ &nbsp; Date: _______________</p>
+        </div>
+      </div>
+
+      <div class="sys-row" style="margin-top:8px;">
+        <span class="sys-label">Time Arrive:</span><span>_______________</span>
+        <span class="sys-label" style="margin-left:30px;">Time Depart:</span><span>_______________</span>
+      </div>
+
+      <p style="margin-top:10px; font-size:11px;">Please check that the equipment count agrees with the above. Hire charges after the quantities returned as above will cease on <strong>${data.returnDate}</strong>.</p>
+      <p style="font-size:11px;">All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+
+      <div class="sys-charges">
+        <h4>Charges:</h4>
+        <ul>
+          <li><strong>Dirty Equipment:</strong> Will be charged at 2× the list hire price of the item.</li>
+          <li><strong>Damaged Equipment:</strong> Will be charged at 4× the list hire price of the item.</li>
+          <li><strong>Lost / Scrap Equipment:</strong> Will be charged at the selling price of the item.</li>
+        </ul>
+      </div>
+
+      ${data.remarks ? '<div class="remarks"><strong>Remarks:</strong> ' + data.remarks + "</div>" : ""}
+
+      <div class="sys-footer">
+        <div class="sys-row"><span class="sys-label">Processed By:</span><span>${data.createdBy || "-"}</span></div>
+        <div class="sys-row"><span class="sys-label">Processed Date:</span><span>${formatTimestamp()}</span></div>
+      </div>
+    </div>
+  `;
+
+  const styles = `
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; padding: 16px; font-size: 11px; color: #222; }
+    .page { page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    @media print { body { padding: 0; } }
+
+    /* ---- Gate Pass Styles ---- */
+    .gp-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
+    .gp-logo { width: 90px; height: auto; margin-right: 16px; }
+    .gp-header-right h1 { font-size: 22px; margin: 0; text-transform: uppercase; }
+    .gp-header-right h2 { font-size: 16px; margin: 0; color: #444; }
+    .gp-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .gp-info-left, .gp-info-right { border: 1px solid #bbb; padding: 8px; border-radius: 4px; }
+    .gp-row { display: flex; margin-bottom: 4px; align-items: baseline; }
+    .gp-label { font-weight: bold; width: 130px; font-size: 11px; }
+    .gp-val { flex: 1; }
+    .gp-val-line { flex: 1; border-bottom: 1px solid #999; min-height: 14px; }
+    .gp-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .gp-table th, .gp-table td { border: 1px solid #999; padding: 6px 8px; }
+    .gp-table th { background: #e8e8e8; font-size: 11px; text-transform: uppercase; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .total-row { font-weight: bold; background: #f5f5f5; }
+    .gp-customer-section { border: 1px solid #bbb; padding: 10px; border-radius: 4px; margin-bottom: 12px; }
+    .gp-transport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .gp-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; }
+    .gp-sig-box p { margin-bottom: 4px; }
+    .gp-balance-row { font-size: 11px; padding: 4px 0; border-top: 1px solid #ddd; }
+    .gp-footer { text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 10px; }
+
+    /* ---- System Page Styles ---- */
+    .sys-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
+    .sys-logo { width: 90px; height: auto; margin-right: 16px; }
+    .sys-header-center { flex: 1; }
+    .sys-header-center h1 { font-size: 22px; margin-bottom: 2px; }
+    .copy-label { font-weight: bold; color: #555; font-size: 12px; }
+    .sys-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .sys-detail-box { border: 1px solid #bbb; padding: 8px; border-radius: 4px; }
+    .sys-detail-box h3 { font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 6px; }
+    .sys-row { display: flex; margin-bottom: 3px; align-items: baseline; font-size: 11px; }
+    .sys-label { font-weight: bold; width: 120px; color: #444; }
+    .sys-site-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .section-title { font-size: 13px; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th, td { border: 1px solid #bbb; padding: 5px 6px; font-size: 11px; }
+    th { background: #e8e8e8; font-weight: bold; }
+    .sys-safety { border: 1px solid #bbb; padding: 8px; border-radius: 4px; margin-bottom: 12px; }
+    .sys-safety h4 { font-size: 12px; text-transform: uppercase; margin-bottom: 6px; }
+    .sys-safety p { margin-bottom: 4px; }
+    .sys-signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .sig-block { border-top: 2px solid #333; padding-top: 8px; }
+    .sig-block p { margin-bottom: 4px; }
+    .sys-charges { border: 1px solid #333; border-radius: 4px; padding: 8px; margin-top: 10px; background: #fcfcfc; }
+    .sys-charges h4 { margin-bottom: 6px; font-size: 12px; }
+    .sys-charges ul { padding-left: 16px; margin: 0; }
+    .sys-charges li { margin-bottom: 4px; line-height: 1.4; }
+    .remarks { margin-top: 10px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; }
+    .sys-footer { margin-top: 12px; border-top: 1px solid #ccc; padding-top: 6px; }
+  `;
 
   const html =
     "<!DOCTYPE html><html><head>" +
     "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
     "<style>" + styles + "</style>" +
     "</head><body>" +
-    returnNotePage("Company Copy") +
-    returnNotePage("Client Copy") +
+    gatePassPage() +
+    systemPage("Company Copy") +
+    systemPage("Client Copy") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
