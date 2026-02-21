@@ -302,10 +302,15 @@ const Index = () => {
               <QuickActions />
             </div>
 
-            {/* Stats + Chart Row */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
-              {/* Left: Stat Cards */}
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 auto-rows-min">
+            {/* Chart + Stats Row */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
+              {/* Left: Inventory Chart */}
+              <div className="space-y-6">
+                <InventoryOverview chartOnly />
+              </div>
+
+              {/* Right: Stat Cards */}
+              <div className="grid auto-rows-min grid-cols-2 gap-3 md:grid-cols-3">
                 <StatCard
                   title="Total Scaffolds"
                   value={isLoading ? "..." : stats?.totalScaffolds || 0}
@@ -352,11 +357,6 @@ const Index = () => {
                   icon={Wrench}
                   iconBg="warning"
                 />
-              </div>
-
-              {/* Right: Inventory Chart */}
-              <div className="space-y-6">
-                <InventoryOverview chartOnly />
               </div>
             </div>
 
