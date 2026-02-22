@@ -1052,11 +1052,11 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const totalReturned = data.items.reduce((sum, item) => sum + item.totalReturned, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
-  // ---- Page 1: Gate Pass ----
+  // ---- Page 1: Manual-style Hire Return Slip ----
   const gatePassItemRows = data.items.map((item) =>
     "<tr>" +
-    "<td>" + (item.partNumber || "-") + "</td>" +
     "<td>" + (item.description || "-") + "</td>" +
+    '<td class="text-center">' + (item.partNumber || "-") + "</td>" +
     '<td class="text-center">' + item.good + "</td>" +
     '<td class="text-center">' + item.dirty + "</td>" +
     '<td class="text-center">' + item.damaged + "</td>" +
@@ -1066,35 +1066,45 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   ).join("");
 
   const gatePassPage = () => `
-    <div class="page gate-pass-page">
+    <div class="page gate-pass-page pink-sheet">
+      <div class="gp-top-meta">
+        <div class="gp-meta-box">Gate Pass</div>
+        <div class="gp-meta-box">Truck Bin No.</div>
+      </div>
+
       <div class="gp-header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTNO Logo" class="gp-logo" />
+        <img src="${window.location.origin}/otn-logo.png" alt="OTNOS Logo" class="gp-logo" />
         <div class="gp-header-right">
-          <h1>Gate Pass</h1>
+          <h1>otnos</h1>
           <h2>HIRE RETURN NOTE</h2>
+        </div>
+        <div class="gp-header-doc">
+          <p>Doc Ref: OTN-HRN</p>
+          <p>No: ${data.returnNoteNumber}</p>
         </div>
       </div>
 
       <div class="gp-info-grid">
         <div class="gp-info-left">
-          <div class="gp-row"><span class="gp-label">Return Note No.</span><span class="gp-val">${data.returnNoteNumber}</span></div>
           <div class="gp-row"><span class="gp-label">Customer</span><span class="gp-val">${data.companyName}</span></div>
           <div class="gp-row"><span class="gp-label">Site Name</span><span class="gp-val">${data.siteName}</span></div>
+          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val">${data.siteId || "-"}</span></div>
           <div class="gp-row"><span class="gp-label">Site Address</span><span class="gp-val">${data.siteAddress || "-"}</span></div>
         </div>
         <div class="gp-info-right">
+          <div class="gp-row"><span class="gp-label">OTNOS Branch</span><span class="gp-val">Embakasi</span></div>
           <div class="gp-row"><span class="gp-label">Date</span><span class="gp-val">${data.returnDate}</span></div>
           <div class="gp-row"><span class="gp-label">Hire End Date</span><span class="gp-val">${data.returnDate}</span></div>
-          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val">${data.siteId || "-"}</span></div>
-          <div class="gp-row"><span class="gp-label">Quotation No.</span><span class="gp-val">${data.quotationNumber}</span></div>
+          <div class="gp-row"><span class="gp-label">Customer Return</span><span class="gp-val">☑</span></div>
+          <div class="gp-row"><span class="gp-label">OTNOS Collect</span><span class="gp-val">☐</span></div>
         </div>
       </div>
 
       <table class="gp-table">
         <thead>
           <tr>
-            <th>Part No.</th>
             <th>Product Description</th>
+            <th class="text-center">Site Number</th>
             <th class="text-center">Good</th>
             <th class="text-center">Dirty</th>
             <th class="text-center">Damaged</th>
@@ -1121,7 +1131,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
         <div class="gp-sig-grid">
           <div class="gp-sig-box">
-            <p><strong>OTNO Checker</strong></p>
+            <p><strong>OTNOS Checker</strong></p>
             <p>Name: ${data.receivedBy || "_______________"}</p>
             <p>Signature: _______________</p>
           </div>
@@ -1141,8 +1151,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       </div>
 
       <div class="gp-footer">
-        <p>${COMPANY_NAME} &bull; ${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</p>
-        <p style="font-size:9px; margin-top:4px;">Copy distribution: OTNO Blue &bull; Customer White</p>
+        <p>${COMPANY_NAME} &bull; ${COMPANY_LOCATION}</p>
+        <p style="font-size:9px; margin-top:4px;">All transactions are subject to our terms of trade.</p>
       </div>
     </div>
   `;
@@ -1309,28 +1319,32 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     @media print { body { padding: 0; } }
 
     /* ---- Gate Pass Styles ---- */
-    .gp-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
+    .pink-sheet { background: #f8cddd; border: 1px solid #c58ea3; padding: 14px; }
+    .gp-top-meta { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+    .gp-meta-box { border: 1px dashed #666; padding: 4px 8px; font-size: 10px; background: #fce4ee; }
+    .gp-header { display: flex; align-items: center; border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
     .gp-logo { width: 90px; height: auto; margin-right: 16px; }
     .gp-header-right h1 { font-size: 22px; margin: 0; text-transform: uppercase; }
     .gp-header-right h2 { font-size: 16px; margin: 0; color: #444; }
+    .gp-header-doc { margin-left: auto; text-align: right; font-size: 10px; }
     .gp-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .gp-info-left, .gp-info-right { border: 1px solid #bbb; padding: 8px; border-radius: 4px; }
+    .gp-info-left, .gp-info-right { border: 1px solid #8a5a6b; padding: 8px; border-radius: 4px; background: #f9dce8; }
     .gp-row { display: flex; margin-bottom: 4px; align-items: baseline; }
     .gp-label { font-weight: bold; width: 130px; font-size: 11px; }
     .gp-val { flex: 1; }
     .gp-val-line { flex: 1; border-bottom: 1px solid #999; min-height: 14px; }
     .gp-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    .gp-table th, .gp-table td { border: 1px solid #999; padding: 6px 8px; }
-    .gp-table th { background: #e8e8e8; font-size: 11px; text-transform: uppercase; }
+    .gp-table th, .gp-table td { border: 1px solid #8a5a6b; padding: 6px 8px; }
+    .gp-table th { background: #f3b9cf; font-size: 11px; text-transform: uppercase; }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
-    .total-row { font-weight: bold; background: #f5f5f5; }
-    .gp-customer-section { border: 1px solid #bbb; padding: 10px; border-radius: 4px; margin-bottom: 12px; }
+    .total-row { font-weight: bold; background: #f3b9cf; }
+    .gp-customer-section { border: 1px solid #8a5a6b; padding: 10px; border-radius: 4px; margin-bottom: 12px; background: #f9dce8; }
     .gp-transport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
     .gp-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; }
     .gp-sig-box p { margin-bottom: 4px; }
-    .gp-balance-row { font-size: 11px; padding: 4px 0; border-top: 1px solid #ddd; }
-    .gp-footer { text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 8px; margin-top: 10px; }
+    .gp-balance-row { font-size: 11px; padding: 4px 0; border-top: 1px solid #8a5a6b; }
+    .gp-footer { text-align: center; font-size: 10px; color: #333; border-top: 1px solid #8a5a6b; padding-top: 8px; margin-top: 10px; }
 
     /* ---- System Page Styles ---- */
     .sys-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
@@ -1368,8 +1382,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<style>" + styles + "</style>" +
     "</head><body>" +
     gatePassPage() +
-    systemPage("Company Copy") +
-    systemPage("Client Copy") +
+    systemPage("System Generated") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
