@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import constructionImage from "@/assets/construction-silhouette.jpg";
 
 import {
   Form,
@@ -238,6 +239,20 @@ const AddScaffold = () => {
         <Header title="Add Scaffold" subtitle="Register new equipment" />
         <main className="p-6">
           <div className="max-w-2xl mx-auto">
+            <div className="relative mb-6 overflow-hidden rounded-2xl border border-border/60">
+              <img
+                src={constructionImage}
+                alt="Construction site silhouette"
+                className="h-36 w-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/50 to-transparent" />
+              <div className="absolute inset-0 flex items-end p-4">
+                <p className="text-sm font-medium text-primary-foreground">
+                  Keep your inventory records accurate before creating quotations and dispatches.
+                </p>
+              </div>
+            </div>
+
             <Button
               variant="ghost"
               className="mb-6"
