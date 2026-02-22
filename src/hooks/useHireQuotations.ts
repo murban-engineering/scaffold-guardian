@@ -53,6 +53,7 @@ export interface HireQuotation {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  dispatch_date: string | null;
   line_items?: QuotationLineItem[];
 }
 
