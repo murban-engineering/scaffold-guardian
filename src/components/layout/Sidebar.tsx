@@ -144,21 +144,21 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
           size="icon"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
-          className="bg-card shadow-md"
+          className="border border-white/40 bg-card/85 shadow-lg backdrop-blur-xl"
         >
           <Menu className="h-5 w-5" />
         </Button>
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-72 bg-card p-0 text-foreground shadow-2xl">
+        <SheetContent side="left" className="w-72 rounded-r-3xl border-r border-white/40 bg-sidebar/90 p-0 text-foreground shadow-2xl backdrop-blur-xl">
           <aside className="flex h-full flex-col">{sidebarContent(true)}</aside>
         </SheetContent>
       </Sheet>
 
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border bg-sidebar shadow-sm transition-all duration-300 md:flex",
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-white/40 bg-sidebar/90 shadow-lg backdrop-blur-xl transition-all duration-300 md:flex",
           collapsed ? "w-20" : "w-64"
         )}
       >
