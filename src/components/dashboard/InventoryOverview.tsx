@@ -153,46 +153,46 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     const availableArc = (Math.max(Math.min(availablePct, 100), 0) / 100) * 360;
 
     return (
-      <div className="animate-fade-in rounded-2xl border border-emerald-200/30 bg-gradient-to-br from-[hsla(172,50%,26%,0.5)] via-[hsla(172,50%,22%,0.45)] to-[hsla(172,50%,18%,0.4)] p-5 text-slate-100 shadow-[0_20px_45px_-25px_rgba(6,95,70,0.75)] backdrop-blur-2xl">
+      <div className="animate-fade-in rounded-3xl border border-white/60 bg-gradient-to-br from-[hsla(174,30%,92%,0.86)] via-[hsla(188,40%,94%,0.88)] to-[hsla(268,48%,93%,0.83)] p-6 text-slate-900 shadow-[0_22px_40px_-24px_rgba(15,23,42,0.4)] backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-white/20 bg-white/10 p-2 backdrop-blur-md">
-              <Package className="h-4 w-4 text-slate-100" />
+            <div className="rounded-lg border border-teal-200/70 bg-white/75 p-2 shadow-sm backdrop-blur-md">
+              <Package className="h-4 w-4 text-teal-600" />
             </div>
-            <h3 className="text-sm font-semibold tracking-tight text-white">Inventory Analysis</h3>
+            <h3 className="text-sm font-semibold tracking-tight text-slate-900">Inventory Analysis</h3>
           </div>
-          <span className="text-xs text-slate-300">Monthly</span>
+          <span className="text-xs text-teal-700">Monthly</span>
         </div>
 
-        <div className="grid grid-cols-[auto_1fr] items-center gap-6">
-          <div className="relative flex h-40 w-40 items-center justify-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative flex h-56 w-56 items-center justify-center">
             <div
-              className="h-36 w-36 rounded-full"
+              className="h-52 w-52 rounded-full shadow-[0_16px_40px_-22px_rgba(8,145,178,0.6)]"
               style={{
-                background: `conic-gradient(#facc15 0deg ${availableArc}deg, #38bdf8 ${availableArc}deg 360deg)`,
+                background: `conic-gradient(#14b8a6 0deg ${availableArc}deg, #c4b5fd ${availableArc}deg 360deg)`,
               }}
             />
-            <div className="absolute flex h-24 w-24 flex-col items-center justify-center rounded-full border border-emerald-100/20 bg-emerald-950/70 text-center shadow-inner backdrop-blur-md">
-              <span className="text-2xl font-bold text-white">{availablePct}%</span>
-              <span className="text-[11px] text-slate-300">{totals.availableStock} units</span>
+            <div className="absolute flex h-36 w-36 flex-col items-center justify-center rounded-full border border-white/70 bg-white/80 text-center shadow-inner backdrop-blur-md">
+              <span className="text-4xl font-bold text-slate-900">{availablePct}%</span>
+              <span className="text-xs text-slate-500">{totals.availableStock} units</span>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="w-full space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 backdrop-blur-md">
             <div className="flex items-center justify-between text-sm">
-              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Available</span>
-              <span className="font-semibold text-white">{totals.availableStock}</span>
-              <span className="text-xs text-emerald-300">+{availablePct}%</span>
+              <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-teal-500" /> Available</span>
+              <span className="font-semibold text-slate-900">{totals.availableStock}</span>
+              <span className="text-xs text-teal-700">{availablePct}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-sky-400" /> On Hire</span>
-              <span className="font-semibold text-white">{totals.onHire}</span>
-              <span className="text-xs text-amber-300">+{onHirePct}%</span>
+              <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-violet-400" /> On Hire</span>
+              <span className="font-semibold text-slate-900">{totals.onHire}</span>
+              <span className="text-xs text-violet-600">{onHirePct}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-violet-400" /> Opening Stock</span>
-              <span className="font-semibold text-white">{totals.openingStock}</span>
-              <span className="text-xs text-slate-300">100%</span>
+              <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-sky-400" /> Opening Stock</span>
+              <span className="font-semibold text-slate-900">{totals.openingStock}</span>
+              <span className="text-xs text-slate-500">100%</span>
             </div>
           </div>
         </div>
