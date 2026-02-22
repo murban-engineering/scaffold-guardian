@@ -24,8 +24,11 @@ const currency = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 2,
 });
 
-const asDateOrToday = (value: string) => {
-  const parsed = new Date(`${value}T00:00:00`);
+const asDateOrToday = (value?: string | null) => {
+  if (!value) return new Date();
+
+  const normalizedValue = value.includes("T") ? value : `${value}T00:00:00`;
+  const parsed = new Date(normalizedValue);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 };
 
@@ -403,7 +406,7 @@ const Accounting = () => {
     return activeQuotations.map((q, idx) => {
       const lineItems = q.line_items ?? [];
       // Use stored dispatch_date if available, otherwise fall back to line item timestamps
-      const storedDispatchDate = (q as any).dispatch_date;
+      const storedDispatchDate = q.dispatch_date;
       let dispatchDate: string;
       if (storedDispatchDate) {
         dispatchDate = format(asDateOrToday(storedDispatchDate), "yyyy-MM-dd");
