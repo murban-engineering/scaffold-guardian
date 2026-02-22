@@ -612,6 +612,50 @@ const HireQuotationWorkflow = ({
   // Return save effect is placed after returnItems declaration below
 
   useEffect(() => {
+    if (!initialQuotation) return;
+    if (deliveryHistory.length > 0) return;
+
+    const lineItems = initialQuotation.line_items ?? [];
+    const persistedDeliveredItems = lineItems
+      .filter((item) => (item.delivered_quantity ?? 0) > 0)
+      .map((item) => {
+        const deliveredQty = item.delivered_quantity ?? 0;
+        const massPerItem = item.mass_per_item ?? 0;
+        return {
+          itemCode: item.part_number ?? "",
+          description: item.description ?? "",
+          quantityDelivered: deliveredQty,
+          balanceAfter: item.balance_quantity ?? 0,
+          massPerItem,
+          totalMass: deliveredQty * massPerItem,
+        };
+      });
+
+    if (!persistedDeliveredItems.length) return;
+
+    const derivedDeliveryDate =
+      initialQuotation.dispatch_date ||
+      initialQuotation.updated_at ||
+      initialQuotation.created_at ||
+      new Date().toISOString();
+
+    setDeliveryHistory([
+      {
+        id: `persisted-delivery-${initialQuotation.id}`,
+        deliveryNoteNumber: deriveDeliveryNoteNumber(initialQuotation.quotation_number || "", 1),
+        deliveryDate: new Date(derivedDeliveryDate).toISOString().split("T")[0],
+        deliveredBy: "",
+        receivedBy: "",
+        vehicleNo: "",
+        status: "dispatched",
+        items: persistedDeliveredItems,
+        totalMass: persistedDeliveredItems.reduce((sum, item) => sum + item.totalMass, 0),
+        createdAt: derivedDeliveryDate,
+      },
+    ]);
+  }, [initialQuotation, deliveryHistory.length]);
+
+  useEffect(() => {
     setRemainingQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
@@ -693,6 +737,49 @@ const HireQuotationWorkflow = ({
       returnItems,
     }));
   }, [returnStorageKey, returnHistory, returnProcessed, returnSequence, returnItems]);
+
+  useEffect(() => {
+    if (!initialQuotation) return;
+    if (returnHistory.length > 0) return;
+
+    const lineItems = initialQuotation.line_items ?? [];
+    const persistedReturnItems = lineItems
+      .filter((item) => (item.returned_quantity ?? 0) > 0)
+      .map((item) => {
+        const returnedQty = item.returned_quantity ?? 0;
+        const massPerItem = item.mass_per_item ?? 0;
+        return {
+          itemCode: item.part_number ?? "",
+          description: item.description ?? "",
+          good: returnedQty,
+          dirty: 0,
+          damaged: 0,
+          scrap: 0,
+          totalReturned: returnedQty,
+          balanceAfter: item.return_balance_quantity ?? 0,
+          massPerItem,
+          totalMass: returnedQty * massPerItem,
+        };
+      });
+
+    if (!persistedReturnItems.length) return;
+
+    setReturnHistory([
+      {
+        id: `persisted-return-${initialQuotation.id}`,
+        returnNoteNumber: deriveReturnNoteNumber(initialQuotation.quotation_number || "", 1),
+        returnDate: new Date(initialQuotation.updated_at || initialQuotation.created_at).toISOString().split("T")[0],
+        returnedBy: "",
+        receivedBy: "",
+        vehicleNo: "",
+        status: "processed",
+        items: persistedReturnItems,
+        totalReturned: persistedReturnItems.reduce((sum, item) => sum + item.totalReturned, 0),
+        totalMass: persistedReturnItems.reduce((sum, item) => sum + item.totalMass, 0),
+        createdAt: initialQuotation.updated_at || initialQuotation.created_at,
+      },
+    ]);
+  }, [initialQuotation, returnHistory.length]);
 
   // Auto-fill site form from client details when entering site-master step
   useEffect(() => {
