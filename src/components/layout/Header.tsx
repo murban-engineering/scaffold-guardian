@@ -32,7 +32,7 @@ const Header = ({ title, subtitle, searchValue, onSearchChange }: HeaderProps) =
     : "Worker";
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-white/30 bg-background/55 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="space-y-0.5">
           {subtitle && <p className="text-sm font-medium text-primary">{subtitle.split('.')[0]}</p>}
@@ -47,7 +47,7 @@ const Header = ({ title, subtitle, searchValue, onSearchChange }: HeaderProps) =
               placeholder="Search..."
               value={searchValue ?? ""}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              className="h-10 rounded-xl border-border/60 bg-card pl-9 shadow-sm transition focus-visible:ring-1 focus-visible:ring-primary"
+              className="h-10 rounded-2xl border-white/45 bg-card/80 pl-9 shadow-md backdrop-blur-xl transition focus-visible:ring-1 focus-visible:ring-primary"
             />
           </div>
 
@@ -55,7 +55,7 @@ const Header = ({ title, subtitle, searchValue, onSearchChange }: HeaderProps) =
           <Button
             variant="ghost"
             size="icon"
-            className="relative h-10 w-10 self-start rounded-xl border border-border/60 bg-card shadow-sm hover:bg-muted sm:self-auto"
+            className="relative h-10 w-10 self-start rounded-2xl border border-white/45 bg-card/80 shadow-md backdrop-blur-xl hover:bg-muted/70 sm:self-auto"
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
@@ -66,7 +66,7 @@ const Header = ({ title, subtitle, searchValue, onSearchChange }: HeaderProps) =
           </Button>
 
           {/* User */}
-          <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-card px-3 py-1.5 shadow-sm">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-white/45 bg-card/80 px-3 py-1.5 shadow-md backdrop-blur-xl">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-foreground">{profile?.full_name || "User"}</p>
               <p className="text-xs text-muted-foreground">{displayRole}</p>
