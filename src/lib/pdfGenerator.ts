@@ -403,7 +403,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   }
 
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
-  const noteTitle = data.noteTitle ?? "Hire Loading Note";
+  const noteTitle = data.noteTitle ?? "Hire Loading Report";
 
   const loadingNotePage = (copyLabel: string) => `
     <div class="loading-note-page">
@@ -415,7 +415,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
           <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <p><strong>${noteTitle}</strong></p>
+          <h2 class="note-title">${noteTitle}</h2>
           <p class="copy-label">${copyLabel}</p>
         </div>
       </div>
@@ -442,19 +442,9 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
       </div>
 
       <div class="section">
-        <h3>Loading Details</h3>
-        <div class="info-row"><span class="info-label">Loaded By:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Checked By:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Date:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Time:</span><span class="info-value">____________________</span></div>
-      </div>
-
-      <div class="section">
-        <h3>Ground Verification (To be completed on site)</h3>
-        <div class="info-row"><span class="info-label">Received By:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Site Time In:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Site Time Out:</span><span class="info-value">____________________</span></div>
-        <div class="info-row"><span class="info-label">Remarks:</span><span class="info-value">________________________________________________</span></div>
+        <h3>Comments</h3>
+        <p>Quote Excludes Transport To And From Site</p>
+        <p>Four Weeks Hire Deposit Required Upfront</p>
       </div>
 
       <table>
@@ -494,7 +484,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Hire Loading Note - ${data.quotationNumber}</title>
+      <title>Hire Loading Report - ${data.quotationNumber}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
@@ -503,6 +493,14 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         .header-content { flex: 1; }
         .header-content h1 { font-size: 24px; margin-bottom: 5px; }
         .header-content p { color: #666; }
+        .note-title {
+          font-size: 30px;
+          font-weight: 800;
+          text-decoration: underline;
+          text-transform: uppercase;
+          margin-top: 8px;
+          color: #111;
+        }
         .copy-label { font-weight: bold; color: #111; margin-top: 4px; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
         .info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
@@ -512,6 +510,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         .info-value { flex: 1; }
         .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 16px; }
         .section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
+        .section p { margin-bottom: 4px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f5f5; font-weight: bold; }
