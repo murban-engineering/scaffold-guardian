@@ -147,52 +147,54 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   };
 
   if (chartOnly) {
+    const safeOpeningStock = Math.max(totals.openingStock, 1);
+    const availablePct = Math.round((totals.availableStock / safeOpeningStock) * 100);
+    const onHirePct = Math.round((totals.onHire / safeOpeningStock) * 100);
+    const availableArc = (Math.max(Math.min(availablePct, 100), 0) / 100) * 360;
+
     return (
-      <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm animate-fade-in">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="rounded-lg bg-primary/10 p-2">
-            <Package className="h-4 w-4 text-primary" />
+      <div className="rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 p-5 text-slate-100 shadow-xl animate-fade-in">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-white/10 p-2">
+              <Package className="h-4 w-4 text-slate-100" />
+            </div>
+            <h3 className="text-sm font-semibold tracking-tight text-white">Inventory Analysis</h3>
           </div>
-          <h3 className="text-sm font-semibold tracking-tight">Inventory Graphical Analysis</h3>
+          <span className="text-xs text-slate-300">Monthly</span>
         </div>
 
-        {/* Summary pills */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="flex flex-col items-center rounded-xl bg-muted/60 px-3 py-2.5">
-            <Boxes className="h-4 w-4 text-muted-foreground mb-1" />
-            <span className="text-lg font-bold">{totals.openingStock}</span>
-            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">Opening Stock</span>
+        <div className="grid grid-cols-[auto_1fr] items-center gap-6">
+          <div className="relative flex h-40 w-40 items-center justify-center">
+            <div
+              className="h-36 w-36 rounded-full"
+              style={{
+                background: `conic-gradient(#facc15 0deg ${availableArc}deg, #38bdf8 ${availableArc}deg 360deg)`,
+              }}
+            />
+            <div className="absolute flex h-24 w-24 flex-col items-center justify-center rounded-full bg-slate-900/95 text-center shadow-inner">
+              <span className="text-2xl font-bold text-white">{availablePct}%</span>
+              <span className="text-[11px] text-slate-300">{totals.availableStock} units</span>
+            </div>
           </div>
-          <div className="flex flex-col items-center rounded-xl bg-primary/8 px-3 py-2.5">
-            <Warehouse className="h-4 w-4 text-primary mb-1" />
-            <span className="text-lg font-bold text-primary">{totals.availableStock}</span>
-            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">Available</span>
-          </div>
-          <div className="flex flex-col items-center rounded-xl bg-amber-500/8 px-3 py-2.5">
-            <Truck className="h-4 w-4 text-amber-600 mb-1" />
-            <span className="text-lg font-bold text-amber-600">{totals.onHire}</span>
-            <span className="text-[10px] text-muted-foreground font-medium leading-tight text-center">On Hire</span>
-          </div>
-        </div>
 
-        {/* Chart */}
-        <div className="h-52 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} barCategoryGap="20%">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: "10px",
-                  border: "1px solid hsl(var(--border))",
-                  background: "hsl(var(--card))",
-                  fontSize: "12px",
-                }}
-              />
-              <Bar dataKey="quantity" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Available</span>
+              <span className="font-semibold text-white">{totals.availableStock}</span>
+              <span className="text-xs text-emerald-300">+{availablePct}%</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-sky-400" /> On Hire</span>
+              <span className="font-semibold text-white">{totals.onHire}</span>
+              <span className="text-xs text-amber-300">+{onHirePct}%</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-2 text-slate-200"><span className="h-2 w-2 rounded-full bg-violet-400" /> Opening Stock</span>
+              <span className="font-semibold text-white">{totals.openingStock}</span>
+              <span className="text-xs text-slate-300">100%</span>
+            </div>
+          </div>
         </div>
       </div>
     );
