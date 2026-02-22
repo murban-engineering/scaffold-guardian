@@ -1139,9 +1139,10 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "</tr>"
   ).join("");
 
-  const gatePassPage = () => `
+  const gatePassPage = (copyLabel: string) => `
     <div class="page gate-pass-page pink-sheet">
       <div class="gp-top-meta">
+        <div class="gp-meta-box">${copyLabel}</div>
         <div class="gp-meta-box">Gate Pass</div>
         <div class="gp-meta-box">Truck Bin No.</div>
       </div>
@@ -1452,8 +1453,10 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
     "<style>" + styles + "</style>" +
     "</head><body>" +
-    gatePassPage() +
-    systemPage("Office Copy") +
+    gatePassPage("Company Copy") +
+    systemPage("Company Copy") +
+    gatePassPage("Client Copy") +
+    systemPage("Client Copy") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
