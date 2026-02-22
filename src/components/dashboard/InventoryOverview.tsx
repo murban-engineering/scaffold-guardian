@@ -178,6 +178,17 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             </div>
           </div>
 
+          <div className="flex items-center gap-6 text-xs font-medium text-slate-700">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-teal-500" />
+              Available
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-violet-400" />
+              On Hire
+            </span>
+          </div>
+
           <div className="w-full space-y-3 rounded-2xl border border-white/60 bg-white/60 p-4 backdrop-blur-md">
             <div className="flex items-center justify-between text-sm">
               <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-teal-500" /> Available</span>
