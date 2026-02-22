@@ -260,6 +260,25 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         </Card>
       </div>
 
+      <div className="mb-6 h-60 w-full rounded-xl border border-border/60 bg-background/40 p-3">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} barCategoryGap="20%">
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
+            <Tooltip
+              contentStyle={{
+                borderRadius: "10px",
+                border: "1px solid hsl(var(--border))",
+                background: "hsl(var(--card))",
+                fontSize: "12px",
+              }}
+            />
+            <Bar dataKey="quantity" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
