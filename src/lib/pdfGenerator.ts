@@ -1227,7 +1227,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </div>
   `;
 
-  // ---- Page 2: System-generated Return Note ----
+  // ---- Page 2: Return Note ----
   const systemItemRows = data.items.map((item) =>
     "<tr>" +
     "<td>" + (item.partNumber || "-") + "</td>" +
@@ -1417,7 +1417,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     .gp-balance-row { font-size: 11px; padding: 4px 0; border-top: 1px solid #8a5a6b; }
     .gp-footer { text-align: center; font-size: 10px; color: #333; border-top: 1px solid #8a5a6b; padding-top: 8px; margin-top: 10px; }
 
-    /* ---- System Page Styles ---- */
+    /* ---- Return Note Page Styles ---- */
     .sys-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
     .sys-logo { width: 90px; height: auto; margin-right: 16px; }
     .sys-header-center { flex: 1; }
@@ -1453,7 +1453,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<style>" + styles + "</style>" +
     "</head><body>" +
     gatePassPage() +
-    systemPage("System Generated") +
+    systemPage("Office Copy") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
