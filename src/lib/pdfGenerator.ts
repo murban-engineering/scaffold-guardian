@@ -1053,15 +1053,15 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
   // ---- Page 1: Manual-style Hire Return Slip ----
-  const gatePassItemRows = data.items.map((item) =>
+  const gatePassItemRows = Array.from({ length: 20 }, () =>
     "<tr>" +
-    "<td>" + (item.description || "-") + "</td>" +
-    '<td class="text-center">' + (item.partNumber || "-") + "</td>" +
-    '<td class="text-center">' + item.good + "</td>" +
-    '<td class="text-center">' + item.dirty + "</td>" +
-    '<td class="text-center">' + item.damaged + "</td>" +
-    '<td class="text-center">' + item.scrap + "</td>" +
-    '<td class="text-center">' + item.totalReturned + "</td>" +
+    '<td class="gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
+    '<td class="text-center gp-empty-row"></td>' +
     "</tr>"
   ).join("");
 
@@ -1080,23 +1080,23 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         </div>
         <div class="gp-header-doc">
           <p>Doc Ref: OTN-HRN</p>
-          <p>No: ${data.returnNoteNumber}</p>
+          <p>No: _______________</p>
         </div>
       </div>
 
       <div class="gp-info-grid">
         <div class="gp-info-left">
-          <div class="gp-row"><span class="gp-label">Customer</span><span class="gp-val">${data.companyName}</span></div>
-          <div class="gp-row"><span class="gp-label">Site Name</span><span class="gp-val">${data.siteName}</span></div>
-          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val">${data.siteId || "-"}</span></div>
-          <div class="gp-row"><span class="gp-label">Site Address</span><span class="gp-val">${data.siteAddress || "-"}</span></div>
+          <div class="gp-row"><span class="gp-label">Customer</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Site Name</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Site Address</span><span class="gp-val-line"></span></div>
         </div>
         <div class="gp-info-right">
-          <div class="gp-row"><span class="gp-label">OTNOS Branch</span><span class="gp-val">Embakasi</span></div>
-          <div class="gp-row"><span class="gp-label">Date</span><span class="gp-val">${data.returnDate}</span></div>
-          <div class="gp-row"><span class="gp-label">Hire End Date</span><span class="gp-val">${data.returnDate}</span></div>
-          <div class="gp-row"><span class="gp-label">Customer Return</span><span class="gp-val">☑</span></div>
-          <div class="gp-row"><span class="gp-label">OTNOS Collect</span><span class="gp-val">☐</span></div>
+          <div class="gp-row"><span class="gp-label">OTNOS Branch</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Date</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Hire End Date</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">Customer Return</span><span class="gp-val-line"></span></div>
+          <div class="gp-row"><span class="gp-label">OTNOS Collect</span><span class="gp-val-line"></span></div>
         </div>
       </div>
 
@@ -1114,17 +1114,13 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         </thead>
         <tbody>
           ${gatePassItemRows}
-          <tr class="total-row">
-            <td colspan="6" class="text-right"><strong>Total Returned</strong></td>
-            <td class="text-center"><strong>${totalReturned}</strong></td>
-          </tr>
         </tbody>
       </table>
 
       <div class="gp-customer-section">
         <div class="gp-transport-grid">
           <div class="gp-row"><span class="gp-label">Size of Vehicle</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Vehicle Reg. No</span><span class="gp-val">${data.vehicleNo || "_______________"}</span></div>
+          <div class="gp-row"><span class="gp-label">Vehicle Reg. No</span><span class="gp-val-line"></span></div>
           <div class="gp-row"><span class="gp-label">Time In</span><span class="gp-val-line"></span></div>
           <div class="gp-row"><span class="gp-label">Time Out</span><span class="gp-val-line"></span></div>
         </div>
@@ -1132,12 +1128,12 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         <div class="gp-sig-grid">
           <div class="gp-sig-box">
             <p><strong>OTNOS Checker</strong></p>
-            <p>Name: ${data.receivedBy || "_______________"}</p>
+            <p>Name: _______________</p>
             <p>Signature: _______________</p>
           </div>
           <div class="gp-sig-box">
             <p><strong>Customer / Driver</strong></p>
-            <p>Name: ${data.returnedBy || "_______________"}</p>
+            <p>Name: _______________</p>
             <p>Signature: _______________</p>
           </div>
         </div>
@@ -1336,6 +1332,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     .gp-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
     .gp-table th, .gp-table td { border: 1px solid #8a5a6b; padding: 6px 8px; }
     .gp-table th { background: #f3b9cf; font-size: 11px; text-transform: uppercase; }
+    .gp-empty-row { height: 24px; }
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .total-row { font-weight: bold; background: #f3b9cf; }
