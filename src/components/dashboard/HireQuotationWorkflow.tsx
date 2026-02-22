@@ -1512,7 +1512,7 @@ const HireQuotationWorkflow = ({
       createdBy: header.createdBy,
       clientId: header.clientId,
       siteId: getSelectedSiteNumber(),
-      noteTitle: `Hire Loading Report (${delivery.deliveryNoteNumber})`,
+      noteTitle: "Hire Loading Report",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
