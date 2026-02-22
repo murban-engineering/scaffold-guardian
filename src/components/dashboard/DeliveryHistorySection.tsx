@@ -168,18 +168,18 @@ export const DeliveryHistorySection = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onPrintDeliveryNote(delivery)}
-                    >
-                      <Printer className="h-3 w-3 mr-1" />
-                      DN
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       onClick={() => onPrintLoadingNote(delivery)}
                     >
                       <Printer className="h-3 w-3 mr-1" />
                       LN
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onPrintDeliveryNote(delivery)}
+                    >
+                      <Printer className="h-3 w-3 mr-1" />
+                      DN
                     </Button>
                     {delivery.status === "pending" && (
                       <Button

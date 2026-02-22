@@ -441,12 +441,6 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         </div>
       </div>
 
-      <div class="section">
-        <h3>Comments</h3>
-        <p>Quote Excludes Transport To And From Site</p>
-        <p>Four Weeks Hire Deposit Required Upfront</p>
-      </div>
-
       <table>
         <thead>
           <tr>
@@ -477,6 +471,63 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
           </tr>
         </tbody>
       </table>
+
+      <div class="section comments-section">
+        <h3>Comments</h3>
+        <p>Quote Excludes Transport To And From Site</p>
+        <p>Four Weeks Hire Deposit Required Upfront</p>
+      </div>
+
+      <div class="post-total-grid">
+        <div class="section transport-section">
+          <h3>Transport Charges</h3>
+          <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">R</span></div>
+          <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">R</span></div>
+        </div>
+
+        <div class="section safety-section">
+          <h3>Safety Verification</h3>
+          <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
+          <div class="line-row"><span>Checker:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="section signing-section">
+        <div class="signing-grid">
+          <div class="line-row"><span>Checker's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+
+          <div class="line-row"><span>Transporter's/Customer/Driver's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+
+          <div class="line-row"><span>Customer Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="section transporter-section">
+        <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
+        <div class="line-row split-row">
+          <span>Time Arrive:</span><span class="line-fill"></span>
+          <span>Time Depart:</span><span class="line-fill"></span>
+        </div>
+      </div>
+
+      <div class="section terms-section">
+        <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
+        <p>* The Hirer undertakes to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</p>
+        <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
+        <p>* The Hirer shall not use any goods that are non-standard or unusual and will report their existence to the Owner.</p>
+        <p><strong>Charges:</strong></p>
+        <p>* Dirty Equipment will be charged for at 2X the list hire price of the item.</p>
+        <p>* Damaged Equipment will be charged for at 4X the list hire price of the item.</p>
+        <p>* Lost Equipment will be charged for at the selling price of the item.</p>
+      </div>
     </div>
   `;
 
@@ -511,11 +562,21 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 16px; }
         .section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
         .section p { margin-bottom: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #f5f5f5; font-weight: bold; }
         .text-right { text-align: right; }
         .total-row { font-weight: bold; background: #f9f9f9; }
+        .comments-section { margin-bottom: 12px; }
+        .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .line-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .line-fill { flex: 1; border-bottom: 1px solid #555; min-height: 14px; display: inline-block; }
+        .signing-section { margin-bottom: 12px; }
+        .signing-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 8px 12px; }
+        .transporter-section { margin-bottom: 12px; }
+        .split-row { gap: 8px; }
+        .split-row > span:nth-child(3) { margin-left: 12px; }
+        .terms-section { font-size: 11px; line-height: 1.35; }
         .loading-note-page { page-break-after: always; }
         .loading-note-page:last-child { page-break-after: auto; }
         @media print { body { padding: 0; } }
