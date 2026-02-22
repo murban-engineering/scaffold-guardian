@@ -1,0 +1,1 @@
+ALTER TABLE public.hire_quotations ADD COLUMN dispatch_date date;

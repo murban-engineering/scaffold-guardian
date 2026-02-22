@@ -402,11 +402,18 @@ const Accounting = () => {
     const bd = asDateOrToday(billingDate);
     return activeQuotations.map((q, idx) => {
       const lineItems = q.line_items ?? [];
-      const dispatchDates = lineItems
-        .filter((li) => (li.delivered_quantity ?? 0) > 0)
-        .map((li) => li.updated_at).filter(Boolean).sort();
-      const dispatchDateRaw = dispatchDates[0] ?? q.updated_at ?? q.created_at;
-      const dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+      // Use stored dispatch_date if available, otherwise fall back to line item timestamps
+      const storedDispatchDate = (q as any).dispatch_date;
+      let dispatchDate: string;
+      if (storedDispatchDate) {
+        dispatchDate = format(asDateOrToday(storedDispatchDate), "yyyy-MM-dd");
+      } else {
+        const dispatchDates = lineItems
+          .filter((li) => (li.delivered_quantity ?? 0) > 0)
+          .map((li) => li.updated_at).filter(Boolean).sort();
+        const dispatchDateRaw = dispatchDates[0] ?? q.updated_at ?? q.created_at;
+        dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+      }
       const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
 
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {

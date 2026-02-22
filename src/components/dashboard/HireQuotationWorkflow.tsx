@@ -1264,6 +1264,10 @@ const HireQuotationWorkflow = ({
 
   // Dispatch a delivery and save to database
   const handleDispatchDelivery = async () => {
+    if (!deliveryNote.deliveryDate) {
+      toast.error("Please set the Dispatch Date before dispatching.");
+      return;
+    }
     if (!validateDeliveryQuantities()) return;
 
     // Deduct inventory first
@@ -1307,7 +1311,8 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           status: "dispatched",
-        });
+          dispatch_date: deliveryNote.deliveryDate,
+        } as any);
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
       }
@@ -3409,7 +3414,7 @@ const HireQuotationWorkflow = ({
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <Label htmlFor="deliveryDate">Delivery Date</Label>
+                  <Label htmlFor="deliveryDate">Dispatch Date</Label>
                   <Input
                     id="deliveryDate"
                     type="date"
@@ -3618,7 +3623,7 @@ const HireQuotationWorkflow = ({
                 <Input value={deliveryNote.deliveryNoteNo} readOnly className="bg-muted" />
               </div>
               <div>
-                <Label>Delivery Date</Label>
+                <Label>Dispatch Date</Label>
                 <Input
                   type="date"
                   value={deliveryNote.deliveryDate}
