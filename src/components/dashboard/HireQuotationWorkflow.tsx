@@ -129,8 +129,10 @@ type ReturnItem = {
   scaffoldId: string | null;
   itemCode: string;
   description: string;
+  orderedQuantity: number;
   totalDelivered: number;
   previouslyReturned: number;
+  maxReturnable: number;
   returnBalance: number;
   good: string;
   dirty: string;
@@ -708,15 +710,21 @@ const HireQuotationWorkflow = ({
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
         const existing = prev.find((entry) => entry.id === item.id);
+        const orderedQuantity = parseNumber(item.originalQuantity);
         const totalDelivered = parseNumber(item.qtyDelivered);
+        const maxReturnable = Math.min(orderedQuantity, totalDelivered);
+        const previouslyReturned = Math.min(existing?.previouslyReturned ?? 0, maxReturnable);
+        const computedBalance = Math.max(maxReturnable - previouslyReturned, 0);
         return {
           id: item.id,
           scaffoldId: item.scaffoldId,
           itemCode: item.itemCode,
           description: item.description,
+          orderedQuantity,
           totalDelivered,
-          previouslyReturned: existing?.previouslyReturned ?? 0,
-          returnBalance: existing?.returnBalance ?? totalDelivered,
+          previouslyReturned,
+          maxReturnable,
+          returnBalance: Math.min(existing?.returnBalance ?? computedBalance, computedBalance),
           good: existing?.good ?? "0",
           dirty: existing?.dirty ?? "0",
           damaged: existing?.damaged ?? "0",
@@ -1972,6 +1980,10 @@ const HireQuotationWorkflow = ({
     setReturnItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
+        if (item.returnBalance <= 0) {
+          toast.error(`${item.description || item.itemCode} has already been fully returned.`);
+          return item;
+        }
         const nextItem = { ...item, [field]: value };
         const totalReturned =
           parseNumber(nextItem.good) +
@@ -2075,7 +2087,7 @@ const HireQuotationWorkflow = ({
           const damaged = parseNumber(item.damaged);
           const scrap = parseNumber(item.scrap);
           const totalReturned = good + dirty + damaged + scrap;
-          const balanceAfter = item.returnBalance - totalReturned;
+          const balanceAfter = Math.max(item.returnBalance - totalReturned, 0);
           return {
             itemCode: item.itemCode,
             description: item.description,
@@ -2105,8 +2117,8 @@ const HireQuotationWorkflow = ({
       // Update return balances
       const updatedReturnItems = returnItems.map((item) => {
         const totalReturned = parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap);
-        const newPreviouslyReturned = item.previouslyReturned + totalReturned;
-        const newReturnBalance = item.returnBalance - totalReturned;
+        const newPreviouslyReturned = Math.min(item.previouslyReturned + totalReturned, item.maxReturnable);
+        const newReturnBalance = Math.max(item.maxReturnable - newPreviouslyReturned, 0);
         return { ...item, previouslyReturned: newPreviouslyReturned, returnBalance: newReturnBalance, good: "0", dirty: "0", damaged: "0", scrap: "0" };
       });
       setReturnItems(updatedReturnItems);
@@ -2117,10 +2129,11 @@ const HireQuotationWorkflow = ({
           .filter((item) => item.itemCode)
           .map((item) => {
             const totalReturned = parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap);
+            const newPreviouslyReturned = Math.min(item.previouslyReturned + totalReturned, item.maxReturnable);
             return {
               part_number: item.itemCode,
-              returned_quantity: item.previouslyReturned + totalReturned,
-              return_balance_quantity: item.returnBalance - totalReturned,
+              returned_quantity: newPreviouslyReturned,
+              return_balance_quantity: Math.max(item.maxReturnable - newPreviouslyReturned, 0),
             };
           });
         if (returnUpdates.length > 0) {
