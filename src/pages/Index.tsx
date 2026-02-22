@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { PackageSearch, MapPinned, ClipboardCheck, UsersRound, Wrench, FileText, FolderClock, Building2 } from "lucide-react";
+import { FileText, FolderClock, Building2 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import StatCard from "@/components/dashboard/StatCard";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
+import ActiveClients from "@/components/dashboard/ActiveClients";
 import RecentInspections from "@/components/dashboard/RecentInspections";
 import ActiveSites from "@/components/dashboard/ActiveSites";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -15,7 +15,6 @@ import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/H
 import type { StepKey } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,6 @@ const Index = () => {
   const [workflowInitialClientMode, setWorkflowInitialClientMode] = useState<"new" | "existing">("new");
   const { profile, hasRole, loading: authLoading } = useAuth();
   const canViewWorkforce = hasRole("admin");
-  const { data: stats, isLoading } = useDashboardStats();
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
 
   useEffect(() => {
@@ -302,62 +300,10 @@ const Index = () => {
               <QuickActions />
             </div>
 
-            {/* Chart + Stats Row */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
-              {/* Left: Inventory Chart */}
-              <div className="space-y-6">
-                <InventoryOverview chartOnly />
-              </div>
-
-              {/* Right: Stat Cards */}
-              <div className="grid auto-rows-min grid-cols-2 gap-3 md:grid-cols-3">
-                <StatCard
-                  title="Total Scaffolds"
-                  value={isLoading ? "..." : stats?.totalScaffolds || 0}
-                  change={stats?.totalScaffolds ? "+12 this month" : "Add scaffolds to get started"}
-                  changeType={stats?.totalScaffolds ? "positive" : "neutral"}
-                  icon={PackageSearch}
-                  iconBg="primary"
-                />
-                <StatCard
-                  title="Active Sites"
-                  value={isLoading ? "..." : stats?.activeSites || 0}
-                  change={stats?.activeSites ? "2 starting soon" : "Create your first site"}
-                  changeType="neutral"
-                  icon={MapPinned}
-                  iconBg="accent"
-                />
-                <StatCard
-                  title="Inspections Due"
-                  value={isLoading ? "..." : stats?.inspectionsDue || 0}
-                  change={
-                    stats?.inspectionsDue && stats.inspectionsDue > 0
-                      ? `${stats.inspectionsDue} pending`
-                      : "All caught up"
-                  }
-                  changeType={
-                    stats?.inspectionsDue && stats.inspectionsDue > 0 ? "negative" : "positive"
-                  }
-                  icon={ClipboardCheck}
-                  iconBg="success"
-                />
-                <StatCard
-                  title="Active Workers"
-                  value={isLoading ? "..." : stats?.activeWorkers || 0}
-                  change="Team members"
-                  changeType="neutral"
-                  icon={UsersRound}
-                  iconBg="accent"
-                />
-                <StatCard
-                  title="Pending Repairs"
-                  value={isLoading ? "..." : stats?.pendingRepairs || 0}
-                  change={stats?.pendingRepairs ? "Needs resolution" : "All resolved"}
-                  changeType={stats?.pendingRepairs ? "negative" : "positive"}
-                  icon={Wrench}
-                  iconBg="warning"
-                />
-              </div>
+            {/* Chart + Clients Row */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+              <ActiveClients />
+              <InventoryOverview chartOnly />
             </div>
 
             {/* Full Inventory Table */}
