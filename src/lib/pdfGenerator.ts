@@ -169,6 +169,19 @@ const formatMass = (value: number | string | null | undefined) => {
 const withPrintOption = (html: string) => {
   const printControls = `
     <style>
+      h1, h2, h3 {
+        text-align: left !important;
+        font-weight: 800 !important;
+      }
+      h1 { font-size: 28px !important; }
+      h2 { font-size: 22px !important; }
+      h3 { font-size: 16px !important; }
+      .report-title {
+        font-size: 22px;
+        font-weight: 800;
+        margin-top: 8px;
+        color: #111;
+      }
       .print-controls {
         position: sticky;
         top: 0;
@@ -225,7 +238,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
           <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <p><strong>Hire Delivery Note</strong></p>
+          <h2 class="report-title">Hire Delivery Note</h2>
         </div>
       </div>
       
@@ -796,7 +809,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
           <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <p><strong>Hire Quotation</strong></p>
+          <h2 class="report-title">Hire Quotation</h2>
         </div>
       </div>
 
@@ -976,7 +989,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <p>${COMPANY_ADDRESS}</p>
           <p>${COMPANY_LOCATION}</p>
           <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <p><strong>Hire Quotation</strong></p>
+          <h2 class="report-title">Hire Quotation</h2>
         </div>
       </div>
       
