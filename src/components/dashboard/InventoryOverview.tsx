@@ -153,10 +153,10 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     const availableArc = (Math.max(Math.min(availablePct, 100), 0) / 100) * 360;
 
     return (
-      <div className="rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 p-5 text-slate-100 shadow-xl animate-fade-in">
+      <div className="animate-fade-in rounded-2xl border border-emerald-200/30 bg-gradient-to-br from-[hsla(172,50%,26%,0.5)] via-[hsla(172,50%,22%,0.45)] to-[hsla(172,50%,18%,0.4)] p-5 text-slate-100 shadow-[0_20px_45px_-25px_rgba(6,95,70,0.75)] backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-white/10 p-2">
+            <div className="rounded-lg border border-white/20 bg-white/10 p-2 backdrop-blur-md">
               <Package className="h-4 w-4 text-slate-100" />
             </div>
             <h3 className="text-sm font-semibold tracking-tight text-white">Inventory Analysis</h3>
@@ -172,7 +172,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
                 background: `conic-gradient(#facc15 0deg ${availableArc}deg, #38bdf8 ${availableArc}deg 360deg)`,
               }}
             />
-            <div className="absolute flex h-24 w-24 flex-col items-center justify-center rounded-full bg-slate-900/95 text-center shadow-inner">
+            <div className="absolute flex h-24 w-24 flex-col items-center justify-center rounded-full border border-emerald-100/20 bg-emerald-950/70 text-center shadow-inner backdrop-blur-md">
               <span className="text-2xl font-bold text-white">{availablePct}%</span>
               <span className="text-[11px] text-slate-300">{totals.availableStock} units</span>
             </div>
