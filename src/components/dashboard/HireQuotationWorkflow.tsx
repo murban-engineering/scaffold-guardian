@@ -706,6 +706,23 @@ const HireQuotationWorkflow = ({
   });
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
 
+  const persistedReturnQuantitiesByItemCode = useMemo(() => {
+    const quantities = new Map<string, { returned: number; balance: number | null }>();
+    (initialQuotation?.line_items ?? []).forEach((lineItem) => {
+      const itemCode = lineItem.part_number ?? "";
+      if (!itemCode) return;
+
+      quantities.set(itemCode, {
+        returned: Math.max(lineItem.returned_quantity ?? 0, 0),
+        balance:
+          lineItem.return_balance_quantity === null || lineItem.return_balance_quantity === undefined
+            ? null
+            : Math.max(lineItem.return_balance_quantity, 0),
+      });
+    });
+    return quantities;
+  }, [initialQuotation]);
+
   useEffect(() => {
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
@@ -713,8 +730,17 @@ const HireQuotationWorkflow = ({
         const orderedQuantity = parseNumber(item.originalQuantity);
         const totalDelivered = parseNumber(item.qtyDelivered);
         const maxReturnable = Math.min(orderedQuantity, totalDelivered);
-        const previouslyReturned = Math.min(existing?.previouslyReturned ?? 0, maxReturnable);
-        const computedBalance = Math.max(maxReturnable - previouslyReturned, 0);
+        const persistedReturns = persistedReturnQuantitiesByItemCode.get(item.itemCode);
+        const persistedPreviouslyReturned = persistedReturns?.returned ?? 0;
+        const persistedBalance = persistedReturns?.balance;
+        const previouslyReturned = Math.min(
+          Math.max(existing?.previouslyReturned ?? 0, persistedPreviouslyReturned),
+          maxReturnable
+        );
+        const computedBalance =
+          persistedBalance !== null && persistedBalance !== undefined
+            ? Math.min(Math.max(persistedBalance, 0), maxReturnable)
+            : Math.max(maxReturnable - previouslyReturned, 0);
         return {
           id: item.id,
           scaffoldId: item.scaffoldId,
@@ -733,7 +759,7 @@ const HireQuotationWorkflow = ({
         };
       })
     );
-  }, [equipmentItems]);
+  }, [equipmentItems, persistedReturnQuantitiesByItemCode]);
 
   // Persist return history to localStorage (after returnItems is declared)
   useEffect(() => {
@@ -1230,7 +1256,35 @@ const HireQuotationWorkflow = ({
     setEquipmentQuantity("1");
   };
 
+  const isEquipmentItemLocked = useCallback((item: EquipmentItem) => {
+    if (item.previouslyDelivered > 0) return true;
+
+    const deliveredFromHistory = deliveryHistory.some((delivery) =>
+      delivery.items.some(
+        (deliveryItem) =>
+          deliveryItem.itemCode === item.itemCode && deliveryItem.quantityDelivered > 0
+      )
+    );
+    if (deliveredFromHistory) return true;
+
+    const returnedFromHistory = returnHistory.some((record) =>
+      record.items.some(
+        (returnedItem) => returnedItem.itemCode === item.itemCode && returnedItem.totalReturned > 0
+      )
+    );
+
+    return returnedFromHistory;
+  }, [deliveryHistory, returnHistory]);
+
   const removeItem = (index: number) => {
+    const item = equipmentItems[index];
+    if (!item) return;
+
+    if (isEquipmentItemLocked(item)) {
+      toast.error("Cannot remove this item after hire loading/delivery activity has been recorded.");
+      return;
+    }
+
     setEquipmentItems(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -1426,6 +1480,18 @@ const HireQuotationWorkflow = ({
     });
     setLastDeliveredQuantities(deliveredQuantities);
     setCurrentDeliveryDispatched(true);
+    setEquipmentItems((prev) =>
+      prev.map((item) => {
+        const deliveredNow = deliveredQuantities[item.id] ?? 0;
+        if (deliveredNow <= 0) return item;
+        const newPreviouslyDelivered = Math.max(item.previouslyDelivered + deliveredNow, 0);
+        return {
+          ...item,
+          previouslyDelivered: newPreviouslyDelivered,
+          dbBalanceQuantity: balanceQuantities[item.id] ?? item.dbBalanceQuantity,
+        };
+      })
+    );
     
     toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
   };
@@ -3144,6 +3210,8 @@ const HireQuotationWorkflow = ({
                               size="icon"
                               className="h-7 w-7 text-destructive hover:text-destructive"
                               onClick={() => removeItem(idx)}
+                              disabled={isEquipmentItemLocked(item)}
+                              title={isEquipmentItemLocked(item) ? "Cannot remove after hire loading/delivery activity" : "Remove item"}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
