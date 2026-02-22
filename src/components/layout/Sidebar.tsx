@@ -14,13 +14,14 @@ import {
   BotMessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import otnLogo from "@/assets/otn-logo.png";
 import type { ProcessedClient } from "@/components/dashboard/HireQuotationWorkflow";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState } from "react";
+
+const otnLogo = "/otnologo-removebg-preview.png";
 
 interface SidebarProps {
   activeItem: string;
