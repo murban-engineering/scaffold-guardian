@@ -1512,7 +1512,7 @@ const HireQuotationWorkflow = ({
       createdBy: header.createdBy,
       clientId: header.clientId,
       siteId: getSelectedSiteNumber(),
-      noteTitle: `Hire Loading Note (${delivery.deliveryNoteNumber})`,
+      noteTitle: `Hire Loading Report (${delivery.deliveryNoteNumber})`,
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -1649,7 +1649,7 @@ const HireQuotationWorkflow = ({
       createdBy: header.createdBy,
       clientId: header.clientId,
       siteId: getSelectedSiteNumber(),
-      noteTitle: noteType === "balance" ? "Hire Loading Note (Balance)" : "Hire Loading Note",
+      noteTitle: noteType === "balance" ? "Hire Loading Report (Balance)" : "Hire Loading Report",
       items: [],
     };
 
