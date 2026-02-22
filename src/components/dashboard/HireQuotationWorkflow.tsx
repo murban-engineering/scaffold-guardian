@@ -706,6 +706,23 @@ const HireQuotationWorkflow = ({
   });
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
 
+  const persistedReturnQuantitiesByItemCode = useMemo(() => {
+    const quantities = new Map<string, { returned: number; balance: number | null }>();
+    (initialQuotation?.line_items ?? []).forEach((lineItem) => {
+      const itemCode = lineItem.part_number ?? "";
+      if (!itemCode) return;
+
+      quantities.set(itemCode, {
+        returned: Math.max(lineItem.returned_quantity ?? 0, 0),
+        balance:
+          lineItem.return_balance_quantity === null || lineItem.return_balance_quantity === undefined
+            ? null
+            : Math.max(lineItem.return_balance_quantity, 0),
+      });
+    });
+    return quantities;
+  }, [initialQuotation]);
+
   useEffect(() => {
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
@@ -713,8 +730,17 @@ const HireQuotationWorkflow = ({
         const orderedQuantity = parseNumber(item.originalQuantity);
         const totalDelivered = parseNumber(item.qtyDelivered);
         const maxReturnable = Math.min(orderedQuantity, totalDelivered);
-        const previouslyReturned = Math.min(existing?.previouslyReturned ?? 0, maxReturnable);
-        const computedBalance = Math.max(maxReturnable - previouslyReturned, 0);
+        const persistedReturns = persistedReturnQuantitiesByItemCode.get(item.itemCode);
+        const persistedPreviouslyReturned = persistedReturns?.returned ?? 0;
+        const persistedBalance = persistedReturns?.balance;
+        const previouslyReturned = Math.min(
+          Math.max(existing?.previouslyReturned ?? 0, persistedPreviouslyReturned),
+          maxReturnable
+        );
+        const computedBalance =
+          persistedBalance !== null && persistedBalance !== undefined
+            ? Math.min(Math.max(persistedBalance, 0), maxReturnable)
+            : Math.max(maxReturnable - previouslyReturned, 0);
         return {
           id: item.id,
           scaffoldId: item.scaffoldId,
@@ -733,7 +759,7 @@ const HireQuotationWorkflow = ({
         };
       })
     );
-  }, [equipmentItems]);
+  }, [equipmentItems, persistedReturnQuantitiesByItemCode]);
 
   // Persist return history to localStorage (after returnItems is declared)
   useEffect(() => {
