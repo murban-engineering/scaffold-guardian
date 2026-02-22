@@ -545,12 +545,13 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         .header-content h1 { font-size: 24px; margin-bottom: 5px; }
         .header-content p { color: #666; }
         .note-title {
-          font-size: 30px;
+          font-size: 24px;
           font-weight: 800;
           text-decoration: underline;
           text-transform: uppercase;
           margin-top: 8px;
           color: #111;
+          text-align: left;
         }
         .copy-label { font-weight: bold; color: #111; margin-top: 4px; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
