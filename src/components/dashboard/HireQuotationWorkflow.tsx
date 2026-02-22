@@ -1256,7 +1256,35 @@ const HireQuotationWorkflow = ({
     setEquipmentQuantity("1");
   };
 
+  const isEquipmentItemLocked = useCallback((item: EquipmentItem) => {
+    if (item.previouslyDelivered > 0) return true;
+
+    const deliveredFromHistory = deliveryHistory.some((delivery) =>
+      delivery.items.some(
+        (deliveryItem) =>
+          deliveryItem.itemCode === item.itemCode && deliveryItem.quantityDelivered > 0
+      )
+    );
+    if (deliveredFromHistory) return true;
+
+    const returnedFromHistory = returnHistory.some((record) =>
+      record.items.some(
+        (returnedItem) => returnedItem.itemCode === item.itemCode && returnedItem.totalReturned > 0
+      )
+    );
+
+    return returnedFromHistory;
+  }, [deliveryHistory, returnHistory]);
+
   const removeItem = (index: number) => {
+    const item = equipmentItems[index];
+    if (!item) return;
+
+    if (isEquipmentItemLocked(item)) {
+      toast.error("Cannot remove this item after hire loading/delivery activity has been recorded.");
+      return;
+    }
+
     setEquipmentItems(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -1452,6 +1480,18 @@ const HireQuotationWorkflow = ({
     });
     setLastDeliveredQuantities(deliveredQuantities);
     setCurrentDeliveryDispatched(true);
+    setEquipmentItems((prev) =>
+      prev.map((item) => {
+        const deliveredNow = deliveredQuantities[item.id] ?? 0;
+        if (deliveredNow <= 0) return item;
+        const newPreviouslyDelivered = Math.max(item.previouslyDelivered + deliveredNow, 0);
+        return {
+          ...item,
+          previouslyDelivered: newPreviouslyDelivered,
+          dbBalanceQuantity: balanceQuantities[item.id] ?? item.dbBalanceQuantity,
+        };
+      })
+    );
     
     toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
   };
@@ -3170,6 +3210,8 @@ const HireQuotationWorkflow = ({
                               size="icon"
                               className="h-7 w-7 text-destructive hover:text-destructive"
                               onClick={() => removeItem(idx)}
+                              disabled={isEquipmentItemLocked(item)}
+                              title={isEquipmentItemLocked(item) ? "Cannot remove after hire loading/delivery activity" : "Remove item"}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
