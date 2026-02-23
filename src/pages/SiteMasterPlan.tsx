@@ -65,7 +65,7 @@ const SiteMasterPlan = () => {
           <section className="overflow-hidden rounded-xl border border-border bg-card print:rounded-none print:border-0">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h2 className="text-3xl font-bold">Site Master</h2>
-              <img src="/otn-logo.png" alt="OTN logo" className="h-14 w-auto" />
+              <img src="/otnologo-removebg-preview.png" alt="OTN logo" className="h-14 w-auto" />
             </div>
 
             <h3 className={sectionTitleClass}>Customer Information</h3>

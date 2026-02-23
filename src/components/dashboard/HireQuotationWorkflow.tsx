@@ -727,7 +727,7 @@ const HireQuotationWorkflow = ({
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
         const existing = prev.find((entry) => entry.id === item.id);
-        const orderedQuantity = parseNumber(item.originalQuantity);
+        const orderedQuantity = item.originalQuantity ?? 0;
         const totalDelivered = parseNumber(item.qtyDelivered);
         const maxReturnable = Math.min(orderedQuantity, totalDelivered);
         const persistedReturns = persistedReturnQuantitiesByItemCode.get(item.itemCode);
