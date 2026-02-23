@@ -231,7 +231,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const deliveryNotePage = () => `
     <div class="delivery-note-page">
       <div class="header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
         <div class="header-content">
           <h1>${COMPANY_NAME}</h1>
           <p>Email: otnoacess@gmail.com</p>
@@ -421,7 +421,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   const loadingNotePage = (copyLabel: string) => `
     <div class="loading-note-page">
       <div class="header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
         <div class="header-content">
           <h1>${COMPANY_NAME}</h1>
           <p>Email: otnoacess@gmail.com</p>
@@ -645,7 +645,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     <body>
       <div class="yard-note">
         <div class="yard-note-header">
-          <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" style="width: 80px; height: auto;" />
+          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" style="width: 80px; height: auto;" />
           <div class="title-block">
             <h1>${COMPANY_NAME}</h1>
             <p>Email: otnoacess@gmail.com</p>
@@ -802,7 +802,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </head>
     <body>
       <div class="header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
         <div class="header-content">
           <h1>${COMPANY_NAME}</h1>
           <p>Email: otnoacess@gmail.com</p>
@@ -982,7 +982,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     </head>
     <body>
       <div class="header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTN Logo" class="header-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
         <div class="header-content">
           <h1>${COMPANY_NAME}</h1>
           <p>Email: otnoacess@gmail.com</p>
@@ -1148,7 +1148,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       </div>
 
       <div class="gp-header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTNOS Logo" class="gp-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNOS Logo" class="gp-logo" />
         <div class="gp-header-right">
           <h1>otnos</h1>
           <h2>HIRE RETURN NOTE</h2>
@@ -1246,7 +1246,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const systemPage = (copyLabel: string) => `
     <div class="page system-page">
       <div class="sys-header">
-        <img src="${window.location.origin}/otn-logo.png" alt="OTNO Logo" class="sys-logo" />
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="sys-logo" />
         <div class="sys-header-center">
           <h1>Hire Return Note</h1>
           <p class="copy-label">${copyLabel}</p>
