@@ -13,6 +13,7 @@ import AddScaffold from "./pages/AddScaffold";
 import MaintenanceLogs from "./pages/MaintenanceLogs";
 import Revenue from "./pages/Revenue";
 import Accounting from "./pages/Accounting";
+import SiteMasterPlan from "./pages/SiteMasterPlan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Accounting />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/site-master-plan"
+              element={
+                <ProtectedRoute>
+                  <SiteMasterPlan />
                 </ProtectedRoute>
               }
             />
