@@ -491,7 +491,7 @@ const HireQuotationWorkflow = ({
   const [remainingQuantities, setRemainingQuantities] = useState<Record<string, number>>({});
   const [lastDeliveredQuantities, setLastDeliveredQuantities] = useState<Record<string, number> | null>(null);
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string>("");
-  const [equipmentQuantity, setEquipmentQuantity] = useState<string>("1");
+  const [equipmentQuantity, setEquipmentQuantity] = useState<string>("0");
   const [itemCodeSearch, setItemCodeSearch] = useState<string>("");
   const [discounts, setDiscounts] = useState<DiscountLine[]>(() => [
     { type: "Tonnage", product: "", hireDiscount: "", salesDiscount: "", rate: "" },
@@ -860,33 +860,13 @@ const HireQuotationWorkflow = ({
   );
   const remainingSelectedQty = useMemo(() => {
     if (!selectedScaffold) return 0;
-    const availableQty = selectedScaffold.quantity ?? 0;
-    const alreadyAdded = equipmentItems.reduce((total, item) => {
-      if (item.scaffoldId !== selectedScaffold.id) return total;
-      return total + parseNumber(item.qtyDelivered);
-    }, 0);
-    return Math.max(availableQty - alreadyAdded, 0);
-  }, [equipmentItems, selectedScaffold]);
+    return selectedScaffold.quantity ?? 0;
+  }, [selectedScaffold]);
   const addDisabled =
     !selectedScaffoldId ||
-    remainingSelectedQty <= 0 ||
     parseNumber(equipmentQuantity) <= 0;
 
-  useEffect(() => {
-    if (!selectedScaffoldId) return;
-    if (remainingSelectedQty <= 0) {
-      setEquipmentQuantity("0");
-      return;
-    }
-    const currentQty = parseNumber(equipmentQuantity);
-    if (currentQty <= 0) {
-      setEquipmentQuantity("1");
-      return;
-    }
-    if (currentQty > remainingSelectedQty) {
-      setEquipmentQuantity(String(remainingSelectedQty));
-    }
-  }, [equipmentQuantity, remainingSelectedQty, selectedScaffoldId]);
+  // No auto-capping effect needed - user can enter any quantity
 
   const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
   const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
@@ -1210,15 +1190,14 @@ const HireQuotationWorkflow = ({
       return;
     }
 
-    // Check available inventory
+    // Check available inventory - show as info only, don't block
     const availableQty = scaffold.quantity ?? 0;
     const existingItem = equipmentItems.find(item => item.scaffoldId === scaffold.id);
     const alreadyAdded = existingItem ? parseNumber(existingItem.qtyDelivered) : 0;
     const totalRequested = alreadyAdded + qty;
 
     if (totalRequested > availableQty) {
-      toast.error(`Cannot order ${totalRequested} items. Only ${availableQty} available in inventory (${alreadyAdded} already added).`);
-      return;
+      toast.warning(`Note: Requesting ${totalRequested} items but only ${availableQty} available in yard. Quotation will proceed.`);
     }
 
     const existingIndex = equipmentItems.findIndex(item => item.scaffoldId === scaffold.id);
@@ -1253,7 +1232,7 @@ const HireQuotationWorkflow = ({
 
     setSelectedScaffoldId("");
     setItemCodeSearch("");
-    setEquipmentQuantity("1");
+    setEquipmentQuantity("0");
   };
 
   const isEquipmentItemLocked = useCallback((item: EquipmentItem) => {
@@ -2548,13 +2527,14 @@ const HireQuotationWorkflow = ({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
+                    <Label htmlFor="customerOrderNo">Account Number</Label>
                     <Input
                       id="customerOrderNo"
                       value={header.customerOrderNo}
                       onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
-                      placeholder="Order / Account number"
+                      placeholder="For account holders only"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">Customer Number is assigned only for clients with an active account.</p>
                   </div>
                   <div>
                     <Label htmlFor="createdBy">Created By</Label>
@@ -3109,28 +3089,10 @@ const HireQuotationWorkflow = ({
                   <div className="flex gap-2">
                     <Input
                       type="number"
-                      min={selectedScaffoldId ? 1 : 0}
-                      max={selectedScaffoldId ? Math.max(remainingSelectedQty, 0) : undefined}
+                      min={0}
                       value={equipmentQuantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!selectedScaffoldId) {
-                          setEquipmentQuantity(value);
-                          return;
-                        }
-                        if (value === "") {
-                          setEquipmentQuantity(value);
-                          return;
-                        }
-                        const nextValue = parseNumber(value);
-                        if (remainingSelectedQty <= 0) {
-                          setEquipmentQuantity("0");
-                          return;
-                        }
-                        const capped = Math.min(Math.max(nextValue, 1), remainingSelectedQty);
-                        setEquipmentQuantity(String(capped));
-                      }}
-                      disabled={!selectedScaffoldId || remainingSelectedQty <= 0}
+                      onChange={(e) => setEquipmentQuantity(e.target.value)}
+                      disabled={!selectedScaffoldId}
                     />
                     <Button type="button" onClick={handleAddFromInventory} size="icon" disabled={addDisabled}>
                       <Plus className="h-4 w-4" />
@@ -3138,7 +3100,7 @@ const HireQuotationWorkflow = ({
                   </div>
                   {selectedScaffoldId && (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Remaining in inventory: {remainingSelectedQty}
+                      Available in yard: {selectedScaffold?.quantity ?? 0}
                     </p>
                   )}
                 </div>
@@ -3180,7 +3142,25 @@ const HireQuotationWorkflow = ({
                         <tr key={item.id} className="border-t border-border">
                           <td className="px-3 py-2">{item.itemCode || "-"}</td>
                           <td className="px-3 py-2">{item.description}</td>
-                          <td className="px-3 py-2 text-right">{qty}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              className="h-8 w-20 text-right ml-auto"
+                              value={item.qtyDelivered}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setEquipmentItems((prev) =>
+                                  prev.map((entry, entryIndex) =>
+                                    entryIndex === idx
+                                      ? { ...entry, qtyDelivered: value, originalQuantity: Math.max(parseNumber(value), 0) }
+                                      : entry
+                                  )
+                                );
+                              }}
+                              disabled={isEquipmentItemLocked(item)}
+                            />
+                          </td>
                           <td className="px-3 py-2 text-right">{mass ? `${mass} kg` : "-"}</td>
                           <td className="px-3 py-2 text-right">{formatCurrency(rate)}</td>
                           <td className="px-3 py-2 text-right">

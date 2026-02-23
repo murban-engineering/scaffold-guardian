@@ -102,16 +102,22 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   }, [onHireByScaffoldId, scaffolds]);
 
   const totals = useMemo(() => {
-    return inventoryMetrics.reduce(
-      (acc, item) => {
-        acc.openingStock += item.openingStock;
-        acc.availableStock += item.availableStock;
-        acc.onHire += item.onHire;
+    return (scaffolds ?? []).reduce(
+      (acc, item, idx) => {
+        const metrics = inventoryMetrics[idx];
+        if (!metrics) return acc;
+        const mass = item.mass_per_item ?? 0;
+        acc.openingStock += metrics.openingStock;
+        acc.availableStock += metrics.availableStock;
+        acc.onHire += metrics.onHire;
+        acc.openingStockTonnage += metrics.openingStock * mass;
+        acc.availableTonnage += metrics.availableStock * mass;
+        acc.onHireTonnage += metrics.onHire * mass;
         return acc;
       },
-      { openingStock: 0, availableStock: 0, onHire: 0 }
+      { openingStock: 0, availableStock: 0, onHire: 0, openingStockTonnage: 0, availableTonnage: 0, onHireTonnage: 0 }
     );
-  }, [inventoryMetrics]);
+  }, [inventoryMetrics, scaffolds]);
 
   const metricsById = useMemo(() => {
     return new Map(inventoryMetrics.map((metric) => [metric.id, metric]));
@@ -240,7 +246,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -269,6 +275,42 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{totals.onHire}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Boxes className="h-4 w-4" /> Total Tonnage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{(totals.openingStockTonnage / 1000).toFixed(2)} t</p>
+            <p className="text-xs text-muted-foreground">{totals.openingStockTonnage.toLocaleString()} kg</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Warehouse className="h-4 w-4" /> Available Tonnage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{(totals.availableTonnage / 1000).toFixed(2)} t</p>
+            <p className="text-xs text-muted-foreground">{totals.availableTonnage.toLocaleString()} kg</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Truck className="h-4 w-4" /> On Hire Tonnage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{(totals.onHireTonnage / 1000).toFixed(2)} t</p>
+            <p className="text-xs text-muted-foreground">{totals.onHireTonnage.toLocaleString()} kg</p>
           </CardContent>
         </Card>
       </div>
@@ -312,7 +354,8 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
                   <TableHead className="text-center">Qty at Start</TableHead>
                   <TableHead className="text-center">Available</TableHead>
                   <TableHead className="text-center">On Hire</TableHead>
-                  <TableHead className="text-center">Mass</TableHead>
+                  <TableHead className="text-center">Mass/Item</TableHead>
+                  <TableHead className="text-center">Total Mass</TableHead>
                   <TableHead className="text-right">Weekly Rate</TableHead>
                   <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead className="text-center">Status</TableHead>
@@ -331,7 +374,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
                     <Fragment key={item.id}>
                       {showHeader && (
                         <TableRow key={`group-${group}`} className="bg-muted/50 hover:bg-muted/50">
-                          <TableCell colSpan={9} className="py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                          <TableCell colSpan={10} className="py-2 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
                             {groupLabel}
                           </TableCell>
                         </TableRow>
@@ -354,6 +397,11 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
                         </TableCell>
                         <TableCell className="text-center text-muted-foreground">
                           {formatMass(item.mass_per_item)}
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {item.mass_per_item && rowMetrics
+                            ? `${((item.mass_per_item) * (rowMetrics.openingStock)).toFixed(2)} kg`
+                            : "-"}
                         </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(item.weekly_rate)}
