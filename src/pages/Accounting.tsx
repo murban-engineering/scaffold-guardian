@@ -526,6 +526,7 @@ const Accounting = () => {
       maintenance: "/maintenance-logs",
       revenue: "/revenue",
       settings: "/settings",
+      "site-master-plan": "/site-master-plan",
     };
     if (["inventory", "workforce"].includes(item)) {
       navigate("/", { state: { activeItem: item }, replace: true });

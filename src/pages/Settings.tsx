@@ -107,6 +107,10 @@ const Settings = () => {
     }
     if (item === "accounting") {
       navigate("/accounting");
+      return;
+    }
+    if (item === "site-master-plan") {
+      navigate("/site-master-plan");
     }
   };
 

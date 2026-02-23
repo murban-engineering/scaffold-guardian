@@ -77,6 +77,10 @@ const Revenue = () => {
       navigate("/accounting");
       return;
     }
+    if (item === "site-master-plan") {
+      navigate("/site-master-plan");
+      return;
+    }
     if (item === "settings") {
       navigate("/settings");
     }
