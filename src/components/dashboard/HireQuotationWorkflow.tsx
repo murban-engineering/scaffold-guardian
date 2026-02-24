@@ -871,8 +871,15 @@ const HireQuotationWorkflow = ({
   );
   const remainingSelectedQty = useMemo(() => {
     if (!selectedScaffold) return 0;
-    return selectedScaffold.quantity ?? 0;
-  }, [selectedScaffold]);
+    if (isTestQuotation) return selectedScaffold.quantity ?? 0;
+
+    const alreadyAdded = equipmentItems.reduce((total, item) => {
+      if (item.scaffoldId !== selectedScaffold.id) return total;
+      return total + parseNumber(item.qtyDelivered);
+    }, 0);
+
+    return Math.max((selectedScaffold.quantity ?? 0) - alreadyAdded, 0);
+  }, [equipmentItems, isTestQuotation, selectedScaffold]);
   const addDisabled =
     !selectedScaffoldId ||
     parseNumber(equipmentQuantity) <= 0;
@@ -3129,8 +3136,22 @@ const HireQuotationWorkflow = ({
                     <Input
                       type="number"
                       min={0}
+                      max={isTestQuotation ? undefined : remainingSelectedQty}
                       value={equipmentQuantity}
-                      onChange={(e) => setEquipmentQuantity(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "") {
+                          setEquipmentQuantity(value);
+                          return;
+                        }
+
+                        const clampedQty = clampToInventory(parseNumber(value), remainingSelectedQty);
+                        if (!isTestQuotation && parseNumber(value) > remainingSelectedQty) {
+                          toast.error(`Cannot request more than ${remainingSelectedQty} item(s) available in inventory.`);
+                        }
+
+                        setEquipmentQuantity(String(clampedQty));
+                      }}
                       disabled={!selectedScaffoldId}
                     />
                     <Button type="button" onClick={handleAddFromInventory} size="icon" disabled={addDisabled}>
@@ -3139,7 +3160,7 @@ const HireQuotationWorkflow = ({
                   </div>
                   {selectedScaffoldId && (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Available in yard: {selectedScaffold?.quantity ?? 0}
+                      Available in yard: {selectedScaffold?.quantity ?? 0} • Remaining to add: {remainingSelectedQty}
                     </p>
                   )}
                 </div>
