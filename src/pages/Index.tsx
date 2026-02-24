@@ -19,6 +19,7 @@ import { useCreateQuotation, useHireQuotations, useUpdateQuotation, HireQuotatio
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -44,6 +46,7 @@ const Index = () => {
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [selectedContinueClient, setSelectedContinueClient] = useState("all");
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
@@ -121,6 +124,25 @@ const Index = () => {
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
+
+  const continueClientOptions = hireQuotations.reduce<Array<{ value: string; label: string }>>((acc, quotation) => {
+    const companyName = quotation.company_name?.trim() || "Unnamed client";
+    const clientId = quotation.quotation_number?.replace("HSQ-", "CL-") || "No client ID";
+    const value = `${companyName}|${clientId}`;
+    if (!acc.some((option) => option.value === value)) {
+      acc.push({ value, label: `${companyName} (${clientId})` });
+    }
+    return acc;
+  }, []);
+
+  const filterQuotationsByClient = (rows: HireQuotation[]) =>
+    selectedContinueClient === "all"
+      ? rows
+      : rows.filter((quotation) => {
+          const companyName = quotation.company_name?.trim() || "Unnamed client";
+          const clientId = quotation.quotation_number?.replace("HSQ-", "CL-") || "No client ID";
+          return `${companyName}|${clientId}` === selectedContinueClient;
+        });
 
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
@@ -450,6 +472,9 @@ const Index = () => {
         </Dialog>
         <Dialog open={showContinueDialog} onOpenChange={(open) => {
           setShowContinueDialog(open);
+          if (open) {
+            setSelectedContinueClient("all");
+          }
           if (!open && (activeItem === "site-master" || activeItem === "yard-verification") && !selectedQuotation) {
             setActiveItem("dashboard");
           }
@@ -466,13 +491,29 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
+              <div className="grid gap-2 md:w-[360px]">
+                <Label htmlFor="continue-client-filter">Client</Label>
+                <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
+                  <SelectTrigger id="continue-client-filter">
+                    <SelectValue placeholder="All clients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clients</SelectItem>
+                    {continueClientOptions.map((client) => (
+                      <SelectItem key={client.value} value={client.value}>
+                        {client.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {quotationsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
               ) : hireQuotations.length ? (
                 <div className="max-h-[60vh] space-y-4 overflow-y-auto">
                   {[
-                    { title: "Saved Quotations", rows: standardQuotations },
-                    { title: "Test Quotations", rows: testQuotations },
+                    { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations) },
+                    { title: "Test Quotations", rows: filterQuotationsByClient(testQuotations) },
                   ]
                     .filter((section) => section.rows.length > 0)
                     .map((section) => (
