@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2 } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -15,7 +15,8 @@ import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/H
 import type { StepKey } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
-import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +51,7 @@ const Index = () => {
   const { profile, hasRole, loading: authLoading } = useAuth();
   const canViewWorkforce = hasRole("admin");
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
+  const createQuotation = useCreateQuotation();
 
   useEffect(() => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
@@ -137,6 +139,29 @@ const Index = () => {
       return;
     }
     setShowQuotationDialog(true);
+  };
+
+  const handleStartTestQuotation = async () => {
+    try {
+      const todayLabel = new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" });
+      const quotation = await createQuotation.mutateAsync({
+        company_name: "Test Quotation Client",
+        site_name: `Price Check ${todayLabel}`,
+        site_manager_name: "Prospective Client",
+        notes: "Temporary quotation for price-check only.",
+      });
+
+      setSelectedExistingClient(null);
+      setSelectedQuotation(quotation);
+      setWorkflowInitialClientMode("new");
+      setWorkflowInitialStep("equipment");
+      setShowQuotationDialog(true);
+
+      const customerNumber = quotation.quotation_number.replace("HSQ-", "CL-");
+      toast.success(`Test quotation created. Customer number: ${customerNumber}`);
+    } catch (error) {
+      console.error("Failed to create test quotation", error);
+    }
   };
 
   const handleSidebarItemClick = (item: string) => {
@@ -252,6 +277,14 @@ const Index = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-72">
+                        <DropdownMenuItem
+                          onClick={handleStartTestQuotation}
+                          disabled={createQuotation.isPending}
+                          className="cursor-pointer"
+                        >
+                          <FlaskConical className="mr-2 h-4 w-4" />
+                          {createQuotation.isPending ? "Creating Test Quotation..." : "Test Quotation"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleStartNewQuotation} className="cursor-pointer">
                           <FileText className="mr-2 h-4 w-4" />
                           New Hire Quotation
