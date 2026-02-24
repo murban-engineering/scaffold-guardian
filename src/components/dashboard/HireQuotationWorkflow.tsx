@@ -239,6 +239,7 @@ const HireQuotationWorkflow = ({
   const [savedQuotationId, setSavedQuotationId] = useState<string | null>(null);
   const [clientEntryMode, setClientEntryMode] = useState<ClientEntryMode>(initialClientMode);
   const [clientLookupQuery, setClientLookupQuery] = useState("");
+  const [selectedPreviousClientId, setSelectedPreviousClientId] = useState("");
 
   const [activeStep, setActiveStep] = useState<StepKey>(initialStep || "client");
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
@@ -1072,6 +1073,18 @@ const HireQuotationWorkflow = ({
       return companyKey.includes(query) || clientId.includes(query);
     }).slice(0, 8);
   }, [clientLookupQuery, previousQuotations]);
+
+  useEffect(() => {
+    if (!previousClientMatches.length) {
+      setSelectedPreviousClientId("");
+      return;
+    }
+
+    const selectedStillVisible = previousClientMatches.some((quotation) => quotation.id === selectedPreviousClientId);
+    if (!selectedStillVisible) {
+      setSelectedPreviousClientId("");
+    }
+  }, [previousClientMatches, selectedPreviousClientId]);
 
   const handleSelectPreviousClient = (quotation: HireQuotation) => {
     const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
@@ -2483,27 +2496,38 @@ const HireQuotationWorkflow = ({
                       placeholder="Search by Client ID (CL-...) or company name"
                     />
                   </div>
-                  <div className="space-y-2">
-                    {previousClientMatches.length ? (
-                      previousClientMatches.map((quotation) => {
-                        const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number) || "No client ID";
-                        return (
-                          <button
-                            key={quotation.id}
-                            type="button"
-                            onClick={() => handleSelectPreviousClient(quotation)}
-                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-left transition hover:border-primary/50 hover:bg-primary/5"
-                          >
-                            <p className="text-sm font-medium">{quotation.company_name || "Unnamed company"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {clientId} • {quotation.site_manager_name || "No contact"}
-                            </p>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <p className="text-xs text-muted-foreground">No previous clients found for that search.</p>
-                    )}
+                  <div>
+                    <Label>Select client to continue quotation</Label>
+                    <Select
+                      value={selectedPreviousClientId}
+                      onValueChange={(value) => {
+                        setSelectedPreviousClientId(value);
+                        const selectedQuotation = previousClientMatches.find((quotation) => quotation.id === value);
+                        if (selectedQuotation) {
+                          handleSelectPreviousClient(selectedQuotation);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            previousClientMatches.length
+                              ? "Choose previous client"
+                              : "No previous clients found for that search"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {previousClientMatches.map((quotation) => {
+                          const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number) || "No client ID";
+                          return (
+                            <SelectItem key={quotation.id} value={quotation.id}>
+                              {(quotation.company_name || "Unnamed company")} • {clientId}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               )}
