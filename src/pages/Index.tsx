@@ -146,7 +146,17 @@ const Index = () => {
     setShowQuotationDialog(true);
   };
 
-  const handleStartTestQuotation = async () => {
+  const handleStartTestQuotation = async (quotation?: HireQuotation) => {
+    if (quotation) {
+      setSelectedQuotation(null);
+      setSelectedExistingClient(quotation);
+      setWorkflowInitialClientMode("existing");
+      setIsTestQuotationFlow(true);
+      setWorkflowInitialStep("equipment");
+      setShowQuotationDialog(true);
+      return;
+    }
+
     try {
       const todayLabel = new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" });
       const quotation = await createQuotation.mutateAsync({
@@ -291,14 +301,43 @@ const Index = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-72">
-                        <DropdownMenuItem
-                          onClick={handleStartTestQuotation}
-                          disabled={createQuotation.isPending}
-                          className="cursor-pointer"
-                        >
-                          <FlaskConical className="mr-2 h-4 w-4" />
-                          {createQuotation.isPending ? "Creating Test Quotation..." : "Test Quotation"}
-                        </DropdownMenuItem>
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="cursor-pointer">
+                            <FlaskConical className="mr-2 h-4 w-4" />
+                            Test Quotation
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                            <DropdownMenuItem
+                              onClick={() => handleStartTestQuotation()}
+                              disabled={createQuotation.isPending}
+                              className="cursor-pointer"
+                            >
+                              <FlaskConical className="mr-2 h-4 w-4" />
+                              {createQuotation.isPending ? "Creating Test Quotation..." : "New Test Quotation"}
+                            </DropdownMenuItem>
+                            {existingClientOptions.length ? (
+                              existingClientOptions.map((quotation) => {
+                                const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+                                return (
+                                  <DropdownMenuItem
+                                    key={`test-${quotation.id}`}
+                                    className="cursor-pointer"
+                                    onClick={() => handleStartTestQuotation(quotation)}
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-medium">{clientId}</p>
+                                      <p className="truncate text-xs text-muted-foreground">
+                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
+                                      </p>
+                                    </div>
+                                  </DropdownMenuItem>
+                                );
+                              })
+                            ) : (
+                              <DropdownMenuItem disabled>No client IDs available</DropdownMenuItem>
+                            )}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                         <DropdownMenuItem onClick={handleStartNewQuotation} className="cursor-pointer">
                           <FileText className="mr-2 h-4 w-4" />
                           New Hire Quotation
