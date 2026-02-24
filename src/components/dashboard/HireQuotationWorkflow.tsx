@@ -876,7 +876,13 @@ const HireQuotationWorkflow = ({
     !selectedScaffoldId ||
     parseNumber(equipmentQuantity) <= 0;
 
-  // No auto-capping effect needed - user can enter any quantity
+  const clampToInventory = (requestedQty: number, availableQty: number) => {
+    if (isTestQuotation) {
+      return Math.max(requestedQty, 0);
+    }
+
+    return Math.min(Math.max(requestedQty, 0), Math.max(availableQty, 0));
+  };
 
   const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
   const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
@@ -1200,21 +1206,20 @@ const HireQuotationWorkflow = ({
       return;
     }
 
-    // Check available inventory - show as info only, don't block
     const availableQty = scaffold.quantity ?? 0;
     const existingItem = equipmentItems.find(item => item.scaffoldId === scaffold.id);
     const alreadyAdded = existingItem ? parseNumber(existingItem.qtyDelivered) : 0;
-    const totalRequested = alreadyAdded + qty;
+    const totalRequested = clampToInventory(alreadyAdded + qty, availableQty);
 
-    if (totalRequested > availableQty) {
-      toast.warning(`Note: Requesting ${totalRequested} items but only ${availableQty} available in yard. Quotation will proceed.`);
+    if (!isTestQuotation && alreadyAdded + qty > availableQty) {
+      toast.error(`Cannot request more than ${availableQty} item(s) available in inventory.`);
     }
 
     const existingIndex = equipmentItems.findIndex(item => item.scaffoldId === scaffold.id);
     if (existingIndex >= 0) {
       setEquipmentItems(prev => prev.map((item, idx) => 
         idx === existingIndex 
-          ? { ...item, qtyDelivered: String(parseNumber(item.qtyDelivered) + qty) }
+          ? { ...item, qtyDelivered: String(totalRequested) }
           : item
       ));
       toast.success(`Updated quantity for ${scaffold.description || scaffold.part_number}`);
@@ -1226,13 +1231,13 @@ const HireQuotationWorkflow = ({
         itemCode: scaffold.part_number || "",
         description: scaffold.description || scaffold.scaffold_type,
         unit: "pcs",
-        qtyDelivered: String(qty),
+        qtyDelivered: String(clampToInventory(qty, availableQty)),
         weeklyRate: String(scaffold.weekly_rate || 0),
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
         warehouseAvailableQty: scaffold.quantity ?? 0,
-        originalQuantity: qty,
+        originalQuantity: clampToInventory(qty, availableQty),
         previouslyDelivered: 0,
         dbBalanceQuantity: 0,
       };
@@ -3160,10 +3165,17 @@ const HireQuotationWorkflow = ({
                               value={item.qtyDelivered}
                               onChange={(e) => {
                                 const value = e.target.value;
+                                const requestedQty = parseNumber(value);
+                                const nextQty = clampToInventory(requestedQty, item.warehouseAvailableQty);
+
+                                if (!isTestQuotation && requestedQty > item.warehouseAvailableQty) {
+                                  toast.error(`Cannot set quantity above inventory (${item.warehouseAvailableQty}).`);
+                                }
+
                                 setEquipmentItems((prev) =>
                                   prev.map((entry, entryIndex) =>
                                     entryIndex === idx
-                                      ? { ...entry, qtyDelivered: value, originalQuantity: Math.max(parseNumber(value), 0) }
+                                      ? { ...entry, qtyDelivered: String(nextQty), originalQuantity: nextQty }
                                       : entry
                                   )
                                 );
