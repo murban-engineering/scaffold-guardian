@@ -901,7 +901,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       <title>Hire Quotation - ${data.quotationNumber}</title>
       <style>
         ${STANDARD_REPORT_STYLES}
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
         .info-section { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
         .info-section h3 { font-size: 14px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
         .grand-total { font-size: 14px; background: #333; color: white; }
@@ -927,13 +927,17 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
         </div>
         <div class="info-section">
-          <h3>Client Information</h3>
+          <h3>Client Details</h3>
           <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
-          <div class="info-row"><span class="info-label">Site:</span><span class="info-value">${data.siteName}</span></div>
-          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
           <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
           <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
           <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${data.contactEmail || "-"}</span></div>
+        </div>
+
+        <div class="info-section">
+          <h3>Site Details</h3>
+          <div class="info-row"><span class="info-label">Site:</span><span class="info-value">${data.siteName}</span></div>
+          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
         </div>
       </div>
 
