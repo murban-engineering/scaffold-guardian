@@ -233,6 +233,10 @@ const STANDARD_REPORT_STYLES = `
   .report-box { border: 1px solid #111827; border-radius: 8px; padding: 10px 12px; }
   .report-title { font-size: 32px; line-height: 1; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
   .copy-label { display: inline-block; font-size: 11px; font-weight: 700; border: 1px solid #111827; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; }
+  .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
+  .standard-report-left { display: grid; gap: 12px; }
+  .standard-report-right { display: grid; gap: 8px; }
+  .client-panel { min-height: 220px; }
   .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
   .panel { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
   .panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #111827; }
@@ -275,6 +279,80 @@ const renderReportHeader = (title: string, copyLabel?: string) => `
   </div>
 `;
 
+interface StandardReportLayoutData {
+  documentType: string;
+  documentNumber: string;
+  documentDate: string;
+  clientName: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  siteName?: string;
+  siteId?: string;
+  siteLocation?: string;
+  siteAddress?: string;
+  clientId?: string;
+  orderNumber?: string;
+  manualNumber?: string;
+}
+
+const renderStandardReportLayout = (data: StandardReportLayoutData) => `
+  <div class="standard-report-layout">
+    <div class="standard-report-left">
+      <div class="brand-block">
+        <div class="brand-top">
+          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <div class="brand-title">${COMPANY_NAME}</div>
+        </div>
+        <div class="brand-meta">
+          <span><strong>Address:</strong> ${COMPANY_ADDRESS}</span>
+          <span><strong>Location:</strong> ${COMPANY_LOCATION}</span>
+          <span><strong>PIN:</strong> ${COMPANY_PIN}</span>
+          <span><strong>Email:</strong> otnoacess@gmail.com</span>
+        </div>
+      </div>
+
+      <div class="panel client-panel">
+        <h3>Client Details</h3>
+        <div class="info-row"><span class="info-label">Client Name</span><span class="info-sep">:</span><span class="info-value">${data.clientName || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Phone</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || "-"}</span></div>
+      </div>
+    </div>
+
+    <div class="standard-report-right">
+      <h2 class="report-title">${data.documentType}</h2>
+      <div class="panel">
+        <h3>Document Details</h3>
+        <div class="info-row"><span class="info-label">Document No</span><span class="info-sep">:</span><span class="info-value">${data.documentNumber || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">${data.documentType}</span></div>
+        <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${data.documentDate || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value">${data.clientId || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Order No</span><span class="info-sep">:</span><span class="info-value">${data.orderNumber || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber || "-"}</span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Company Details</h3>
+        <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">${COMPANY_NAME}</span></div>
+        <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
+        <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
+        <div class="info-row"><span class="info-label">PIN</span><span class="info-sep">:</span><span class="info-value">${COMPANY_PIN}</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+      </div>
+
+      <div class="panel">
+        <h3>Site Details</h3>
+        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Site Location</span><span class="info-sep">:</span><span class="info-value">${data.siteLocation || "-"}</span></div>
+        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
+      </div>
+    </div>
+  </div>
+`;
+
 export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -286,7 +364,19 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
   const deliveryNotePage = () => `
     <div class="delivery-note-page">
-      ${renderReportHeader("Hire Delivery Note")}
+      ${renderStandardReportLayout({
+        documentType: "Hire Delivery Note",
+        documentNumber: data.deliveryNoteNumber,
+        documentDate: data.deliveryDate,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        orderNumber: data.quotationNumber
+      })}
 
 
       <div class="info-grid">
@@ -426,7 +516,20 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
 
   const loadingNotePage = (copyLabel: string) => `
     <div class="loading-note-page">
-      ${renderReportHeader(noteTitle, copyLabel)}
+      ${renderStandardReportLayout({
+        documentType: noteTitle,
+        documentNumber: data.quotationNumber,
+        documentDate: data.dateCreated,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        manualNumber: copyLabel
+      })}
 
       <div class="info-grid">
         <div class="info-section">
@@ -617,18 +720,20 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="yard-note">
-        <div class="yard-note-header">
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" style="width: 80px; height: auto;" />
-          <div class="title-block">
-            <h1>${COMPANY_NAME}</h1>
-            <p>Email: otnoacess@gmail.com</p>
-            <p>${COMPANY_ADDRESS}</p>
-            <p>${COMPANY_LOCATION}</p>
-            <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          </div>
-          <div class="yard-note-meta">T.B.OD32</div>
-        </div>
-        <h2>YARD VERIFICATION REPORT</h2>
+        ${renderStandardReportLayout({
+          documentType: "Yard Verification Report",
+          documentNumber: data.deliveryNoteNumber,
+          documentDate: data.deliveryDate,
+          clientName: data.companyName,
+          contactName: data.contactName,
+          contactPhone: data.contactPhone,
+          siteName: data.siteName,
+          siteId: data.siteId,
+          siteAddress: data.siteAddress,
+          clientId: data.clientId,
+          orderNumber: data.quotationNumber,
+          manualNumber: "T.B.OD32"
+        })}
         <table class="yard-note-table yard-note-info-table">
           <tr>
             <td class="label">Customer/Branch Name:</td>
@@ -1172,52 +1277,22 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const systemPage = (copyLabel: string) => `
     <div class="page system-page">
-      <div class="sys-header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="sys-logo" />
-        <div class="sys-header-center">
-          <h1>Hire Return Note</h1>
-          <p class="copy-label">${copyLabel}</p>
-        </div>
-      </div>
-
-      <div class="sys-details-grid">
-        <div class="sys-detail-box">
-          <h3>Document Details</h3>
-          <div class="sys-row"><span class="sys-label">Document No:</span><span>${data.returnNoteNumber}</span></div>
-          <div class="sys-row"><span class="sys-label">Document Type:</span><span>Hire Return Note</span></div>
-          <div class="sys-row"><span class="sys-label">Document Date:</span><span>${data.returnDate}</span></div>
-          <div class="sys-row"><span class="sys-label">Quotation No:</span><span>${data.quotationNumber}</span></div>
-          <div class="sys-row"><span class="sys-label">Client ID:</span><span>${data.clientId || "-"}</span></div>
-          <div class="sys-row"><span class="sys-label">PIN:</span><span>${COMPANY_PIN}</span></div>
-          <div class="sys-row"><span class="sys-label">Hire End Date:</span><span>${data.returnDate}</span></div>
-        </div>
-        <div class="sys-detail-box">
-          <h3>Company Details</h3>
-          <div class="sys-row"><span class="sys-label">${COMPANY_NAME}</span></div>
-          <div class="sys-row"><span class="sys-label">Address:</span><span>${COMPANY_ADDRESS}</span></div>
-          <div class="sys-row"><span class="sys-label">Location:</span><span>${COMPANY_LOCATION}</span></div>
-          <div class="sys-row"><span class="sys-label">Email:</span><span>otnoacess@gmail.com</span></div>
-          <div class="sys-row"><span class="sys-label">PIN:</span><span>${COMPANY_PIN}</span></div>
-        </div>
-      </div>
-
-      <div class="sys-detail-box" style="margin-bottom:12px;">
-        <h3>Client &amp; Site Details</h3>
-        <div class="sys-site-grid">
-          <div>
-            <div class="sys-row"><span class="sys-label">Customer:</span><span>${data.companyName}</span></div>
-            <div class="sys-row"><span class="sys-label">Contact:</span><span>${data.contactName}</span></div>
-            <div class="sys-row"><span class="sys-label">Phone:</span><span>${data.contactPhone}</span></div>
-            <div class="sys-row"><span class="sys-label">Email:</span><span>${data.contactEmail || "-"}</span></div>
-          </div>
-          <div>
-            <div class="sys-row"><span class="sys-label">Site Name:</span><span>${data.siteName}</span></div>
-            <div class="sys-row"><span class="sys-label">Site ID:</span><span>${data.siteId || "-"}</span></div>
-            <div class="sys-row"><span class="sys-label">Site Location:</span><span>${data.siteLocation || "-"}</span></div>
-            <div class="sys-row"><span class="sys-label">Site Address:</span><span>${data.siteAddress || "-"}</span></div>
-          </div>
-        </div>
-      </div>
+      ${renderStandardReportLayout({
+        documentType: "Hire Return Note",
+        documentNumber: data.returnNoteNumber,
+        documentDate: data.returnDate,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        orderNumber: data.quotationNumber,
+        manualNumber: copyLabel
+      })}
 
       <h3 class="section-title">Equipment Details</h3>
       <table>
