@@ -219,6 +219,62 @@ const withPrintOption = (html: string) => {
   return html.replace("<body>", `<body>${printControls}`);
 };
 
+const STANDARD_REPORT_STYLES = `
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Arial", sans-serif; padding: 20px; font-size: 12px; color: #1f2937; line-height: 1.35; }
+  .report-page { page-break-after: always; }
+  .report-page:last-child { page-break-after: auto; }
+  .report-header { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
+  .brand-block { border: 1px solid #111827; border-radius: 8px; padding: 12px 14px; }
+  .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .brand-logo { width: 72px; height: auto; }
+  .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
+  .brand-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: #374151; }
+  .report-box { border: 1px solid #111827; border-radius: 8px; padding: 10px 12px; }
+  .report-title { font-size: 32px; line-height: 1; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
+  .copy-label { display: inline-block; font-size: 11px; font-weight: 700; border: 1px solid #111827; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; }
+  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .panel { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
+  .panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #111827; }
+  .info-row { display: flex; gap: 6px; margin-bottom: 4px; align-items: baseline; }
+  .info-label { font-weight: 700; color: #111827; min-width: 130px; }
+  .info-sep { color: #6b7280; }
+  .info-value { color: #111827; word-break: break-word; flex: 1; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  th, td { border: 1px solid #111827; padding: 6px 8px; font-size: 11px; vertical-align: top; }
+  th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+  .total-row td { background: #f9fafb; font-weight: 800; }
+  .text-right { text-align: right; }
+  .section-box { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
+  .section-box h4 { margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
+  .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; }
+  .signature-box { border-top: 1px solid #111827; padding-top: 8px; }
+  .signature-box p { margin-bottom: 5px; }
+  @media print { body { padding: 0; } }
+`;
+
+const renderReportHeader = (title: string, copyLabel?: string) => `
+  <div class="report-header">
+    <div class="brand-block">
+      <div class="brand-top">
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+        <div class="brand-title">${COMPANY_NAME}</div>
+      </div>
+      <div class="brand-meta">
+        <span><strong>Address:</strong> ${COMPANY_ADDRESS}</span>
+        <span><strong>Location:</strong> ${COMPANY_LOCATION}</span>
+        <span><strong>PIN:</strong> ${COMPANY_PIN}</span>
+        <span><strong>Email:</strong> otnoacess@gmail.com</span>
+      </div>
+    </div>
+    <div class="report-box">
+      ${copyLabel ? `<span class="copy-label">${copyLabel}</span>` : ""}
+      <h2 class="report-title">${title}</h2>
+      <div class="info-row"><span class="info-label">Printed</span><span class="info-sep">:</span><span class="info-value">${formatTimestamp()}</span></div>
+    </div>
+  </div>
+`;
+
 export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
@@ -230,18 +286,9 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
 
   const deliveryNotePage = () => `
     <div class="delivery-note-page">
-      <div class="header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
-        <div class="header-content">
-          <h1>${COMPANY_NAME}</h1>
-          <p>Email: otnoacess@gmail.com</p>
-          <p>${COMPANY_ADDRESS}</p>
-          <p>${COMPANY_LOCATION}</p>
-          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <h2 class="report-title">Hire Delivery Note</h2>
-        </div>
-      </div>
-      
+      ${renderReportHeader("Hire Delivery Note")}
+
+
       <div class="info-grid">
         <div class="info-section">
           <h3>Delivery Information</h3>
@@ -344,57 +391,16 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     <head>
       <title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header-logo { width: 100px; height: auto; margin-right: 20px; }
-        .header-content { flex: 1; }
-        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
-        .header-content p { color: #666; }
-        .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
-        .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { font-weight: bold; width: 120px; color: #555; }
-        .info-value { flex: 1; }
-        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 20px; }
-        .section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .total-row { font-weight: bold; background: #f9f9f9; }
-        .delivery-terms {
-          border: 1px solid #333;
-          border-radius: 6px;
-          padding: 10px;
-          margin-top: 12px;
-          margin-bottom: 20px;
-          background: #fcfcfc;
-        }
-        .delivery-terms p {
-          margin-bottom: 8px;
-          line-height: 1.4;
-        }
-        .delivery-terms h4 {
-          margin-bottom: 8px;
-          font-size: 13px;
-          text-transform: uppercase;
-        }
-        .delivery-terms ul {
-          margin: 0;
-          padding-left: 16px;
-          margin-bottom: 10px;
-        }
-        .delivery-terms li {
-          margin-bottom: 6px;
-          line-height: 1.4;
-        }
-        .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
-        .signature-box { border-top: 1px solid #333; padding-top: 10px; }
-        .signature-box p { margin-bottom: 5px; }
-        .remarks { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; }
+        ${STANDARD_REPORT_STYLES}
         .delivery-note-page { page-break-after: always; }
         .delivery-note-page:last-child { page-break-after: auto; }
-        @media print { body { padding: 0; } }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .info-section { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
+        .info-section h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+        .delivery-terms { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin: 8px 0 12px; }
+        .delivery-terms ul { margin: 0; padding-left: 16px; }
+        .delivery-terms li { margin-bottom: 5px; }
+        .remarks { margin-bottom: 10px; padding: 10px; border: 1px solid #111827; border-radius: 8px; background: #f9fafb; }
       </style>
     </head>
     <body>
@@ -420,18 +426,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
 
   const loadingNotePage = (copyLabel: string) => `
     <div class="loading-note-page">
-      <div class="header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
-        <div class="header-content">
-          <h1>${COMPANY_NAME}</h1>
-          <p>Email: otnoacess@gmail.com</p>
-          <p>${COMPANY_ADDRESS}</p>
-          <p>${COMPANY_LOCATION}</p>
-          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <h2 class="note-title">${noteTitle}</h2>
-          <p class="copy-label">${copyLabel}</p>
-        </div>
-      </div>
+      ${renderReportHeader(noteTitle, copyLabel)}
 
       <div class="info-grid">
         <div class="info-section">
@@ -550,37 +545,13 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
     <head>
       <title>Hire Loading Report - ${data.quotationNumber}</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header-logo { width: 100px; height: auto; margin-right: 20px; }
-        .header-content { flex: 1; }
-        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
-        .header-content p { color: #666; }
-        .note-title {
-          font-size: 24px;
-          font-weight: 800;
-          text-decoration: underline;
-          text-transform: uppercase;
-          margin-top: 8px;
-          color: #111;
-          text-align: left;
-        }
-        .copy-label { font-weight: bold; color: #111; margin-top: 4px; }
+        ${STANDARD_REPORT_STYLES}
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
-        .info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { font-weight: bold; width: 140px; color: #555; }
-        .info-value { flex: 1; }
-        .section { border: 1px solid #ddd; border-radius: 6px; padding: 10px; margin-bottom: 16px; }
-        .section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
+        .info-section { border: 1px solid #111827; padding: 10px; border-radius: 8px; }
+        .info-section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
+        .section { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin-bottom: 16px; }
+        .section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
         .section p { margin-bottom: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .text-right { text-align: right; }
-        .total-row { font-weight: bold; background: #f9f9f9; }
         .comments-section { margin-bottom: 12px; }
         .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
         .line-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -593,7 +564,6 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         .terms-section { font-size: 11px; line-height: 1.35; }
         .loading-note-page { page-break-after: always; }
         .loading-note-page:last-child { page-break-after: auto; }
-        @media print { body { padding: 0; } }
       </style>
     </head>
     <body>
@@ -781,40 +751,15 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     <head>
       <title>Hire Quotation - ${data.quotationNumber}</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { display: flex; align-items: flex-start; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header-logo { width: 100px; height: auto; margin-right: 20px; }
-        .header-content { flex: 1; }
-        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
-        .header-content p { color: #666; }
+        ${STANDARD_REPORT_STYLES}
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .info-section { border: 1px solid #ddd; padding: 10px; border-radius: 6px; }
-        .info-section h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { font-weight: bold; width: 140px; color: #555; }
-        .info-value { flex: 1; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .text-right { text-align: right; }
-        .total-row { font-weight: bold; background: #f9f9f9; }
+        .info-section { border: 1px solid #111827; padding: 10px; border-radius: 8px; }
+        .info-section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
         .terms { margin-top: 16px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 11px; }
-        @media print { body { padding: 0; } }
       </style>
     </head>
     <body>
-      <div class="header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
-        <div class="header-content">
-          <h1>${COMPANY_NAME}</h1>
-          <p>Email: otnoacess@gmail.com</p>
-          <p>${COMPANY_ADDRESS}</p>
-          <p>${COMPANY_LOCATION}</p>
-          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <h2 class="report-title">Hire Quotation</h2>
-        </div>
-      </div>
+      ${renderReportHeader("Hire Quotation")}
 
       <div class="info-grid">
         <div class="info-section">
@@ -955,44 +900,20 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     <head>
       <title>Hire Quotation - ${data.quotationNumber}</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .header { display: flex; align-items: flex-start; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .header-logo { width: 100px; height: auto; margin-right: 20px; }
-        .header-content { flex: 1; }
-        .header-content h1 { font-size: 24px; margin-bottom: 5px; }
-        .header-content p { color: #666; }
+        ${STANDARD_REPORT_STYLES}
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .info-section h3 { font-size: 14px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
-        .info-row { display: flex; margin-bottom: 5px; }
-        .info-label { font-weight: bold; width: 120px; color: #555; }
-        .info-value { flex: 1; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: #f5f5f5; font-weight: bold; }
-        .text-right { text-align: right; }
-        .total-row { font-weight: bold; background: #f9f9f9; }
+        .info-section { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
+        .info-section h3 { font-size: 14px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
         .grand-total { font-size: 14px; background: #333; color: white; }
         .summary-box { background: #f5f5f5; padding: 15px; margin-bottom: 20px; }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
         .summary-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .summary-row.grand { font-size: 16px; font-weight: bold; background: #333; color: white; margin: -15px; margin-top: 10px; padding: 15px; }
         .terms { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 11px; }
-        @media print { body { padding: 0; } }
       </style>
     </head>
     <body>
-      <div class="header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTN Logo" class="header-logo" />
-        <div class="header-content">
-          <h1>${COMPANY_NAME}</h1>
-          <p>Email: otnoacess@gmail.com</p>
-          <p>${COMPANY_ADDRESS}</p>
-          <p>${COMPANY_LOCATION}</p>
-          <p><strong>PIN: ${COMPANY_PIN}</strong></p>
-          <h2 class="report-title">Hire Quotation</h2>
-        </div>
-      </div>
+      ${renderReportHeader("Hire Quotation")}
       
       <div class="info-grid">
         <div class="info-section">
