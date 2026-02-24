@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderClock } from "lucide-react";
+import { FolderClock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -7,7 +7,23 @@ import HireQuotationWorkflow from "@/components/dashboard/HireQuotationWorkflow"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
+import { useClientSites } from "@/hooks/useClientSites";
+
+const ClientSitesBadges = ({ quotationId }: { quotationId: string }) => {
+  const { data: sites } = useClientSites(quotationId);
+  if (!sites?.length) return <span className="text-xs text-muted-foreground">No sites registered</span>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {sites.map((site) => (
+        <Badge key={site.id} variant="outline" className="font-mono text-xs">
+          {site.site_number} — {site.site_name}
+        </Badge>
+      ))}
+    </div>
+  );
+};
 
 const PreviousClients = () => {
   const navigate = useNavigate();
@@ -92,6 +108,7 @@ const PreviousClients = () => {
                         <TableRow>
                           <TableHead>Client</TableHead>
                           <TableHead>Site</TableHead>
+                          <TableHead>Registered Sites</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Action</TableHead>
                         </TableRow>
@@ -112,6 +129,9 @@ const PreviousClients = () => {
                               <div className="text-xs text-muted-foreground line-clamp-1">
                                 {quotation.site_address || "No site address"}
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              <ClientSitesBadges quotationId={quotation.id} />
                             </TableCell>
                             <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
                             <TableCell className="text-right">

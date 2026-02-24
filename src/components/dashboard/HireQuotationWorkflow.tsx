@@ -3555,6 +3555,129 @@ const HireQuotationWorkflow = ({
               </Card>
             )}
 
+            {/* Add New Site Section in Hire Loading */}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
+                  Add New Site for This Client
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {!savedQuotationId ? (
+                  <p className="text-sm text-muted-foreground">Save the client details first to add sites.</p>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Site Name *</Label>
+                        <Input
+                          value={newSite.siteName}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteName: e.target.value }))}
+                          placeholder="Site / Project name"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Location</Label>
+                        <Input
+                          value={newSite.siteLocation}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteLocation: e.target.value }))}
+                          placeholder="City or area"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Site Address</Label>
+                        <Input
+                          value={newSite.siteAddress}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteAddress: e.target.value }))}
+                          placeholder="Full address"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Manager Name</Label>
+                        <Input
+                          value={newSite.siteManagerName}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerName: e.target.value }))}
+                          placeholder="Manager name"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div>
+                        <Label>Manager Phone</Label>
+                        <Input
+                          value={newSite.siteManagerPhone}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerPhone: e.target.value }))}
+                          placeholder="+254 ..."
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div>
+                        <Label>Manager Email</Label>
+                        <Input
+                          value={newSite.siteManagerEmail}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteManagerEmail: e.target.value }))}
+                          placeholder="email@example.com"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                      <div>
+                        <Label>Site Opened By</Label>
+                        <Input
+                          value={newSite.siteOpenedBy}
+                          onChange={(e) => setNewSite(prev => ({ ...prev, siteOpenedBy: e.target.value }))}
+                          placeholder="Name"
+                          disabled={inventoryDeducted}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 pt-2">
+                      <Badge variant="secondary" className="text-sm font-mono">
+                        Next Site ID: {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
+                      </Badge>
+                      <Button
+                        type="button"
+                        onClick={handleAddClientSite}
+                        disabled={createClientSite.isPending || !newSite.siteName || inventoryDeducted}
+                        size="sm"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        {createClientSite.isPending ? "Adding..." : "Add Site"}
+                      </Button>
+                    </div>
+                    {(clientSites?.length ?? 0) > 0 && (
+                      <div className="mt-4 rounded-lg border border-border overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/40">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-semibold">Site ID</th>
+                              <th className="px-3 py-2 text-left font-semibold">Site Name</th>
+                              <th className="px-3 py-2 text-left font-semibold">Location</th>
+                              <th className="px-3 py-2 text-left font-semibold">Manager</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {clientSites?.map((site) => (
+                              <tr key={site.id} className="border-t border-border hover:bg-muted/30">
+                                <td className="px-3 py-2">
+                                  <Badge variant="outline" className="font-mono text-xs">{site.site_number}</Badge>
+                                </td>
+                                <td className="px-3 py-2 font-medium">{site.site_name}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{site.site_location || "—"}</td>
+                                <td className="px-3 py-2 text-muted-foreground">{site.site_manager_name || "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Delivery Details Form */}
             <Card>
               <CardHeader className="pb-3">
