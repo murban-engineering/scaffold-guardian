@@ -622,10 +622,10 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+        .yard-note h1 { text-align: center; font-size: 14px; margin-bottom: 2px; }
         .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
         .yard-note .title-block { text-align: center; }
-        .yard-note .title-block h1 { text-align: center; }
+        .yard-note .title-block h1 { text-align: center; font-size: 14px; }
         .yard-note .title-block p { text-align: center; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
