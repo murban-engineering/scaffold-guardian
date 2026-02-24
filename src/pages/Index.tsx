@@ -15,7 +15,7 @@ import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/H
 import type { StepKey } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreateQuotation, useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useHireQuotations, useUpdateQuotation, HireQuotation } from "@/hooks/useHireQuotations";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ const Index = () => {
   const canViewWorkforce = hasRole("admin");
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
   const createQuotation = useCreateQuotation();
+  const updateQuotation = useUpdateQuotation();
 
   useEffect(() => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
@@ -155,14 +156,22 @@ const Index = () => {
         notes: "Temporary quotation for price-check only.",
       });
 
+      const customerNumber = quotation.quotation_number
+        .replace("HSQ-", "CL-")
+        .replace("HQ-", "CL-");
+
+      const testQuotation = await updateQuotation.mutateAsync({
+        id: quotation.id,
+        quotation_number: customerNumber,
+      });
+
       setSelectedExistingClient(null);
-      setSelectedQuotation(quotation);
+      setSelectedQuotation(testQuotation);
       setWorkflowInitialClientMode("new");
       setIsTestQuotationFlow(true);
       setWorkflowInitialStep("equipment");
       setShowQuotationDialog(true);
 
-      const customerNumber = quotation.quotation_number.replace("HSQ-", "CL-");
       toast.success(`Test quotation created. Customer number: ${customerNumber}`);
     } catch (error) {
       console.error("Failed to create test quotation", error);
