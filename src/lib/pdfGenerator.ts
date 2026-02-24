@@ -624,6 +624,9 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
         .yard-note h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
         .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
+        .yard-note .title-block { text-align: center; }
+        .yard-note .title-block h1 { text-align: center; }
+        .yard-note .title-block p { text-align: center; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
@@ -930,6 +933,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           <p>Date: ___________________________</p>
         </div>
       </div>
+      <div style="text-align: right; font-size: 9px; color: #999; margin-top: 20px;">Print date: ${formatTimestamp()}</div>
     </body>
     </html>
   `;
@@ -1105,6 +1109,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
           <p>Date: ___________________________</p>
         </div>
       </div>
+      <div style="text-align: right; font-size: 9px; color: #999; margin-top: 20px;">Print date: ${formatTimestamp()}</div>
     </body>
     </html>
   `;
