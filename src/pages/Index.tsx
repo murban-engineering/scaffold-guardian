@@ -48,6 +48,7 @@ const Index = () => {
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
   const [workflowInitialClientMode, setWorkflowInitialClientMode] = useState<"new" | "existing">("new");
+  const [isTestQuotationFlow, setIsTestQuotationFlow] = useState(false);
   const { profile, hasRole, loading: authLoading } = useAuth();
   const canViewWorkforce = hasRole("admin");
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
@@ -119,6 +120,7 @@ const Index = () => {
     setSelectedExistingClient(null);
     setWorkflowInitialStep(undefined);
     setWorkflowInitialClientMode("new");
+    setIsTestQuotationFlow(false);
     setShowQuotationDialog(true);
   };
 
@@ -127,12 +129,14 @@ const Index = () => {
     setSelectedExistingClient(quotation ?? null);
     setWorkflowInitialStep(undefined);
     setWorkflowInitialClientMode("existing");
+    setIsTestQuotationFlow(false);
     setShowQuotationDialog(true);
   };
 
   const handleContinueQuotation = (quotation: HireQuotation) => {
     setSelectedExistingClient(null);
     setSelectedQuotation(quotation);
+    setIsTestQuotationFlow(false);
     setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
     if (activeItem === "site-master" || activeItem === "yard-verification") {
@@ -154,6 +158,7 @@ const Index = () => {
       setSelectedExistingClient(null);
       setSelectedQuotation(quotation);
       setWorkflowInitialClientMode("new");
+      setIsTestQuotationFlow(true);
       setWorkflowInitialStep("equipment");
       setShowQuotationDialog(true);
 
@@ -368,6 +373,7 @@ const Index = () => {
               setSelectedExistingClient(null);
               setWorkflowInitialStep(undefined);
               setWorkflowInitialClientMode("new");
+              setIsTestQuotationFlow(false);
             }
           }}
         >
@@ -380,6 +386,7 @@ const Index = () => {
               initialStep={workflowInitialStep}
               initialClientMode={workflowInitialClientMode}
               initialExistingClient={selectedExistingClient}
+              isTestQuotation={isTestQuotationFlow}
               onClientProcessed={(client) => {
                 setProcessedClient(client);
                 setShowQuotationDialog(false);

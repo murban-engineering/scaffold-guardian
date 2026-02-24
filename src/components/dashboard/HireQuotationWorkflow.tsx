@@ -212,6 +212,7 @@ type HireQuotationWorkflowProps = {
   initialStep?: StepKey;
   initialClientMode?: ClientEntryMode;
   initialExistingClient?: HireQuotation | null;
+  isTestQuotation?: boolean;
 };
 
 const HireQuotationWorkflow = ({
@@ -220,6 +221,7 @@ const HireQuotationWorkflow = ({
   initialStep,
   initialClientMode = "new",
   initialExistingClient,
+  isTestQuotation = false,
 }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
@@ -473,7 +475,7 @@ const HireQuotationWorkflow = ({
     );
     
     // If this quotation has balance items from previous delivery, skip to hire-delivery step
-    if (hasBalanceItems) {
+    if (hasBalanceItems && !isTestQuotation) {
       setActiveStep("hire-delivery");
       setDeliverySequence(2); // This is at least the 2nd delivery
       setInventoryDeducted(false); // Reset so they can deliver again
@@ -484,7 +486,7 @@ const HireQuotationWorkflow = ({
     }
     setInventoryDeducted(false);
     setReturnProcessed(false);
-  }, [initialQuotation, profile?.full_name, scaffolds]);
+  }, [initialQuotation, isTestQuotation, profile?.full_name, scaffolds]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
@@ -822,7 +824,15 @@ const HireQuotationWorkflow = ({
     }
   }, [activeStep, savedQuotationId, clientSites?.length]);
 
-  const stepIndex = steps.findIndex((step) => step.key === activeStep);
+  const workflowSteps = useMemo(
+    () =>
+      isTestQuotation
+        ? steps.filter((step) => step.key !== "hire-delivery" && step.key !== "return")
+        : steps,
+    [isTestQuotation]
+  );
+
+  const stepIndex = workflowSteps.findIndex((step) => step.key === activeStep);
 
   const weeklyHireTotal = useMemo(() => {
     return equipmentItems.reduce((total, item) => {
@@ -1009,16 +1019,16 @@ const HireQuotationWorkflow = ({
   };
 
   const handleNext = () => {
-    const currentIndex = steps.findIndex((step) => step.key === activeStep);
-    const nextStep = steps[currentIndex + 1];
+    const currentIndex = workflowSteps.findIndex((step) => step.key === activeStep);
+    const nextStep = workflowSteps[currentIndex + 1];
     if (nextStep) {
       setActiveStep(nextStep.key);
     }
   };
 
   const handleBack = () => {
-    const currentIndex = steps.findIndex((step) => step.key === activeStep);
-    const prevStep = steps[currentIndex - 1];
+    const currentIndex = workflowSteps.findIndex((step) => step.key === activeStep);
+    const prevStep = workflowSteps[currentIndex - 1];
     if (prevStep) {
       setActiveStep(prevStep.key);
     }
@@ -2382,7 +2392,7 @@ const HireQuotationWorkflow = ({
       <CardContent className="space-y-6">
         {/* Step Navigation */}
         <div className="flex flex-wrap gap-2">
-          {steps.map((step, index) => {
+          {workflowSteps.map((step, index) => {
             const Icon = step.icon;
             const isActive = step.key === activeStep;
             const isComplete = index < stepIndex;
