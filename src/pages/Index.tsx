@@ -163,9 +163,23 @@ const Index = () => {
   };
 
   const handleContinueQuotation = (quotation: HireQuotation) => {
-    setSelectedExistingClient(null);
-    setSelectedQuotation(quotation);
-    setIsTestQuotationFlow(false);
+    const continuingFromTestClient = isTestQuotation(quotation);
+
+    if (continuingFromTestClient && activeItem !== "site-master" && activeItem !== "yard-verification") {
+      setSelectedQuotation(null);
+      setSelectedExistingClient(quotation);
+      setWorkflowInitialClientMode("existing");
+      setWorkflowInitialStep(undefined);
+      setIsTestQuotationFlow(false);
+      toast.info("Loaded test client details. Save to generate a new HSQ quotation.");
+    } else {
+      setSelectedExistingClient(null);
+      setSelectedQuotation(quotation);
+      setWorkflowInitialClientMode("new");
+      setWorkflowInitialStep(undefined);
+      setIsTestQuotationFlow(false);
+    }
+
     setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
     if (activeItem === "site-master" || activeItem === "yard-verification") {
