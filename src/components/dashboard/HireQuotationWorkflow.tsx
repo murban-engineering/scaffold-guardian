@@ -2093,6 +2093,7 @@ const HireQuotationWorkflow = ({
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
       siteName: header.siteName,
+      siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
       contactName: header.clientName,
       contactPhone: header.clientPhone,
