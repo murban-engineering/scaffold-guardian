@@ -1575,7 +1575,10 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           status: "dispatched",
-          dispatch_date: deliveryNote.deliveryDate,
+          dispatch_date:
+            initialQuotation?.dispatch_date ||
+            deliveryHistory.find((delivery) => delivery.status === "dispatched")?.deliveryDate ||
+            deliveryNote.deliveryDate,
         } as any);
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
