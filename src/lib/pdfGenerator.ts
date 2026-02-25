@@ -670,8 +670,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .yard-note h1 { text-align: center; font-size: 14px; margin-bottom: 2px; }
-        .yard-note h2 { text-align: center; font-size: 18px; margin-bottom: 8px; letter-spacing: 1px; }
+        .yard-note h1 { text-align: center; font-size: 18px; margin-bottom: 10px; letter-spacing: 0.8px; text-transform: uppercase; }
         .yard-note .title-block { text-align: center; }
         .yard-note .title-block h1 { text-align: center; font-size: 14px; }
         .yard-note .title-block p { text-align: center; }
@@ -685,9 +684,8 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
         .yard-note-footer { margin-top: 10px; }
         .yard-note-footer .row { display: flex; gap: 16px; margin-bottom: 6px; }
         .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 6px; min-height: 28px; }
-        .yard-note-header { display: grid; grid-template-columns: 80px 1fr auto; align-items: center; gap: 12px; margin-bottom: 6px; }
-        .yard-note-header .title-block { text-align: center; }
-        .yard-note-meta { font-size: 10px; text-align: right; }
+        .yard-note-header { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 10px; }
+        .yard-note-header .brand-logo { width: 56px; height: auto; }
         .yard-note-info-table td { height: 28px; }
         .yard-note-info-table .label { font-weight: bold; }
         @media print { body { padding: 0; } }
@@ -695,48 +693,38 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     </head>
     <body>
       <div class="yard-note">
-        ${renderStandardReportLayout({
-          documentType: "Yard Verification Report",
-          documentNumber: data.deliveryNoteNumber,
-          documentDate: data.deliveryDate,
-          clientName: data.companyName,
-          contactName: data.contactName,
-          contactPhone: data.contactPhone,
-          siteName: data.siteName,
-          siteId: data.siteId,
-          siteAddress: data.siteAddress,
-          clientId: data.clientId,
-          orderNumber: data.quotationNumber,
-          manualNumber: "T.B.OD32"
-        })}
+        <div class="yard-note-header">
+          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <h1>Yard Verification Report</h1>
+        </div>
         <table class="yard-note-table yard-note-info-table">
           <tr>
             <td class="label">Customer/Branch Name:</td>
-            <td class="value">${data.companyName || ""}</td>
+            <td class="value">&nbsp;</td>
             <td class="label">ID no:</td>
-            <td class="value">${data.deliveryNoteNumber || ""}</td>
+            <td class="value">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Client ID:</td>
-            <td class="value">${data.clientId || ""}</td>
+            <td class="value">&nbsp;</td>
             <td class="label">Site ID:</td>
-            <td class="value">${data.siteId || ""}</td>
+            <td class="value">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Site:</td>
-            <td class="value">${data.siteName || ""}</td>
+            <td class="value">&nbsp;</td>
             <td class="label">Date:</td>
-            <td class="value">${data.deliveryDate || ""}</td>
+            <td class="value">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Vehicle Reg:</td>
-            <td class="value">${data.vehicleNo || ""}</td>
+            <td class="value">&nbsp;</td>
             <td class="label">Created By:</td>
-            <td class="value">${data.createdBy || ""}</td>
+            <td class="value">&nbsp;</td>
           </tr>
           <tr>
             <td class="label">Branch:</td>
-            <td class="value">${data.siteName || ""}</td>
+            <td class="value">&nbsp;</td>
             <td class="label"></td>
             <td class="value"></td>
           </tr>
