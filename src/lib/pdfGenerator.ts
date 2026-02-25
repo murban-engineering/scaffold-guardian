@@ -319,6 +319,8 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         <h3>${data.clientName || "-"}</h3>
         ${data.clientAddress ? `<p style="margin-bottom:6px;">${data.clientAddress}</p>` : ""}
         <div style="margin-top: 12px;">
+          <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
+          <div class="info-row"><span class="info-label">Cell No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
           <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
           ${data.clientVat ? `<div class="info-row"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : ""}
           ${data.clientReg ? `<div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : ""}
@@ -352,17 +354,11 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
 
       <div class="panel">
         <h3>Site Details</h3>
-        <div class="info-row">
-          <span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || ""}</span>
-          <span class="info-label" style="margin-left:16px;">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span>
-        </div>
+        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
         <div style="margin-top:8px;">
-          <div class="info-row">
-            <span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span>
-            <span class="info-label" style="margin-left:16px;">Cell No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span>
-          </div>
+          <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
           <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
         </div>
       </div>
