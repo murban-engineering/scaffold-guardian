@@ -32,6 +32,38 @@ const asDateOrToday = (value?: string | null) => {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 };
 
+const resolveDispatchDateFromHistory = (quotationId: string, quotationNumber?: string | null) => {
+  if (typeof window === "undefined") return null;
+
+  const keys = [
+    `hire-delivery-history:${quotationId}`,
+    quotationNumber ? `hire-delivery-history:${quotationNumber}` : null,
+  ].filter(Boolean) as string[];
+
+  for (const key of keys) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) continue;
+
+      const deliveryDates = parsed
+        .map((entry) => entry?.deliveryDate)
+        .filter((value): value is string => typeof value === "string" && value.length > 0)
+        .sort();
+
+      if (deliveryDates.length > 0) {
+        return deliveryDates[0];
+      }
+    } catch {
+      // Ignore invalid localStorage payloads and continue to the next key.
+    }
+  }
+
+  return null;
+};
+
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
@@ -405,17 +437,24 @@ const Accounting = () => {
     const bd = asDateOrToday(billingDate);
     return activeQuotations.map((q, idx) => {
       const lineItems = q.line_items ?? [];
-      // Use stored dispatch_date if available, otherwise fall back to line item timestamps
+      // Use stored dispatch_date if available, then delivery history, then a stable fallback.
       const storedDispatchDate = q.dispatch_date;
       let dispatchDate: string;
       if (storedDispatchDate) {
         dispatchDate = format(asDateOrToday(storedDispatchDate), "yyyy-MM-dd");
       } else {
-        const dispatchDates = lineItems
-          .filter((li) => (li.delivered_quantity ?? 0) > 0)
-          .map((li) => li.updated_at).filter(Boolean).sort();
-        const dispatchDateRaw = dispatchDates[0] ?? q.updated_at ?? q.created_at;
-        dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+        const historyDispatchDate = resolveDispatchDateFromHistory(q.id, q.quotation_number);
+        if (historyDispatchDate) {
+          dispatchDate = format(asDateOrToday(historyDispatchDate), "yyyy-MM-dd");
+        } else {
+          const dispatchDates = lineItems
+            .filter((li) => (li.delivered_quantity ?? 0) > 0)
+            .map((li) => li.updated_at ?? li.created_at)
+            .filter(Boolean)
+            .sort();
+          const dispatchDateRaw = dispatchDates[0] ?? q.created_at ?? q.updated_at;
+          dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+        }
       }
       const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
 
