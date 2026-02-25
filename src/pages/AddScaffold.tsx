@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -20,7 +20,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -28,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { useCreateScaffold, useDeleteScaffold, useScaffolds, useUpdateScaffold } from "@/hooks/useScaffolds";
+import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGrouping";
 
 const formSchema = z.object({
   scaffold_type: z.enum(["frame", "tube_coupler", "mobile", "suspended", "cantilever", "system"]),
@@ -67,6 +70,7 @@ const AddScaffold = () => {
   const { data: existingScaffolds } = useScaffolds();
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [inventorySearch, setInventorySearch] = useState("");
   const isSubmitting = createScaffold.isPending || updateScaffold.isPending;
 
   const handleSidebarItemClick = (item: string) => {
@@ -126,6 +130,34 @@ const AddScaffold = () => {
   const quantityValue = form.watch("quantity");
   const selectedScaffold = existingScaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId);
   const currentQuantity = selectedScaffold?.quantity ?? 0;
+
+  const watchedPartNumber = form.watch("part_number");
+
+  const groupedInventoryOptions = useMemo(() => {
+    const query = inventorySearch.trim().toLowerCase();
+    const filtered = (existingScaffolds ?? []).filter((scaffold) => {
+      if (!query) return true;
+      return (
+        (scaffold.part_number ?? "").toLowerCase().includes(query) ||
+        (scaffold.description ?? "").toLowerCase().includes(query) ||
+        scaffold.scaffold_type.toLowerCase().includes(query)
+      );
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const groupA = getInventoryGroupKey(a.description ?? a.scaffold_type);
+      const groupB = getInventoryGroupKey(b.description ?? b.scaffold_type);
+      if (groupA !== groupB) return groupA.localeCompare(groupB);
+      return (a.description ?? "").localeCompare(b.description ?? "");
+    });
+
+    return sorted.reduce<Record<string, typeof sorted>>((acc, scaffold) => {
+      const group = getInventoryGroupKey(scaffold.description ?? scaffold.scaffold_type);
+      if (!acc[group]) acc[group] = [];
+      acc[group].push(scaffold);
+      return acc;
+    }, {});
+  }, [existingScaffolds, inventorySearch]);
 
   const handlePresetSelect = (scaffoldId: string) => {
     const scaffold = existingScaffolds?.find(s => s.id === scaffoldId);
@@ -197,6 +229,28 @@ const AddScaffold = () => {
     }
     form.clearErrors("quantity");
   }, [adjustmentType, currentQuantity, form, quantityValue, selectedScaffold]);
+
+  useEffect(() => {
+    const normalizedPartNumber = (watchedPartNumber ?? "").trim().toLowerCase();
+    if (!normalizedPartNumber) return;
+
+    const matchingScaffold = existingScaffolds?.find(
+      (scaffold) => (scaffold.part_number ?? "").trim().toLowerCase() === normalizedPartNumber
+    );
+
+    if (!matchingScaffold) return;
+    if (selectedScaffoldId === matchingScaffold.id) return;
+
+    setSelectedScaffoldId(matchingScaffold.id);
+    setShowDeleteConfirm(false);
+    form.setValue("scaffold_type", matchingScaffold.scaffold_type);
+    form.setValue("part_number", matchingScaffold.part_number || "");
+    form.setValue("description", matchingScaffold.description || "");
+    form.setValue("mass_per_item", matchingScaffold.mass_per_item || undefined);
+    form.setValue("weekly_rate", matchingScaffold.weekly_rate || undefined);
+    form.setValue("unit_price", matchingScaffold.unit_price || undefined);
+    form.setValue("quantity", matchingScaffold.quantity ?? undefined);
+  }, [existingScaffolds, form, selectedScaffoldId, watchedPartNumber]);
 
   const onSubmit = async (values: FormValues) => {
     if (values.adjustment_type === "remove") {
@@ -281,20 +335,34 @@ const AddScaffold = () => {
                       <FormLabel className="text-sm font-medium mb-2 block">
                         Quick Select from Inventory
                       </FormLabel>
+                      <div className="relative mb-3">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          value={inventorySearch}
+                          onChange={(event) => setInventorySearch(event.target.value)}
+                          placeholder="Search by part number, description, or type..."
+                          className="pl-9"
+                        />
+                      </div>
                       <Select onValueChange={handlePresetSelect} value={selectedScaffoldId ?? ""}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select an item to auto-fill details..." />
                         </SelectTrigger>
-                        <SelectContent className="max-h-[300px]">
-                          {existingScaffolds?.map((scaffold) => (
-                            <SelectItem key={scaffold.id} value={scaffold.id}>
-                              {scaffold.part_number} - {scaffold.description}
-                            </SelectItem>
+                        <SelectContent className="max-h-[320px]">
+                          {Object.entries(groupedInventoryOptions).map(([group, items]) => (
+                            <SelectGroup key={group}>
+                              <SelectLabel>{getInventoryGroupLabel(group)}</SelectLabel>
+                              {items.map((scaffold) => (
+                                <SelectItem key={scaffold.id} value={scaffold.id}>
+                                  {scaffold.part_number} - {scaffold.description}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Or fill in the details manually below
+                        Enter an existing part number to auto-fill, or complete the form manually below
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Current inventory quantity: {currentQuantity}
