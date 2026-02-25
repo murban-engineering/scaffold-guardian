@@ -225,7 +225,7 @@ const STANDARD_REPORT_STYLES = `
   .report-page { page-break-after: always; }
   .report-page:last-child { page-break-after: auto; }
   .report-header { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
-  .brand-block { border: 1px solid #111827; border-radius: 8px; padding: 12px 14px; }
+  .brand-block { padding: 12px 14px; }
   .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
   .brand-logo { width: 72px; height: auto; }
   .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
@@ -268,7 +268,6 @@ const renderReportHeader = (title: string, copyLabel?: string) => `
         <span><strong>Address:</strong> ${COMPANY_ADDRESS}</span>
         <span><strong>Location:</strong> ${COMPANY_LOCATION}</span>
         <span><strong>PIN:</strong> ${COMPANY_PIN}</span>
-        <span><strong>Email:</strong> otnoacess@gmail.com</span>
       </div>
     </div>
     <div class="report-box">
@@ -313,7 +312,6 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         </div>
         <div class="brand-meta">
           <span><strong>Reg No:</strong> ${COMPANY_PIN}</span>
-          <span><strong>Email:</strong> otnoacess@gmail.com</span>
         </div>
       </div>
 
@@ -322,6 +320,8 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         ${data.clientAddress ? `<p style="margin-bottom:6px;">${data.clientAddress}</p>` : ""}
         <div style="margin-top: 12px;">
           <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
+          ${data.clientVat ? `<div class="info-row"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : ""}
+          ${data.clientReg ? `<div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : ""}
           <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
         </div>
       </div>
