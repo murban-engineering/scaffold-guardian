@@ -32,6 +32,7 @@ export interface QuotationCalculationData {
   dateCreated: string;
   companyName: string;
   siteName: string;
+  siteLocation?: string;
   siteAddress: string;
   contactName: string;
   contactPhone: string;
@@ -255,6 +256,25 @@ const STANDARD_REPORT_STYLES = `
   .signature-box { border-top: 1px solid #111827; padding-top: 8px; }
   .signature-box p { margin-bottom: 5px; }
   @media print { body { padding: 0; } }
+`;
+
+const STANDARD_REPORT_HEADER_STYLES = `
+  .report-title { font-size: 32px; line-height: 1; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
+  .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
+  .standard-report-left { display: grid; gap: 12px; }
+  .standard-report-right { display: grid; gap: 8px; }
+  .client-panel { min-height: 220px; }
+  .brand-block { padding: 12px 14px; }
+  .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .brand-logo { width: 72px; height: auto; }
+  .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
+  .brand-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: #374151; }
+  .panel { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
+  .panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #111827; }
+  .info-row { display: flex; gap: 6px; margin-bottom: 4px; align-items: baseline; }
+  .info-label { font-weight: 700; color: #111827; min-width: 130px; }
+  .info-sep { color: #6b7280; }
+  .info-value { color: #111827; word-break: break-word; flex: 1; }
 `;
 
 const renderReportHeader = (title: string, copyLabel?: string) => `
@@ -977,6 +997,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
         contactEmail: data.contactEmail,
         siteName: data.siteName,
         siteId: data.siteId,
+        siteLocation: data.siteLocation,
         siteAddress: data.siteAddress,
         clientId: data.clientId,
         createdBy: data.createdBy,
@@ -1109,39 +1130,23 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const gatePassPage = (copyLabel: string) => `
     <div class="page gate-pass-page pink-sheet">
-      <div class="gp-top-meta">
-        <div class="gp-meta-box">${copyLabel}</div>
-        <div class="gp-meta-box">Gate Pass</div>
-        <div class="gp-meta-box">Truck Bin No.</div>
-      </div>
-
-      <div class="gp-header">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNOS Logo" class="gp-logo" />
-        <div class="gp-header-right">
-          <h1>otnos</h1>
-          <h2>HIRE RETURN NOTE</h2>
-        </div>
-        <div class="gp-header-doc">
-          <p>Doc Ref: OTN-HRN</p>
-          <p>No: _______________</p>
-        </div>
-      </div>
-
-      <div class="gp-info-grid">
-        <div class="gp-info-left">
-          <div class="gp-row"><span class="gp-label">Customer</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Site Name</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Site Code</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Site Address</span><span class="gp-val-line"></span></div>
-        </div>
-        <div class="gp-info-right">
-          <div class="gp-row"><span class="gp-label">OTNOS Branch</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Date</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Hire End Date</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Customer Return</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">OTNOS Collect</span><span class="gp-val-line"></span></div>
-        </div>
-      </div>
+      ${renderStandardReportLayout({
+        documentType: "Hire Return Form",
+        documentNumber: data.returnNoteNumber,
+        documentDate: data.returnDate,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        orderNumber: data.quotationNumber,
+        manualNumber: copyLabel,
+        createdBy: data.createdBy,
+      })}
 
       <table class="gp-table">
         <thead>
@@ -1327,6 +1332,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     .page { page-break-after: always; }
     .page:last-child { page-break-after: auto; }
     @media print { body { padding: 0; } }
+
+    ${STANDARD_REPORT_HEADER_STYLES}
 
     /* ---- Gate Pass Styles ---- */
     .pink-sheet { background: #f8cddd; border: 1px solid #c58ea3; padding: 14px; }
