@@ -141,6 +141,19 @@ type ReturnItem = {
   massPerItem: number;
 };
 
+type TestWorkflowDraft = {
+  activeStep: StepKey;
+  header: QuotationHeader;
+  discounts: DiscountLine[];
+  calculation: QuotationCalculation;
+  equipmentItems: EquipmentItem[];
+  selectedScaffoldId: string;
+  equipmentQuantity: string;
+  itemCodeSearch: string;
+};
+
+const TEST_WORKFLOW_DRAFT_KEY = "hire-workflow:test-draft";
+
 const steps: { key: StepKey; title: string; description: string; icon: typeof UserRoundPen }[] = [
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
@@ -708,6 +721,94 @@ const HireQuotationWorkflow = ({
     paymentTerms: "Payment due within 30 days from invoice date.",
   });
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
+  const [hasHydratedTestDraft, setHasHydratedTestDraft] = useState(false);
+
+  useEffect(() => {
+    if (!isTestQuotation || initialQuotation) {
+      setHasHydratedTestDraft(true);
+      return;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(TEST_WORKFLOW_DRAFT_KEY);
+      if (!stored) {
+        setHasHydratedTestDraft(true);
+        return;
+      }
+
+      const draft = JSON.parse(stored) as Partial<TestWorkflowDraft>;
+
+      const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
+      if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
+        setActiveStep(draft.activeStep);
+      }
+
+      if (draft.header) {
+        setHeader((prev) => ({ ...prev, ...draft.header }));
+      }
+
+      if (draft.discounts?.length) {
+        setDiscounts(draft.discounts);
+      }
+
+      if (draft.calculation) {
+        setCalculation((prev) => ({ ...prev, ...draft.calculation }));
+      }
+
+      if (draft.equipmentItems?.length) {
+        setEquipmentItems(draft.equipmentItems);
+      }
+
+      if (typeof draft.selectedScaffoldId === "string") {
+        setSelectedScaffoldId(draft.selectedScaffoldId);
+      }
+
+      if (typeof draft.equipmentQuantity === "string") {
+        setEquipmentQuantity(draft.equipmentQuantity);
+      }
+
+      if (typeof draft.itemCodeSearch === "string") {
+        setItemCodeSearch(draft.itemCodeSearch);
+      }
+
+      toast.success("Restored your test workflow draft.");
+    } catch (error) {
+      console.error("Failed to hydrate test workflow draft:", error);
+    } finally {
+      setHasHydratedTestDraft(true);
+    }
+  }, [initialQuotation, isTestQuotation]);
+
+  useEffect(() => {
+    if (!hasHydratedTestDraft || !isTestQuotation || initialQuotation) {
+      return;
+    }
+
+    const draft: TestWorkflowDraft = {
+      activeStep,
+      header,
+      discounts,
+      calculation,
+      equipmentItems,
+      selectedScaffoldId,
+      equipmentQuantity,
+      itemCodeSearch,
+    };
+
+    window.localStorage.setItem(TEST_WORKFLOW_DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    hasHydratedTestDraft,
+    isTestQuotation,
+    initialQuotation,
+    activeStep,
+    header,
+    discounts,
+    calculation,
+    equipmentItems,
+    selectedScaffoldId,
+    equipmentQuantity,
+    itemCodeSearch,
+  ]);
 
   const persistedReturnQuantitiesByItemCode = useMemo(() => {
     const quantities = new Map<string, { returned: number; balance: number | null }>();
