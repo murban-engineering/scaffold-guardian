@@ -284,9 +284,12 @@ interface StandardReportLayoutData {
   documentNumber: string;
   documentDate: string;
   clientName: string;
+  clientAddress?: string;
   contactName?: string;
   contactPhone?: string;
   contactEmail?: string;
+  clientVat?: string;
+  clientReg?: string;
   siteName?: string;
   siteId?: string;
   siteLocation?: string;
@@ -294,6 +297,10 @@ interface StandardReportLayoutData {
   clientId?: string;
   orderNumber?: string;
   manualNumber?: string;
+  hireQuoteNo?: string;
+  hireStartDate?: string;
+  depositRequired?: string;
+  createdBy?: string;
 }
 
 const renderStandardReportLayout = (data: StandardReportLayoutData) => `
@@ -305,19 +312,18 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
           <div class="brand-title">${COMPANY_NAME}</div>
         </div>
         <div class="brand-meta">
-          <span><strong>Address:</strong> ${COMPANY_ADDRESS}</span>
-          <span><strong>Location:</strong> ${COMPANY_LOCATION}</span>
-          <span><strong>PIN:</strong> ${COMPANY_PIN}</span>
+          <span><strong>Reg No:</strong> ${COMPANY_PIN}</span>
           <span><strong>Email:</strong> otnoacess@gmail.com</span>
         </div>
       </div>
 
       <div class="panel client-panel">
-        <h3>Client Details</h3>
-        <div class="info-row"><span class="info-label">Client Name</span><span class="info-sep">:</span><span class="info-value">${data.clientName || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Phone</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || "-"}</span></div>
+        <h3>${data.clientName || "-"}</h3>
+        ${data.clientAddress ? `<p style="margin-bottom:6px;">${data.clientAddress}</p>` : ""}
+        <div style="margin-top: 12px;">
+          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
+          <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
+        </div>
       </div>
     </div>
 
@@ -328,9 +334,11 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         <div class="info-row"><span class="info-label">Document No</span><span class="info-sep">:</span><span class="info-value">${data.documentNumber || "-"}</span></div>
         <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">${data.documentType}</span></div>
         <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${data.documentDate || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value">${data.clientId || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Order No</span><span class="info-sep">:</span><span class="info-value">${data.orderNumber || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber || "-"}</span></div>
+        ${data.orderNumber ? `<div class="info-row"><span class="info-label">Your Order No</span><span class="info-sep">:</span><span class="info-value">${data.orderNumber}</span></div>` : ""}
+        ${data.manualNumber ? `<div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber}</span></div>` : ""}
+        ${data.hireQuoteNo ? `<div class="info-row"><span class="info-label">Hire Quote No</span><span class="info-sep">:</span><span class="info-value">${data.hireQuoteNo}</span></div>` : ""}
+        ${data.hireStartDate ? `<div class="info-row"><span class="info-label">Hire Start Date</span><span class="info-sep">:</span><span class="info-value">${data.hireStartDate}</span></div>` : ""}
+        ${data.depositRequired ? `<div class="info-row"><span class="info-label">Deposit Required</span><span class="info-sep">:</span><span class="info-value">${data.depositRequired}</span></div>` : ""}
       </div>
 
       <div class="panel">
@@ -338,16 +346,25 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">${COMPANY_NAME}</span></div>
         <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
         <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
-        <div class="info-row"><span class="info-label">PIN</span><span class="info-sep">:</span><span class="info-value">${COMPANY_PIN}</span></div>
-        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+        <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+        ${data.createdBy ? `<div class="info-row"><span class="info-label">Salesman</span><span class="info-sep">:</span><span class="info-value">${data.createdBy}</span></div>` : ""}
       </div>
 
       <div class="panel">
         <h3>Site Details</h3>
-        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Site Location</span><span class="info-sep">:</span><span class="info-value">${data.siteLocation || "-"}</span></div>
-        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
+        <div class="info-row">
+          <span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || ""}</span>
+          <span class="info-label" style="margin-left:16px;">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span>
+        </div>
+        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
+        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
+        <div style="margin-top:8px;">
+          <div class="info-row">
+            <span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span>
+            <span class="info-label" style="margin-left:16px;">Cell No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span>
+          </div>
+          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -375,32 +392,10 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         siteId: data.siteId,
         siteAddress: data.siteAddress,
         clientId: data.clientId,
-        orderNumber: data.quotationNumber
+        orderNumber: data.quotationNumber,
+        hireQuoteNo: data.quotationNumber,
+        createdBy: data.createdBy,
       })}
-
-
-      <div class="info-grid">
-        <div class="info-section">
-          <h3>Delivery Information</h3>
-          <div class="info-row"><span class="info-label">Delivery Note No:</span><span class="info-value">${data.deliveryNoteNumber}</span></div>
-          <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
-          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Delivery Date:</span><span class="info-value">${data.deliveryDate}</span></div>
-          <div class="info-row"><span class="info-label">Vehicle No:</span><span class="info-value">${data.vehicleNo || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Delivered By:</span><span class="info-value">${data.deliveredBy || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
-        </div>
-        <div class="info-section">
-          <h3>Client Details</h3>
-          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
-          <div class="info-row"><span class="info-label">Site:</span><span class="info-value">${data.siteName}</span></div>
-          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
-          <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
-        </div>
-      </div>
 
       <table>
         <thead>
@@ -528,29 +523,9 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         siteLocation: data.siteLocation,
         siteAddress: data.siteAddress,
         clientId: data.clientId,
-        manualNumber: copyLabel
+        manualNumber: copyLabel,
+        createdBy: data.createdBy,
       })}
-
-      <div class="info-grid">
-        <div class="info-section">
-          <h3>Client Details</h3>
-          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
-          <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
-          <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
-          <div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">${data.siteName}</span></div>
-          <div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">${data.siteLocation || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
-        </div>
-        <div class="info-section">
-          <h3>OTNO Access Details</h3>
-          <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
-          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
-          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
-        </div>
-      </div>
 
       <table>
         <thead>
@@ -864,31 +839,21 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       </style>
     </head>
     <body>
-      ${renderReportHeader("Hire Quotation")}
-
-      <div class="info-grid">
-        <div class="info-section">
-          <h3>Client Details</h3>
-          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
-          <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
-          <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
-          <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${data.contactEmail || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Office Tel:</span><span class="info-value">${data.officeTel || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Office Email:</span><span class="info-value">${data.officeEmail || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site Name:</span><span class="info-value">${data.siteName}</span></div>
-          <div class="info-row"><span class="info-label">Site Location:</span><span class="info-value">${data.siteLocation || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
-        </div>
-        <div class="info-section">
-          <h3>OTNO Access Details</h3>
-          <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
-          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Date Created:</span><span class="info-value">${data.dateCreated}</span></div>
-          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
-        </div>
-      </div>
+      ${renderStandardReportLayout({
+        documentType: "Hire Quotation",
+        documentNumber: data.quotationNumber,
+        documentDate: data.dateCreated,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        createdBy: data.createdBy,
+      })}
 
       <table>
         <thead>
@@ -1018,33 +983,20 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       </style>
     </head>
     <body>
-      ${renderReportHeader("Hire Quotation")}
-      
-      <div class="info-grid">
-        <div class="info-section">
-          <h3>Quotation Details</h3>
-          <div class="info-row"><span class="info-label">Quotation No:</span><span class="info-value">${data.quotationNumber}</span></div>
-          <div class="info-row"><span class="info-label">Client ID:</span><span class="info-value">${data.clientId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Site ID:</span><span class="info-value">${data.siteId || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Date:</span><span class="info-value">${data.dateCreated}</span></div>
-          <div class="info-row"><span class="info-label">Hire Period:</span><span class="info-value">${data.hireWeeks} week(s)</span></div>
-          <div class="info-row"><span class="info-label">Created By:</span><span class="info-value">${data.createdBy || "-"}</span></div>
-          <div class="info-row"><span class="info-label">Printed:</span><span class="info-value">${formatTimestamp()}</span></div>
-        </div>
-        <div class="info-section">
-          <h3>Client Details</h3>
-          <div class="info-row"><span class="info-label">Company:</span><span class="info-value">${data.companyName}</span></div>
-          <div class="info-row"><span class="info-label">Contact:</span><span class="info-value">${data.contactName}</span></div>
-          <div class="info-row"><span class="info-label">Phone:</span><span class="info-value">${data.contactPhone}</span></div>
-          <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${data.contactEmail || "-"}</span></div>
-        </div>
-
-        <div class="info-section">
-          <h3>Site Details</h3>
-          <div class="info-row"><span class="info-label">Site:</span><span class="info-value">${data.siteName}</span></div>
-          <div class="info-row"><span class="info-label">Address:</span><span class="info-value">${data.siteAddress || "-"}</span></div>
-        </div>
-      </div>
+      ${renderStandardReportLayout({
+        documentType: "Hire Quotation",
+        documentNumber: data.quotationNumber,
+        documentDate: data.dateCreated,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        createdBy: data.createdBy,
+      })}
 
       <table>
         <thead>
@@ -1291,7 +1243,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         siteAddress: data.siteAddress,
         clientId: data.clientId,
         orderNumber: data.quotationNumber,
-        manualNumber: copyLabel
+        manualNumber: copyLabel,
+        createdBy: data.createdBy,
       })}
 
       <h3 class="section-title">Equipment Details</h3>
