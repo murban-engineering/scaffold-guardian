@@ -6,27 +6,27 @@
 
 @layer base {
   :root {
-    /* Soft mint/lavender dashboard theme */
-    --background: 170 35% 92%;
+    /* Neutral light dashboard theme */
+    --background: 0 0% 100%;
     --foreground: 190 30% 17%;
 
-    --card: 180 20% 96%;
+    --card: 0 0% 100%;
     --card-foreground: 190 30% 17%;
 
-    --popover: 180 20% 96%;
+    --popover: 0 0% 100%;
     --popover-foreground: 190 30% 17%;
 
     --primary: 186 74% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 178 26% 90%;
+    --secondary: 210 20% 96%;
     --secondary-foreground: 190 30% 17%;
 
-    --muted: 178 20% 88%;
+    --muted: 210 20% 96%;
     --muted-foreground: 194 14% 43%;
 
-    --accent: 187 48% 89%;
-    --accent-foreground: 190 46% 30%;
+    --accent: 210 20% 95%;
+    --accent-foreground: 215 25% 27%;
 
     /* Warm Red Destructive */
     --destructive: 0 72% 51%;
@@ -42,20 +42,20 @@
     --danger: 0 72% 51%;
     --danger-foreground: 0 0% 100%;
 
-    --border: 186 25% 84%;
-    --input: 186 25% 84%;
+    --border: 214 21% 89%;
+    --input: 214 21% 89%;
     --ring: 186 74% 39%;
 
     --radius: 1rem;
 
-    /* Sidebar — light frosted */
-    --sidebar-background: 175 35% 89%;
+    /* Sidebar — neutral light */
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 190 30% 17%;
     --sidebar-primary: 186 74% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 184 45% 83%;
-    --sidebar-accent-foreground: 190 46% 30%;
-    --sidebar-border: 183 22% 82%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 214 21% 89%;
     --sidebar-ring: 186 74% 39%;
 
     /* Custom gradients */
@@ -70,7 +70,7 @@
     --chart-4: 200 50% 50%;
     --chart-5: 280 40% 55%;
 
-    --sidebar: 175 35% 89%;
+    --sidebar: 0 0% 100%;
 
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -154,10 +154,7 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background-image:
-      radial-gradient(circle at 0% 0%, hsl(186 75% 83% / 0.65), transparent 40%),
-      radial-gradient(circle at 100% 0%, hsl(267 72% 88% / 0.55), transparent 40%),
-      linear-gradient(160deg, hsl(var(--background)) 0%, hsl(170 34% 92%) 100%);
+    background-image: none;
     min-height: 100vh;
   }
 
