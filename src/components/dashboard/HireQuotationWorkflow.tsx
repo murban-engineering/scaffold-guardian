@@ -2701,9 +2701,7 @@ const HireQuotationWorkflow = ({
     toast.success("Return note opened for printing");
   };
 
-  const availableScaffolds = scaffolds?.filter((s: Scaffold) =>
-    (s.quantity ?? 0) > 0 && s.status === "available"
-  ) || [];
+  const inventoryScaffolds = scaffolds ?? [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
   /** Derive a grouping key from the description so similar items cluster together. */
   const getEquipmentGroupKey = (description: string | null): string => {
@@ -2727,9 +2725,9 @@ const HireQuotationWorkflow = ({
   };
 
   const filteredScaffolds = (() => {
-    let list = availableScaffolds;
+    let list = inventoryScaffolds;
     if (normalizedItemCodeSearch) {
-      const matches = availableScaffolds.filter((scaffold) => {
+      const matches = inventoryScaffolds.filter((scaffold) => {
         const partNumber = scaffold.part_number?.toLowerCase() ?? "";
         const description = scaffold.description?.toLowerCase() ?? "";
         const scaffoldType = scaffold.scaffold_type?.toLowerCase() ?? "";
@@ -2741,7 +2739,7 @@ const HireQuotationWorkflow = ({
       });
       if (matches.length) {
         const matchIds = new Set(matches.map(match => match.id));
-        const remaining = availableScaffolds.filter(scaffold => !matchIds.has(scaffold.id));
+        const remaining = inventoryScaffolds.filter(scaffold => !matchIds.has(scaffold.id));
         list = [...matches, ...remaining];
       }
     }
@@ -2758,7 +2756,7 @@ const HireQuotationWorkflow = ({
     setItemCodeSearch(value);
     const normalizedValue = value.trim().toLowerCase();
     if (!normalizedValue) return;
-    const exactMatch = availableScaffolds.find(
+    const exactMatch = inventoryScaffolds.find(
       scaffold => (scaffold.part_number ?? "").toLowerCase() === normalizedValue
     );
     if (exactMatch) {
@@ -3345,7 +3343,7 @@ const HireQuotationWorkflow = ({
                     value={selectedScaffoldId}
                     onValueChange={(value) => {
                       setSelectedScaffoldId(value);
-                      const selected = availableScaffolds.find(scaffold => scaffold.id === value);
+                      const selected = inventoryScaffolds.find(scaffold => scaffold.id === value);
                       if (selected?.part_number) {
                         setItemCodeSearch(selected.part_number);
                       }
@@ -3377,7 +3375,7 @@ const HireQuotationWorkflow = ({
                                 )}
                                 <SelectItem value={scaffold.id}>
                                   {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                                  (Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                                  (Status: {scaffold.status}, Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
                                 </SelectItem>
                               </React.Fragment>
                             );
