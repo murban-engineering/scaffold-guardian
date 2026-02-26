@@ -424,10 +424,9 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
             <th>#</th>
             <th>Part Number</th>
             <th>Description</th>
-            <th>Balance Qty</th>
-            <th>This Delivery</th>
-            <th>Mass/Item (kg)</th>
-            <th>Total Mass (kg)</th>
+            <th class="text-right">Balance Qty</th>
+            <th class="text-right">This Delivery</th>
+            <th class="text-right">Mass/Item (kg)</th>
           </tr>
         </thead>
         <tbody>
@@ -436,57 +435,74 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
               <td>${idx + 1}</td>
               <td>${item.partNumber || "-"}</td>
               <td>${item.description || "-"}</td>
-              <td>${item.balanceQuantity}</td>
-              <td>${item.quantity}</td>
-              <td>${formatMass(item.massPerItem)}</td>
-              <td>${formatMass(item.totalMass)}</td>
+              <td class="text-right">${item.balanceQuantity}</td>
+              <td class="text-right">${item.quantity}</td>
+              <td class="text-right">${formatMass(item.massPerItem)}</td>
             </tr>
           `).join("")}
-          <tr class="total-row">
-            <td colspan="6">Total Mass</td>
-            <td>${formatMass(totalMass)}</td>
-          </tr>
         </tbody>
       </table>
 
-      ${data.remarks ? `<div class="remarks"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+      ${data.remarks ? `<div class="remarks" style="margin-top:8px;padding:8px;border:1px solid #333;border-radius:4px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
-      <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
-        <strong>COMMENTS</strong><br />
-        Quotes exclude transport to and from site.<br />
-        One month deposit is required upfront.<br />
-        We do not accept cash payments.
+      <!-- Transport Charges + Safety Verification side by side -->
+      <div class="post-total-grid" style="margin-top:12px;">
+        <div class="section transport-section">
+          <h3>Transport Charges</h3>
+          <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+          <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+        </div>
+        <div class="section safety-section">
+          <h3>Safety Verification</h3>
+          <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
+          <div class="line-row" style="margin-top:6px;"><span>Checker:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        </div>
       </div>
 
-      <div class="delivery-terms">
-        <h4>IMPORTANT</h4>
-        <p>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
-        <ul>
-          <li>The Hirer undertakes: to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</li>
-          <li>The Hirer shall ensure: that all goods are used in accordance with Otno's instructions.</li>
-          <li>The Hirer shall not use: any goods that are non-standard or unusual and will report their existence to the Owner.</li>
-        </ul>
-        <h4>Pricing</h4>
-        <ul>
-          <li>Dirty Equipment: Will be charged for at 2X the list hire price of the item.</li>
-          <li>Damaged Equipment: Will be charged for at 4X the list hire price of the item.</li>
-          <li>Lost Equipment: Will be charged for at the selling price of the item.</li>
-        </ul>
+      <!-- Signatures section -->
+      <div class="section signing-section" style="margin-bottom:10px;">
+        <div class="signing-grid">
+          <div class="line-row"><span>${COMPANY_NAME} Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+
+          <div class="line-row"><span>Transporter's/Customer/Driver's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+
+          <div class="line-row"><span>Customer Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        </div>
       </div>
 
-      <div class="signature-section">
-        <div class="signature-box">
-          <p><strong>Delivered By:</strong></p>
-          <p>Name: ${data.deliveredBy || "_______________"}</p>
-          <p>Signature: _______________</p>
-          <p>Date: _______________</p>
+      <!-- Vehicle + Time section -->
+      <div class="section transporter-section" style="margin-bottom:10px;">
+        <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
+        <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
+        <div class="line-row split-row">
+          <span>Time Arrive:</span><span class="line-fill"></span>
+          <span>Time Depart:</span><span class="line-fill"></span>
         </div>
-        <div class="signature-box">
-          <p><strong>Received By:</strong></p>
-          <p>Name: ${data.receivedBy || "_______________"}</p>
-          <p>Signature: _______________</p>
-          <p>Date: _______________</p>
-        </div>
+      </div>
+
+      <!-- Customer Comments -->
+      <div class="section" style="margin-bottom:10px; min-height:60px;">
+        <h3>Customer Comments:</h3>
+        <div style="min-height:40px;"></div>
+      </div>
+
+      <!-- Terms -->
+      <div class="section terms-section">
+        <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
+        <p>* The Hirer undertakes to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</p>
+        <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
+        <p>* The Hirer shall not use any goods that are non-standard or unusual and will report their existence to the Owner.</p>
+        <p><strong>Charges:</strong></p>
+        <p>* Dirty Equipment: Will be charged for at 2X the list hire price of the item.</p>
+        <p>* Damaged Equipment: Will be charged for at 4X the list hire price of the item.</p>
+        <p>* Lost Equipment: Will be charged for at the selling price of the item.</p>
       </div>
     </div>
   `;
@@ -500,13 +516,17 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         ${STANDARD_REPORT_STYLES}
         .delivery-note-page { page-break-after: always; }
         .delivery-note-page:last-child { page-break-after: auto; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-        .info-section { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
-        .info-section h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
-        .delivery-terms { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin: 8px 0 12px; }
-        .delivery-terms ul { margin: 0; padding-left: 16px; }
-        .delivery-terms li { margin-bottom: 5px; }
-        .remarks { margin-bottom: 10px; padding: 10px; border: 1px solid #111827; border-radius: 8px; background: #f9fafb; }
+        .section { border: 1px solid #333; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
+        .section h3 { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+        .section p { margin-bottom: 4px; font-size: 11px; }
+        .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .line-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; }
+        .line-fill { flex: 1; border-bottom: 1px solid #555; min-height: 14px; display: inline-block; }
+        .signing-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 6px 10px; }
+        .split-row > span:nth-child(3) { margin-left: 12px; }
+        .terms-section { font-size: 10.5px; line-height: 1.35; }
+        .terms-section p { margin-bottom: 3px; }
+        .remarks { margin-bottom: 10px; padding: 8px; border: 1px solid #333; border-radius: 4px; background: #f9fafb; }
       </style>
     </head>
     <body>

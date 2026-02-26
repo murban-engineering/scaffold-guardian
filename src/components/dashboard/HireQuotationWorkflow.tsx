@@ -1323,9 +1323,10 @@ const HireQuotationWorkflow = ({
     setHeader(prev => {
       const currentValues = prev[field];
       if (!Array.isArray(currentValues)) return prev;
-      const nextValues = currentValues.includes(value)
-        ? currentValues.filter(item => item !== value)
-        : [...currentValues, value];
+      const stringValues = currentValues as string[];
+      const nextValues = stringValues.includes(value)
+        ? stringValues.filter(item => item !== value)
+        : [...stringValues, value];
       return { ...prev, [field]: nextValues };
     });
   };
