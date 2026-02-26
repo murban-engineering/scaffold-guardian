@@ -135,7 +135,7 @@ const Index = () => {
     .slice(0, 10);
 
   const isTestQuotation = (quotation: HireQuotation) =>
-    toClientId(quotation.quotation_number).toUpperCase().startsWith("CL-");
+    (quotation.quotation_number || "").toUpperCase().startsWith("CL-");
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
