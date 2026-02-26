@@ -122,7 +122,9 @@ type OtherInformationDetails = {
 
 type StructuredQuotationNotes = {
   paymentTerms: string;
-  clientDetails: Pick<QuotationHeader, "directors" | "companySection" | "otherInformation">;
+  clientDetails: Pick<QuotationHeader, "directors" | "companySection" | "otherInformation"> & {
+    profile: Partial<QuotationHeader>;
+  };
 };
 
 type DiscountLine = {
@@ -296,6 +298,7 @@ const parseStructuredQuotationNotes = (notes: string | null | undefined): Struct
         directors: Array.from({ length: 4 }, createEmptyDirector),
         companySection: createDefaultCompanySection(),
         otherInformation: createDefaultOtherInformation(),
+        profile: {},
       },
     };
   }
@@ -320,6 +323,7 @@ const parseStructuredQuotationNotes = (notes: string | null | undefined): Struct
             parsed.clientDetails?.otherInformation?.authorisedPersons?.[index] ?? ""
           ),
         },
+        profile: parsed.clientDetails?.profile ?? {},
       },
     };
   } catch {
@@ -329,6 +333,7 @@ const parseStructuredQuotationNotes = (notes: string | null | undefined): Struct
         directors: Array.from({ length: 4 }, createEmptyDirector),
         companySection: createDefaultCompanySection(),
         otherInformation: createDefaultOtherInformation(),
+        profile: {},
       },
     };
   }
@@ -341,6 +346,44 @@ const buildStructuredQuotationNotes = (paymentTerms: string, header: QuotationHe
       directors: header.directors,
       companySection: header.companySection,
       otherInformation: header.otherInformation,
+      profile: {
+        postalAddress: header.postalAddress,
+        postalCode: header.postalCode,
+        physicalAddress: header.physicalAddress,
+        physicalCode: header.physicalCode,
+        companyEmail: header.companyEmail,
+        landline1: header.landline1,
+        landline2: header.landline2,
+        faxNumber: header.faxNumber,
+        siteContactPerson: header.siteContactPerson,
+        accountsContact: header.accountsContact,
+        accountsEmail: header.accountsEmail,
+        statementDelivery: header.statementDelivery,
+        legalEntity: header.legalEntity,
+        clientCompanyName: header.clientCompanyName,
+        clientName: header.clientName,
+        clientPhone: header.clientPhone,
+        clientEmail: header.clientEmail,
+        officeTel: header.officeTel,
+        officeEmail: header.officeEmail,
+        customerOrderNo: header.customerOrderNo,
+        officialOrdersUsed: header.officialOrdersUsed,
+        bulkOrdersUsed: header.bulkOrdersUsed,
+        newOrderForEveryQuote: header.newOrderForEveryQuote,
+        telephonicOrders: header.telephonicOrders,
+        personsNameAsOrder: header.personsNameAsOrder,
+        personsName: header.personsName,
+        requisitionNumberUsed: header.requisitionNumberUsed,
+        requisitionNo: header.requisitionNo,
+        fixedRateAgreed: header.fixedRateAgreed,
+        returns: header.returns,
+        delivery: header.delivery,
+        specialTransportArrangement: header.specialTransportArrangement,
+        projectTypes: header.projectTypes,
+        marketSegments: header.marketSegments,
+        civilsSegments: header.civilsSegments,
+        scaffoldingSegments: header.scaffoldingSegments,
+      },
     },
   } as StructuredQuotationNotes);
 
@@ -558,8 +601,10 @@ const HireQuotationWorkflow = ({
     setHeader(prev => {
       const qNum = initialQuotation.quotation_number || prev.quotationNo;
       const derivedClientId = deriveClientIdFromQuotationNumber(qNum);
+      const savedProfile = parsedNotes.clientDetails.profile ?? {};
       return {
         ...prev,
+        ...savedProfile,
         quotationNo: qNum,
         clientId: derivedClientId,
         dateCreated: createdDate,
@@ -577,9 +622,9 @@ const HireQuotationWorkflow = ({
         officialOrdersUsed: initialQuotation.official_order_required ? "yes" : "no",
         bulkOrdersUsed: initialQuotation.bulk_order_required ? "yes" : "no",
         telephonicOrders: initialQuotation.telephonic_order_acceptable ? "yes" : "no",
-        specialTransportArrangement: initialQuotation.transport_arrangement ?? "",
-        projectTypes: initialQuotation.project_type ?? [],
-        marketSegments: initialQuotation.market_segment ?? [],
+        specialTransportArrangement: initialQuotation.transport_arrangement ?? savedProfile.specialTransportArrangement ?? "",
+        projectTypes: initialQuotation.project_type ?? savedProfile.projectTypes ?? [],
+        marketSegments: initialQuotation.market_segment ?? savedProfile.marketSegments ?? [],
         customerOrderNo: initialQuotation.account_number ?? "",
         directors: parsedNotes.clientDetails.directors,
         companySection: parsedNotes.clientDetails.companySection,
@@ -1389,9 +1434,11 @@ const HireQuotationWorkflow = ({
   const handleSelectPreviousClient = (quotation: HireQuotation) => {
     const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
+    const savedProfile = parsedNotes.clientDetails.profile ?? {};
 
     setHeader((prev) => ({
       ...prev,
+      ...savedProfile,
       clientId: derivedClientId || prev.clientId,
       tradingName: quotation.company_name ?? "",
       clientCompanyName: quotation.company_name ?? "",
@@ -1407,10 +1454,10 @@ const HireQuotationWorkflow = ({
       officialOrdersUsed: quotation.official_order_required ? "yes" : "no",
       bulkOrdersUsed: quotation.bulk_order_required ? "yes" : "no",
       telephonicOrders: quotation.telephonic_order_acceptable ? "yes" : "no",
-      specialTransportArrangement: quotation.transport_arrangement ?? "",
+      specialTransportArrangement: quotation.transport_arrangement ?? savedProfile.specialTransportArrangement ?? "",
       customerOrderNo: quotation.account_number ?? "",
-      projectTypes: quotation.project_type ?? [],
-      marketSegments: quotation.market_segment ?? [],
+      projectTypes: quotation.project_type ?? savedProfile.projectTypes ?? [],
+      marketSegments: quotation.market_segment ?? savedProfile.marketSegments ?? [],
       directors: parsedNotes.clientDetails.directors,
       companySection: parsedNotes.clientDetails.companySection,
       otherInformation: parsedNotes.clientDetails.otherInformation,
