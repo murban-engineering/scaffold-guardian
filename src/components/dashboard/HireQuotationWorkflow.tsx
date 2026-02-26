@@ -270,6 +270,14 @@ const parseNumber = (value: string) => {
 const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
   quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
 
+const deriveDraftIdFromClient = (quotation?: HireQuotation | null) => {
+  const clientId = deriveClientIdFromQuotationNumber(quotation?.quotation_number)
+    .trim()
+    .toLowerCase();
+
+  return clientId ? `client:${clientId}` : null;
+};
+
 const createEmptyDirector = (): DirectorDetails => ({
   fullName: "",
   idNumber: "",
@@ -969,15 +977,21 @@ const HireQuotationWorkflow = ({
 
       if (storedDrafts) {
         const draftCollection = JSON.parse(storedDrafts) as Record<string, TestWorkflowDraft>;
+        const requestedDraftId = deriveDraftIdFromClient(initialExistingClient);
         const activeDraftId =
           window.localStorage.getItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY) ??
           TEST_WORKFLOW_DEFAULT_DRAFT_ID;
 
         draft =
+          (requestedDraftId ? draftCollection[requestedDraftId] : null) ??
           draftCollection[activeDraftId] ??
           draftCollection[TEST_WORKFLOW_DEFAULT_DRAFT_ID] ??
           Object.values(draftCollection)[0] ??
           null;
+
+        if (requestedDraftId && draftCollection[requestedDraftId]) {
+          window.localStorage.setItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY, requestedDraftId);
+        }
       }
 
       if (!draft) {
@@ -1028,7 +1042,7 @@ const HireQuotationWorkflow = ({
     } finally {
       setHasHydratedTestDraft(true);
     }
-  }, [initialQuotation, isTestQuotation]);
+  }, [initialExistingClient, initialQuotation, isTestQuotation]);
 
   useEffect(() => {
     if (!hasHydratedTestDraft || !isTestQuotation || initialQuotation) {
