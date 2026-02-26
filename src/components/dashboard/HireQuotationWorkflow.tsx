@@ -200,6 +200,22 @@ type TestWorkflowDraft = {
 };
 
 const TEST_WORKFLOW_DRAFT_KEY = "hire-workflow:test-draft";
+const TEST_WORKFLOW_DRAFTS_KEY = "hire-workflow:test-drafts";
+const TEST_WORKFLOW_ACTIVE_DRAFT_KEY = "hire-workflow:test-draft:active";
+const TEST_WORKFLOW_DEFAULT_DRAFT_ID = "default";
+
+const deriveTestDraftId = (header: Partial<QuotationHeader>) => {
+  const clientId = header.clientId?.trim().toLowerCase();
+  if (clientId) return `client:${clientId}`;
+
+  const companyName = header.clientCompanyName?.trim().toLowerCase();
+  if (companyName) return `company:${companyName}`;
+
+  const tradingName = header.tradingName?.trim().toLowerCase();
+  if (tradingName) return `trading:${tradingName}`;
+
+  return TEST_WORKFLOW_DEFAULT_DRAFT_ID;
+};
 
 const steps: { key: StepKey; title: string; description: string; icon: typeof UserRoundPen }[] = [
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
@@ -948,13 +964,30 @@ const HireQuotationWorkflow = ({
     }
 
     try {
-      const stored = window.localStorage.getItem(TEST_WORKFLOW_DRAFT_KEY);
-      if (!stored) {
-        setHasHydratedTestDraft(true);
-        return;
+      let draft: Partial<TestWorkflowDraft> | null = null;
+      const storedDrafts = window.localStorage.getItem(TEST_WORKFLOW_DRAFTS_KEY);
+
+      if (storedDrafts) {
+        const draftCollection = JSON.parse(storedDrafts) as Record<string, TestWorkflowDraft>;
+        const activeDraftId =
+          window.localStorage.getItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY) ??
+          TEST_WORKFLOW_DEFAULT_DRAFT_ID;
+
+        draft =
+          draftCollection[activeDraftId] ??
+          draftCollection[TEST_WORKFLOW_DEFAULT_DRAFT_ID] ??
+          Object.values(draftCollection)[0] ??
+          null;
       }
 
-      const draft = JSON.parse(stored) as Partial<TestWorkflowDraft>;
+      if (!draft) {
+        const storedLegacyDraft = window.localStorage.getItem(TEST_WORKFLOW_DRAFT_KEY);
+        if (!storedLegacyDraft) {
+          setHasHydratedTestDraft(true);
+          return;
+        }
+        draft = JSON.parse(storedLegacyDraft) as Partial<TestWorkflowDraft>;
+      }
 
       const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
       if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
@@ -1013,6 +1046,16 @@ const HireQuotationWorkflow = ({
       itemCodeSearch,
     };
 
+    const draftId = deriveTestDraftId(header);
+    const existingDrafts = window.localStorage.getItem(TEST_WORKFLOW_DRAFTS_KEY);
+    const draftCollection = existingDrafts
+      ? (JSON.parse(existingDrafts) as Record<string, TestWorkflowDraft>)
+      : {};
+
+    draftCollection[draftId] = draft;
+
+    window.localStorage.setItem(TEST_WORKFLOW_DRAFTS_KEY, JSON.stringify(draftCollection));
+    window.localStorage.setItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY, draftId);
     window.localStorage.setItem(TEST_WORKFLOW_DRAFT_KEY, JSON.stringify(draft));
   }, [
     hasHydratedTestDraft,
