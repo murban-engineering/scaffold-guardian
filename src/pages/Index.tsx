@@ -202,9 +202,9 @@ const Index = () => {
     try {
       const todayLabel = new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" });
       const quotation = await createQuotation.mutateAsync({
-        company_name: "Test Quotation Client",
+        company_name: "",
         site_name: `Price Check ${todayLabel}`,
-        site_manager_name: "Prospective Client",
+        site_manager_name: "",
         notes: "Temporary quotation for price-check only.",
       });
 
