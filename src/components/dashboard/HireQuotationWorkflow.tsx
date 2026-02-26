@@ -344,6 +344,7 @@ const HireQuotationWorkflow = ({
     returnedBy: "",
     receivedBy: "",
     vehicleNo: "",
+    hireEndDate: getToday(),
     remarks: "",
   });
   const [header, setHeader] = useState<QuotationHeader>(() => ({
@@ -907,6 +908,7 @@ const HireQuotationWorkflow = ({
         id: `persisted-return-${initialQuotation.id}`,
         returnNoteNumber: deriveReturnNoteNumber(initialQuotation.quotation_number || "", 1),
         returnDate: new Date(initialQuotation.updated_at || initialQuotation.created_at).toISOString().split("T")[0],
+        hireEndDate: new Date(initialQuotation.updated_at || initialQuotation.created_at).toISOString().split("T")[0],
         returnedBy: "",
         receivedBy: "",
         vehicleNo: "",
@@ -2288,6 +2290,7 @@ const HireQuotationWorkflow = ({
         id: crypto.randomUUID(),
         returnNoteNumber: returnNote.returnNoteNo,
         returnDate: returnNote.returnDate,
+        hireEndDate: returnNote.hireEndDate,
         returnedBy: returnNote.returnedBy,
         receivedBy: returnNote.receivedBy,
         vehicleNo: returnNote.vehicleNo,
@@ -2355,6 +2358,7 @@ const HireQuotationWorkflow = ({
       returnedBy: "",
       receivedBy: "",
       vehicleNo: "",
+      hireEndDate: getToday(),
       remarks: "",
     }));
     toast.info("Starting return batch " + nextSequence + ". Enter return quantities.");
@@ -2366,6 +2370,7 @@ const HireQuotationWorkflow = ({
       returnNoteNumber: record.returnNoteNumber,
       dateCreated: header.dateCreated,
       returnDate: record.returnDate,
+      hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
@@ -2406,6 +2411,7 @@ const HireQuotationWorkflow = ({
       returnNoteNumber: returnNote.returnNoteNo,
       dateCreated: header.dateCreated,
       returnDate: returnNote.returnDate,
+      hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
@@ -4131,6 +4137,15 @@ const HireQuotationWorkflow = ({
                       type="date"
                       value={returnNote.returnDate}
                       onChange={(e) => setReturnNote(prev => ({ ...prev, returnDate: e.target.value }))}
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Hire End Date</Label>
+                    <Input
+                      type="date"
+                      value={returnNote.hireEndDate}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, hireEndDate: e.target.value }))}
                       disabled={returnProcessed}
                     />
                   </div>
