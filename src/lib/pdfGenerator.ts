@@ -162,9 +162,7 @@ const formatCurrency = (value: number) =>
   `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const formatMass = (value: number | string | null | undefined) => {
-  if (value == null) {
-    return "-";
-  }
+  if (value == null) return "-";
   const parsed = typeof value === "string" ? Number(value) : value;
   return Number.isFinite(parsed) ? `${parsed.toFixed(2)} kg` : "-";
 };
@@ -172,27 +170,14 @@ const formatMass = (value: number | string | null | undefined) => {
 const withPrintOption = (html: string) => {
   const printControls = `
     <style>
-      h1, h2, h3 {
-        text-align: left !important;
-        font-weight: 800 !important;
-      }
-      h1 { font-size: 22px !important; }
-      h2 { font-size: 18px !important; }
-      h3 { font-size: 13px !important; }
-      .report-title {
-        font-size: 18px;
-        font-weight: 800;
-        margin-top: 8px;
-        color: #111;
-      }
       .print-controls {
         position: sticky;
         top: 0;
         z-index: 9999;
         display: flex;
         justify-content: flex-end;
-        padding: 12px 20px;
-        background: rgba(255, 255, 255, 0.96);
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.97);
         border-bottom: 1px solid #ddd;
       }
       .print-button {
@@ -200,115 +185,155 @@ const withPrintOption = (html: string) => {
         border-radius: 6px;
         background: #111;
         color: #fff;
-        padding: 8px 14px;
-        font-size: 12px;
+        padding: 6px 12px;
+        font-size: 11px;
         font-weight: 600;
         cursor: pointer;
       }
       @media print {
-        .print-controls {
-          display: none;
-        }
+        .print-controls { display: none; }
       }
     </style>
-    <script>
-      const triggerPrint = () => window.print();
-    </script>
+    <script>const triggerPrint = () => window.print();</script>
     <div class="print-controls">
       <button type="button" class="print-button" onclick="triggerPrint()">Print report</button>
     </div>
   `;
-
   return html.replace("<body>", `<body>${printControls}`);
 };
 
-const STANDARD_REPORT_STYLES = `
+// ── Shared print styles used in every report ──────────────────────────────────
+// Key technique: .page-header is position:fixed at top during print so it
+// repeats on every page. The .page-header-spacer pushes content below it.
+const SHARED_PRINT_STYLES = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: "Arial", sans-serif; padding: 20px; font-size: 12px; color: #1f2937; line-height: 1.35; }
-  .report-page { page-break-after: always; }
-  .report-page:last-child { page-break-after: auto; }
-  .report-header { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
-  .brand-block { padding: 12px 14px; }
-  .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .brand-logo { width: 72px; height: auto; }
-  .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
-  .brand-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: #374151; }
-  .report-box { border: 1px solid #111827; border-radius: 8px; padding: 10px 12px; }
-  .report-title { font-size: 24px; line-height: 1; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
-  .copy-label { display: inline-block; font-size: 11px; font-weight: 700; border: 1px solid #111827; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; }
-  .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
-  .standard-report-left { display: grid; gap: 12px; }
-  .standard-report-right { display: grid; gap: 8px; }
-  .client-panel { min-height: 220px; }
-  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  .panel { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
-  .panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #111827; }
-  .info-row { display: flex; gap: 6px; margin-bottom: 4px; align-items: baseline; }
-  .info-label { font-weight: 700; color: #111827; min-width: 130px; }
+  body { font-family: Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; }
+  
+  /* ── Screen layout ── */
+  body { padding: 12px; }
+
+  /* ── Repeating page header (print only) ── */
+  .page-header {
+    display: none; /* hidden on screen – only shown at print */
+  }
+  @media print {
+    body { padding: 0; font-size: 8.5px; }
+    .page-header {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-bottom: 1.5px solid #111;
+      padding: 5px 10px 4px;
+      z-index: 9999;
+    }
+    /* push body content below the fixed header */
+    .page-header-spacer { display: block; height: 56px; }
+    /* avoid page break inside table rows */
+    tr { page-break-inside: avoid; }
+    /* table header repeats on every printed page */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+  }
+  .page-header-spacer { display: none; }
+
+  /* ── Report title ── */
+  .report-title {
+    font-size: 18px; font-weight: 900; letter-spacing: -0.3px;
+    color: #111827; text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  /* ── Standard two-column header (screen) ── */
+  .standard-report-layout {
+    display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; margin-bottom: 12px;
+  }
+  .standard-report-left { display: grid; gap: 8px; }
+  .standard-report-right { display: grid; gap: 6px; }
+
+  /* ── Branding block (no border) ── */
+  .brand-block { padding: 8px 10px; }
+  .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+  .brand-logo { width: 60px; height: auto; }
+  .brand-title { font-size: 14px; font-weight: 800; line-height: 1.15; color: #111827; }
+  .brand-meta { font-size: 9px; color: #374151; }
+
+  /* ── Bordered panels ── */
+  .panel { border: 1px solid #111827; border-radius: 6px; padding: 7px 9px; }
+  .panel h3 { font-size: 11px; font-weight: 800; margin-bottom: 4px; color: #111827; }
+  .client-panel { min-height: 150px; }
+
+  /* ── Info rows ── */
+  .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
+  .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
   .info-sep { color: #6b7280; }
-  .info-value { color: #111827; word-break: break-word; flex: 1; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-  th, td { border: 1px solid #111827; padding: 6px 8px; font-size: 11px; vertical-align: top; }
+  .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 9px; }
+
+  /* ── Copy badge ── */
+  .copy-label {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    border: 1px solid #111827; padding: 1px 6px; border-radius: 999px; margin-bottom: 4px;
+  }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  th, td { border: 1px solid #111827; padding: 4px 6px; font-size: 8.5px; vertical-align: top; }
   th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
   .total-row td { background: #f9fafb; font-weight: 800; }
   .text-right { text-align: right; }
-  .section-box { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin-bottom: 12px; }
-  .section-box h4 { margin-bottom: 6px; font-size: 12px; text-transform: uppercase; }
-  .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; }
-  .signature-box { border-top: 1px solid #111827; padding-top: 8px; }
-  .signature-box p { margin-bottom: 5px; }
-  @media print {
-    body { padding: 0; }
-    .standard-report-layout { position: fixed; top: 0; left: 0; right: 0; background: #fff; padding: 8px 12px 10px; z-index: 10; }
-    .standard-report-layout ~ * { margin-left: 0; margin-right: 0; }
-    .standard-report-layout ~ table:first-of-type,
-    .standard-report-layout ~ .section-box:first-of-type,
-    .standard-report-layout ~ .remarks:first-of-type,
-    .standard-report-layout ~ .comments:first-of-type,
-    .standard-report-layout ~ .delivery-terms:first-of-type { margin-top: 345px; }
-  }
+  .text-center { text-align: center; }
+
+  /* ── Section boxes ── */
+  .section { border: 1px solid #333; border-radius: 4px; padding: 7px; margin-bottom: 8px; }
+  .section h3 { font-size: 10px; font-weight: 700; margin-bottom: 4px; }
+  .section h4 { margin-bottom: 4px; font-size: 9px; text-transform: uppercase; }
+  .section p { margin-bottom: 3px; font-size: 9px; }
+
+  /* ── Post-table grids ── */
+  .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .line-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 9px; }
+  .line-fill { flex: 1; border-bottom: 1px solid #555; min-height: 12px; display: inline-block; }
+
+  /* ── Signing grid ── */
+  .signing-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 4px 8px; }
+  .split-row > span:nth-child(3) { margin-left: 10px; }
+
+  /* ── Terms ── */
+  .terms-section { font-size: 8.5px; line-height: 1.3; }
+  .terms-section p { margin-bottom: 2px; }
+
+  /* ── Signature blocks ── */
+  .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .signature-box { border-top: 1px solid #111827; padding-top: 6px; }
+  .signature-box p { margin-bottom: 4px; }
+
+  /* ── Page break helper ── */
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
 `;
 
-const STANDARD_REPORT_HEADER_STYLES = `
-  .report-title { font-size: 24px; line-height: 1; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
-  .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
-  .standard-report-left { display: grid; gap: 12px; }
-  .standard-report-right { display: grid; gap: 8px; }
-  .client-panel { min-height: 220px; }
-  .brand-block { padding: 12px 14px; }
-  .brand-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .brand-logo { width: 72px; height: auto; }
-  .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
-  .brand-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: #374151; }
-  .panel { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
-  .panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #111827; }
-  .info-row { display: flex; gap: 6px; margin-bottom: 4px; align-items: baseline; }
-  .info-label { font-weight: 700; color: #111827; min-width: 130px; }
-  .info-sep { color: #6b7280; }
-  .info-value { color: #111827; word-break: break-word; flex: 1; }
-`;
-
-const renderReportHeader = (title: string, copyLabel?: string) => `
-  <div class="report-header">
-    <div class="brand-block">
-      <div class="brand-top">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
-        <div class="brand-title">${COMPANY_NAME}</div>
+// ── Compact page-header HTML (shown only at print, fixed at top) ─────────────
+const renderPageHeader = (docTitle: string, docNumber: string, clientName: string) => `
+  <div class="page-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;"/>
+        <div>
+          <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
+          <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
+        </div>
       </div>
-      <div class="brand-meta">
-        <span><strong>Address:</strong> ${COMPANY_ADDRESS}</span>
-        <span><strong>Location:</strong> ${COMPANY_LOCATION}</span>
-        <span><strong>PIN:</strong> ${COMPANY_PIN}</span>
+      <div style="text-align:right;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;">${docTitle}</div>
+        <div style="font-size:8px;color:#555;">${docNumber} &bull; ${clientName}</div>
       </div>
-    </div>
-    <div class="report-box">
-      ${copyLabel ? `<span class="copy-label">${copyLabel}</span>` : ""}
-      <h2 class="report-title">${title}</h2>
-      <div class="info-row"><span class="info-label">Printed</span><span class="info-sep">:</span><span class="info-value">${formatTimestamp()}</span></div>
     </div>
   </div>
+  <div class="page-header-spacer"></div>
 `;
 
+// ── Standard two-column layout (screen heading + client/site panels) ─────────
 interface StandardReportLayoutData {
   documentType: string;
   documentNumber: string;
@@ -349,8 +374,8 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
 
       <div class="panel client-panel">
         <h3>${data.clientName || "-"}</h3>
-        ${data.clientAddress ? `<p style="margin-bottom:6px;">${data.clientAddress}</p>` : ""}
-        <div style="margin-top: 12px;">
+        ${data.clientAddress ? `<p style="margin-bottom:4px;font-size:9px;">${data.clientAddress}</p>` : ""}
+        <div style="margin-top:8px;">
           <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
           <div class="info-row"><span class="info-label">Cell No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
           <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
@@ -387,10 +412,10 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
 
       <div class="panel">
         <h3>Site Details</h3>
-        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${data.siteId || ""}</span></div>
+        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
-        <div style="margin-top:8px;">
+        <div style="margin-top:5px;">
           <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
           <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
         </div>
@@ -399,17 +424,16 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
   </div>
 `;
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIRE DELIVERY NOTE
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
-
-  const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
   const deliveryNotePage = () => `
-    <div class="delivery-note-page">
+    <div class="page">
+      ${renderPageHeader("Hire Delivery Note", data.deliveryNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Delivery Note",
         documentNumber: data.deliveryNoteNumber,
@@ -452,42 +476,37 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         </tbody>
       </table>
 
-      ${data.remarks ? `<div class="remarks" style="margin-top:8px;padding:8px;border:1px solid #333;border-radius:4px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+      ${data.remarks ? `<div class="section" style="margin-top:6px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
-      <!-- Transport Charges + Safety Verification side by side -->
-      <div class="post-total-grid" style="margin-top:12px;">
-        <div class="section transport-section">
+      <div class="post-total-grid">
+        <div class="section">
           <h3>Transport Charges</h3>
           <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
           <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
         </div>
-        <div class="section safety-section">
+        <div class="section">
           <h3>Safety Verification</h3>
           <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
-          <div class="line-row" style="margin-top:6px;"><span>Checker:</span><span class="line-fill"></span></div>
+          <div class="line-row" style="margin-top:5px;"><span>Checker:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
         </div>
       </div>
 
-      <!-- Signatures section -->
-      <div class="section signing-section" style="margin-bottom:10px;">
+      <div class="section" style="margin-bottom:8px;">
         <div class="signing-grid">
-          <div class="line-row"><span>${COMPANY_NAME} Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-
-          <div class="line-row"><span>Transporter's/Customer/Driver's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-
-          <div class="line-row"><span>Customer Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
         </div>
       </div>
 
-      <!-- Vehicle + Time section -->
-      <div class="section transporter-section" style="margin-bottom:10px;">
+      <div class="section" style="margin-bottom:8px;">
         <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
         <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
         <div class="line-row split-row">
@@ -496,71 +515,42 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         </div>
       </div>
 
-      <!-- Customer Comments -->
-      <div class="section" style="margin-bottom:10px; min-height:60px;">
+      <div class="section" style="margin-bottom:8px;min-height:40px;">
         <h3>Customer Comments:</h3>
-        <div style="min-height:40px;"></div>
       </div>
 
-      <!-- Terms -->
       <div class="section terms-section">
         <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
-        <p>* The Hirer undertakes to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</p>
+        <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
         <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
-        <p>* The Hirer shall not use any goods that are non-standard or unusual and will report their existence to the Owner.</p>
-        <p><strong>Charges:</strong></p>
-        <p>* Dirty Equipment: Will be charged for at 2X the list hire price of the item.</p>
-        <p>* Damaged Equipment: Will be charged for at 4X the list hire price of the item.</p>
-        <p>* Lost Equipment: Will be charged for at the selling price of the item.</p>
+        <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
       </div>
     </div>
   `;
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
-      <style>
-        ${STANDARD_REPORT_STYLES}
-        .delivery-note-page { page-break-after: always; }
-        .delivery-note-page:last-child { page-break-after: auto; }
-        .section { border: 1px solid #333; border-radius: 4px; padding: 10px; margin-bottom: 10px; }
-        .section h3 { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-        .section p { margin-bottom: 4px; font-size: 11px; }
-        .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
-        .line-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; }
-        .line-fill { flex: 1; border-bottom: 1px solid #555; min-height: 14px; display: inline-block; }
-        .signing-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 6px 10px; }
-        .split-row > span:nth-child(3) { margin-left: 12px; }
-        .terms-section { font-size: 10.5px; line-height: 1.35; }
-        .terms-section p { margin-bottom: 3px; }
-        .remarks { margin-bottom: 10px; padding: 8px; border: 1px solid #333; border-radius: 4px; background: #f9fafb; }
-      </style>
-    </head>
-    <body>
-      ${deliveryNotePage()}
-      ${deliveryNotePage()}
-    </body>
-    </html>
-  `;
+  const html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
+    <style>${SHARED_PRINT_STYLES}</style></head><body>
+    ${deliveryNotePage()}
+    ${deliveryNotePage()}
+  </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIRE LOADING NOTE
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
   const noteTitle = data.noteTitle ?? "Hire Loading Report";
 
   const loadingNotePage = (copyLabel: string) => `
-    <div class="loading-note-page">
+    <div class="page">
+      ${renderPageHeader(noteTitle, data.quotationNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: noteTitle,
         documentNumber: data.quotationNumber,
@@ -585,8 +575,8 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
             <th>Description</th>
             <th class="text-right">Qty</th>
             <th class="text-right">This Delivery</th>
-            <th class="text-right">Mass/Item</th>
-            <th class="text-right">Total Mass</th>
+            <th class="text-right">Mass/Item (kg)</th>
+            <th class="text-right">Total Mass (kg)</th>
           </tr>
         </thead>
         <tbody>
@@ -608,20 +598,19 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         </tbody>
       </table>
 
-      <div class="section comments-section">
+      <div class="section" style="margin-bottom:8px;">
         <h3>Comments</h3>
         <p>Quote Excludes Transport To And From Site</p>
         <p>Four Weeks Hire Deposit Required Upfront</p>
       </div>
 
       <div class="post-total-grid">
-        <div class="section transport-section">
+        <div class="section">
           <h3>Transport Charges</h3>
-          <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">R</span></div>
-          <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">R</span></div>
+          <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+          <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
         </div>
-
-        <div class="section safety-section">
+        <div class="section">
           <h3>Safety Verification</h3>
           <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
           <div class="line-row"><span>Checker:</span><span class="line-fill"></span></div>
@@ -629,23 +618,21 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         </div>
       </div>
 
-      <div class="section signing-section">
+      <div class="section" style="margin-bottom:8px;">
         <div class="signing-grid">
           <div class="line-row"><span>Checker's Name:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-
-          <div class="line-row"><span>Transporter's/Customer/Driver's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-
-          <div class="line-row"><span>Customer Representative's Name:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
           <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
         </div>
       </div>
 
-      <div class="section transporter-section">
+      <div class="section" style="margin-bottom:8px;">
         <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill"></span></div>
         <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
         <div class="line-row split-row">
@@ -655,62 +642,29 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
       </div>
 
       <div class="section terms-section">
-        <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
-        <p>* The Hirer undertakes to use the goods in accordance with the provisions of the Occupational Health and Safety Act No. 85 of 1993 as amended.</p>
-        <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
-        <p>* The Hirer shall not use any goods that are non-standard or unusual and will report their existence to the Owner.</p>
-        <p><strong>Charges:</strong></p>
-        <p>* Dirty Equipment will be charged for at 2X the list hire price of the item.</p>
-        <p>* Damaged Equipment will be charged for at 4X the list hire price of the item.</p>
-        <p>* Lost Equipment will be charged for at the selling price of the item.</p>
+        <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted.</strong></p>
+        <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
+        <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
       </div>
     </div>
   `;
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Hire Loading Report - ${data.quotationNumber}</title>
-      <style>
-        ${STANDARD_REPORT_STYLES}
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .info-section { border: 1px solid #111827; padding: 10px; border-radius: 8px; }
-        .info-section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
-        .section { border: 1px solid #111827; border-radius: 8px; padding: 10px; margin-bottom: 16px; }
-        .section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
-        .section p { margin-bottom: 4px; }
-        .comments-section { margin-bottom: 12px; }
-        .post-total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-        .line-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .line-fill { flex: 1; border-bottom: 1px solid #555; min-height: 14px; display: inline-block; }
-        .signing-section { margin-bottom: 12px; }
-        .signing-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 8px 12px; }
-        .transporter-section { margin-bottom: 12px; }
-        .split-row { gap: 8px; }
-        .split-row > span:nth-child(3) { margin-left: 12px; }
-        .terms-section { font-size: 11px; line-height: 1.35; }
-        .loading-note-page { page-break-after: always; }
-        .loading-note-page:last-child { page-break-after: auto; }
-      </style>
-    </head>
-    <body>
-      ${loadingNotePage("Company Copy")}
-      ${loadingNotePage("Client Copy")}
-    </body>
-    </html>
-  `;
+  const html = `<!DOCTYPE html><html><head><title>${noteTitle} - ${data.quotationNumber}</title>
+    <style>${SHARED_PRINT_STYLES}</style></head><body>
+    ${loadingNotePage("Company Copy")}
+    ${loadingNotePage("Client Copy")}
+  </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// YARD VERIFICATION NOTE  (custom layout – no standard header repeat)
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
   const html = `
     <!DOCTYPE html>
@@ -719,25 +673,20 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
       <title>Yard Verification Report - ${data.deliveryNoteNumber}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
-        .yard-note h1 { text-align: center; font-size: 18px; margin-bottom: 10px; letter-spacing: 0.8px; text-transform: uppercase; }
-        .yard-note .title-block { text-align: center; }
-        .yard-note .title-block h1 { text-align: center; font-size: 14px; }
-        .yard-note .title-block p { text-align: center; }
-        .yard-note-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 6px; }
+        body { font-family: Arial, sans-serif; padding: 16px; font-size: 11px; }
+        .yard-note h1 { text-align: center; font-size: 16px; margin-bottom: 8px; letter-spacing: 0.6px; text-transform: uppercase; }
+        .yard-note-header { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px; }
+        .yard-note-header .brand-logo { width: 48px; height: auto; }
+        .yard-note-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 5px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
         .yard-note-table .label { width: 20%; font-weight: bold; }
         .yard-note-table .value { width: 30%; }
         .yard-note-table .small { width: 12%; }
-        .yard-note-table .notes { height: 28px; }
-        .yard-note-footer { margin-top: 10px; }
-        .yard-note-footer .row { display: flex; gap: 16px; margin-bottom: 6px; }
-        .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 6px; min-height: 28px; }
-        .yard-note-header { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 10px; }
-        .yard-note-header .brand-logo { width: 56px; height: auto; }
-        .yard-note-info-table td { height: 28px; }
-        .yard-note-info-table .label { font-weight: bold; }
+        .yard-note-table .notes { height: 24px; }
+        .yard-note-footer { margin-top: 8px; }
+        .yard-note-footer .row { display: flex; gap: 12px; margin-bottom: 5px; }
+        .yard-note-footer .field { flex: 1; border: 1px solid #333; padding: 5px; min-height: 24px; }
         @media print { body { padding: 0; } }
       </style>
     </head>
@@ -747,50 +696,37 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
           <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
           <h1>Yard Verification Report</h1>
         </div>
-        <table class="yard-note-table yard-note-info-table">
+        <table class="yard-note-table">
           <tr>
-            <td class="label">Customer/Branch Name:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label">ID no:</td>
-            <td class="value">&nbsp;</td>
+            <td class="label">Customer/Branch Name:</td><td class="value">&nbsp;</td>
+            <td class="label">ID no:</td><td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Client ID:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label">Site ID:</td>
-            <td class="value">&nbsp;</td>
+            <td class="label">Client ID:</td><td class="value">&nbsp;</td>
+            <td class="label">Site ID:</td><td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Site:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label">Date:</td>
-            <td class="value">&nbsp;</td>
+            <td class="label">Site:</td><td class="value">&nbsp;</td>
+            <td class="label">Date:</td><td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Vehicle Reg:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label">Created By:</td>
-            <td class="value">&nbsp;</td>
+            <td class="label">Vehicle Reg:</td><td class="value">&nbsp;</td>
+            <td class="label">Created By:</td><td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Branch:</td>
-            <td class="value">&nbsp;</td>
-            <td class="label"></td>
-            <td class="value"></td>
+            <td class="label">Branch:</td><td class="value">&nbsp;</td>
+            <td class="label"></td><td class="value"></td>
           </tr>
           <tr>
-            <td class="label">Customer Return (Yes/No):</td>
-            <td class="value">&nbsp;</td>
-            <td class="label">OTNO Return (Yes/No):</td>
-            <td class="value">&nbsp;</td>
+            <td class="label">Customer Return (Yes/No):</td><td class="value">&nbsp;</td>
+            <td class="label">OTNO Return (Yes/No):</td><td class="value">&nbsp;</td>
           </tr>
           <tr>
-            <td class="label">Request for collection:</td>
-            <td class="value" colspan="3">&nbsp;</td>
+            <td class="label">Request for collection:</td><td class="value" colspan="3">&nbsp;</td>
           </tr>
         </table>
 
-        <table class="yard-note-table" style="margin-top: 10px;">
+        <table class="yard-note-table" style="margin-top:8px;">
           <tr>
             <th rowspan="2">Description</th>
             <th colspan="2">Deliveries</th>
@@ -807,14 +743,9 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
           </tr>
           ${Array.from({ length: 12 }).map(() => `
             <tr>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
-              <td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td><td class="notes">&nbsp;</td><td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td><td class="notes">&nbsp;</td><td class="notes">&nbsp;</td>
+              <td class="notes">&nbsp;</td><td class="notes">&nbsp;</td>
             </tr>
           `).join("")}
         </table>
@@ -825,14 +756,12 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
             <div class="field"><strong>Customer site return slip no:</strong></div>
           </div>
           <div class="row">
-            <div class="field"><strong>Checker name:</strong></div>
-            <div class="field"><strong>Checker Signature:</strong></div>
+            <div class="field"><strong>OTNO Checker Name:</strong></div>
+            <div class="field"><strong>Customer/Driver Name:</strong></div>
           </div>
           <div class="row">
-            <div class="field"><strong>Discrepancies reported to office staff (name and signature):</strong></div>
-          </div>
-          <div class="row">
-            <div class="field"><strong>Discrepancies resolved with customer by (name and signature):</strong></div>
+            <div class="field"><strong>Signature:</strong></div>
+            <div class="field"><strong>Signature:</strong></div>
           </div>
         </div>
       </div>
@@ -844,338 +773,214 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
   printWindow.document.close();
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIRE QUOTATION REPORT
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateHireQuotationReportPDF = (data: HireQuotationReportData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
-  const subtotal = data.items.reduce((sum, item) => {
-    const discountAmount = item.weeklyRate * item.quantity * (item.discountRate / 100);
-    return sum + (item.weeklyRate * item.quantity - discountAmount);
-  }, 0);
   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalMass = data.items.reduce((sum, item) => sum + (item.massPerItem || 0) * item.quantity, 0);
-  const vatRate = 0.16;
-  const vatAmount = subtotal * vatRate;
-  const totalBeforeDiscount = subtotal + vatAmount;
-  const discountAmount = totalBeforeDiscount * (data.discountRate / 100);
-  const totalAfterDiscount = totalBeforeDiscount - discountAmount;
+  const totalMass = data.items.reduce((sum, item) => sum + (item.massPerItem ?? 0) * item.quantity, 0);
+  const subtotal = data.items.reduce((sum, item) => {
+    const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
+    return sum + item.weeklyRate * (1 - discountRate) * item.quantity;
+  }, 0);
+  const vatAmount = subtotal * 0.16;
+  const discountAmount = (subtotal + vatAmount) * (data.discountRate / 100);
+  const totalAfterDiscount = subtotal + vatAmount - discountAmount;
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Hire Quotation - ${data.quotationNumber}</title>
-      <style>
-        ${STANDARD_REPORT_STYLES}
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .info-section { border: 1px solid #111827; padding: 10px; border-radius: 8px; }
-        .info-section h3 { font-size: 13px; color: #111827; margin-bottom: 8px; }
-        .terms { margin-top: 16px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 11px; }
-      </style>
-    </head>
-    <body>
-      ${renderStandardReportLayout({
-        documentType: "Hire Quotation",
-        documentNumber: data.quotationNumber,
-        documentDate: data.dateCreated,
-        clientName: data.companyName,
-        contactName: data.contactName,
-        contactPhone: data.contactPhone,
-        contactEmail: data.contactEmail,
-        siteName: data.siteName,
-        siteId: data.siteId,
-        siteLocation: data.siteLocation,
-        siteAddress: data.siteAddress,
-        clientId: data.clientId,
-        createdBy: data.createdBy,
-      })}
+  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
+    <style>
+      ${SHARED_PRINT_STYLES}
+      .grand-total { font-size: 12px; background: #333; color: white; }
+      .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
+    </style></head><body>
+    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    ${renderStandardReportLayout({
+      documentType: "Hire Quotation",
+      documentNumber: data.quotationNumber,
+      documentDate: data.dateCreated,
+      clientName: data.companyName,
+      contactName: data.contactName,
+      contactPhone: data.contactPhone,
+      contactEmail: data.contactEmail,
+      siteName: data.siteName,
+      siteId: data.siteId,
+      siteLocation: data.siteLocation,
+      siteAddress: data.siteAddress,
+      clientId: data.clientId,
+      createdBy: data.createdBy,
+    })}
 
-      <div style="margin-bottom: 16px; font-size: 12px; line-height: 1.5;">
-        <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br />
-        We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br />
-        This Quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
-      </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Part Number</th><th>Description</th>
+          <th class="text-right">Qty</th>
+          <th class="text-right">Mass/Item</th>
+          <th class="text-right">Rate</th>
+          <th class="text-right">Hire/Week (Net)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map((item, idx) => {
+          const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
+          const discountedRate = item.weeklyRate * (1 - discountRate);
+          const discountedTotal = discountedRate * item.quantity;
+          return `<tr>
+            <td>${idx + 1}</td>
+            <td>${item.partNumber || "-"}</td>
+            <td>${item.description || "-"}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right">${formatMass(item.massPerItem)}</td>
+            <td class="text-right">${formatCurrency(discountedRate)}</td>
+            <td class="text-right">${formatCurrency(discountedTotal)}</td>
+          </tr>`;
+        }).join("")}
+        <tr class="total-row">
+          <td colspan="3"><strong>SUBTOTAL</strong></td>
+          <td class="text-right"><strong>${totalQuantity}</strong></td>
+          <td class="text-right"><strong>${formatMass(totalMass)}</strong></td>
+          <td class="text-right">-</td>
+          <td class="text-right"><strong>${formatCurrency(subtotal)}</strong></td>
+        </tr>
+        <tr class="total-row"><td colspan="6"><strong>VAT (16%)</strong></td><td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td></tr>
+        ${data.discountRate > 0 ? `<tr class="total-row"><td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td><td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td></tr>` : ""}
+        <tr class="total-row" style="background:#333;color:white;">
+          <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
+          <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
+        </tr>
+      </tbody>
+    </table>
 
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Part Number</th>
-            <th>Description</th>
-            <th class="text-right">Qty</th>
-            <th class="text-right">Mass/Item</th>
-            <th class="text-right">Rate</th>
-            <th class="text-right">Hire/Week (Net)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.items.map((item, idx) => {
-            const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
-            const discountedRate = item.weeklyRate * (1 - discountRate);
-            const discountedTotal = discountedRate * item.quantity;
-            return `
-              <tr>
-                <td>${idx + 1}</td>
-                <td>${item.partNumber || "-"}</td>
-                <td>${item.description || "-"}</td>
-                <td class="text-right">${item.quantity}</td>
-                <td class="text-right">${formatMass(item.massPerItem)}</td>
-                <td class="text-right">${formatCurrency(discountedRate)}</td>
-                <td class="text-right">${formatCurrency(discountedTotal)}</td>
-              </tr>
-            `;
-          }).join("")}
-          <tr class="total-row">
-            <td colspan="3"><strong>SUBTOTAL</strong></td>
-            <td class="text-right"><strong>${totalQuantity}</strong></td>
-            <td class="text-right"><strong>${formatMass(totalMass)}</strong></td>
-            <td class="text-right">-</td>
-            <td class="text-right"><strong>${formatCurrency(subtotal)}</strong></td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="6"><strong>VAT (16%)</strong></td>
-            <td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td>
-          </tr>
-          ${data.discountRate > 0 ? `
-            <tr class="total-row">
-              <td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td>
-              <td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td>
-            </tr>
-          ` : ""}
-          <tr class="total-row" style="background: #333; color: white;">
-            <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
-            <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="terms">
+      <strong>COMMENTS</strong><br/>
+      ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br/>")}
+    </div>
 
-      <div class="comments" style="margin-top: 16px; margin-bottom: 12px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 12px;">
-        <strong>COMMENTS</strong><br />
-        ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br />")}
-      </div>
+    <div class="terms">
+      <strong>TERMS:</strong> Order confirmation is through deposit payment before collection. One month deposit required upfront. We do not accept cash payments.<br/>
+      <strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED | KES Acc: 02107773676350 | I&amp;M Bank, Changamwe | Swift: IMBLKENA | Mpesa: 542542
+    </div>
 
-      <div class="terms">
-        <strong>TERMS:</strong><br />
-        Order confirmation is through deposit payment before collection.<br />
-        One month deposit is required upfront.<br />
-        Items not currently available in our yard will not be billed.<br />
-        We do not accept cash payments.<br />
-        <strong>Note:</strong><br />
-        All transactions are subject to our Standard Terms of Trade.<br />
-        By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
-        Scaffold Hire Contract.<br />
-        We thank you for affording us the opportunity to quote. Please sign below for acceptance.<br />
-        <strong>Payment Details:</strong><br />
-        Account Name: OTNO ACCESS SOLUTIONS LIMITED<br />
-        KES Account Number: 02107773676350<br />
-        Bank Name: I&amp;M BANK LIMITED<br />
-        Branch Name: Changamwe<br />
-        Bank Code: 57, Branch code: 021<br />
-        Swift code: IMBLKENA<br />
-        Mpesa paybill code: 542542
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-        <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For ${COMPANY_NAME}:</strong></p>
-          <p style="margin-bottom: 20px;">Name: ___________________________</p>
-          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
-          <p>Date: ___________________________</p>
-        </div>
-        <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For Client:</strong></p>
-          <p style="margin-bottom: 20px;">Name: ___________________________</p>
-          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
-          <p>Date: ___________________________</p>
-        </div>
-      </div>
-      <div style="text-align: right; font-size: 9px; color: #999; margin-top: 20px;">Print date: ${formatTimestamp()}</div>
-    </body>
-    </html>
-  `;
+    <div class="signature-section">
+      <div class="signature-box"><p><strong>For ${COMPANY_NAME}:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
+      <div class="signature-box"><p><strong>For Client:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
+    </div>
+    <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
+  </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUOTATION CALCULATION PDF
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateQuotationPDF = (data: QuotationCalculationData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Hire Quotation - ${data.quotationNumber}</title>
-      <style>
-        ${STANDARD_REPORT_STYLES}
-        .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-bottom: 20px; }
-        .info-section { border: 1px solid #111827; border-radius: 8px; padding: 10px; }
-        .info-section h3 { font-size: 14px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 10px; }
-        .grand-total { font-size: 14px; background: #333; color: white; }
-        .summary-box { background: #f5f5f5; padding: 15px; margin-bottom: 20px; }
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
-        .summary-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .summary-row.grand { font-size: 16px; font-weight: bold; background: #333; color: white; margin: -15px; margin-top: 10px; padding: 15px; }
-        .terms { margin-top: 20px; padding: 10px; background: #f9f9f9; border-left: 3px solid #333; font-size: 11px; }
-      </style>
-    </head>
-    <body>
-      ${renderStandardReportLayout({
-        documentType: "Hire Quotation",
-        documentNumber: data.quotationNumber,
-        documentDate: data.dateCreated,
-        clientName: data.companyName,
-        contactName: data.contactName,
-        contactPhone: data.contactPhone,
-        contactEmail: data.contactEmail,
-        siteName: data.siteName,
-        siteId: data.siteId,
-        siteLocation: data.siteLocation,
-        siteAddress: data.siteAddress,
-        clientId: data.clientId,
-        createdBy: data.createdBy,
-      })}
+  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
+    <style>
+      ${SHARED_PRINT_STYLES}
+      .summary-box { background: #f5f5f5; padding: 10px; margin-bottom: 14px; }
+      .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #ddd; font-size: 9.5px; }
+      .summary-row:last-child { border-bottom: none; }
+      .summary-row.grand { font-size: 11px; font-weight: bold; background: #333; color: white; margin: -10px; margin-top: 8px; padding: 10px; }
+      .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
+    </style></head><body>
+    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    ${renderStandardReportLayout({
+      documentType: "Hire Quotation",
+      documentNumber: data.quotationNumber,
+      documentDate: data.dateCreated,
+      clientName: data.companyName,
+      contactName: data.contactName,
+      contactPhone: data.contactPhone,
+      contactEmail: data.contactEmail,
+      siteName: data.siteName,
+      siteId: data.siteId,
+      siteLocation: data.siteLocation,
+      siteAddress: data.siteAddress,
+      clientId: data.clientId,
+      createdBy: data.createdBy,
+    })}
 
-      <div style="margin-bottom: 16px; font-size: 12px; line-height: 1.5;">
-        <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br />
-        We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br />
-        This Quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
-      </div>
+    <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
+      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
+      We thank you for your valued enquiry and are pleased to submit our quotation. Valid for 30 DAYS.
+    </div>
 
-      <table>
-        <thead>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Part Number</th><th>Description</th>
+          <th class="text-right">Qty</th><th class="text-right">Weekly Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map((item, idx) => `
           <tr>
-            <th>#</th>
-            <th>Part Number</th>
-            <th>Description</th>
-            <th class="text-right">Qty</th>
-            <th class="text-right">Weekly Rate</th>
+            <td>${idx + 1}</td>
+            <td>${item.partNumber || "-"}</td>
+            <td>${item.description || "-"}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right">${formatCurrency(item.weeklyRate)}</td>
           </tr>
-        </thead>
-        <tbody>
-          ${data.items.map((item, idx) => `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>${item.partNumber || "-"}</td>
-              <td>${item.description || "-"}</td>
-              <td class="text-right">${item.quantity}</td>
-              <td class="text-right">${formatCurrency(item.weeklyRate)}</td>
-            </tr>
-          `).join("")}
-          <tr class="total-row">
-            <td colspan="3"><strong>TOTAL</strong></td>
-            <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
-            <td class="text-right">-</td>
-          </tr>
-        </tbody>
-      </table>
+        `).join("")}
+        <tr class="total-row">
+          <td colspan="3"><strong>TOTAL</strong></td>
+          <td class="text-right"><strong>${data.items.reduce((sum, item) => sum + item.quantity, 0)}</strong></td>
+          <td class="text-right">-</td>
+        </tr>
+      </tbody>
+    </table>
 
-      <div class="summary-box">
-        <div class="summary-row">
-          <span>Number of Weeks</span>
-          <span>× ${data.hireWeeks}</span>
-        </div>
-        <div class="summary-row">
-          <span>Total for Hire Period</span>
-          <span>${formatCurrency(data.totalForPeriod)}</span>
-        </div>
-        <div class="summary-row">
-          <span>VAT (${data.vatRate}%)</span>
-          <span>${formatCurrency(data.vatAmount)}</span>
-        </div>
-        ${data.discountRate > 0 ? `
-          <div class="summary-row">
-            <span>Discount (${data.discountRate}%)</span>
-            <span>-${formatCurrency(data.discountAmount)}</span>
-          </div>
-        ` : ""}
-        <div class="summary-row grand">
-          <span>GRAND TOTAL (incl. VAT)</span>
-          <span>${formatCurrency(data.grandTotal)}</span>
-        </div>
-        <div class="summary-row grand">
-          <span>PAYMENT TOTAL</span>
-          <span>${formatCurrency(data.paymentTotal)}</span>
-        </div>
-      </div>
+    <div class="summary-box">
+      <div class="summary-row"><span>Number of Weeks</span><span>× ${data.hireWeeks}</span></div>
+      <div class="summary-row"><span>Total for Hire Period</span><span>${formatCurrency(data.totalForPeriod)}</span></div>
+      <div class="summary-row"><span>VAT (${data.vatRate}%)</span><span>${formatCurrency(data.vatAmount)}</span></div>
+      ${data.discountRate > 0 ? `<div class="summary-row"><span>Discount (${data.discountRate}%)</span><span>-${formatCurrency(data.discountAmount)}</span></div>` : ""}
+      <div class="summary-row grand"><span>GRAND TOTAL (incl. VAT)</span><span>${formatCurrency(data.grandTotal)}</span></div>
+      <div class="summary-row grand"><span>PAYMENT TOTAL</span><span>${formatCurrency(data.paymentTotal)}</span></div>
+    </div>
 
-      <div class="terms">
-        <strong>TERMS:</strong><br />
-        Quote does not include transport to and from site.<br />
-        Order confirmation is through deposit payment before collection.<br />
-        One month deposit is required upfront.<br />
-        Items not currently available in our yard will not be billed.<br />
-        We do not accept cash payments.<br />
-        <strong>Note:</strong><br />
-        All transactions are subject to our Standard Terms of Trade.<br />
-        By accepting this quotation, you agree to be bound by all the terms and conditions outlined in our
-        Scaffold Hire Contract.<br />
-        We thank you for affording us the opportunity to quote. Please sign below for acceptance.<br />
-        <strong>Payment Details:</strong><br />
-        Account Name: OTNO ACCESS SOLUTIONS LIMITED<br />
-        KES Account Number: 02107773676350<br />
-        Bank Name: I&amp;M BANK LIMITED<br />
-        Branch Name: Changamwe<br />
-        Bank Code: 57, Branch code: 021<br />
-        Swift code: IMBLKENA<br />
-        Mpesa paybill code: 542542
-      </div>
+    <div class="terms">
+      <strong>TERMS:</strong> Quote does not include transport. Order confirmation through deposit payment. One month deposit required upfront. We do not accept cash.<br/>
+      <strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED | KES Acc: 02107773676350 | I&amp;M Bank, Changamwe | Swift: IMBLKENA | Mpesa: 542542
+    </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
-        <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For ${COMPANY_NAME}:</strong></p>
-          <p style="margin-bottom: 20px;">Name: ___________________________</p>
-          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
-          <p>Date: ___________________________</p>
-        </div>
-        <div style="border-top: 1px solid #333; padding-top: 10px;">
-          <p style="margin-bottom: 5px;"><strong>For Client:</strong></p>
-          <p style="margin-bottom: 20px;">Name: ___________________________</p>
-          <p style="margin-bottom: 20px;">Signature: ___________________________</p>
-          <p>Date: ___________________________</p>
-        </div>
-      </div>
-      <div style="text-align: right; font-size: 9px; color: #999; margin-top: 20px;">Print date: ${formatTimestamp()}</div>
-    </body>
-    </html>
-  `;
+    <div class="signature-section">
+      <div class="signature-box"><p><strong>For ${COMPANY_NAME}:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
+      <div class="signature-box"><p><strong>For Client:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
+    </div>
+    <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
+  </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIRE RETURN NOTE
+// ═══════════════════════════════════════════════════════════════════════════════
 export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    alert("Please allow popups for this site to generate PDFs");
-    return;
-  }
+  if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
   const totalReturned = data.items.reduce((sum, item) => sum + item.totalReturned, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
-  // ---- Page 1: Manual-style Hire Return Slip ----
+  // Page 1: Gate Pass (pink)
   const gatePassItemRows = Array.from({ length: 20 }, () =>
-    "<tr>" +
-    '<td class="gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    '<td class="text-center gp-empty-row"></td>' +
-    "</tr>"
+    "<tr><td style='height:22px'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td></tr>"
   ).join("");
 
   const gatePassPage = (copyLabel: string) => `
-    <div class="page gate-pass-page pink-sheet">
+    <div class="page" style="background:#f8cddd;border:1px solid #c58ea3;padding:12px;">
+      ${renderPageHeader("Hire Return Form", data.returnNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Return Form",
         documentNumber: data.returnNoteNumber,
@@ -1195,8 +1000,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         createdBy: data.createdBy,
       })}
 
-      <table class="gp-table">
-        <thead>
+      <table style="border-color:#8a5a6b;">
+        <thead style="background:#f3b9cf;">
           <tr>
             <th>Product Description</th>
             <th class="text-center">Site Number</th>
@@ -1207,64 +1012,51 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
             <th class="text-center">Total</th>
           </tr>
         </thead>
-        <tbody>
-          ${gatePassItemRows}
-        </tbody>
+        <tbody>${gatePassItemRows}</tbody>
       </table>
 
-      <div class="gp-customer-section">
-        <div class="gp-transport-grid">
-          <div class="gp-row"><span class="gp-label">Size of Vehicle</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Vehicle Reg. No</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Time In</span><span class="gp-val-line"></span></div>
-          <div class="gp-row"><span class="gp-label">Time Out</span><span class="gp-val-line"></span></div>
+      <div style="border:1px solid #8a5a6b;padding:8px;border-radius:4px;margin-bottom:8px;background:#f9dce8;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <div class="line-row"><span>Size of Vehicle</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Vehicle Reg. No</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Time In</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Time Out</span><span class="line-fill"></span></div>
         </div>
-
-        <div class="gp-sig-grid">
-          <div class="gp-sig-box">
-            <p><strong>OTNOS Checker</strong></p>
-            <p>Name: _______________</p>
-            <p>Signature: _______________</p>
-          </div>
-          <div class="gp-sig-box">
-            <p><strong>Customer / Driver</strong></p>
-            <p>Name: _______________</p>
-            <p>Signature: _______________</p>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px;">
+          <div><p><strong>OTNOS Checker</strong></p><p>Name: _______________</p><p>Signature: _______________</p></div>
+          <div><p><strong>Customer / Driver</strong></p><p>Name: _______________</p><p>Signature: _______________</p></div>
         </div>
-
-        <div class="gp-balance-row">
-          <span>Balance still on site: <strong>Yes / No</strong></span>
-          <span style="margin-left:30px;">Is site clear: <strong>Yes / No</strong></span>
-          <span style="margin-left:30px;">Collect again: <strong>Yes / No</strong></span>
+        <div style="font-size:9px;padding:4px 0;border-top:1px solid #8a5a6b;">
+          Balance still on site: <strong>Yes / No</strong> &nbsp;&nbsp; Is site clear: <strong>Yes / No</strong> &nbsp;&nbsp; Collect again: <strong>Yes / No</strong>
         </div>
-        <div class="gp-row" style="margin-top:6px;"><span class="gp-label">Collection Date</span><span class="gp-val-line"></span></div>
+        <div class="line-row" style="margin-top:5px;"><span>Collection Date</span><span class="line-fill"></span></div>
       </div>
 
-      <div class="gp-footer">
+      <div style="text-align:center;font-size:8.5px;border-top:1px solid #8a5a6b;padding-top:6px;">
         <p>${COMPANY_NAME} &bull; ${COMPANY_LOCATION}</p>
-        <p style="font-size:9px; margin-top:4px;">All transactions are subject to our terms of trade.</p>
+        <p style="font-size:8px;margin-top:3px;">All transactions are subject to our terms of trade.</p>
       </div>
     </div>
   `;
 
-  // ---- Page 2: Return Note ----
-  const systemItemRows = data.items.map((item) =>
-    "<tr>" +
-    "<td>" + (item.partNumber || "-") + "</td>" +
-    "<td>" + (item.description || "-") + "</td>" +
-    '<td class="text-right">' + (item.totalDelivered - item.totalReturned + item.balanceAfter) + "</td>" +
-    '<td class="text-right">' + item.good + "</td>" +
-    '<td class="text-right">' + item.dirty + "</td>" +
-    '<td class="text-right">' + item.damaged + "</td>" +
-    '<td class="text-right">' + item.scrap + "</td>" +
-    '<td class="text-right">' + item.totalReturned + "</td>" +
-    '<td class="text-right">' + item.balanceAfter + "</td>" +
-    "</tr>"
+  // Page 2: System Return Note
+  const systemItemRows = data.items.map(item =>
+    `<tr>
+      <td>${item.partNumber || "-"}</td>
+      <td>${item.description || "-"}</td>
+      <td class="text-right">${item.totalDelivered - item.totalReturned + item.balanceAfter}</td>
+      <td class="text-right">${item.good}</td>
+      <td class="text-right">${item.dirty}</td>
+      <td class="text-right">${item.damaged}</td>
+      <td class="text-right">${item.scrap}</td>
+      <td class="text-right">${item.totalReturned}</td>
+      <td class="text-right">${item.balanceAfter}</td>
+    </tr>`
   ).join("");
 
   const systemPage = (copyLabel: string) => `
-    <div class="page system-page">
+    <div class="page">
+      ${renderPageHeader("Hire Return Note", data.returnNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1284,19 +1076,14 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         createdBy: data.createdBy,
       })}
 
-      <h3 class="section-title">Equipment Details</h3>
       <table>
         <thead>
           <tr>
-            <th>Part Number</th>
-            <th>Description</th>
+            <th>Part Number</th><th>Description</th>
             <th class="text-right">On Site</th>
-            <th class="text-right">Good</th>
-            <th class="text-right">Dirty</th>
-            <th class="text-right">Damaged</th>
-            <th class="text-right">Scrap</th>
-            <th class="text-right">This Return</th>
-            <th class="text-right">Balance</th>
+            <th class="text-right">Good</th><th class="text-right">Dirty</th>
+            <th class="text-right">Damaged</th><th class="text-right">Scrap</th>
+            <th class="text-right">This Return</th><th class="text-right">Balance</th>
           </tr>
         </thead>
         <tbody>
@@ -1313,139 +1100,71 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         </tbody>
       </table>
 
-      <div class="sys-safety">
-        <h4>SAFETY VERIFICATION</h4>
-        <div class="sys-site-grid">
-          <div>
-            <p>Vehicle safety loaded as per palletizing &amp; loading procedure</p>
-            <div class="sys-row"><span class="sys-label">Checker:</span><span>${data.receivedBy || "_______________"}</span></div>
-            <div class="sys-row"><span class="sys-label">Signature:</span><span>_______________</span></div>
-          </div>
-          <div>
-            <p><strong>Transport Charges</strong></p>
-            <div class="sys-row"><span class="sys-label">Internal Vehicle:</span><span>_______________</span></div>
-            <div class="sys-row"><span class="sys-label">External Vehicle:</span><span>_______________</span></div>
-          </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="section">
+          <h4>SAFETY VERIFICATION</h4>
+          <p>Vehicle safely loaded as per palletizing &amp; loading procedure</p>
+          <div class="line-row"><span>Checker:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        </div>
+        <div class="section">
+          <p><strong>Transport Charges</strong></p>
+          <div class="line-row"><span>Internal Vehicle:</span><span class="line-fill">Ksh</span></div>
+          <div class="line-row"><span>External Vehicle:</span><span class="line-fill">Ksh</span></div>
         </div>
       </div>
 
-      <div class="sys-signatures">
-        <div class="sig-block">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+        <div style="border-top:2px solid #333;padding-top:6px;">
           <p><strong>OTNO Representative</strong></p>
           <p>Name: ${data.receivedBy || "_______________"}</p>
           <p>Signature: _______________ &nbsp; Date: _______________</p>
         </div>
-        <div class="sig-block">
+        <div style="border-top:2px solid #333;padding-top:6px;">
           <p><strong>Vehicle Reg No:</strong> ${data.vehicleNo || "_______________"}</p>
           <p><strong>Transporter / Customer / Driver</strong></p>
           <p>Name: ${data.returnedBy || "_______________"}</p>
           <p>Signature: _______________ &nbsp; Date: _______________</p>
         </div>
-        <div class="sig-block">
+        <div style="border-top:2px solid #333;padding-top:6px;">
           <p><strong>Customer Representative</strong></p>
           <p>Name: _______________</p>
           <p>Signature: _______________ &nbsp; Date: _______________</p>
         </div>
       </div>
 
-      <div class="sys-row" style="margin-top:8px;">
-        <span class="sys-label">Time Arrive:</span><span>_______________</span>
-        <span class="sys-label" style="margin-left:30px;">Time Depart:</span><span>_______________</span>
+      <div class="line-row" style="margin-top:8px;">
+        <span>Time Arrive:</span><span class="line-fill"></span>
+        <span style="margin-left:24px;">Time Depart:</span><span class="line-fill"></span>
       </div>
 
-      <p style="margin-top:10px; font-size:11px;">Please check that the equipment count agrees with the above. Hire charges after the quantities returned as above will cease on <strong>${data.returnDate}</strong>.</p>
-      <p style="font-size:11px;">All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+      <p style="margin-top:8px;font-size:9px;">Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on <strong>${data.returnDate}</strong>.</p>
+      <p style="font-size:9px;">All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
 
-      <div class="sys-charges">
-        <h4>Charges:</h4>
-        <ul>
+      <div class="section" style="margin-top:8px;">
+        <strong>Charges:</strong>
+        <ul style="padding-left:14px;margin-top:3px;font-size:9px;">
           <li><strong>Dirty Equipment:</strong> Will be charged at 2× the list hire price of the item.</li>
           <li><strong>Damaged Equipment:</strong> Will be charged at 4× the list hire price of the item.</li>
           <li><strong>Lost / Scrap Equipment:</strong> Will be charged at the selling price of the item.</li>
         </ul>
       </div>
 
-      ${data.remarks ? '<div class="remarks"><strong>Remarks:</strong> ' + data.remarks + "</div>" : ""}
+      ${data.remarks ? `<div class="section" style="margin-top:8px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
 
-      <div class="sys-footer">
-        <div class="sys-row"><span class="sys-label">Processed By:</span><span>${data.createdBy || "-"}</span></div>
-        <div class="sys-row"><span class="sys-label">Processed Date:</span><span>${formatTimestamp()}</span></div>
+      <div style="margin-top:10px;border-top:1px solid #ccc;padding-top:5px;font-size:9px;">
+        <div class="line-row"><span>Processed By:</span><span class="line-fill">${data.createdBy || "-"}</span></div>
+        <div class="line-row"><span>Processed Date:</span><span class="line-fill">${formatTimestamp()}</span></div>
       </div>
     </div>
-  `;
-
-  const styles = `
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; padding: 16px; font-size: 11px; color: #222; }
-    .page { page-break-after: always; }
-    .page:last-child { page-break-after: auto; }
-    @media print { body { padding: 0; } }
-
-    ${STANDARD_REPORT_HEADER_STYLES}
-
-    /* ---- Gate Pass Styles ---- */
-    .pink-sheet { background: #f8cddd; border: 1px solid #c58ea3; padding: 14px; }
-    .gp-top-meta { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
-    .gp-meta-box { border: 1px dashed #666; padding: 4px 8px; font-size: 10px; background: #fce4ee; }
-    .gp-header { display: flex; align-items: center; border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
-    .gp-logo { width: 90px; height: auto; margin-right: 16px; }
-    .gp-header-right h1 { font-size: 22px; margin: 0; text-transform: uppercase; }
-    .gp-header-right h2 { font-size: 16px; margin: 0; color: #444; }
-    .gp-header-doc { margin-left: auto; text-align: right; font-size: 10px; }
-    .gp-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .gp-info-left, .gp-info-right { border: 1px solid #8a5a6b; padding: 8px; border-radius: 4px; background: #f9dce8; }
-    .gp-row { display: flex; margin-bottom: 4px; align-items: baseline; }
-    .gp-label { font-weight: bold; width: 130px; font-size: 11px; }
-    .gp-val { flex: 1; }
-    .gp-val-line { flex: 1; border-bottom: 1px solid #999; min-height: 14px; }
-    .gp-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    .gp-table th, .gp-table td { border: 1px solid #8a5a6b; padding: 6px 8px; }
-    .gp-table th { background: #f3b9cf; font-size: 11px; text-transform: uppercase; }
-    .gp-empty-row { height: 24px; }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .total-row { font-weight: bold; background: #f3b9cf; }
-    .gp-customer-section { border: 1px solid #8a5a6b; padding: 10px; border-radius: 4px; margin-bottom: 12px; background: #f9dce8; }
-    .gp-transport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
-    .gp-sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px; }
-    .gp-sig-box p { margin-bottom: 4px; }
-    .gp-balance-row { font-size: 11px; padding: 4px 0; border-top: 1px solid #8a5a6b; }
-    .gp-footer { text-align: center; font-size: 10px; color: #333; border-top: 1px solid #8a5a6b; padding-top: 8px; margin-top: 10px; }
-
-    /* ---- Return Note Page Styles ---- */
-    .sys-header { display: flex; align-items: center; border-bottom: 3px solid #111; padding-bottom: 10px; margin-bottom: 12px; }
-    .sys-logo { width: 90px; height: auto; margin-right: 16px; }
-    .sys-header-center { flex: 1; }
-    .sys-header-center h1 { font-size: 22px; margin-bottom: 2px; }
-    .copy-label { font-weight: bold; color: #555; font-size: 12px; }
-    .sys-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .sys-detail-box { border: 1px solid #bbb; padding: 8px; border-radius: 4px; }
-    .sys-detail-box h3 { font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 6px; }
-    .sys-row { display: flex; margin-bottom: 3px; align-items: baseline; font-size: 11px; }
-    .sys-label { font-weight: bold; width: 120px; color: #444; }
-    .sys-site-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .section-title { font-size: 13px; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    th, td { border: 1px solid #bbb; padding: 5px 6px; font-size: 11px; }
-    th { background: #e8e8e8; font-weight: bold; }
-    .sys-safety { border: 1px solid #bbb; padding: 8px; border-radius: 4px; margin-bottom: 12px; }
-    .sys-safety h4 { font-size: 12px; text-transform: uppercase; margin-bottom: 6px; }
-    .sys-safety p { margin-bottom: 4px; }
-    .sys-signatures { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .sig-block { border-top: 2px solid #333; padding-top: 8px; }
-    .sig-block p { margin-bottom: 4px; }
-    .sys-charges { border: 1px solid #333; border-radius: 4px; padding: 8px; margin-top: 10px; background: #fcfcfc; }
-    .sys-charges h4 { margin-bottom: 6px; font-size: 12px; }
-    .sys-charges ul { padding-left: 16px; margin: 0; }
-    .sys-charges li { margin-bottom: 4px; line-height: 1.4; }
-    .remarks { margin-top: 10px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; }
-    .sys-footer { margin-top: 12px; border-top: 1px solid #ccc; padding-top: 6px; }
   `;
 
   const html =
     "<!DOCTYPE html><html><head>" +
     "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
-    "<style>" + styles + "</style>" +
+    "<style>" + SHARED_PRINT_STYLES + `
+      .page[style*="background:#f8cddd"] .panel { border-color: #8a5a6b; }
+    ` + "</style>" +
     "</head><body>" +
     gatePassPage("Company Copy") +
     systemPage("Company Copy") +
