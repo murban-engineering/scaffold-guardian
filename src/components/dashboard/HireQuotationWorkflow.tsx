@@ -79,6 +79,50 @@ type QuotationHeader = {
   civilsSegments: string[];
   scaffoldingSegments: string[];
   createdBy: string;
+  directors: DirectorDetails[];
+  companySection: CompanySectionDetails;
+  otherInformation: OtherInformationDetails;
+};
+
+type DirectorDetails = {
+  fullName: string;
+  idNumber: string;
+  residentialTel: string;
+  cellphone: string;
+  residentialAddress: string;
+};
+
+type CompanySectionDetails = {
+  registeredName: string;
+  registrationNumber: string;
+  commencementDate: string;
+  registeredOffice: string;
+  issuedShareCapital: string;
+  judicialManagement: "yes" | "no" | "";
+  compromiseDetails: string;
+  holdingCompanyName: string;
+  holdingCompanyRegistration: string;
+  subsidiaryCompanyName: string;
+  subsidiaryCompanyRegistration: string;
+  auditors: string;
+};
+
+type OtherInformationDetails = {
+  bankers: string;
+  branchName: string;
+  branchNumber: string;
+  accountName: string;
+  accountNumber: string;
+  ownPremises: "yes" | "no" | "";
+  landlordDetails: string;
+  vatRegistrationNumber: string;
+  authorisedPersons: string[];
+  officialOrderNumbers: "yes" | "no" | "";
+};
+
+type StructuredQuotationNotes = {
+  paymentTerms: string;
+  clientDetails: Pick<QuotationHeader, "directors" | "companySection" | "otherInformation">;
 };
 
 type DiscountLine = {
@@ -207,6 +251,98 @@ const parseNumber = (value: string) => {
 
 const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
   quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
+
+const createEmptyDirector = (): DirectorDetails => ({
+  fullName: "",
+  idNumber: "",
+  residentialTel: "",
+  cellphone: "",
+  residentialAddress: "",
+});
+
+const createDefaultCompanySection = (): CompanySectionDetails => ({
+  registeredName: "",
+  registrationNumber: "",
+  commencementDate: "",
+  registeredOffice: "",
+  issuedShareCapital: "",
+  judicialManagement: "",
+  compromiseDetails: "",
+  holdingCompanyName: "",
+  holdingCompanyRegistration: "",
+  subsidiaryCompanyName: "",
+  subsidiaryCompanyRegistration: "",
+  auditors: "",
+});
+
+const createDefaultOtherInformation = (): OtherInformationDetails => ({
+  bankers: "",
+  branchName: "",
+  branchNumber: "",
+  accountName: "",
+  accountNumber: "",
+  ownPremises: "",
+  landlordDetails: "",
+  vatRegistrationNumber: "",
+  authorisedPersons: ["", "", ""],
+  officialOrderNumbers: "",
+});
+
+const parseStructuredQuotationNotes = (notes: string | null | undefined): StructuredQuotationNotes => {
+  if (!notes) {
+    return {
+      paymentTerms: "",
+      clientDetails: {
+        directors: Array.from({ length: 4 }, createEmptyDirector),
+        companySection: createDefaultCompanySection(),
+        otherInformation: createDefaultOtherInformation(),
+      },
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(notes) as Partial<StructuredQuotationNotes>;
+    return {
+      paymentTerms: parsed.paymentTerms ?? "",
+      clientDetails: {
+        directors: Array.from({ length: 4 }, (_, index) => ({
+          ...createEmptyDirector(),
+          ...(parsed.clientDetails?.directors?.[index] ?? {}),
+        })),
+        companySection: {
+          ...createDefaultCompanySection(),
+          ...(parsed.clientDetails?.companySection ?? {}),
+        },
+        otherInformation: {
+          ...createDefaultOtherInformation(),
+          ...(parsed.clientDetails?.otherInformation ?? {}),
+          authorisedPersons: Array.from({ length: 3 }, (_, index) =>
+            parsed.clientDetails?.otherInformation?.authorisedPersons?.[index] ?? ""
+          ),
+        },
+      },
+    };
+  } catch {
+    return {
+      paymentTerms: notes,
+      clientDetails: {
+        directors: Array.from({ length: 4 }, createEmptyDirector),
+        companySection: createDefaultCompanySection(),
+        otherInformation: createDefaultOtherInformation(),
+      },
+    };
+  }
+};
+
+const buildStructuredQuotationNotes = (paymentTerms: string, header: QuotationHeader) =>
+  JSON.stringify({
+    paymentTerms,
+    clientDetails: {
+      directors: header.directors,
+      companySection: header.companySection,
+      otherInformation: header.otherInformation,
+    },
+  } as StructuredQuotationNotes);
 
 export type ProcessedClient = {
   id: string;
@@ -394,6 +530,9 @@ const HireQuotationWorkflow = ({
     civilsSegments: [],
     scaffoldingSegments: [],
     createdBy: "",
+    directors: Array.from({ length: 4 }, createEmptyDirector),
+    companySection: createDefaultCompanySection(),
+    otherInformation: createDefaultOtherInformation(),
   }));
 
   useEffect(() => {
@@ -412,6 +551,8 @@ const HireQuotationWorkflow = ({
     const createdDate = initialQuotation.created_at
       ? new Date(initialQuotation.created_at).toISOString().split("T")[0]
       : getToday();
+
+    const parsedNotes = parseStructuredQuotationNotes(initialQuotation.notes);
 
     setSavedQuotationId(initialQuotation.id);
     setHeader(prev => {
@@ -440,6 +581,9 @@ const HireQuotationWorkflow = ({
         projectTypes: initialQuotation.project_type ?? [],
         marketSegments: initialQuotation.market_segment ?? [],
         customerOrderNo: initialQuotation.account_number ?? "",
+        directors: parsedNotes.clientDetails.directors,
+        companySection: parsedNotes.clientDetails.companySection,
+        otherInformation: parsedNotes.clientDetails.otherInformation,
         createdBy: prev.createdBy || profile?.full_name || "",
       };
     });
@@ -455,7 +599,7 @@ const HireQuotationWorkflow = ({
       ...prev,
       hireDate: prev.hireDate || createdDate,
       returnDate: prev.returnDate || createdDate,
-      paymentTerms: initialQuotation.notes ?? "",
+      paymentTerms: parsedNotes.paymentTerms,
     }));
 
     // Load equipment items with balance tracking from database
@@ -1218,6 +1362,7 @@ const HireQuotationWorkflow = ({
 
   const handleSelectPreviousClient = (quotation: HireQuotation) => {
     const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+    const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
 
     setHeader((prev) => ({
       ...prev,
@@ -1240,6 +1385,9 @@ const HireQuotationWorkflow = ({
       customerOrderNo: quotation.account_number ?? "",
       projectTypes: quotation.project_type ?? [],
       marketSegments: quotation.market_segment ?? [],
+      directors: parsedNotes.clientDetails.directors,
+      companySection: parsedNotes.clientDetails.companySection,
+      otherInformation: parsedNotes.clientDetails.otherInformation,
       siteName: "",
       physicalCode: "",
     }));
@@ -1290,6 +1438,8 @@ const HireQuotationWorkflow = ({
       const contactPhone = header.landline1 || header.clientPhone;
       const contactEmail = header.companyEmail || header.clientEmail;
 
+      const structuredNotes = buildStructuredQuotationNotes(calculation.paymentTerms, header);
+
       if (!savedQuotationId) {
         const quotation = await createQuotation.mutateAsync({
           company_name: companyName,
@@ -1299,6 +1449,7 @@ const HireQuotationWorkflow = ({
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
+          notes: structuredNotes,
         });
         setSavedQuotationId(quotation.id);
         const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
@@ -1322,6 +1473,7 @@ const HireQuotationWorkflow = ({
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
+          notes: structuredNotes,
         });
       }
       handleNext();
@@ -2360,7 +2512,7 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           hire_weeks: Math.max(numberOfWeeks, 1),
-          notes: calculation.paymentTerms,
+          notes: buildStructuredQuotationNotes(calculation.paymentTerms, header),
           status: "completed",
         });
       }
@@ -2833,6 +2985,131 @@ const HireQuotationWorkflow = ({
                       <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </div>
+
+
+            {/* Section 2 - Directors / Partners / Owners / Members */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Section 2 — Directors / Partners / Owners / Members</h4>
+              <div className="space-y-4">
+                {header.directors.map((director, index) => (
+                  <div key={`director-${index}`} className="rounded-md border p-3">
+                    <p className="mb-3 text-xs font-medium text-muted-foreground">Entry {index + 1}</p>
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <Input
+                        value={director.fullName}
+                        onChange={(e) => setHeader(prev => ({
+                          ...prev,
+                          directors: prev.directors.map((entry, i) => i === index ? { ...entry, fullName: e.target.value } : entry),
+                        }))}
+                        placeholder="Full Name"
+                      />
+                      <Input
+                        value={director.idNumber}
+                        onChange={(e) => setHeader(prev => ({
+                          ...prev,
+                          directors: prev.directors.map((entry, i) => i === index ? { ...entry, idNumber: e.target.value } : entry),
+                        }))}
+                        placeholder="ID Number"
+                      />
+                      <Input
+                        value={director.residentialTel}
+                        onChange={(e) => setHeader(prev => ({
+                          ...prev,
+                          directors: prev.directors.map((entry, i) => i === index ? { ...entry, residentialTel: e.target.value } : entry),
+                        }))}
+                        placeholder="Residential Tel. No."
+                      />
+                      <Input
+                        value={director.cellphone}
+                        onChange={(e) => setHeader(prev => ({
+                          ...prev,
+                          directors: prev.directors.map((entry, i) => i === index ? { ...entry, cellphone: e.target.value } : entry),
+                        }))}
+                        placeholder="Cellphone No."
+                      />
+                      <div className="md:col-span-4">
+                        <Input
+                          value={director.residentialAddress}
+                          onChange={(e) => setHeader(prev => ({
+                            ...prev,
+                            directors: prev.directors.map((entry, i) => i === index ? { ...entry, residentialAddress: e.target.value } : entry),
+                          }))}
+                          placeholder="Residential Address"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 3 - Companies */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Section 3 — Companies (Public and Private) and Close Corporations</h4>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input value={header.companySection.registeredName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredName: e.target.value } }))} placeholder="Registered Name of Company / CC" className="md:col-span-2" />
+                <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} placeholder="Registration Number / CC Number" className="md:col-span-2" />
+                <Input value={header.companySection.commencementDate} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, commencementDate: e.target.value } }))} placeholder="Date of Commencement of Business" className="md:col-span-2" />
+                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} placeholder="Registered Office" className="md:col-span-2" />
+                <Input value={header.companySection.issuedShareCapital} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, issuedShareCapital: e.target.value } }))} placeholder="Issued Share Capital" className="md:col-span-2" />
+                <div className="md:col-span-2">
+                  <Label>Judicial Management / Compromise with Creditors</Label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <Button type="button" variant={header.companySection.judicialManagement === "yes" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, judicialManagement: "yes" } }))}>Yes</Button>
+                    <Button type="button" variant={header.companySection.judicialManagement === "no" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, judicialManagement: "no" } }))}>No</Button>
+                  </div>
+                </div>
+                <Input value={header.companySection.compromiseDetails} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, compromiseDetails: e.target.value } }))} placeholder="If yes, please give details" className="md:col-span-2" />
+                <Input value={header.companySection.holdingCompanyName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, holdingCompanyName: e.target.value } }))} placeholder="Holding Company Name" />
+                <Input value={header.companySection.holdingCompanyRegistration} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, holdingCompanyRegistration: e.target.value } }))} placeholder="Holding Company Registration Number" />
+                <Input value={header.companySection.subsidiaryCompanyName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, subsidiaryCompanyName: e.target.value } }))} placeholder="Subsidiary Company Name" />
+                <Input value={header.companySection.subsidiaryCompanyRegistration} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, subsidiaryCompanyRegistration: e.target.value } }))} placeholder="Subsidiary Company Registration Number" />
+                <Input value={header.companySection.auditors} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, auditors: e.target.value } }))} placeholder="Auditors" className="md:col-span-2" />
+              </div>
+            </div>
+
+            {/* Section 7 - Other Information */}
+            <div className="rounded-lg border border-border p-4">
+              <h4 className="text-sm font-semibold mb-4 text-primary">Section 7 — Other Information</h4>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input value={header.otherInformation.bankers} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, bankers: e.target.value } }))} placeholder="Bankers" className="md:col-span-2" />
+                <Input value={header.otherInformation.branchName} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, branchName: e.target.value } }))} placeholder="Branch Name" />
+                <Input value={header.otherInformation.branchNumber} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, branchNumber: e.target.value } }))} placeholder="Branch Number" />
+                <Input value={header.otherInformation.accountName} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, accountName: e.target.value } }))} placeholder="Account Name" className="md:col-span-2" />
+                <Input value={header.otherInformation.accountNumber} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, accountNumber: e.target.value } }))} placeholder="Account Number" className="md:col-span-2" />
+                <div className="md:col-span-2">
+                  <Label>Do you own your own premises?</Label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <Button type="button" variant={header.otherInformation.ownPremises === "yes" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, ownPremises: "yes" } }))}>Yes</Button>
+                    <Button type="button" variant={header.otherInformation.ownPremises === "no" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, ownPremises: "no" } }))}>No</Button>
+                  </div>
+                </div>
+                <Input value={header.otherInformation.landlordDetails} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, landlordDetails: e.target.value } }))} placeholder="If no, name and telephone number of landlord" className="md:col-span-2" />
+                <Input value={header.otherInformation.vatRegistrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, vatRegistrationNumber: e.target.value } }))} placeholder="VAT Registration Number" className="md:col-span-2" />
+                {header.otherInformation.authorisedPersons.map((person, index) => (
+                  <Input
+                    key={`authorised-person-${index}`}
+                    value={person}
+                    onChange={(e) => setHeader(prev => ({
+                      ...prev,
+                      otherInformation: {
+                        ...prev.otherInformation,
+                        authorisedPersons: prev.otherInformation.authorisedPersons.map((entry, i) => i === index ? e.target.value : entry),
+                      },
+                    }))}
+                    placeholder={`Authorised person ${index + 1}`}
+                    className="md:col-span-2"
+                  />
+                ))}
+                <div className="md:col-span-2">
+                  <Label>Does your company use official Order Numbers?</Label>
+                  <div className="mt-2 flex items-center gap-3">
+                    <Button type="button" variant={header.otherInformation.officialOrderNumbers === "yes" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, officialOrderNumbers: "yes" } }))}>Yes</Button>
+                    <Button type="button" variant={header.otherInformation.officialOrderNumbers === "no" ? "default" : "outline"} onClick={() => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, officialOrderNumbers: "no" } }))}>No</Button>
+                  </div>
                 </div>
               </div>
             </div>
