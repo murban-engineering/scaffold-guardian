@@ -487,6 +487,7 @@ const Index = () => {
               <DialogTitle>Create Hire Quotation</DialogTitle>
             </DialogHeader>
             <HireQuotationWorkflow 
+              key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
               initialQuotation={selectedQuotation}
               initialStep={workflowInitialStep}
               initialClientMode={workflowInitialClientMode}
