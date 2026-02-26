@@ -99,13 +99,21 @@ const renderAccountingReportHeader = ({
       <div class="left-block">
         <div class="brand-top">
           <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
-          <div class="brand-title">${COMPANY_NAME}</div>
+          <div>
+            <div class="brand-title">${COMPANY_NAME}</div>
+            <div class="brand-subtitle">A Division of OTNO Access Group</div>
+          </div>
         </div>
         <div class="brand-meta">
-          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p>
-          <p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
-          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p>
-          <p><strong>PIN:</strong> P052471711M</p>
+          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p><p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
+          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p><p><strong>PIN:</strong> P052471711M</p>
+        </div>
+        <div class="panel client-panel">
+          <h3>${escapeHtml(client)}</h3>
+          <div class="client-address">${escapeHtml(siteAddress || "-")}</div>
+          <div class="spacer"></div>
+          <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(contactName || "-")}</span></div>
+          <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(contactPhone || "-")}</span></div>
         </div>
       </div>
       <div class="right-block">
@@ -221,14 +229,18 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       h1{margin:0 0 4px;font-size:16px;line-height:1.2}
       h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
       .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
-      .left-block{padding:8px 4px}
+      .left-block{padding:8px 4px;display:grid;gap:10px}
       .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
       .logo{width:88px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
-      .brand-meta{display:grid;gap:4px;color:#374151}
+      .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
+      .brand-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;color:#374151;font-size:11px}
       .panel{border:1px solid #111827;border-radius:6px;padding:8px}
       .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .client-panel h3{font-size:20px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
+      .client-address{white-space:pre-line;min-height:42px}
+      .spacer{height:16px}
       .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
       table{width:100%;border-collapse:collapse;margin-top:8px}
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
@@ -340,14 +352,18 @@ const openScrapReport = (invoice: ClientInvoice) => {
       h1{margin:0 0 4px;font-size:16px;line-height:1.2}
       h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
       .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
-      .left-block{padding:8px 4px}
+      .left-block{padding:8px 4px;display:grid;gap:10px}
       .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
       .logo{width:88px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
-      .brand-meta{display:grid;gap:4px;color:#374151}
+      .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
+      .brand-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;color:#374151;font-size:11px}
       .panel{border:1px solid #111827;border-radius:6px;padding:8px}
       .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .client-panel h3{font-size:20px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
+      .client-address{white-space:pre-line;min-height:42px}
+      .spacer{height:16px}
       .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
       table{width:100%;border-collapse:collapse;margin-top:8px}
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
