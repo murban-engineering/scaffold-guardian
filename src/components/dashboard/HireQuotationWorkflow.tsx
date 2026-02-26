@@ -707,7 +707,7 @@ const HireQuotationWorkflow = ({
       setInventoryDeducted(false); // Reset so they can deliver again
       toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
     } else if (hasDispatchActivity && !isTestQuotation) {
-      setActiveStep("hire-return");
+      setActiveStep("return");
       setDeliverySequence(1);
       setInventoryDeducted(true);
     } else {
