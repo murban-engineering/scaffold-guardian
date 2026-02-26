@@ -105,13 +105,28 @@ const Index = () => {
     return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
   };
 
+  const toClientId = (quotationNumber: string | null) =>
+    (quotationNumber || "No client ID").replace("HSQ-", "CL-").replace("HQ-", "CL-");
+
   const existingClientOptions = hireQuotations
     .filter((quotation) => (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
     .reduce<HireQuotation[]>((acc, quotation) => {
       const companyKey = (quotation.company_name || "").trim().toLowerCase();
-      const clientId = quotation.quotation_number.replace("HSQ-", "CL-").toLowerCase();
+      const clientId = toClientId(quotation.quotation_number).toLowerCase();
       const key = `${companyKey}|${clientId}`;
-      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${entry.quotation_number.replace("HSQ-", "CL-").toLowerCase()}` === key)) {
+      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${toClientId(entry.quotation_number).toLowerCase()}` === key)) {
+        return acc;
+      }
+      acc.push(quotation);
+      return acc;
+    }, [])
+    .slice(0, 10);
+
+  const testClientOptions = hireQuotations
+    .filter((quotation) => quotation.quotation_number)
+    .reduce<HireQuotation[]>((acc, quotation) => {
+      const clientId = toClientId(quotation.quotation_number).toLowerCase();
+      if (acc.some((entry) => toClientId(entry.quotation_number).toLowerCase() === clientId)) {
         return acc;
       }
       acc.push(quotation);
@@ -120,14 +135,14 @@ const Index = () => {
     .slice(0, 10);
 
   const isTestQuotation = (quotation: HireQuotation) =>
-    (quotation.quotation_number || "").toUpperCase().startsWith("CL-");
+    toClientId(quotation.quotation_number).toUpperCase().startsWith("CL-");
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
 
   const continueClientOptions = hireQuotations.reduce<Array<{ value: string; label: string }>>((acc, quotation) => {
     const companyName = quotation.company_name?.trim() || "Unnamed client";
-    const clientId = quotation.quotation_number?.replace("HSQ-", "CL-") || "No client ID";
+    const clientId = toClientId(quotation.quotation_number);
     const value = `${companyName}|${clientId}`;
     if (!acc.some((option) => option.value === value)) {
       acc.push({ value, label: `${companyName} (${clientId})` });
@@ -140,7 +155,7 @@ const Index = () => {
       ? rows
       : rows.filter((quotation) => {
           const companyName = quotation.company_name?.trim() || "Unnamed client";
-          const clientId = quotation.quotation_number?.replace("HSQ-", "CL-") || "No client ID";
+          const clientId = toClientId(quotation.quotation_number);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
 
@@ -357,9 +372,9 @@ const Index = () => {
                               <FlaskConical className="mr-2 h-4 w-4" />
                               {createQuotation.isPending ? "Creating Test Quotation..." : "New Test Quotation"}
                             </DropdownMenuItem>
-                            {existingClientOptions.length ? (
-                              existingClientOptions.map((quotation) => {
-                                const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+                            {testClientOptions.length ? (
+                              testClientOptions.map((quotation) => {
+                                const clientId = toClientId(quotation.quotation_number);
                                 return (
                                   <DropdownMenuItem
                                     key={`test-${quotation.id}`}
@@ -396,7 +411,7 @@ const Index = () => {
                           <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
                             {existingClientOptions.length ? (
                               existingClientOptions.map((quotation) => {
-                                const clientId = quotation.quotation_number.replace("HSQ-", "CL-");
+                                const clientId = toClientId(quotation.quotation_number);
                                 return (
                                   <DropdownMenuItem
                                     key={quotation.id}
