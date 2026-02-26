@@ -159,6 +159,7 @@ const steps: { key: StepKey; title: string; description: string; icon: typeof Us
   { key: "client", title: "Client Details", description: "Quotation header", icon: UserRoundPen },
   { key: "equipment", title: "Equipment", description: "Select from inventory", icon: PackageSearch },
   { key: "quotation", title: "Hire Quotation", description: "Generate report", icon: FileCheck2 },
+  { key: "site-master", title: "Site Details", description: "Register client sites", icon: MapPin },
   { key: "hire-delivery", title: "Hire Loading", description: "Confirm quantities", icon: Truck },
   { key: "return", title: "Hire Return", description: "Return items to inventory", icon: RotateCcw },
 ];
@@ -933,7 +934,7 @@ const HireQuotationWorkflow = ({
   const workflowSteps = useMemo(
     () =>
       isTestQuotation
-        ? steps.filter((step) => step.key !== "hire-delivery" && step.key !== "return")
+        ? steps.filter((step) => step.key !== "site-master" && step.key !== "hire-delivery" && step.key !== "return")
         : steps,
     [isTestQuotation]
   );
@@ -1273,10 +1274,6 @@ const HireQuotationWorkflow = ({
       toast.error("At least one telephone number is required.");
       return false;
     }
-    if (!header.siteName) {
-      toast.error("Site Name is required.");
-      return false;
-    }
     return true;
   };
 
@@ -1296,12 +1293,12 @@ const HireQuotationWorkflow = ({
       if (!savedQuotationId) {
         const quotation = await createQuotation.mutateAsync({
           company_name: companyName,
-          site_name: header.siteName,
-          site_address: header.physicalAddress || header.siteAddress,
+          site_name: header.siteName || undefined,
+          site_address: header.physicalAddress || header.siteAddress || undefined,
           site_manager_name: contactName,
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
-          delivery_address: header.siteLocation,
+          delivery_address: header.siteLocation || undefined,
         });
         setSavedQuotationId(quotation.id);
         const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
@@ -1319,12 +1316,12 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           company_name: companyName,
-          site_name: header.siteName,
-          site_address: header.physicalAddress || header.siteAddress,
+          site_name: header.siteName || undefined,
+          site_address: header.physicalAddress || header.siteAddress || undefined,
           site_manager_name: contactName,
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
-          delivery_address: header.siteLocation,
+          delivery_address: header.siteLocation || undefined,
         });
       }
       handleNext();
@@ -2679,60 +2676,6 @@ const HireQuotationWorkflow = ({
               )}
             </div>
 
-            {clientEntryMode === "existing" && (
-              <div className="rounded-lg border border-border p-4">
-                <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="siteName">Site Name *</Label>
-                    <Input
-                      id="siteName"
-                      value={header.siteName}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
-                      placeholder="Project / Site name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="siteLocation">Site Location</Label>
-                    <Input
-                      id="siteLocation"
-                      value={header.siteLocation}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
-                      placeholder="City or area"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="siteAddress">Site Address</Label>
-                    <Textarea
-                      id="siteAddress"
-                      rows={2}
-                      value={header.siteAddress}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
-                      placeholder="Full site address"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="customerOrderNo">Account Number</Label>
-                    <Input
-                      id="customerOrderNo"
-                      value={header.customerOrderNo}
-                      onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
-                      placeholder="For account holders only"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">Customer Number is assigned only for clients with an active account.</p>
-                  </div>
-                  <div>
-                    <Label htmlFor="createdBy">Created By</Label>
-                    <Input
-                      id="createdBy"
-                      value={header.createdBy}
-                      onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
-                      placeholder="User name"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {clientEntryMode !== "existing" && (
             <>
@@ -2894,59 +2837,6 @@ const HireQuotationWorkflow = ({
               </div>
             </div>
 
-            {clientEntryMode === "new" && (
-              <div className="rounded-lg border border-border p-4">
-                <h4 className="text-sm font-semibold mb-4 text-primary">Site Details</h4>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="siteName">Site Name *</Label>
-                    <Input
-                      id="siteName"
-                      value={header.siteName}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteName: e.target.value }))}
-                      placeholder="Project / Site name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="siteLocation">Site Location</Label>
-                    <Input
-                      id="siteLocation"
-                      value={header.siteLocation}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteLocation: e.target.value }))}
-                      placeholder="City or area"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="siteAddress">Site Address</Label>
-                    <Textarea
-                      id="siteAddress"
-                      rows={2}
-                      value={header.siteAddress}
-                      onChange={(e) => setHeader(prev => ({ ...prev, siteAddress: e.target.value }))}
-                      placeholder="Full site address"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="customerOrderNo">Customer Order / Account Number</Label>
-                    <Input
-                      id="customerOrderNo"
-                      value={header.customerOrderNo}
-                      onChange={(e) => setHeader(prev => ({ ...prev, customerOrderNo: e.target.value }))}
-                      placeholder="Order / Account number"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="createdBy">Created By</Label>
-                    <Input
-                      id="createdBy"
-                      value={header.createdBy}
-                      onChange={(e) => setHeader(prev => ({ ...prev, createdBy: e.target.value }))}
-                      placeholder="User name"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Ordering */}
             <div className="rounded-lg border border-border p-4">
@@ -3186,13 +3076,23 @@ const HireQuotationWorkflow = ({
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">* Required fields</p>
-              <Button 
-                type="button" 
-                onClick={handleHeaderSave}
-                disabled={createQuotation.isPending || updateQuotation.isPending}
-              >
-                {createQuotation.isPending ? "Saving..." : "Save & Continue"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => goToStep("site-master")}
+                  disabled={!savedQuotationId}
+                >
+                  Site Details
+                </Button>
+                <Button 
+                  type="button" 
+                  onClick={handleHeaderSave}
+                  disabled={createQuotation.isPending || updateQuotation.isPending}
+                >
+                  {createQuotation.isPending ? "Saving..." : "Save & Continue"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
