@@ -109,6 +109,7 @@ type EquipmentItem = {
 type DeliveryNote = {
   deliveryNoteNo: string;
   deliveryDate: string;
+  hireStartDate: string;
   deliveredBy: string;
   receivedBy: string;
   vehicleNo: string;
@@ -519,6 +520,7 @@ const HireQuotationWorkflow = ({
   const [deliveryNote, setDeliveryNote] = useState<DeliveryNote>(() => ({
     deliveryNoteNo: deriveDeliveryNoteNumber(""),
     deliveryDate: getToday(),
+    hireStartDate: getToday(),
     deliveredBy: "",
     receivedBy: "",
     vehicleNo: "",
@@ -1533,6 +1535,7 @@ const HireQuotationWorkflow = ({
       id: crypto.randomUUID(),
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
       deliveryDate: deliveryNote.deliveryDate,
+      hireStartDate: deliveryNote.hireStartDate,
       deliveredBy: deliveryNote.deliveredBy,
       receivedBy: deliveryNote.receivedBy,
       vehicleNo: deliveryNote.vehicleNo,
@@ -1547,6 +1550,10 @@ const HireQuotationWorkflow = ({
   const handleDispatchDelivery = async () => {
     if (!deliveryNote.deliveryDate) {
       toast.error("Please set the Dispatch Date before dispatching.");
+      return;
+    }
+    if (!deliveryNote.hireStartDate) {
+      toast.error("Please set the Hire Start Date before dispatching.");
       return;
     }
     if (!validateDeliveryQuantities()) return;
@@ -1646,6 +1653,7 @@ const HireQuotationWorkflow = ({
       ...prev,
       deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, nextSequence),
       deliveryDate: getToday(),
+      hireStartDate: getToday(),
       deliveredBy: "",
       receivedBy: "",
       vehicleNo: "",
@@ -1682,6 +1690,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: delivery.deliveryNoteNumber,
       dateCreated: header.dateCreated,
       deliveryDate: delivery.deliveryDate,
+      hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
       siteName: header.siteName,
       siteAddress: header.siteAddress,
@@ -1747,6 +1756,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
       dateCreated: header.dateCreated,
       deliveryDate: deliveryNote.deliveryDate,
+      hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
       siteName: header.siteName,
       siteAddress: header.siteAddress,
@@ -1984,6 +1994,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
       dateCreated: header.dateCreated,
       deliveryDate: deliveryNote.deliveryDate,
+      hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
       siteName: header.siteName,
       siteAddress: header.siteAddress,
@@ -3890,6 +3901,15 @@ const HireQuotationWorkflow = ({
                     type="date"
                     value={deliveryNote.deliveryDate}
                     onChange={(e) => setDeliveryNote(prev => ({ ...prev, deliveryDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hireStartDate">Hire Start Date</Label>
+                  <Input
+                    id="hireStartDate"
+                    type="date"
+                    value={deliveryNote.hireStartDate}
+                    onChange={(e) => setDeliveryNote(prev => ({ ...prev, hireStartDate: e.target.value }))}
                   />
                 </div>
               </CardContent>
