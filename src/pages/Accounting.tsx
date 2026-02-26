@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Printer, CalendarDays, DollarSign, Users, Search, FileText, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
+import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -23,14 +24,6 @@ const currency = new Intl.NumberFormat("en-KE", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-
-const asDateOrToday = (value?: string | null) => {
-  if (!value) return new Date();
-
-  const normalizedValue = value.includes("T") ? value : `${value}T00:00:00`;
-  const parsed = new Date(normalizedValue);
-  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-};
 
 const resolveDispatchDateFromHistory = (quotationId: string, quotationNumber?: string | null) => {
   if (typeof window === "undefined") return null;
@@ -46,16 +39,8 @@ const resolveDispatchDateFromHistory = (quotationId: string, quotationNumber?: s
       if (!raw) continue;
 
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) continue;
-
-      const deliveryDates = parsed
-        .map((entry) => entry?.deliveryDate)
-        .filter((value): value is string => typeof value === "string" && value.length > 0)
-        .sort();
-
-      if (deliveryDates.length > 0) {
-        return deliveryDates[0];
-      }
+      const resolvedDate = resolveDispatchDateFromHistoryPayload(parsed);
+      if (resolvedDate) return resolvedDate;
     } catch {
       // Ignore invalid localStorage payloads and continue to the next key.
     }
@@ -449,19 +434,19 @@ const Accounting = () => {
       const storedDispatchDate = q.dispatch_date;
       let dispatchDate: string;
       if (storedDispatchDate) {
-        dispatchDate = format(asDateOrToday(storedDispatchDate), "yyyy-MM-dd");
+        dispatchDate = toIsoDateOrToday(storedDispatchDate);
       } else {
         const historyDispatchDate = resolveDispatchDateFromHistory(q.id, q.quotation_number);
         if (historyDispatchDate) {
-          dispatchDate = format(asDateOrToday(historyDispatchDate), "yyyy-MM-dd");
+          dispatchDate = toIsoDateOrToday(historyDispatchDate);
         } else {
           const dispatchDates = lineItems
             .filter((li) => (li.delivered_quantity ?? 0) > 0)
-            .map((li) => li.updated_at ?? li.created_at)
+            .map((li) => li.created_at ?? li.updated_at)
             .filter(Boolean)
             .sort();
           const dispatchDateRaw = dispatchDates[0] ?? q.created_at ?? q.updated_at;
-          dispatchDate = format(asDateOrToday(dispatchDateRaw), "yyyy-MM-dd");
+          dispatchDate = toIsoDateOrToday(dispatchDateRaw);
         }
       }
       const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
@@ -506,7 +491,7 @@ const Accounting = () => {
         hireBreakdown,
         policyBreakdown: surcharge.entries,
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
-        createdDate: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
+        createdDate: toIsoDateOrToday(q.created_at),
       };
     });
   }, [activeQuotations, billingDate, surchargeMap]);
