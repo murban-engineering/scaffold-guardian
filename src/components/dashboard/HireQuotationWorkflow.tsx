@@ -982,12 +982,12 @@ const HireQuotationWorkflow = ({
           window.localStorage.getItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY) ??
           TEST_WORKFLOW_DEFAULT_DRAFT_ID;
 
-        draft =
-          (requestedDraftId ? draftCollection[requestedDraftId] : null) ??
-          draftCollection[activeDraftId] ??
-          draftCollection[TEST_WORKFLOW_DEFAULT_DRAFT_ID] ??
-          Object.values(draftCollection)[0] ??
-          null;
+        draft = requestedDraftId
+          ? draftCollection[requestedDraftId] ?? null
+          : draftCollection[activeDraftId] ??
+            draftCollection[TEST_WORKFLOW_DEFAULT_DRAFT_ID] ??
+            Object.values(draftCollection)[0] ??
+            null;
 
         if (requestedDraftId && draftCollection[requestedDraftId]) {
           window.localStorage.setItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY, requestedDraftId);
