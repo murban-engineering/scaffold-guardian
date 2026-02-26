@@ -604,7 +604,13 @@ const HireQuotationWorkflow = ({
 
     // Load equipment items with balance tracking from database
     const lineItems = initialQuotation.line_items ?? [];
+    const hasDeliveredItems = lineItems.some((item) => (item.delivered_quantity ?? 0) > 0);
     const hasBalanceItems = lineItems.some(item => (item.balance_quantity ?? 0) > 0);
+    const hasDispatchActivity =
+      hasDeliveredItems ||
+      initialQuotation.status === "dispatched" ||
+      initialQuotation.status === "completed" ||
+      !!initialQuotation.dispatch_date;
     
     setEquipmentItems(
       lineItems.map(item => {
@@ -612,9 +618,13 @@ const HireQuotationWorkflow = ({
         const deliveredQty = item.delivered_quantity ?? 0;
         const balanceQty = item.balance_quantity ?? 0;
         
-        // If this quotation has a balance delivery, show only the balance quantities
-        // Otherwise use the original quantity
-        const qtyToShow = hasBalanceItems ? balanceQty : originalQty;
+        // If this quotation has a balance delivery, show only the balance quantities.
+        // Once a quotation has been dispatched and fully delivered, do not allow redispatching.
+        const qtyToShow = hasBalanceItems
+          ? balanceQty
+          : hasDispatchActivity
+            ? Math.max(balanceQty, 0)
+            : originalQty;
         
         return {
           id: item.id,
@@ -635,17 +645,32 @@ const HireQuotationWorkflow = ({
       })
     );
     
+    if (hasDispatchActivity && !isTestQuotation) {
+      const initialRemainingQuantities = lineItems.reduce<Record<string, number>>((acc, item) => {
+        const fallbackBalance = Math.max((item.quantity ?? 0) - (item.delivered_quantity ?? 0), 0);
+        acc[item.id] = Math.max(item.balance_quantity ?? fallbackBalance, 0);
+        return acc;
+      }, {});
+      setRemainingQuantities(initialRemainingQuantities);
+      setCurrentDeliveryDispatched(true);
+    }
+
     // If this quotation has balance items from previous delivery, skip to hire-delivery step
     if (hasBalanceItems && !isTestQuotation) {
       setActiveStep("hire-delivery");
       setDeliverySequence(2); // This is at least the 2nd delivery
       setInventoryDeducted(false); // Reset so they can deliver again
       toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
+    } else if (hasDispatchActivity && !isTestQuotation) {
+      setActiveStep("hire-return");
+      setDeliverySequence(1);
+      setInventoryDeducted(true);
     } else {
       setActiveStep("client");
       setDeliverySequence(1);
+      setCurrentDeliveryDispatched(false);
+      setInventoryDeducted(false);
     }
-    setInventoryDeducted(false);
     setReturnProcessed(false);
   }, [initialQuotation, isTestQuotation, profile?.full_name, scaffolds]);
 
