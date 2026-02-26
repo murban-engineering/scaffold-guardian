@@ -613,6 +613,20 @@ const HireQuotationWorkflow = ({
   }, [profile?.full_name, header.createdBy]);
 
   useEffect(() => {
+    if (initialQuotation) {
+      return;
+    }
+
+    // Prevent stale quotation IDs from previous sessions from being reused
+    // when starting a new quotation (including test-quotation flows).
+    setSavedQuotationId(null);
+    setEquipmentItems([]);
+    setRemainingQuantities({});
+    setDeliveryQuantities({});
+    setSelectedDeliverySiteId("");
+  }, [initialQuotation, initialExistingClient?.id, initialClientMode, isTestQuotation]);
+
+  useEffect(() => {
     if (!initialQuotation) return;
 
     const createdDate = initialQuotation.created_at
