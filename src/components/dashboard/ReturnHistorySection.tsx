@@ -8,6 +8,7 @@ export interface ReturnRecord {
   id: string;
   returnNoteNumber: string;
   returnDate: string;
+  hireEndDate?: string;
   returnedBy: string;
   receivedBy: string;
   vehicleNo: string;

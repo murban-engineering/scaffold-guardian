@@ -116,6 +116,7 @@ export interface HireReturnNoteData {
   returnNoteNumber: string;
   dateCreated: string;
   returnDate: string;
+  hireEndDate?: string;
   companyName: string;
   siteName: string;
   siteLocation: string;
@@ -319,6 +320,7 @@ interface StandardReportLayoutData {
   manualNumber?: string;
   hireQuoteNo?: string;
   hireStartDate?: string;
+  hireEndDate?: string;
   depositRequired?: string;
   createdBy?: string;
 }
@@ -361,6 +363,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         ${data.manualNumber ? `<div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber}</span></div>` : ""}
         ${data.hireQuoteNo ? `<div class="info-row"><span class="info-label">Hire Quote No</span><span class="info-sep">:</span><span class="info-value">${data.hireQuoteNo}</span></div>` : ""}
         ${data.hireStartDate ? `<div class="info-row"><span class="info-label">Hire Start Date</span><span class="info-sep">:</span><span class="info-value">${data.hireStartDate}</span></div>` : ""}
+        ${data.hireEndDate ? `<div class="info-row"><span class="info-label">Hire End Date</span><span class="info-sep">:</span><span class="info-value">${data.hireEndDate}</span></div>` : ""}
         ${data.depositRequired ? `<div class="info-row"><span class="info-label">Deposit Required</span><span class="info-sep">:</span><span class="info-value">${data.depositRequired}</span></div>` : ""}
       </div>
 
@@ -1159,6 +1162,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         clientId: data.clientId,
         orderNumber: data.quotationNumber,
         manualNumber: copyLabel,
+        hireEndDate: data.hireEndDate,
         createdBy: data.createdBy,
       })}
 
@@ -1247,6 +1251,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         clientId: data.clientId,
         orderNumber: data.quotationNumber,
         manualNumber: copyLabel,
+        hireEndDate: data.hireEndDate,
         createdBy: data.createdBy,
       })}
 
