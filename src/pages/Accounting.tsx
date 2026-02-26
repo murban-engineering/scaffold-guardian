@@ -52,7 +52,6 @@ const resolveDispatchDateFromHistory = (quotationId: string, quotationNumber?: s
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
-const COMPANY_EMAIL = "otnoacess@gmail.com";
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
@@ -103,10 +102,6 @@ const renderAccountingReportHeader = ({
             <div class="brand-title">${COMPANY_NAME}</div>
             <div class="brand-subtitle">A Division of OTNO Access Group</div>
           </div>
-        </div>
-        <div class="brand-meta">
-          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p><p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
-          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p><p><strong>PIN:</strong> P052471711M</p>
         </div>
         <div class="panel client-panel">
           <h3>${escapeHtml(client)}</h3>
