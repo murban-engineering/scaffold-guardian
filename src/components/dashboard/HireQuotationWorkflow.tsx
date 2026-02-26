@@ -997,8 +997,11 @@ const HireQuotationWorkflow = ({
           TEST_WORKFLOW_DEFAULT_DRAFT_ID;
 
         if (requestedDraftId) {
+          // Never hydrate another client’s draft when a client-specific context is requested.
           draft = draftCollection[requestedDraftId] ?? null;
-          window.localStorage.setItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY, requestedDraftId);
+          if (draftCollection[requestedDraftId]) {
+            window.localStorage.setItem(TEST_WORKFLOW_ACTIVE_DRAFT_KEY, requestedDraftId);
+          }
         } else {
           draft =
             draftCollection[activeDraftId] ??
