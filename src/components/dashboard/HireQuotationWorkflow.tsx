@@ -1751,10 +1751,8 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           status: "dispatched",
-          dispatch_date:
-            initialQuotation?.dispatch_date ||
-            deliveryHistory.find((delivery) => delivery.status === "dispatched")?.deliveryDate ||
-            deliveryNote.deliveryDate,
+          // Always use the current delivery date – this is the authoritative dispatch date
+          dispatch_date: deliveryNote.deliveryDate,
         } as any);
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
@@ -4065,6 +4063,44 @@ const HireQuotationWorkflow = ({
         {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
+            {/* Site Selector for Return */}
+            {clientSites && clientSites.length > 0 && (
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    Select Return Site
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>Which site is this return from?</Label>
+                    <Select value={selectedDeliverySiteId} onValueChange={handleSelectDeliverySite}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a site..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientSites.map(site => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.site_number} — {site.site_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedDeliverySiteId && (() => {
+                      const site = clientSites.find(s => s.id === selectedDeliverySiteId);
+                      return site ? (
+                        <div className="text-sm text-muted-foreground mt-1 p-2 bg-muted/30 rounded">
+                          <span className="font-medium text-foreground">{site.site_number}</span> — {site.site_name}
+                          {site.site_address && <span> • {site.site_address}</span>}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="rounded-lg border border-border p-4 bg-muted/30">
               <div className="flex items-center gap-2 mb-1">
                 <h4 className="font-semibold">Hire Return</h4>
