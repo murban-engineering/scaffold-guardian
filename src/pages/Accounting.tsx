@@ -71,6 +71,73 @@ const calculateBillableWeeks = (dispatchDateValue: string, billingDate: Date) =>
 const escapeHtml = (value: string) =>
   value.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#39;");
 
+const renderAccountingReportHeader = ({
+  documentTitle,
+  documentNumber,
+  documentDate,
+  client,
+  site,
+  siteAddress,
+  contactName,
+  contactPhone,
+  createdBy,
+  extraRows = "",
+}: {
+  documentTitle: string;
+  documentNumber: string;
+  documentDate: string;
+  client: string;
+  site: string;
+  siteAddress: string;
+  contactName: string;
+  contactPhone: string;
+  createdBy: string;
+  extraRows?: string;
+}) => `
+  <div class="print-header">
+    <div class="header-grid">
+      <div class="left-block">
+        <div class="brand-top">
+          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+          <div class="brand-title">${COMPANY_NAME}</div>
+        </div>
+        <div class="brand-meta">
+          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p>
+          <p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
+          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p>
+          <p><strong>PIN:</strong> P052471711M</p>
+        </div>
+      </div>
+      <div class="right-block">
+        <h1>${escapeHtml(documentTitle)}</h1>
+        <div class="panel">
+          <h3>Document Details</h3>
+          <div class="row"><span class="lbl">Document No</span><span class="sep">:</span><span class="val">${escapeHtml(documentNumber)}</span></div>
+          <div class="row"><span class="lbl">Document Type</span><span class="sep">:</span><span class="val">${escapeHtml(documentTitle)}</span></div>
+          <div class="row"><span class="lbl">Document Date</span><span class="sep">:</span><span class="val">${escapeHtml(documentDate)}</span></div>
+          <div class="row"><span class="lbl">Printed</span><span class="sep">:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
+          ${extraRows}
+        </div>
+        <div class="panel">
+          <h3>Company Details</h3>
+          <div class="row"><span class="lbl">Company</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_NAME)}</span></div>
+          <div class="row"><span class="lbl">Address</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_ADDRESS)}</span></div>
+          <div class="row"><span class="lbl">Location</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_LOCATION)}</span></div>
+          <div class="row"><span class="lbl">Prepared By</span><span class="sep">:</span><span class="val">${escapeHtml(createdBy || "-")}</span></div>
+        </div>
+        <div class="panel">
+          <h3>Site Details</h3>
+          <div class="row"><span class="lbl">Customer</span><span class="sep">:</span><span class="val">${escapeHtml(client)}</span></div>
+          <div class="row"><span class="lbl">Site Name</span><span class="sep">:</span><span class="val">${escapeHtml(site)}</span></div>
+          <div class="row"><span class="lbl">Site Address</span><span class="sep">:</span><span class="val">${escapeHtml(siteAddress || "-")}</span></div>
+          <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(contactName || "-")}</span></div>
+          <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(contactPhone || "-")}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+`;
+
 type HireLineBreakdown = {
   partNumber: string;
   item: string;
@@ -151,21 +218,18 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     <title>Invoice ${escapeHtml(invoice.invoiceNumber)}</title>
     <style>
       body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
-      h1{margin:0 0 4px;font-size:22px}
-      h2{margin:20px 0 6px;font-size:15px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      .hdr{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      h1{margin:0 0 4px;font-size:16px;line-height:1.2}
+      h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      .left-block{padding:8px 4px}
+      .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
       .logo{width:88px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
       .brand-meta{display:grid;gap:4px;color:#374151}
-      .hdr-right{display:grid;gap:10px}
-      .company-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
-      .company-row:last-child{margin-bottom:0}
-      .company-label{width:130px;font-weight:700;color:#555;flex-shrink:0}
-      .company-val{flex:1}
-      .box{border:1px solid #ddd;border-radius:6px;padding:10px}
-      .box h3{margin:0 0 6px;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px}
-      .row{display:flex;margin-bottom:3px}.lbl{width:130px;font-weight:700;color:#555}.val{flex:1}
+      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
+      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
       table{width:100%;border-collapse:collapse;margin-top:8px}
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
       th{background:#f5f5f5;font-size:11px}
@@ -179,78 +243,68 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       .policy-box ul{margin:0;padding-left:16px}.policy-box li{margin-bottom:4px}
       .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
       .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
-      @media print{.print-bar{display:none}}
+      @media print{
+        .print-bar{display:none}
+        body{margin:0;padding:12px}
+        .print-header{position:fixed;top:0;left:12px;right:12px;background:#fff;padding-top:8px}
+        .print-content{margin-top:350px}
+      }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
-    <div class="hdr">
-      <div>
-        <div class="brand-top">
-          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
-          <div class="brand-title">${COMPANY_NAME}</div>
-        </div>
-        <div class="brand-meta">
-          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p>
-          <p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
-          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p>
-          <p><strong>PIN:</strong> P052471711M</p>
-        </div>
+    ${renderAccountingReportHeader({
+      documentTitle: "DDS (Dirty, Damaged, Scrap) Invoice",
+      documentNumber: invoice.invoiceNumber,
+      documentDate: billingDateStr,
+      client: invoice.client,
+      site: invoice.site,
+      siteAddress: invoice.siteAddress || "-",
+      contactName: invoice.contactName || "-",
+      contactPhone: invoice.contactPhone || "-",
+      createdBy: invoice.createdBy,
+      extraRows: `
+        <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
+        <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+        <div class="row"><span class="lbl">Billed Weeks</span><span class="sep">:</span><span class="val">${invoice.hireWeeks}</span></div>
+      `,
+    })}
+
+    <div class="print-content">
+      <h2>A. Weekly Hire Charges</h2>
+      <table>
+        <thead><tr>
+          <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+        </tr></thead>
+        <tbody>${hireRows}</tbody>
+      </table>
+
+      <h2>B. Return Condition Charges</h2>
+      <table>
+        <thead><tr>
+          <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
+          <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
+        </tr></thead>
+        <tbody>${policyRows}</tbody>
+      </table>
+
+      <div class="sum">
+        <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+        <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
+        <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
+        <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+        <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
       </div>
-      <div class="hdr-right">
-        <h1>DDS (Dirty, Damaged, Scrap) INVOICE</h1>
-        <div>
-          <div class="company-row"><span class="company-label">Invoice No</span><span class="company-val">${escapeHtml(invoice.invoiceNumber)}</span></div>
-          <div class="company-row"><span class="company-label">Quotation No</span><span class="company-val">${escapeHtml(invoice.quotationNumber)}</span></div>
-          <div class="company-row"><span class="company-label">Date Created</span><span class="company-val">${escapeHtml(invoice.createdDate)}</span></div>
-          <div class="company-row"><span class="company-label">Created By</span><span class="company-val">${escapeHtml(invoice.createdBy)}</span></div>
-          <div class="company-row"><span class="company-label">Dispatch Date</span><span class="company-val">${escapeHtml(invoice.dispatchDate)}</span></div>
-          <div class="company-row"><span class="company-label">Billing Date</span><span class="company-val">${escapeHtml(billingDateStr)}</span></div>
-          <div class="company-row"><span class="company-label">Billed Weeks</span><span class="company-val">${invoice.hireWeeks}</span></div>
-          <div class="company-row"><span class="company-label">Client</span><span class="company-val">${escapeHtml(invoice.client)}</span></div>
-          <div class="company-row"><span class="company-label">Site</span><span class="company-val">${escapeHtml(invoice.site)}</span></div>
-          <div class="company-row"><span class="company-label">Site Address</span><span class="company-val">${escapeHtml(invoice.siteAddress || "-")}</span></div>
-          <div class="company-row"><span class="company-label">Contact</span><span class="company-val">${escapeHtml(invoice.contactName || "-")}</span></div>
-          <div class="company-row"><span class="company-label">Phone</span><span class="company-val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
-          <div class="company-row"><span class="company-label">Email</span><span class="company-val">${escapeHtml(invoice.contactEmail || "-")}</span></div>
-          <div class="company-row"><span class="company-label">Printed</span><span class="company-val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
-        </div>
+
+      <div class="policy-box">
+        <h4>Return Condition Billing Policy</h4>
+        <ul>
+          <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
+          <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
+          <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
+        </ul>
       </div>
+
+      <p class="ft">Invoice date: ${escapeHtml(billingDateStr)}. ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
     </div>
-
-    <h2>A. Weekly Hire Charges</h2>
-    <table>
-      <thead><tr>
-        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
-      </tr></thead>
-      <tbody>${hireRows}</tbody>
-    </table>
-
-    <h2>B. Return Condition Charges</h2>
-    <table>
-      <thead><tr>
-        <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
-        <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
-      </tr></thead>
-      <tbody>${policyRows}</tbody>
-    </table>
-
-    <div class="sum">
-      <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
-      <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
-      <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
-      <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-      <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
-    </div>
-
-    <div class="policy-box">
-      <h4>Return Condition Billing Policy</h4>
-      <ul>
-        <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
-        <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
-        <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
-      </ul>
-    </div>
-
-    <p class="ft">Invoice date: ${escapeHtml(billingDateStr)}. ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
   </body></html>`;
 
   win.document.write(html);
@@ -283,15 +337,18 @@ const openScrapReport = (invoice: ClientInvoice) => {
     <title>Scrap Report - ${escapeHtml(invoice.client)}</title>
     <style>
       body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
-      h1{margin:0 0 4px;font-size:22px}
-      h2{margin:20px 0 6px;font-size:15px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      .hdr{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      h1{margin:0 0 4px;font-size:16px;line-height:1.2}
+      h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      .left-block{padding:8px 4px}
+      .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
       .logo{width:88px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
       .brand-meta{display:grid;gap:4px;color:#374151}
-      .row{display:flex;margin-bottom:3px}.lbl{width:130px;font-weight:700;color:#555}.val{flex:1}
-      .doc-title{font-size:22px;margin:0 0 8px}
+      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
+      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
       table{width:100%;border-collapse:collapse;margin-top:8px}
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
       th{background:#f5f5f5;font-size:11px}
@@ -302,47 +359,44 @@ const openScrapReport = (invoice: ClientInvoice) => {
       .ft{margin-top:10px;font-size:11px;color:#555}
       .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
       .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
-      @media print{.print-bar{display:none}}
+      @media print{
+        .print-bar{display:none}
+        body{margin:0;padding:12px}
+        .print-header{position:fixed;top:0;left:12px;right:12px;background:#fff;padding-top:8px}
+        .print-content{margin-top:350px}
+      }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Scrap Report</button></div>
-    <div class="hdr">
-      <div>
-        <div class="brand-top">
-          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
-          <div class="brand-title">${COMPANY_NAME}</div>
-        </div>
-        <div class="brand-meta">
-          <p><strong>Email:</strong> ${COMPANY_EMAIL}</p>
-          <p><strong>Address:</strong> ${COMPANY_ADDRESS}</p>
-          <p><strong>Location:</strong> ${COMPANY_LOCATION}</p>
-          <p><strong>PIN:</strong> P052471711M</p>
-        </div>
+    ${renderAccountingReportHeader({
+      documentTitle: "Scrap Items Report",
+      documentNumber: invoice.quotationNumber,
+      documentDate: invoice.createdDate,
+      client: invoice.client,
+      site: invoice.site,
+      siteAddress: invoice.siteAddress || "-",
+      contactName: invoice.contactName || "-",
+      contactPhone: invoice.contactPhone || "-",
+      createdBy: invoice.createdBy,
+      extraRows: `<div class="row"><span class="lbl">Invoice No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>`,
+    })}
+
+    <div class="print-content">
+      <h2>Scrap Items</h2>
+      <table>
+        <thead><tr>
+          <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Unit Price (KES)</th><th class="r">Amount (KES)</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="sum">
+        <div class="sum-row"><span>Scrap Total</span><strong>${currency.format(totalScrap)}</strong></div>
+        <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+        <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
       </div>
-      <div>
-        <h1 class="doc-title">SCRAP ITEMS REPORT</h1>
-        <div class="row"><span class="lbl">Company:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
-        <div class="row"><span class="lbl">Site:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
-        <div class="row"><span class="lbl">Quotation No:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
-        <div class="row"><span class="lbl">Created By:</span><span class="val">${escapeHtml(invoice.createdBy)}</span></div>
-        <div class="row"><span class="lbl">Printed:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
-      </div>
+
+      <p class="ft">Scrap report for ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
     </div>
-
-    <h2>Scrap Items</h2>
-    <table>
-      <thead><tr>
-        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Unit Price (KES)</th><th class="r">Amount (KES)</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-
-    <div class="sum">
-      <div class="sum-row"><span>Scrap Total</span><strong>${currency.format(totalScrap)}</strong></div>
-      <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-      <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
-    </div>
-
-    <p class="ft">Scrap report for ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
   </body></html>`;
 
   win.document.write(html);

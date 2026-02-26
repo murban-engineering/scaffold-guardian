@@ -176,11 +176,11 @@ const withPrintOption = (html: string) => {
         text-align: left !important;
         font-weight: 800 !important;
       }
-      h1 { font-size: 28px !important; }
-      h2 { font-size: 22px !important; }
-      h3 { font-size: 16px !important; }
+      h1 { font-size: 22px !important; }
+      h2 { font-size: 18px !important; }
+      h3 { font-size: 13px !important; }
       .report-title {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 800;
         margin-top: 8px;
         color: #111;
@@ -234,7 +234,7 @@ const STANDARD_REPORT_STYLES = `
   .brand-title { font-size: 18px; font-weight: 800; line-height: 1.15; color: #111827; }
   .brand-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 11px; color: #374151; }
   .report-box { border: 1px solid #111827; border-radius: 8px; padding: 10px 12px; }
-  .report-title { font-size: 32px; line-height: 1; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
+  .report-title { font-size: 24px; line-height: 1; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
   .copy-label { display: inline-block; font-size: 11px; font-weight: 700; border: 1px solid #111827; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; }
   .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
   .standard-report-left { display: grid; gap: 12px; }
@@ -257,11 +257,20 @@ const STANDARD_REPORT_STYLES = `
   .signature-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 22px; }
   .signature-box { border-top: 1px solid #111827; padding-top: 8px; }
   .signature-box p { margin-bottom: 5px; }
-  @media print { body { padding: 0; } }
+  @media print {
+    body { padding: 0; }
+    .standard-report-layout { position: fixed; top: 0; left: 0; right: 0; background: #fff; padding: 8px 12px 10px; z-index: 10; }
+    .standard-report-layout ~ * { margin-left: 0; margin-right: 0; }
+    .standard-report-layout ~ table:first-of-type,
+    .standard-report-layout ~ .section-box:first-of-type,
+    .standard-report-layout ~ .remarks:first-of-type,
+    .standard-report-layout ~ .comments:first-of-type,
+    .standard-report-layout ~ .delivery-terms:first-of-type { margin-top: 345px; }
+  }
 `;
 
 const STANDARD_REPORT_HEADER_STYLES = `
-  .report-title { font-size: 32px; line-height: 1; font-weight: 900; letter-spacing: -0.4px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
+  .report-title { font-size: 24px; line-height: 1; font-weight: 900; letter-spacing: -0.2px; margin-bottom: 8px; color: #111827; text-transform: uppercase; }
   .standard-report-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
   .standard-report-left { display: grid; gap: 12px; }
   .standard-report-right { display: grid; gap: 8px; }
