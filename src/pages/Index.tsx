@@ -183,10 +183,10 @@ const Index = () => {
     if (continuingFromTestClient && activeItem !== "site-master" && activeItem !== "yard-verification") {
       setSelectedQuotation(null);
       setSelectedExistingClient(quotation);
-      setWorkflowInitialClientMode("existing");
+      setWorkflowInitialClientMode("new");
       setWorkflowInitialStep(undefined);
       setIsTestQuotationFlow(false);
-      toast.info("Loaded test client details. Save to generate a new HSQ quotation.");
+      toast.info("Loaded test client details into a normal quotation flow. Update the client form and save to generate a new HSQ quotation.");
     } else {
       setSelectedExistingClient(null);
       setSelectedQuotation(quotation);
