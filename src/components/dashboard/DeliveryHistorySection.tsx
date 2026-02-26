@@ -8,6 +8,7 @@ export interface DeliveryRecord {
   id: string;
   deliveryNoteNumber: string;
   deliveryDate: string;
+  hireStartDate?: string;
   deliveredBy: string;
   receivedBy: string;
   vehicleNo: string;

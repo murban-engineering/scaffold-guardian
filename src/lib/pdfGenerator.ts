@@ -5,6 +5,7 @@ export interface DeliveryNoteData {
   deliveryNoteNumber: string;
   dateCreated: string;
   deliveryDate: string;
+  hireStartDate?: string;
   companyName: string;
   siteName: string;
   siteAddress: string;
@@ -401,6 +402,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         documentType: "Hire Delivery Note",
         documentNumber: data.deliveryNoteNumber,
         documentDate: data.deliveryDate,
+        hireStartDate: data.hireStartDate,
         clientName: data.companyName,
         contactName: data.contactName,
         contactPhone: data.contactPhone,
