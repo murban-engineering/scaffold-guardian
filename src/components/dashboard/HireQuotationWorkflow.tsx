@@ -1503,13 +1503,50 @@ const HireQuotationWorkflow = ({
   }, [previousClientMatches, selectedPreviousClientId]);
 
   const handleSelectPreviousClient = (quotation: HireQuotation) => {
+    // Treat client selection as a context switch to prevent cross-client equipment carry-over.
+    setEquipmentItems([]);
+    setRemainingQuantities({});
+    setDeliveryQuantities({});
+    setSelectedScaffoldId("");
+    setEquipmentQuantity("0");
+    setItemCodeSearch("");
+    setLastDeliveredQuantities(null);
+    setSavedQuotationId(null);
+
     const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
     const savedProfile = parsedNotes.clientDetails.profile ?? {};
 
     setHeader((prev) => ({
       ...prev,
-      ...savedProfile,
+      postalAddress: savedProfile.postalAddress ?? prev.postalAddress,
+      postalCode: savedProfile.postalCode ?? prev.postalCode,
+      physicalAddress: savedProfile.physicalAddress ?? prev.physicalAddress,
+      companyEmail: savedProfile.companyEmail ?? prev.companyEmail,
+      landline1: savedProfile.landline1 ?? prev.landline1,
+      landline2: savedProfile.landline2 ?? prev.landline2,
+      faxNumber: savedProfile.faxNumber ?? prev.faxNumber,
+      accountsContact: savedProfile.accountsContact ?? prev.accountsContact,
+      accountsEmail: savedProfile.accountsEmail ?? prev.accountsEmail,
+      statementDelivery: savedProfile.statementDelivery ?? prev.statementDelivery,
+      legalEntity: savedProfile.legalEntity ?? prev.legalEntity,
+      officeTel: savedProfile.officeTel ?? prev.officeTel,
+      officeEmail: savedProfile.officeEmail ?? prev.officeEmail,
+      officialOrdersUsed: savedProfile.officialOrdersUsed ?? prev.officialOrdersUsed,
+      bulkOrdersUsed: savedProfile.bulkOrdersUsed ?? prev.bulkOrdersUsed,
+      newOrderForEveryQuote: savedProfile.newOrderForEveryQuote ?? prev.newOrderForEveryQuote,
+      telephonicOrders: savedProfile.telephonicOrders ?? prev.telephonicOrders,
+      personsNameAsOrder: savedProfile.personsNameAsOrder ?? prev.personsNameAsOrder,
+      personsName: savedProfile.personsName ?? prev.personsName,
+      requisitionNumberUsed: savedProfile.requisitionNumberUsed ?? prev.requisitionNumberUsed,
+      requisitionNo: savedProfile.requisitionNo ?? prev.requisitionNo,
+      fixedRateAgreed: savedProfile.fixedRateAgreed ?? prev.fixedRateAgreed,
+      returns: savedProfile.returns ?? prev.returns,
+      delivery: savedProfile.delivery ?? prev.delivery,
+      projectTypes: savedProfile.projectTypes ?? prev.projectTypes,
+      marketSegments: savedProfile.marketSegments ?? prev.marketSegments,
+      civilsSegments: savedProfile.civilsSegments ?? prev.civilsSegments,
+      scaffoldingSegments: savedProfile.scaffoldingSegments ?? prev.scaffoldingSegments,
       clientId: derivedClientId || prev.clientId,
       tradingName: quotation.company_name ?? "",
       clientCompanyName: quotation.company_name ?? "",
