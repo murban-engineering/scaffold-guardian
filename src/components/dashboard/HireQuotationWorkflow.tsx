@@ -1028,7 +1028,7 @@ const HireQuotationWorkflow = ({
     const suffix = existingSites.length === 0 ? "" : String.fromCharCode(65 + existingSites.length - 1); // A, B, C...
     const siteNumber = deriveSiteNumber(header.quotationNo, suffix);
 
-    await createClientSite.mutateAsync({
+    const createdSite = await createClientSite.mutateAsync({
       quotation_id: savedQuotationId,
       site_number: siteNumber,
       site_suffix: suffix,
@@ -1041,6 +1041,8 @@ const HireQuotationWorkflow = ({
       site_opened_by: newSite.siteOpenedBy || undefined,
       notes: newSite.notes || undefined,
     });
+
+    handleSelectDeliverySiteFromRow(createdSite);
 
     setNewSite({ siteName: "", siteLocation: "", siteAddress: "", siteManagerName: "", siteManagerPhone: "", siteManagerEmail: "", siteOpenedBy: "", notes: "" });
   };
@@ -1131,6 +1133,21 @@ const HireQuotationWorkflow = ({
       }));
       toast.success(`Delivery linked to site ${site.site_number}`);
     }
+  };
+
+  const handleSelectDeliverySiteFromRow = (site: ClientSite) => {
+    setSelectedDeliverySiteId(site.id);
+    setHeader(prev => ({
+      ...prev,
+      siteName: site.site_name,
+      siteLocation: site.site_location || prev.siteLocation,
+      siteAddress: site.site_address || prev.siteAddress,
+    }));
+    setDeliveryNote(prev => ({
+      ...prev,
+      remarks: `Site: ${site.site_number} - ${site.site_name}`,
+    }));
+    toast.success(`Site ${site.site_number} selected for this hire loading.`);
   };
 
   const handleNext = () => {
@@ -3828,6 +3845,7 @@ const HireQuotationWorkflow = ({
                               <th className="px-3 py-2 text-left font-semibold">Site Name</th>
                               <th className="px-3 py-2 text-left font-semibold">Location</th>
                               <th className="px-3 py-2 text-left font-semibold">Manager</th>
+                              <th className="px-3 py-2 text-right font-semibold">Action</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -3839,6 +3857,15 @@ const HireQuotationWorkflow = ({
                                 <td className="px-3 py-2 font-medium">{site.site_name}</td>
                                 <td className="px-3 py-2 text-muted-foreground">{site.site_location || "—"}</td>
                                 <td className="px-3 py-2 text-muted-foreground">{site.site_manager_name || "—"}</td>
+                                <td className="px-3 py-2 text-right">
+                                  <Button
+                                    size="sm"
+                                    variant={selectedDeliverySiteId === site.id ? "default" : "outline"}
+                                    onClick={() => handleSelectDeliverySiteFromRow(site)}
+                                  >
+                                    Select Site
+                                  </Button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
