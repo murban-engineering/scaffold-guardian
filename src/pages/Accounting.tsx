@@ -168,10 +168,15 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
       h1{margin:0 0 4px;font-size:22px}
       h2{margin:20px 0 6px;font-size:15px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      .hdr{display:flex;align-items:flex-start;border-bottom:2px solid #333;padding-bottom:10px;margin-bottom:14px;gap:14px}
+      .hdr{display:grid;grid-template-columns:1fr 1.15fr;gap:14px;align-items:start;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:14px}
       .logo{width:100px;height:auto}
       .hdr-txt p{margin:2px 0;color:#555}
-      .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+      .hdr-left,.hdr-right{display:grid;gap:10px}
+      .company-card{border:1px solid #ddd;border-radius:6px;padding:10px}
+      .company-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
+      .company-row:last-child{margin-bottom:0}
+      .company-label{width:72px;font-weight:700;color:#555;flex-shrink:0}
+      .company-val{flex:1}
       .box{border:1px solid #ddd;border-radius:6px;padding:10px}
       .box h3{margin:0 0 6px;font-size:13px;border-bottom:1px solid #eee;padding-bottom:4px}
       .row{display:flex;margin-bottom:3px}.lbl{width:130px;font-weight:700;color:#555}.val{flex:1}
@@ -192,37 +197,50 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
     <div class="hdr">
-      <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
-      <div class="hdr-txt">
-        <h1>${COMPANY_NAME}</h1>
-        <p>Email: ${COMPANY_EMAIL}</p>
-        <p>${COMPANY_ADDRESS}</p>
-        <p>${COMPANY_LOCATION}</p>
-        <p><strong>PIN: P052471711M</strong></p>
-        <p><strong>DDS (Dirty, Damaged, Scrap) INVOICE</strong></p>
+      <div class="hdr-left">
+        <div class="box">
+          <h3>Document Details</h3>
+          <div class="row"><span class="lbl">Invoice No:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>
+          <div class="row"><span class="lbl">Quotation No:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
+          <div class="row"><span class="lbl">Date Created:</span><span class="val">${escapeHtml(invoice.createdDate)}</span></div>
+          <div class="row"><span class="lbl">Created By:</span><span class="val">${escapeHtml(invoice.createdBy)}</span></div>
+          <div class="row"><span class="lbl">Dispatch Date:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+          <div class="row"><span class="lbl">Billing Date:</span><span class="val">${escapeHtml(billingDateStr)}</span></div>
+          <div class="row"><span class="lbl">Billed Weeks:</span><span class="val">${invoice.hireWeeks}</span></div>
+          <div class="row"><span class="lbl">Printed:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
+        </div>
+        <div class="box">
+          <h3>Company Details</h3>
+          <div class="row"><span class="lbl">Company:</span><span class="val">${COMPANY_NAME}</span></div>
+          <div class="row"><span class="lbl">Email:</span><span class="val">${COMPANY_EMAIL}</span></div>
+          <div class="row"><span class="lbl">Address:</span><span class="val">${COMPANY_ADDRESS}</span></div>
+          <div class="row"><span class="lbl">Location:</span><span class="val">${COMPANY_LOCATION}</span></div>
+          <div class="row"><span class="lbl">PIN:</span><span class="val">P052471711M</span></div>
+        </div>
+        <div class="box">
+          <h3>Site Details</h3>
+          <div class="row"><span class="lbl">Company:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
+          <div class="row"><span class="lbl">Site:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
+          <div class="row"><span class="lbl">Site Address:</span><span class="val">${escapeHtml(invoice.siteAddress || "-")}</span></div>
+          <div class="row"><span class="lbl">Contact:</span><span class="val">${escapeHtml(invoice.contactName || "-")}</span></div>
+          <div class="row"><span class="lbl">Phone:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
+          <div class="row"><span class="lbl">Email:</span><span class="val">${escapeHtml(invoice.contactEmail || "-")}</span></div>
+        </div>
       </div>
-    </div>
-
-    <div class="grid2">
-      <div class="box">
-        <h3>Client Details</h3>
-        <div class="row"><span class="lbl">Company:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
-        <div class="row"><span class="lbl">Site:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
-        <div class="row"><span class="lbl">Site Address:</span><span class="val">${escapeHtml(invoice.siteAddress || "-")}</span></div>
-        <div class="row"><span class="lbl">Contact:</span><span class="val">${escapeHtml(invoice.contactName || "-")}</span></div>
-        <div class="row"><span class="lbl">Phone:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
-        <div class="row"><span class="lbl">Email:</span><span class="val">${escapeHtml(invoice.contactEmail || "-")}</span></div>
-      </div>
-      <div class="box">
-        <h3>Invoice Details</h3>
-        <div class="row"><span class="lbl">Invoice No:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>
-        <div class="row"><span class="lbl">Quotation No:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
-        <div class="row"><span class="lbl">Date Created:</span><span class="val">${escapeHtml(invoice.createdDate)}</span></div>
-        <div class="row"><span class="lbl">Created By:</span><span class="val">${escapeHtml(invoice.createdBy)}</span></div>
-        <div class="row"><span class="lbl">Dispatch Date:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
-        <div class="row"><span class="lbl">Billing Date:</span><span class="val">${escapeHtml(billingDateStr)}</span></div>
-        <div class="row"><span class="lbl">Billed Weeks:</span><span class="val">${invoice.hireWeeks}</span></div>
-        <div class="row"><span class="lbl">Printed:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
+      <div class="hdr-right">
+        <div class="company-card">
+          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+          <div class="hdr-txt">
+            <h1>${COMPANY_NAME}</h1>
+            <p><strong>DDS (Dirty, Damaged, Scrap) INVOICE</strong></p>
+          </div>
+        </div>
+        <div class="company-card">
+          <div class="company-row"><span class="company-label">Invoice</span><span class="company-val">${escapeHtml(invoice.invoiceNumber)}</span></div>
+          <div class="company-row"><span class="company-label">Client</span><span class="company-val">${escapeHtml(invoice.client)}</span></div>
+          <div class="company-row"><span class="company-label">Site</span><span class="company-val">${escapeHtml(invoice.site)}</span></div>
+          <div class="company-row"><span class="company-label">Billing</span><span class="company-val">${escapeHtml(billingDateStr)}</span></div>
+        </div>
       </div>
     </div>
 
