@@ -603,6 +603,25 @@ const HireQuotationWorkflow = ({
     otherInformation: createDefaultOtherInformation(),
   }));
 
+  const mapDatabaseLineItemsToEquipment = useCallback((lineItems: HireQuotation["line_items"] = []) => {
+    return lineItems.map((lineItem) => ({
+      id: lineItem.id,
+      scaffoldId: lineItem.scaffold_id ?? "",
+      itemCode: lineItem.part_number ?? "",
+      description: lineItem.description ?? "",
+      unit: "pcs",
+      qtyDelivered: String(lineItem.quantity ?? 0),
+      weeklyRate: String(lineItem.weekly_rate ?? 0),
+      hireDiscount: String(lineItem.hire_discount ?? 0),
+      massPerItem: String(lineItem.mass_per_item ?? 0),
+      notes: "",
+      warehouseAvailableQty: scaffolds?.find((scaffold) => scaffold.id === lineItem.scaffold_id)?.quantity ?? 0,
+      originalQuantity: lineItem.quantity ?? 0,
+      previouslyDelivered: lineItem.delivered_quantity ?? 0,
+      dbBalanceQuantity: lineItem.balance_quantity ?? 0,
+    }));
+  }, [scaffolds]);
+
   useEffect(() => {
     setClientEntryMode(initialClientMode);
   }, [initialClientMode]);
@@ -1057,24 +1076,7 @@ const HireQuotationWorkflow = ({
         // Load equipment from DB if available (so all users see the same data)
         const dbQuotation = previousQuotations.find(q => q.id === draft.savedQuotationId);
         if (dbQuotation?.line_items?.length) {
-          setEquipmentItems(
-            dbQuotation.line_items.map(li => ({
-              id: li.id,
-              scaffoldId: li.scaffold_id ?? "",
-              itemCode: li.part_number ?? "",
-              description: li.description ?? "",
-              unit: "pcs",
-              qtyDelivered: String(li.quantity ?? 0),
-              weeklyRate: String(li.weekly_rate ?? 0),
-              hireDiscount: String(li.hire_discount ?? 0),
-              massPerItem: String(li.mass_per_item ?? 0),
-              notes: "",
-              warehouseAvailableQty: 0,
-              originalQuantity: li.quantity ?? 0,
-              previouslyDelivered: li.delivered_quantity ?? 0,
-              dbBalanceQuantity: li.balance_quantity ?? 0,
-            }))
-          );
+          setEquipmentItems(mapDatabaseLineItemsToEquipment(dbQuotation.line_items));
         } else if (draft.equipmentItems?.length) {
           setEquipmentItems(draft.equipmentItems);
         }
@@ -1090,7 +1092,20 @@ const HireQuotationWorkflow = ({
     } finally {
       setHasHydratedTestDraft(true);
     }
-  }, [initialExistingClient, initialQuotation, isTestQuotation]);
+  }, [initialExistingClient, initialQuotation, isTestQuotation, previousQuotations, mapDatabaseLineItemsToEquipment]);
+
+  useEffect(() => {
+    if (!isTestQuotation || initialQuotation || !savedQuotationId) {
+      return;
+    }
+
+    const dbQuotation = previousQuotations.find((quotation) => quotation.id === savedQuotationId);
+    if (!dbQuotation?.line_items?.length) {
+      return;
+    }
+
+    setEquipmentItems(mapDatabaseLineItemsToEquipment(dbQuotation.line_items));
+  }, [initialQuotation, isTestQuotation, mapDatabaseLineItemsToEquipment, previousQuotations, savedQuotationId]);
 
   useEffect(() => {
     if (!hasHydratedTestDraft || !isTestQuotation || initialQuotation) {
@@ -1164,7 +1179,7 @@ const HireQuotationWorkflow = ({
       } catch (err) {
         console.error("Auto-sync equipment failed:", err);
       }
-    }, 1500);
+    }, 400);
 
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
