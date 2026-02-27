@@ -1659,6 +1659,8 @@ const HireQuotationWorkflow = ({
   }, [initialClientMode, initialExistingClient]);
 
   const validateHeader = () => {
+    // For test quotations, all fields are optional
+    if (isTestQuotation) return true;
     if (!header.tradingName && !header.clientCompanyName) {
       toast.error("Trading Name / Company Name is required.");
       return false;
@@ -1674,19 +1676,18 @@ const HireQuotationWorkflow = ({
     return true;
   };
 
-  const handleHeaderSave = async () => {
-    if (!validateHeader()) return;
+  // Auto-create or update DB record — used by both test and real quotations.
+  // For test quotations this is called silently; for real quotations validation runs first.
+  const ensureQuotationSaved = async (silent = false): Promise<string | null> => {
     if (!user) {
-      toast.error("Please log in to create a quotation");
-      return;
+      if (!silent) toast.error("Please log in to create a quotation");
+      return null;
     }
-
     try {
-      const companyName = header.tradingName || header.clientCompanyName;
-      const contactName = header.siteContactPerson || header.clientName;
-      const contactPhone = header.landline1 || header.clientPhone;
-      const contactEmail = header.companyEmail || header.clientEmail;
-
+      const companyName = header.tradingName || header.clientCompanyName || "Test Client";
+      const contactName = header.siteContactPerson || header.clientName || undefined;
+      const contactPhone = header.landline1 || header.clientPhone || undefined;
+      const contactEmail = header.companyEmail || header.clientEmail || undefined;
       const structuredNotes = buildStructuredQuotationNotes(calculation.paymentTerms, header);
 
       if (!savedQuotationId) {
@@ -1707,11 +1708,12 @@ const HireQuotationWorkflow = ({
           quotationNo: quotation.quotation_number,
           clientId,
           clientCompanyName: companyName,
-          clientName: contactName,
-          clientPhone: contactPhone,
-          clientEmail: contactEmail,
+          clientName: contactName || prev.clientName,
+          clientPhone: contactPhone || prev.clientPhone,
+          clientEmail: contactEmail || prev.clientEmail,
         }));
-        toast.success(`Quotation ${quotation.quotation_number} created! Client ID: ${clientId}`);
+        if (!silent) toast.success(`Client ID: ${clientId} — ${quotation.quotation_number}`);
+        return quotation.id;
       } else {
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
@@ -1724,17 +1726,28 @@ const HireQuotationWorkflow = ({
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
         });
+        return savedQuotationId;
       }
-      handleNext();
     } catch (error) {
       console.error("Failed to save quotation:", error);
+      return null;
     }
   };
 
-  const handleAddFromInventory = () => {
+  const handleHeaderSave = async () => {
+    if (!validateHeader()) return;
+    const id = await ensureQuotationSaved(false);
+    if (id) handleNext();
+  };
+
+  const handleAddFromInventory = async () => {
     if (!selectedScaffoldId) {
       toast.error("Please select an item from inventory");
       return;
+    }
+    // For test quotations: silently create DB record before adding equipment so items persist
+    if (isTestQuotation && !savedQuotationId) {
+      await ensureQuotationSaved(true);
     }
     
     const scaffold = scaffolds?.find(s => s.id === selectedScaffoldId);
@@ -3469,22 +3482,26 @@ const HireQuotationWorkflow = ({
             )}
 
             <div className="flex items-center justify-between border-t border-border pt-4">
-              <p className="text-xs text-muted-foreground">* Required fields</p>
+              <p className="text-xs text-muted-foreground">
+                {isTestQuotation ? "All fields optional — a Client ID will be auto-assigned" : "* Required fields"}
+              </p>
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => goToStep("site-master")}
-                  disabled={!savedQuotationId}
-                >
-                  Site Details
-                </Button>
+                {!isTestQuotation && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => goToStep("site-master")}
+                    disabled={!savedQuotationId}
+                  >
+                    Site Details
+                  </Button>
+                )}
                 <Button 
                   type="button" 
                   onClick={handleHeaderSave}
                   disabled={createQuotation.isPending || updateQuotation.isPending}
                 >
-                  {createQuotation.isPending ? "Saving..." : "Save & Continue"}
+                  {createQuotation.isPending ? "Creating..." : isTestQuotation ? "Continue to Equipment →" : "Save & Continue"}
                 </Button>
               </div>
             </div>
