@@ -197,6 +197,7 @@ type TestWorkflowDraft = {
   selectedScaffoldId: string;
   equipmentQuantity: string;
   itemCodeSearch: string;
+  savedQuotationId?: string | null;
 };
 
 const TEST_WORKFLOW_DRAFT_KEY = "hire-workflow:test-draft";
@@ -1037,9 +1038,6 @@ const HireQuotationWorkflow = ({
         setCalculation((prev) => ({ ...prev, ...draft.calculation }));
       }
 
-      if (draft.equipmentItems?.length) {
-        setEquipmentItems(draft.equipmentItems);
-      }
 
       if (typeof draft.selectedScaffoldId === "string") {
         setSelectedScaffoldId(draft.selectedScaffoldId);
@@ -1051,6 +1049,39 @@ const HireQuotationWorkflow = ({
 
       if (typeof draft.itemCodeSearch === "string") {
         setItemCodeSearch(draft.itemCodeSearch);
+      }
+
+      // Restore the saved quotation ID so equipment can be re-linked to the DB record
+      if (draft.savedQuotationId) {
+        setSavedQuotationId(draft.savedQuotationId);
+        // Load equipment from DB if available (so all users see the same data)
+        const dbQuotation = previousQuotations.find(q => q.id === draft.savedQuotationId);
+        if (dbQuotation?.line_items?.length) {
+          setEquipmentItems(
+            dbQuotation.line_items.map(li => ({
+              id: li.id,
+              scaffoldId: li.scaffold_id ?? "",
+              itemCode: li.part_number ?? "",
+              description: li.description ?? "",
+              unit: "pcs",
+              qtyDelivered: String(li.quantity ?? 0),
+              weeklyRate: String(li.weekly_rate ?? 0),
+              hireDiscount: String(li.hire_discount ?? 0),
+              massPerItem: String(li.mass_per_item ?? 0),
+              notes: "",
+              warehouseAvailableQty: 0,
+              originalQuantity: li.quantity ?? 0,
+              previouslyDelivered: li.delivered_quantity ?? 0,
+              dbBalanceQuantity: li.balance_quantity ?? 0,
+            }))
+          );
+        } else if (draft.equipmentItems?.length) {
+          setEquipmentItems(draft.equipmentItems);
+        }
+      } else {
+        if (draft.equipmentItems?.length) {
+          setEquipmentItems(draft.equipmentItems);
+        }
       }
 
       toast.success("Restored your test workflow draft.");
@@ -1075,6 +1106,7 @@ const HireQuotationWorkflow = ({
       selectedScaffoldId,
       equipmentQuantity,
       itemCodeSearch,
+      savedQuotationId,
     };
 
     const draftId = deriveTestDraftId(header);
@@ -1100,7 +1132,44 @@ const HireQuotationWorkflow = ({
     selectedScaffoldId,
     equipmentQuantity,
     itemCodeSearch,
+    savedQuotationId,
   ]);
+
+  // Auto-sync equipment items to the database whenever they change (debounced).
+  // This ensures test quotations are persisted for all users, not just localStorage.
+  const addLineItemsForSync = useAddLineItems();
+  const clearLineItemsForSync = useClearLineItems();
+  useEffect(() => {
+    if (!savedQuotationId || !hasHydratedTestDraft) return;
+    // Only auto-sync for test quotations that have a DB record
+    if (!isTestQuotation) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        await clearLineItemsForSync.mutateAsync(savedQuotationId);
+        if (equipmentItems.length > 0) {
+          await addLineItemsForSync.mutateAsync(
+            equipmentItems.map(item => ({
+              quotation_id: savedQuotationId,
+              scaffold_id: item.scaffoldId || undefined,
+              part_number: item.itemCode,
+              description: item.description,
+              quantity: parseNumber(item.qtyDelivered),
+              hire_discount: parseNumber(item.hireDiscount),
+              mass_per_item: parseNumber(item.massPerItem),
+              weekly_rate: parseNumber(item.weeklyRate),
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Auto-sync equipment failed:", err);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [equipmentItems, savedQuotationId, hasHydratedTestDraft, isTestQuotation]);
+
 
   const persistedReturnQuantitiesByItemCode = useMemo(() => {
     const quantities = new Map<string, { returned: number; balance: number | null }>();
@@ -1522,11 +1591,9 @@ const HireQuotationWorkflow = ({
 
     setHeader((prev) => ({
       ...prev,
+      // From saved profile (lower priority)
       postalAddress: savedProfile.postalAddress ?? prev.postalAddress,
       postalCode: savedProfile.postalCode ?? prev.postalCode,
-      physicalAddress: savedProfile.physicalAddress ?? prev.physicalAddress,
-      companyEmail: savedProfile.companyEmail ?? prev.companyEmail,
-      landline1: savedProfile.landline1 ?? prev.landline1,
       landline2: savedProfile.landline2 ?? prev.landline2,
       faxNumber: savedProfile.faxNumber ?? prev.faxNumber,
       accountsContact: savedProfile.accountsContact ?? prev.accountsContact,
@@ -1535,10 +1602,7 @@ const HireQuotationWorkflow = ({
       legalEntity: savedProfile.legalEntity ?? prev.legalEntity,
       officeTel: savedProfile.officeTel ?? prev.officeTel,
       officeEmail: savedProfile.officeEmail ?? prev.officeEmail,
-      officialOrdersUsed: savedProfile.officialOrdersUsed ?? prev.officialOrdersUsed,
-      bulkOrdersUsed: savedProfile.bulkOrdersUsed ?? prev.bulkOrdersUsed,
       newOrderForEveryQuote: savedProfile.newOrderForEveryQuote ?? prev.newOrderForEveryQuote,
-      telephonicOrders: savedProfile.telephonicOrders ?? prev.telephonicOrders,
       personsNameAsOrder: savedProfile.personsNameAsOrder ?? prev.personsNameAsOrder,
       personsName: savedProfile.personsName ?? prev.personsName,
       requisitionNumberUsed: savedProfile.requisitionNumberUsed ?? prev.requisitionNumberUsed,
@@ -1546,25 +1610,24 @@ const HireQuotationWorkflow = ({
       fixedRateAgreed: savedProfile.fixedRateAgreed ?? prev.fixedRateAgreed,
       returns: savedProfile.returns ?? prev.returns,
       delivery: savedProfile.delivery ?? prev.delivery,
-      projectTypes: savedProfile.projectTypes ?? prev.projectTypes,
-      marketSegments: savedProfile.marketSegments ?? prev.marketSegments,
       civilsSegments: savedProfile.civilsSegments ?? prev.civilsSegments,
       scaffoldingSegments: savedProfile.scaffoldingSegments ?? prev.scaffoldingSegments,
+      // From quotation (higher priority, overrides savedProfile)
       clientId: derivedClientId || prev.clientId,
       tradingName: quotation.company_name ?? "",
       clientCompanyName: quotation.company_name ?? "",
       siteContactPerson: quotation.site_manager_name ?? "",
       clientName: quotation.site_manager_name ?? "",
-      landline1: quotation.site_manager_phone ?? "",
+      landline1: quotation.site_manager_phone ?? savedProfile.landline1 ?? prev.landline1,
       clientPhone: quotation.site_manager_phone ?? "",
-      companyEmail: quotation.site_manager_email ?? "",
+      companyEmail: quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
       clientEmail: quotation.site_manager_email ?? "",
-      physicalAddress: quotation.company_address ?? "",
+      physicalAddress: quotation.company_address ?? savedProfile.physicalAddress ?? prev.physicalAddress,
       siteAddress: "",
       siteLocation: quotation.delivery_address ?? "",
-      officialOrdersUsed: quotation.official_order_required ? "yes" : "no",
-      bulkOrdersUsed: quotation.bulk_order_required ? "yes" : "no",
-      telephonicOrders: quotation.telephonic_order_acceptable ? "yes" : "no",
+      officialOrdersUsed: quotation.official_order_required ? "yes" : (savedProfile.officialOrdersUsed ?? prev.officialOrdersUsed),
+      bulkOrdersUsed: quotation.bulk_order_required ? "yes" : (savedProfile.bulkOrdersUsed ?? prev.bulkOrdersUsed),
+      telephonicOrders: quotation.telephonic_order_acceptable ? "yes" : (savedProfile.telephonicOrders ?? prev.telephonicOrders),
       specialTransportArrangement: quotation.transport_arrangement ?? savedProfile.specialTransportArrangement ?? "",
       customerOrderNo: quotation.account_number ?? "",
       projectTypes: quotation.project_type ?? savedProfile.projectTypes ?? [],
