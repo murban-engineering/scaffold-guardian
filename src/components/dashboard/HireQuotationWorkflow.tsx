@@ -1591,14 +1591,19 @@ const HireQuotationWorkflow = ({
 
   const handleSelectPreviousClient = (quotation: HireQuotation) => {
     // Treat client selection as a context switch to prevent cross-client equipment carry-over.
-    setEquipmentItems([]);
+    const existingEquipment =
+      isTestQuotation && quotation.line_items?.length
+        ? mapDatabaseLineItemsToEquipment(quotation.line_items)
+        : [];
+
+    setEquipmentItems(existingEquipment);
     setRemainingQuantities({});
     setDeliveryQuantities({});
     setSelectedScaffoldId("");
     setEquipmentQuantity("0");
     setItemCodeSearch("");
     setLastDeliveredQuantities(null);
-    setSavedQuotationId(null);
+    setSavedQuotationId(isTestQuotation ? quotation.id : null);
 
     const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
