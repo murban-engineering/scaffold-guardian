@@ -424,79 +424,92 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
   const subtotal = invoice.grandTotal;
   const vatAmount = subtotal * 0.16;
   const totalDue = subtotal + vatAmount;
+  const runningDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
 
   const statementRows = [
     {
       date: invoice.dispatchDate,
       documentNo: invoice.invoiceNumber,
-      reference: invoice.quotationNumber,
-      description: `Weekly hire charges (${invoice.hireWeeks} week(s))`,
-      debit: invoice.hireTotal,
-      credit: 0,
+      siteNo: invoice.site,
+      orderNo: invoice.quotationNumber,
+      prevDocNo: "-",
+      amount: invoice.hireTotal,
+      allocated: 0,
     },
     {
       date: statementDate,
       documentNo: `${invoice.invoiceNumber}-POL`,
-      reference: invoice.quotationNumber,
-      description: "Return policy adjustments (dirty / damaged / scrap)",
-      debit: invoice.policyTotal,
-      credit: 0,
+      siteNo: invoice.site,
+      orderNo: invoice.quotationNumber,
+      prevDocNo: invoice.invoiceNumber,
+      amount: invoice.policyTotal,
+      allocated: 0,
     },
     {
       date: statementDate,
       documentNo: `${invoice.invoiceNumber}-VAT`,
-      reference: "VAT 16%",
-      description: "VAT applied on subtotal",
-      debit: vatAmount,
-      credit: 0,
+      siteNo: invoice.site,
+      orderNo: "VAT 16%",
+      prevDocNo: `${invoice.invoiceNumber}-POL`,
+      amount: vatAmount,
+      allocated: 0,
     },
-  ].filter((row) => row.debit > 0 || row.credit > 0);
+  ].filter((row) => row.amount > 0 || row.allocated > 0);
 
   let runningBalance = 0;
   const statementTableRows = statementRows.map((row) => {
-    runningBalance += row.debit - row.credit;
+    runningBalance += row.amount - row.allocated;
     return `
       <tr>
         <td>${escapeHtml(row.date)}</td>
         <td>${escapeHtml(row.documentNo)}</td>
-        <td>${escapeHtml(row.reference)}</td>
-        <td>${escapeHtml(row.description)}</td>
-        <td class="r">${currency.format(row.debit)}</td>
-        <td class="r">${currency.format(row.credit)}</td>
+        <td>${escapeHtml(row.siteNo)}</td>
+        <td>${escapeHtml(row.orderNo)}</td>
+        <td>${escapeHtml(row.prevDocNo)}</td>
+        <td class="r">${currency.format(row.amount)}</td>
+        <td class="r">${currency.format(row.allocated)}</td>
         <td class="r">${currency.format(runningBalance)}</td>
       </tr>
     `;
   }).join("");
 
   const ageDays = Math.max(differenceInCalendarDays(billingDate, asDateOrToday(invoice.dispatchDate)), 0);
+  const bucket = (from: number, to?: number) => (ageDays >= from && (to === undefined || ageDays <= to) ? totalDue : 0);
   const aging = {
-    current: ageDays <= 30 ? totalDue : 0,
-    days30: ageDays > 30 && ageDays <= 60 ? totalDue : 0,
-    days60: ageDays > 60 && ageDays <= 90 ? totalDue : 0,
-    days90: ageDays > 90 ? totalDue : 0,
+    days180Plus: bucket(181),
+    days150: bucket(151, 180),
+    days120: bucket(121, 150),
+    days90: bucket(91, 120),
+    days60: bucket(61, 90),
+    days30: bucket(31, 60),
+    current: bucket(0, 30),
   };
 
   const html = `<!doctype html><html><head>
     <title>Customer Statement - ${escapeHtml(invoice.client)}</title>
     <style>
-      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
-      h1{margin:0 0 4px;font-size:28px;line-height:1.1;text-transform:uppercase}
-      .subtitle{font-size:12px;color:#555;margin-bottom:12px}
-      .header-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
-      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
-      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:108px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
-      .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-      .logo{width:90px;height:auto}
-      .brand-title{font-size:20px;font-weight:800;line-height:1.15;color:#111827}
-      table{width:100%;border-collapse:collapse;margin-top:8px}
-      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
-      th{background:#f5f5f5;font-size:11px}
+      body{font-family:Arial,sans-serif;margin:20px;color:#111;font-size:11px}
+      h1{margin:0;font-size:34px;line-height:1.02;text-transform:capitalize}
+      .subtitle{font-size:11px;color:#444;margin-bottom:10px}
+      .header-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+      .brand-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
+      .logo{width:74px;height:auto}
+      .brand-title{font-size:52px;line-height:0.95;font-weight:800;color:#a8ad2b;letter-spacing:-1px}
+      .brand-meta{font-size:10px;color:#666;margin-top:2px}
+      .panel{border:1px solid #30343f;border-radius:3px;padding:8px;min-height:90px}
+      .panel h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;color:#111;font-weight:700}
+      .row{display:flex;align-items:flex-start;margin-bottom:4px}.lbl{width:104px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
+      table{width:100%;border-collapse:collapse;margin-top:6px}
+      th,td{border:1px solid #9ca3af;padding:5px 6px;text-align:left;font-size:10px}
+      th{background:#f9fafb;font-size:10px;text-transform:uppercase}
       .r{text-align:right}
-      .totals,.aging{margin-top:12px;border:1px solid #ddd;border-radius:6px;padding:8px}
-      .totals-row,.aging-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f0f0f0}
-      .totals-row:last-child,.aging-row:last-child{border-bottom:none}
-      .totals-row.total{font-size:14px;font-weight:700;border-top:2px solid #333;margin-top:6px;padding-top:8px}
+      .statement-meta{margin-top:8px;border:1px solid #9ca3af;border-radius:3px;padding:6px}
+      .statement-meta-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:center}
+      .aging{margin-top:8px;border:1px solid #9ca3af;border-radius:3px;padding:6px}
+      .aging-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+      .aging-cell{border:1px solid #d1d5db;padding:5px;text-align:center}
+      .aging-cell .k{display:block;font-size:9px;color:#555;margin-bottom:2px}
+      .footer-band{margin-top:10px;background:#f4c21c;color:#111;padding:6px 10px;font-size:10px;font-weight:700}
       .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
       .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
       @media print{.print-bar{display:none} body{margin:0;padding:12px}}
@@ -506,25 +519,35 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
       <div>
         <div class="brand-top">
           <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
-          <div class="brand-title">${escapeHtml(COMPANY_NAME)}</div>
+          <div>
+            <div class="brand-title">form-scaff</div>
+            <div class="brand-meta">Page 1 of 1 · Printed ${escapeHtml(runningDate)}</div>
+          </div>
         </div>
         <div class="panel">
-          <h3>Customer Details</h3>
-          <div class="row"><span class="lbl">Customer</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.client)}</span></div>
-          <div class="row"><span class="lbl">Site</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.site)}</span></div>
-          <div class="row"><span class="lbl">Address</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.siteAddress || "-")}</span></div>
-          <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
+          <h3>${escapeHtml(invoice.client)}</h3>
+          <div>${escapeHtml(invoice.siteAddress || "-")}</div>
+          <div>${escapeHtml(invoice.site)}</div>
+          <div>Kenya</div>
         </div>
       </div>
       <div>
         <h1>Customer Statement</h1>
-        <div class="subtitle">(includes settlement discount and debit notes)</div>
+        <div class="subtitle">(and settlement discount Credit Note)</div>
         <div class="panel">
-          <h3>Statement Details</h3>
+          <h3>${escapeHtml(COMPANY_NAME)}</h3>
+          <div>${escapeHtml(COMPANY_ADDRESS)}</div>
+          <div>${escapeHtml(COMPANY_LOCATION)}</div>
+          <div class="row"><span class="lbl">Tel No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
+          <div class="row"><span class="lbl">Fax No</span><span class="sep">:</span><span class="val">-</span></div>
+        </div>
+        <div class="panel" style="margin-top:8px;">
           <div class="row"><span class="lbl">Customer No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.accountNumber)}</span></div>
           <div class="row"><span class="lbl">Date</span><span class="sep">:</span><span class="val">${escapeHtml(statementDate)}</span></div>
           <div class="row"><span class="lbl">Terms</span><span class="sep">:</span><span class="val">Net 30 Days</span></div>
+          <div class="row"><span class="lbl">Deposit Held</span><span class="sep">:</span><span class="val">${currency.format(0)}</span></div>
           <div class="row"><span class="lbl">Credit Limit</span><span class="sep">:</span><span class="val">${currency.format(totalDue * 2)}</span></div>
+          <div class="row"><span class="lbl">Vat</span><span class="sep">:</span><span class="val">-</span></div>
         </div>
       </div>
     </div>
@@ -532,31 +555,42 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
     <table>
       <thead>
         <tr>
-          <th>Date</th><th>Document No</th><th>Order No</th><th>Description</th><th class="r">Debit</th><th class="r">Credit</th><th class="r">Balance</th>
+          <th>Date</th><th>Document No</th><th>Site No</th><th>Order No</th><th>Prev Doc No</th><th class="r">Amount</th><th class="r">Allocated</th><th class="r">Balance</th>
         </tr>
       </thead>
       <tbody>
-        ${statementTableRows || `<tr><td colspan="7" class="r">No transactions.</td></tr>`}
+        ${statementTableRows || `<tr><td colspan="8" class="r">No transactions.</td></tr>`}
       </tbody>
     </table>
 
-    <div class="totals">
-      <div class="totals-row"><span>Subtotal</span><strong>${currency.format(subtotal)}</strong></div>
-      <div class="totals-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-      <div class="totals-row total"><span>Total Due</span><strong>${currency.format(totalDue)}</strong></div>
+    <div class="statement-meta">
+      <div class="statement-meta-grid">
+        <div><strong>Bank:</strong> Stanbic Bank · Account: 00000000000 · Branch Code: 31007</div>
+        <div><strong>Total Due</strong></div>
+        <div><strong>Ksh</strong></div>
+        <div class="r"><strong>${currency.format(totalDue)}</strong></div>
+      </div>
     </div>
 
     <div class="aging">
-      <div class="aging-row"><span>Current (0-30 days)</span><strong>${currency.format(aging.current)}</strong></div>
-      <div class="aging-row"><span>30-60 days</span><strong>${currency.format(aging.days30)}</strong></div>
-      <div class="aging-row"><span>60-90 days</span><strong>${currency.format(aging.days60)}</strong></div>
-      <div class="aging-row"><span>90+ days</span><strong>${currency.format(aging.days90)}</strong></div>
+      <div class="aging-grid">
+        <div class="aging-cell"><span class="k">180 Days +</span>${currency.format(aging.days180Plus)}</div>
+        <div class="aging-cell"><span class="k">150 Days</span>${currency.format(aging.days150)}</div>
+        <div class="aging-cell"><span class="k">120 Days</span>${currency.format(aging.days120)}</div>
+        <div class="aging-cell"><span class="k">90 Days</span>${currency.format(aging.days90)}</div>
+        <div class="aging-cell"><span class="k">60 Days</span>${currency.format(aging.days60)}</div>
+        <div class="aging-cell"><span class="k">&lt;30 Days</span>${currency.format(aging.days30)}</div>
+        <div class="aging-cell"><span class="k">Current</span>${currency.format(aging.current)}</div>
+      </div>
     </div>
+
+    <div class="footer-band">Exclusive Distribution Partner for Doka in Sub-Saharan Africa.</div>
   </body></html>`;
 
   win.document.write(html);
   win.document.close();
 };
+
 
 const Accounting = () => {
   const navigate = useNavigate();
