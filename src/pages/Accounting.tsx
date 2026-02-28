@@ -518,9 +518,7 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
     <div class="header-grid">
       <div>
         <div class="brand-top">
-          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
           <div>
-            <div class="brand-title">form-scaff</div>
             <div class="brand-meta">Page 1 of 1 · Printed ${escapeHtml(runningDate)}</div>
           </div>
         </div>
@@ -565,7 +563,7 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
 
     <div class="statement-meta">
       <div class="statement-meta-grid">
-        <div><strong>Bank:</strong> Stanbic Bank · Account: 00000000000 · Branch Code: 31007</div>
+        <div><strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED · KES Acc: 02107773676350 · I&amp;M Bank, Changamwe · Swift: IMBLKENA · Mpesa: 542542</div>
         <div><strong>Total Due</strong></div>
         <div><strong>Ksh</strong></div>
         <div class="r"><strong>${currency.format(totalDue)}</strong></div>
@@ -584,7 +582,6 @@ const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) =
       </div>
     </div>
 
-    <div class="footer-band">Exclusive Distribution Partner for Doka in Sub-Saharan Africa.</div>
   </body></html>`;
 
   win.document.write(html);
