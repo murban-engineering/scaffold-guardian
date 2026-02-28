@@ -268,8 +268,11 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
-  quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
+const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) => {
+  if (!quotationNo) return "";
+  if (quotationNo.startsWith("HSQ-")) return quotationNo.replace("HSQ-", "CL-");
+  return ""; // TEST-DRAFT or other non-HSQ numbers have no client ID
+};
 
 const deriveDraftIdFromClient = (quotation?: HireQuotation | null) => {
   const clientId = deriveClientIdFromQuotationNumber(quotation?.quotation_number)
@@ -1564,6 +1567,8 @@ const HireQuotationWorkflow = ({
     const seen = new Set<string>();
 
     return previousQuotations.filter((quotation) => {
+      // Exclude test draft records from the client lookup list
+      if (quotation.quotation_number === "TEST-DRAFT") return false;
       const companyName = quotation.company_name?.trim() || "";
       const companyKey = companyName.toLowerCase();
       const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number).toLowerCase();
@@ -1720,7 +1725,9 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-        });
+          // Test quotations use a fixed placeholder — no HSQ number generated
+          ...(isTestQuotation ? { quotation_number: "TEST-DRAFT" } : {}),
+        } as any);
         setSavedQuotationId(quotation.id);
         const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
         setHeader(prev => ({
@@ -1732,7 +1739,7 @@ const HireQuotationWorkflow = ({
           clientPhone: contactPhone || prev.clientPhone,
           clientEmail: contactEmail || prev.clientEmail,
         }));
-        if (!silent) toast.success(`Client ID: ${clientId} — ${quotation.quotation_number}`);
+        if (!silent && clientId) toast.success(`Client ID: ${clientId} — ${quotation.quotation_number}`);
         return quotation.id;
       } else {
         await updateQuotation.mutateAsync({
