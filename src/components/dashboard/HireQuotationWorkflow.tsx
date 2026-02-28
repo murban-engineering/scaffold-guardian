@@ -1733,7 +1733,7 @@ const HireQuotationWorkflow = ({
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,
-          clientId,
+          clientId: clientId || prev.clientId,
           clientCompanyName: companyName,
           clientName: contactName || prev.clientName,
           clientPhone: contactPhone || prev.clientPhone,
@@ -1765,6 +1765,14 @@ const HireQuotationWorkflow = ({
     if (!validateHeader()) return;
     const id = await ensureQuotationSaved(false);
     if (id) handleNext();
+  };
+
+  const handleHeaderSaveOnly = async () => {
+    if (!validateHeader()) return;
+    const id = await ensureQuotationSaved(false);
+    if (id) {
+      toast.success(`Client details saved${header.clientId ? ` for ${header.clientId}` : ""}.`);
+    }
   };
 
   const handleAddFromInventory = async () => {
@@ -3513,6 +3521,16 @@ const HireQuotationWorkflow = ({
                 {isTestQuotation ? "All fields optional — a Client ID will be auto-assigned" : "* Required fields"}
               </p>
               <div className="flex gap-2">
+                {isTestQuotation && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleHeaderSaveOnly}
+                    disabled={createQuotation.isPending || updateQuotation.isPending}
+                  >
+                    Save Client Details
+                  </Button>
+                )}
                 {!isTestQuotation && (
                   <Button
                     type="button"
