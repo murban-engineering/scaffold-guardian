@@ -4356,44 +4356,6 @@ const HireQuotationWorkflow = ({
         {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
-            {/* Site Selector for Return */}
-            {clientSites && clientSites.length > 0 && (
-              <Card className="border-primary/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    Select Return Site
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Label>Which site is this return from?</Label>
-                    <Select value={selectedDeliverySiteId} onValueChange={handleSelectDeliverySite}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a site..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clientSites.map(site => (
-                          <SelectItem key={site.id} value={site.id}>
-                            {site.site_number} — {site.site_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedDeliverySiteId && (() => {
-                      const site = clientSites.find(s => s.id === selectedDeliverySiteId);
-                      return site ? (
-                        <div className="text-sm text-muted-foreground mt-1 p-2 bg-muted/30 rounded">
-                          <span className="font-medium text-foreground">{site.site_number}</span> — {site.site_name}
-                          {site.site_address && <span> • {site.site_address}</span>}
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             <div className="rounded-lg border border-border p-4 bg-muted/30">
               <div className="flex items-center gap-2 mb-1">
                 <h4 className="font-semibold">Hire Return</h4>
@@ -4416,20 +4378,7 @@ const HireQuotationWorkflow = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label>Return Note Number</Label>
-                    <Input value={returnNote.returnNoteNo} readOnly className="bg-muted" />
-                  </div>
-                  <div>
-                    <Label>Return Date</Label>
-                    <Input
-                      type="date"
-                      value={returnNote.returnDate}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnDate: e.target.value }))}
-                      disabled={returnProcessed}
-                    />
-                  </div>
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label>Hire End Date</Label>
                     <Input
@@ -4440,31 +4389,28 @@ const HireQuotationWorkflow = ({
                     />
                   </div>
                   <div>
-                    <Label>Vehicle Number</Label>
-                    <Input
-                      value={returnNote.vehicleNo}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
-                      placeholder="e.g. KBZ 123A"
-                      disabled={returnProcessed}
-                    />
-                  </div>
-                  <div>
-                    <Label>Returned By</Label>
-                    <Input
-                      value={returnNote.returnedBy}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnedBy: e.target.value }))}
-                      placeholder="Name of person returning"
-                      disabled={returnProcessed}
-                    />
-                  </div>
-                  <div>
-                    <Label>Received By</Label>
-                    <Input
-                      value={returnNote.receivedBy}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, receivedBy: e.target.value }))}
-                      placeholder="Name of person receiving"
-                      disabled={returnProcessed}
-                    />
+                    <Label>Returned To Site ID</Label>
+                    <Select
+                      value={selectedDeliverySiteId}
+                      onValueChange={handleSelectDeliverySite}
+                      disabled={returnProcessed || !(clientSites?.some((site) => site.is_active))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select active site..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(clientSites || [])
+                          .filter((site) => site.is_active)
+                          .map((site) => (
+                            <SelectItem key={site.id} value={site.id}>
+                              {site.site_number} — {site.site_name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Shows active sites for this client only.
+                    </p>
                   </div>
                 </div>
               </CardContent>
