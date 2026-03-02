@@ -1097,14 +1097,8 @@ const HireQuotationWorkflow = ({
     }
   }, [initialExistingClient, initialQuotation, isTestQuotation, previousQuotations, mapDatabaseLineItemsToEquipment]);
 
-  // Only auto-load DB items for test quotations if local state is empty
-  // (prevents DB sync from overriding items the user has just added)
   useEffect(() => {
     if (!isTestQuotation || initialQuotation || !savedQuotationId) {
-      return;
-    }
-    // If we already have items locally, don't overwrite from DB
-    if (equipmentItems.length > 0) {
       return;
     }
 
@@ -1114,7 +1108,6 @@ const HireQuotationWorkflow = ({
     }
 
     setEquipmentItems(mapDatabaseLineItemsToEquipment(dbQuotation.line_items));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuotation, isTestQuotation, mapDatabaseLineItemsToEquipment, previousQuotations, savedQuotationId]);
 
   useEffect(() => {
@@ -2678,12 +2671,6 @@ const HireQuotationWorkflow = ({
       return;
     }
 
-    // Require a site selection before processing return
-    if ((clientSites?.length ?? 0) > 0 && !selectedDeliverySiteId) {
-      toast.error("Please select the site the items are being returned from.");
-      return;
-    }
-
     const hasReturn = returnItems.some((item) =>
       parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0
     );
@@ -4037,32 +4024,6 @@ const HireQuotationWorkflow = ({
                     <li>Please ensure that you are issued with a "Request for Collection" reference number when you instruct our offices to collect equipment.</li>
                   </ul>
                 </div>
-
-                {/* Save & Continue to Hire Loading */}
-                <div className="flex items-center justify-between border-t border-border pt-4">
-                  <Button type="button" variant="outline" onClick={handleBack}>
-                    Back
-                  </Button>
-                  <div className="flex gap-2">
-                    {(clientSites?.length ?? 0) > 0 && (
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          if (clientSites && clientSites.length > 0 && !selectedDeliverySiteId) {
-                            handleSelectDeliverySiteFromRow(clientSites[0]);
-                          }
-                          handleNext();
-                        }}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Save & Continue to Hire Loading
-                      </Button>
-                    )}
-                    {(clientSites?.length ?? 0) === 0 && (
-                      <p className="text-sm text-amber-600">Add at least one site to continue.</p>
-                    )}
-                  </div>
-                </div>
               </div>
             )}
           </div>
@@ -4427,53 +4388,14 @@ const HireQuotationWorkflow = ({
             </div>
 
             {/* Return Note Details Form */}
-            <Card className={`border-2 ${(clientSites?.length ?? 0) > 0 && !selectedDeliverySiteId && !returnProcessed ? 'border-amber-500/50' : 'border-primary/20'}`}>
+            <Card className="border-primary/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
                   Return Note Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Site selector — required when sites exist */}
-                {(clientSites?.length ?? 0) > 0 && (
-                  <div className={`rounded-lg p-3 ${!selectedDeliverySiteId && !returnProcessed ? 'border-2 border-amber-500/50 bg-amber-500/5' : 'border border-border bg-muted/20'}`}>
-                    <Label className="text-sm font-semibold flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      Return Site <span className="text-destructive ml-1">*</span>
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-2">Select the site the items are being returned from.</p>
-                    <Select
-                      value={selectedDeliverySiteId}
-                      onValueChange={handleSelectDeliverySite}
-                      disabled={returnProcessed}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select site for this return..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(clientSites || [])
-                          .filter((site) => site.is_active)
-                          .map((site) => (
-                            <SelectItem key={site.id} value={site.id}>
-                              {site.site_number} — {site.site_name} {site.site_location ? `(${site.site_location})` : ""}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedDeliverySiteId && (() => {
-                      const site = clientSites?.find(s => s.id === selectedDeliverySiteId);
-                      return site ? (
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge variant="outline" className="font-mono text-xs border-primary/50 text-primary">
-                            {site.site_number}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">{site.site_name} • {site.site_address || site.site_location || "—"}</span>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
+              <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label>Hire End Date</Label>
@@ -4485,13 +4407,28 @@ const HireQuotationWorkflow = ({
                     />
                   </div>
                   <div>
-                    <Label>Return Date</Label>
-                    <Input
-                      type="date"
-                      value={returnNote.returnDate}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnDate: e.target.value }))}
-                      disabled={returnProcessed}
-                    />
+                    <Label>Returned To Site ID</Label>
+                    <Select
+                      value={selectedDeliverySiteId}
+                      onValueChange={handleSelectDeliverySite}
+                      disabled={returnProcessed || !(clientSites?.some((site) => site.is_active))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select active site..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(clientSites || [])
+                          .filter((site) => site.is_active)
+                          .map((site) => (
+                            <SelectItem key={site.id} value={site.id}>
+                              {site.site_number} — {site.site_name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Shows active sites for this client only.
+                    </p>
                   </div>
                 </div>
               </CardContent>

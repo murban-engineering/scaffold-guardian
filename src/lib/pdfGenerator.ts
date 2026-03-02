@@ -167,7 +167,7 @@ const formatMass = (value: number | string | null | undefined) => {
   return Number.isFinite(parsed) ? `${parsed.toFixed(2)} kg` : "-";
 };
 
-const withPrintOption = (html: string, autoPrint = false) => {
+const withPrintOption = (html: string) => {
   const printControls = `
     <style>
       .print-controls {
@@ -194,10 +194,7 @@ const withPrintOption = (html: string, autoPrint = false) => {
         .print-controls { display: none; }
       }
     </style>
-    <script>
-      const triggerPrint = () => window.print();
-      ${autoPrint ? "window.onload = () => { window.print(); };" : ""}
-    </script>
+    <script>const triggerPrint = () => window.print();</script>
     <div class="print-controls">
       <button type="button" class="print-button" onclick="triggerPrint()">Print report</button>
     </div>
@@ -226,22 +223,27 @@ const SHARED_PRINT_STYLES = `
     .print-wrapper-table {
       width: 100%;
       border-collapse: collapse;
-      display: table !important;
     }
     /* thead repeats on every page automatically */
     .print-wrapper-table > thead {
-      display: table-header-group !important;
+      display: table-header-group;
     }
     .print-wrapper-table > tbody {
-      display: table-row-group !important;
+      display: table-row-group;
     }
-    /* The header cell shown on every page */
+    /* The header cell shown only on page 2+ */
     .print-wrapper-table > thead > tr > td {
-      padding: 5px 10px 6px;
-      border-bottom: 2px solid #111;
+      padding: 5px 10px 4px;
+      border-bottom: 1.5px solid #111;
       background: white;
     }
-    /* Hide the screen-only full header at print time */
+    /* On the very first page the full screen header is visible — hide the
+       compact thead so it doesn't double up. We achieve this by making the
+       thead invisible on the first page via a zero-height trick: we insert a
+       1px ghost first-row that pushes the real thead to page 2 rendering.
+       But actually the simpler approach: always show the compact header in
+       thead — it appears on EVERY page including page 1, which is fine because
+       the screen-only full header (.standard-report-layout) is hidden at print. */
     .standard-report-layout { display: none !important; }
     .page-header { display: block; }
 
@@ -251,9 +253,6 @@ const SHARED_PRINT_STYLES = `
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
     .page-header-spacer { display: none; }
-
-    /* Ensure only one copy prints */
-    @page { margin: 10mm; }
   }
   .page-header-spacer { display: none; }
 
@@ -829,21 +828,20 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const discountAmount = (subtotal + vatAmount) * (data.discountRate / 100);
   const totalAfterDiscount = subtotal + vatAmount - discountAmount;
 
-  const displayNumber = data.quotationNumber || "DRAFT";
-  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${displayNumber}</title>
+  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
       .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
     ${wrapBodyContent(
-      renderPageHeader("Hire Quotation", displayNumber, data.companyName || "Draft Client"),
+      renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName),
       `
       ${renderStandardReportLayout({
       documentType: "Hire Quotation",
-      documentNumber: displayNumber,
+      documentNumber: data.quotationNumber,
       documentDate: data.dateCreated,
-      clientName: data.companyName || "Draft Client",
+      clientName: data.companyName,
       contactName: data.contactName,
       contactPhone: data.contactPhone,
       contactEmail: data.contactEmail,
@@ -915,7 +913,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     )}
   </body></html>`;
 
-  printWindow.document.write(withPrintOption(html, true));
+  printWindow.document.write(withPrintOption(html));
   printWindow.document.close();
 };
 
