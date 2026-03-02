@@ -829,20 +829,21 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const discountAmount = (subtotal + vatAmount) * (data.discountRate / 100);
   const totalAfterDiscount = subtotal + vatAmount - discountAmount;
 
-  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
+  const displayNumber = data.quotationNumber || "DRAFT";
+  const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${displayNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
       .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
     ${wrapBodyContent(
-      renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName),
+      renderPageHeader("Hire Quotation", displayNumber, data.companyName || "Draft Client"),
       `
       ${renderStandardReportLayout({
       documentType: "Hire Quotation",
-      documentNumber: data.quotationNumber,
+      documentNumber: displayNumber,
       documentDate: data.dateCreated,
-      clientName: data.companyName,
+      clientName: data.companyName || "Draft Client",
       contactName: data.contactName,
       contactPhone: data.contactPhone,
       contactEmail: data.contactEmail,
