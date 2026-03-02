@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Printer, CalendarDays, DollarSign, Users, Search, FileText, ClipboardList } from "lucide-react";
+import { Printer, CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
 
@@ -759,28 +759,40 @@ const Accounting = () => {
                                 <Printer className="h-3.5 w-3.5 mr-1" />
                                 DDS Invoice
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openScrapReport(inv)}
-                                title="Print scrap items report"
-                                disabled={inv.policyBreakdown.filter(l => l.condition === "scrap").length === 0}
+                              <Select
+                                onValueChange={(action) => {
+                                  if (action === "dds") {
+                                    openInvoicePrint(inv, billingDate);
+                                    return;
+                                  }
+
+                                  if (action === "scrap") {
+                                    openScrapReport(inv);
+                                    return;
+                                  }
+
+                                  if (action.startsWith("monthly:")) {
+                                    const monthIdx = Number(action.replace("monthly:", ""));
+                                    const months = generateMonthlyInvoices(inv);
+                                    const m = months[monthIdx];
+                                    if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
+                                  }
+                                }}
                               >
-                                <FileText className="h-3.5 w-3.5 mr-1" />
-                                Scrap
-                              </Button>
-                              <Select onValueChange={(monthIdx) => {
-                                const months = generateMonthlyInvoices(inv);
-                                const m = months[Number(monthIdx)];
-                                if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
-                              }}>
-                                <SelectTrigger className="h-8 w-[130px] text-xs">
-                                  <SelectValue placeholder="Monthly" />
+                                <SelectTrigger className="h-8 w-[180px] text-xs">
+                                  <SelectValue placeholder="Reports" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="dds">DDS Invoice</SelectItem>
+                                  <SelectItem
+                                    value="scrap"
+                                    disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
+                                  >
+                                    Scrap Report
+                                  </SelectItem>
                                   {generateMonthlyInvoices(inv).map((m, idx) => (
-                                    <SelectItem key={idx} value={String(idx)}>
-                                      {m.label}
+                                    <SelectItem key={idx} value={`monthly:${idx}`}>
+                                      Monthly: {m.label}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
