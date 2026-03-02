@@ -193,6 +193,42 @@ export const useUpdateQuotation = () => {
   });
 };
 
+export const useDeleteQuotation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }): Promise<void> => {
+      const { error: deleteSitesError } = await supabase
+        .from("client_sites")
+        .delete()
+        .eq("quotation_id", id);
+
+      if (deleteSitesError) throw deleteSitesError;
+
+      const { error: deleteLineItemsError } = await supabase
+        .from("quotation_line_items")
+        .delete()
+        .eq("quotation_id", id);
+
+      if (deleteLineItemsError) throw deleteLineItemsError;
+
+      const { error: deleteQuotationError } = await supabase
+        .from("hire_quotations")
+        .delete()
+        .eq("id", id);
+
+      if (deleteQuotationError) throw deleteQuotationError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["hire-quotations"] });
+      toast.success("Quotation deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete quotation: ${error.message}`);
+    },
+  });
+};
+
 export const useAddLineItem = () => {
   const queryClient = useQueryClient();
 
