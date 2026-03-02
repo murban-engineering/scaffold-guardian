@@ -167,7 +167,7 @@ const formatMass = (value: number | string | null | undefined) => {
   return Number.isFinite(parsed) ? `${parsed.toFixed(2)} kg` : "-";
 };
 
-const withPrintOption = (html: string) => {
+const withPrintOption = (html: string, autoPrint = false) => {
   const printControls = `
     <style>
       .print-controls {
@@ -194,7 +194,10 @@ const withPrintOption = (html: string) => {
         .print-controls { display: none; }
       }
     </style>
-    <script>const triggerPrint = () => window.print();</script>
+    <script>
+      const triggerPrint = () => window.print();
+      ${autoPrint ? "window.onload = () => { window.print(); };" : ""}
+    </script>
     <div class="print-controls">
       <button type="button" class="print-button" onclick="triggerPrint()">Print report</button>
     </div>
@@ -223,27 +226,22 @@ const SHARED_PRINT_STYLES = `
     .print-wrapper-table {
       width: 100%;
       border-collapse: collapse;
+      display: table !important;
     }
     /* thead repeats on every page automatically */
     .print-wrapper-table > thead {
-      display: table-header-group;
+      display: table-header-group !important;
     }
     .print-wrapper-table > tbody {
-      display: table-row-group;
+      display: table-row-group !important;
     }
-    /* The header cell shown only on page 2+ */
+    /* The header cell shown on every page */
     .print-wrapper-table > thead > tr > td {
-      padding: 5px 10px 4px;
-      border-bottom: 1.5px solid #111;
+      padding: 5px 10px 6px;
+      border-bottom: 2px solid #111;
       background: white;
     }
-    /* On the very first page the full screen header is visible — hide the
-       compact thead so it doesn't double up. We achieve this by making the
-       thead invisible on the first page via a zero-height trick: we insert a
-       1px ghost first-row that pushes the real thead to page 2 rendering.
-       But actually the simpler approach: always show the compact header in
-       thead — it appears on EVERY page including page 1, which is fine because
-       the screen-only full header (.standard-report-layout) is hidden at print. */
+    /* Hide the screen-only full header at print time */
     .standard-report-layout { display: none !important; }
     .page-header { display: block; }
 
@@ -253,6 +251,9 @@ const SHARED_PRINT_STYLES = `
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
     .page-header-spacer { display: none; }
+
+    /* Ensure only one copy prints */
+    @page { margin: 10mm; }
   }
   .page-header-spacer { display: none; }
 
@@ -913,7 +914,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     )}
   </body></html>`;
 
-  printWindow.document.write(withPrintOption(html));
+  printWindow.document.write(withPrintOption(html, true));
   printWindow.document.close();
 };
 
