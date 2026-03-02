@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -15,7 +15,7 @@ import HireQuotationWorkflow, { ProcessedClient } from "@/components/dashboard/H
 import type { StepKey } from "@/components/dashboard/HireQuotationWorkflow";
 import SignedInUsers from "@/components/workforce/SignedInUsers";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreateQuotation, useHireQuotations, useUpdateQuotation, HireQuotation } from "@/hooks/useHireQuotations";
+import { useCreateQuotation, useDeleteQuotation, useHireQuotations, useUpdateQuotation, HireQuotation } from "@/hooks/useHireQuotations";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ const Index = () => {
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
   const createQuotation = useCreateQuotation();
   const updateQuotation = useUpdateQuotation();
+  const deleteQuotation = useDeleteQuotation();
 
   useEffect(() => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
@@ -245,6 +246,55 @@ const Index = () => {
     }
   };
 
+  const handleDeleteTestQuotation = async (quotation: HireQuotation) => {
+    const clientId = toClientId(quotation.quotation_number);
+    const confirmed = window.confirm(
+      `Delete test quotation ${clientId}? This will permanently remove its quotation history from the system.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteQuotation.mutateAsync({ id: quotation.id });
+
+      const historyKeys = [
+        `hire-delivery-history:${quotation.id}`,
+        `hire-return-history:${quotation.id}`,
+      ];
+
+      if (quotation.quotation_number) {
+        historyKeys.push(`hire-delivery-history:${quotation.quotation_number}`);
+        historyKeys.push(`hire-return-history:${quotation.quotation_number}`);
+      }
+
+      historyKeys.forEach((key) => window.localStorage.removeItem(key));
+
+      const testDraftsRaw = window.localStorage.getItem("hire-workflow:test-drafts");
+      if (testDraftsRaw) {
+        const testDrafts = JSON.parse(testDraftsRaw) as Record<string, { savedQuotationId?: string; header?: { quotationNo?: string } }>;
+        const filteredDrafts = Object.fromEntries(
+          Object.entries(testDrafts).filter(([, draft]) => {
+            const hasMatchingSavedId = draft.savedQuotationId === quotation.id;
+            const hasMatchingQuotationNo =
+              Boolean(quotation.quotation_number) &&
+              draft.header?.quotationNo === quotation.quotation_number;
+            return !hasMatchingSavedId && !hasMatchingQuotationNo;
+          }),
+        );
+
+        window.localStorage.setItem("hire-workflow:test-drafts", JSON.stringify(filteredDrafts));
+      }
+
+      if (selectedQuotation?.id === quotation.id) {
+        setSelectedQuotation(null);
+      }
+
+      toast.success(`Deleted test quotation ${clientId} and cleared its saved history.`);
+    } catch (error) {
+      console.error("Failed to delete test quotation", error);
+    }
+  };
+
   const handleSidebarItemClick = (item: string) => {
     if (item === "sites") {
       navigate("/sites");
@@ -381,11 +431,28 @@ const Index = () => {
                                     className="cursor-pointer"
                                     onClick={() => handleStartTestQuotation(quotation)}
                                   >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium">{clientId}</p>
-                                      <p className="truncate text-xs text-muted-foreground">
-                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
-                                      </p>
+                                    <div className="flex w-full items-start justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium">{clientId}</p>
+                                        <p className="truncate text-xs text-muted-foreground">
+                                          {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
+                                        </p>
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                        onClick={(event) => {
+                                          event.preventDefault();
+                                          event.stopPropagation();
+                                          handleDeleteTestQuotation(quotation);
+                                        }}
+                                        disabled={deleteQuotation.isPending}
+                                        aria-label={`Delete test quotation ${clientId}`}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
                                     </div>
                                   </DropdownMenuItem>
                                 );
