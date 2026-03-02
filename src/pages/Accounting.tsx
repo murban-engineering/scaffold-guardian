@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Printer, CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
+import { CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
 
@@ -750,15 +750,6 @@ const Accounting = () => {
                           <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openInvoicePrint(inv, billingDate)}
-                                title="Print DDS invoice to billing date"
-                              >
-                                <Printer className="h-3.5 w-3.5 mr-1" />
-                                DDS Invoice
-                              </Button>
                               <Select
                                 onValueChange={(action) => {
                                   if (action === "dds") {
