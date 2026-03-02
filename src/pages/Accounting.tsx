@@ -14,8 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Printer, CalendarDays, DollarSign, Users, Search, FileText, ClipboardList, ChevronDown, FileSpreadsheet } from "lucide-react";
+import { Printer, CalendarDays, DollarSign, Users, Search, FileText, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
 
@@ -415,180 +414,6 @@ const openScrapReport = (invoice: ClientInvoice) => {
   win.document.close();
 };
 
-const openCustomerStatement = (invoice: ClientInvoice, billingDateStr: string) => {
-  const win = window.open("", "_blank");
-  if (!win) { alert("Please allow popups to print reports"); return; }
-
-  const billingDate = asDateOrToday(billingDateStr);
-  const statementDate = format(billingDate, "yyyy-MM-dd");
-  const subtotal = invoice.grandTotal;
-  const vatAmount = subtotal * 0.16;
-  const totalDue = subtotal + vatAmount;
-  const runningDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
-
-  const statementRows = [
-    {
-      date: invoice.dispatchDate,
-      documentNo: invoice.invoiceNumber,
-      siteNo: invoice.site,
-      orderNo: invoice.quotationNumber,
-      prevDocNo: "-",
-      amount: invoice.hireTotal,
-      allocated: 0,
-    },
-    {
-      date: statementDate,
-      documentNo: `${invoice.invoiceNumber}-POL`,
-      siteNo: invoice.site,
-      orderNo: invoice.quotationNumber,
-      prevDocNo: invoice.invoiceNumber,
-      amount: invoice.policyTotal,
-      allocated: 0,
-    },
-    {
-      date: statementDate,
-      documentNo: `${invoice.invoiceNumber}-VAT`,
-      siteNo: invoice.site,
-      orderNo: "VAT 16%",
-      prevDocNo: `${invoice.invoiceNumber}-POL`,
-      amount: vatAmount,
-      allocated: 0,
-    },
-  ].filter((row) => row.amount > 0 || row.allocated > 0);
-
-  let runningBalance = 0;
-  const statementTableRows = statementRows.map((row) => {
-    runningBalance += row.amount - row.allocated;
-    return `
-      <tr>
-        <td>${escapeHtml(row.date)}</td>
-        <td>${escapeHtml(row.documentNo)}</td>
-        <td>${escapeHtml(row.siteNo)}</td>
-        <td>${escapeHtml(row.orderNo)}</td>
-        <td>${escapeHtml(row.prevDocNo)}</td>
-        <td class="r">${currency.format(row.amount)}</td>
-        <td class="r">${currency.format(row.allocated)}</td>
-        <td class="r">${currency.format(runningBalance)}</td>
-      </tr>
-    `;
-  }).join("");
-
-  const ageDays = Math.max(differenceInCalendarDays(billingDate, asDateOrToday(invoice.dispatchDate)), 0);
-  const bucket = (from: number, to?: number) => (ageDays >= from && (to === undefined || ageDays <= to) ? totalDue : 0);
-  const aging = {
-    days180Plus: bucket(181),
-    days150: bucket(151, 180),
-    days120: bucket(121, 150),
-    days90: bucket(91, 120),
-    days60: bucket(61, 90),
-    days30: bucket(31, 60),
-    current: bucket(0, 30),
-  };
-
-  const html = `<!doctype html><html><head>
-    <title>Customer Statement - ${escapeHtml(invoice.client)}</title>
-    <style>
-      body{font-family:Arial,sans-serif;margin:20px;color:#111;font-size:11px}
-      h1{margin:0;font-size:34px;line-height:1.02;text-transform:capitalize}
-      .subtitle{font-size:11px;color:#444;margin-bottom:10px}
-      .header-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-      .brand-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px}
-      .logo{width:74px;height:auto}
-      .brand-title{font-size:52px;line-height:0.95;font-weight:800;color:#a8ad2b;letter-spacing:-1px}
-      .brand-meta{font-size:10px;color:#666;margin-top:2px}
-      .panel{border:1px solid #30343f;border-radius:3px;padding:8px;min-height:90px}
-      .panel h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;color:#111;font-weight:700}
-      .row{display:flex;align-items:flex-start;margin-bottom:4px}.lbl{width:104px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
-      table{width:100%;border-collapse:collapse;margin-top:6px}
-      th,td{border:1px solid #9ca3af;padding:5px 6px;text-align:left;font-size:10px}
-      th{background:#f9fafb;font-size:10px;text-transform:uppercase}
-      .r{text-align:right}
-      .statement-meta{margin-top:8px;border:1px solid #9ca3af;border-radius:3px;padding:6px}
-      .statement-meta-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:center}
-      .aging{margin-top:8px;border:1px solid #9ca3af;border-radius:3px;padding:6px}
-      .aging-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-      .aging-cell{border:1px solid #d1d5db;padding:5px;text-align:center}
-      .aging-cell .k{display:block;font-size:9px;color:#555;margin-bottom:2px}
-      .footer-band{margin-top:10px;background:#f4c21c;color:#111;padding:6px 10px;font-size:10px;font-weight:700}
-      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
-      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
-      @media print{.print-bar{display:none} body{margin:0;padding:12px}}
-    </style></head><body>
-    <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Customer Statement</button></div>
-    <div class="header-grid">
-      <div>
-        <div class="brand-top">
-          <div>
-            <div class="brand-meta">Page 1 of 1 · Printed ${escapeHtml(runningDate)}</div>
-          </div>
-        </div>
-        <div class="panel">
-          <h3>${escapeHtml(invoice.client)}</h3>
-          <div>${escapeHtml(invoice.siteAddress || "-")}</div>
-          <div>${escapeHtml(invoice.site)}</div>
-          <div>Kenya</div>
-        </div>
-      </div>
-      <div>
-        <h1>Customer Statement</h1>
-        <div class="subtitle">(and settlement discount Credit Note)</div>
-        <div class="panel">
-          <h3>${escapeHtml(COMPANY_NAME)}</h3>
-          <div>${escapeHtml(COMPANY_ADDRESS)}</div>
-          <div>${escapeHtml(COMPANY_LOCATION)}</div>
-          <div class="row"><span class="lbl">Tel No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
-          <div class="row"><span class="lbl">Fax No</span><span class="sep">:</span><span class="val">-</span></div>
-        </div>
-        <div class="panel" style="margin-top:8px;">
-          <div class="row"><span class="lbl">Customer No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.accountNumber)}</span></div>
-          <div class="row"><span class="lbl">Date</span><span class="sep">:</span><span class="val">${escapeHtml(statementDate)}</span></div>
-          <div class="row"><span class="lbl">Terms</span><span class="sep">:</span><span class="val">Net 30 Days</span></div>
-          <div class="row"><span class="lbl">Deposit Held</span><span class="sep">:</span><span class="val">${currency.format(0)}</span></div>
-          <div class="row"><span class="lbl">Credit Limit</span><span class="sep">:</span><span class="val">${currency.format(totalDue * 2)}</span></div>
-          <div class="row"><span class="lbl">Vat</span><span class="sep">:</span><span class="val">-</span></div>
-        </div>
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Document No</th><th>Site No</th><th>Order No</th><th>Prev Doc No</th><th class="r">Amount</th><th class="r">Allocated</th><th class="r">Balance</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${statementTableRows || `<tr><td colspan="8" class="r">No transactions.</td></tr>`}
-      </tbody>
-    </table>
-
-    <div class="statement-meta">
-      <div class="statement-meta-grid">
-        <div><strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED · KES Acc: 02107773676350 · I&amp;M Bank, Changamwe · Swift: IMBLKENA · Mpesa: 542542</div>
-        <div><strong>Total Due</strong></div>
-        <div><strong>Ksh</strong></div>
-        <div class="r"><strong>${currency.format(totalDue)}</strong></div>
-      </div>
-    </div>
-
-    <div class="aging">
-      <div class="aging-grid">
-        <div class="aging-cell"><span class="k">180 Days +</span>${currency.format(aging.days180Plus)}</div>
-        <div class="aging-cell"><span class="k">150 Days</span>${currency.format(aging.days150)}</div>
-        <div class="aging-cell"><span class="k">120 Days</span>${currency.format(aging.days120)}</div>
-        <div class="aging-cell"><span class="k">90 Days</span>${currency.format(aging.days90)}</div>
-        <div class="aging-cell"><span class="k">60 Days</span>${currency.format(aging.days60)}</div>
-        <div class="aging-cell"><span class="k">&lt;30 Days</span>${currency.format(aging.days30)}</div>
-        <div class="aging-cell"><span class="k">Current</span>${currency.format(aging.current)}</div>
-      </div>
-    </div>
-
-  </body></html>`;
-
-  win.document.write(html);
-  win.document.close();
-};
-
-
 const Accounting = () => {
   const navigate = useNavigate();
   const { data: quotations = [], isLoading } = useHireQuotations();
@@ -924,43 +749,43 @@ const Accounting = () => {
                           </TableCell>
                           <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
                           <TableCell className="text-center">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="sm" variant="outline" className="gap-1">
-                                  Reports
-                                  <ChevronDown className="h-3.5 w-3.5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel>Print Reports</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => openInvoicePrint(inv, billingDate)}>
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  DDS Invoice
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => openScrapReport(inv)}
-                                  disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
-                                >
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  Scrap Report
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openCustomerStatement(inv, billingDate)}>
-                                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                  Customer Statement
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel>Monthly Invoices</DropdownMenuLabel>
-                                {generateMonthlyInvoices(inv).map((m, idx) => (
-                                  <DropdownMenuItem
-                                    key={idx}
-                                    onClick={() => openMonthlyInvoice(inv, m.startDate, m.endDate, m.label)}
-                                  >
-                                    {m.label}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openInvoicePrint(inv, billingDate)}
+                                title="Print DDS invoice to billing date"
+                              >
+                                <Printer className="h-3.5 w-3.5 mr-1" />
+                                DDS Invoice
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openScrapReport(inv)}
+                                title="Print scrap items report"
+                                disabled={inv.policyBreakdown.filter(l => l.condition === "scrap").length === 0}
+                              >
+                                <FileText className="h-3.5 w-3.5 mr-1" />
+                                Scrap
+                              </Button>
+                              <Select onValueChange={(monthIdx) => {
+                                const months = generateMonthlyInvoices(inv);
+                                const m = months[Number(monthIdx)];
+                                if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
+                              }}>
+                                <SelectTrigger className="h-8 w-[130px] text-xs">
+                                  <SelectValue placeholder="Monthly" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {generateMonthlyInvoices(inv).map((m, idx) => (
+                                    <SelectItem key={idx} value={String(idx)}>
+                                      {m.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

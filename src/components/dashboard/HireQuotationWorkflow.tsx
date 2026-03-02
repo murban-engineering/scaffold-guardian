@@ -268,11 +268,8 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) => {
-  if (!quotationNo) return "";
-  if (quotationNo.startsWith("HSQ-")) return quotationNo.replace("HSQ-", "CL-");
-  return ""; // TEST-DRAFT or other non-HSQ numbers have no client ID
-};
+const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
+  quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
 
 const deriveDraftIdFromClient = (quotation?: HireQuotation | null) => {
   const clientId = deriveClientIdFromQuotationNumber(quotation?.quotation_number)
@@ -1567,8 +1564,6 @@ const HireQuotationWorkflow = ({
     const seen = new Set<string>();
 
     return previousQuotations.filter((quotation) => {
-      // Exclude test draft records from the client lookup list
-      if (quotation.quotation_number === "TEST-DRAFT") return false;
       const companyName = quotation.company_name?.trim() || "";
       const companyKey = companyName.toLowerCase();
       const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number).toLowerCase();
@@ -1725,21 +1720,19 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-          // Test quotations use a fixed placeholder — no HSQ number generated
-          ...(isTestQuotation ? { quotation_number: "TEST-DRAFT" } : {}),
-        } as any);
+        });
         setSavedQuotationId(quotation.id);
         const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,
-          clientId: clientId || prev.clientId,
+          clientId,
           clientCompanyName: companyName,
           clientName: contactName || prev.clientName,
           clientPhone: contactPhone || prev.clientPhone,
           clientEmail: contactEmail || prev.clientEmail,
         }));
-        if (!silent && clientId) toast.success(`Client ID: ${clientId} — ${quotation.quotation_number}`);
+        if (!silent) toast.success(`Client ID: ${clientId} — ${quotation.quotation_number}`);
         return quotation.id;
       } else {
         await updateQuotation.mutateAsync({
@@ -1765,14 +1758,6 @@ const HireQuotationWorkflow = ({
     if (!validateHeader()) return;
     const id = await ensureQuotationSaved(false);
     if (id) handleNext();
-  };
-
-  const handleHeaderSaveOnly = async () => {
-    if (!validateHeader()) return;
-    const id = await ensureQuotationSaved(false);
-    if (id) {
-      toast.success(`Client details saved${header.clientId ? ` for ${header.clientId}` : ""}.`);
-    }
   };
 
   const handleAddFromInventory = async () => {
@@ -3521,16 +3506,6 @@ const HireQuotationWorkflow = ({
                 {isTestQuotation ? "All fields optional — a Client ID will be auto-assigned" : "* Required fields"}
               </p>
               <div className="flex gap-2">
-                {isTestQuotation && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleHeaderSaveOnly}
-                    disabled={createQuotation.isPending || updateQuotation.isPending}
-                  >
-                    Save Client Details
-                  </Button>
-                )}
                 {!isTestQuotation && (
                   <Button
                     type="button"
@@ -4374,6 +4349,44 @@ const HireQuotationWorkflow = ({
         {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
+            {/* Site Selector for Return */}
+            {clientSites && clientSites.length > 0 && (
+              <Card className="border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    Select Return Site
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>Which site is this return from?</Label>
+                    <Select value={selectedDeliverySiteId} onValueChange={handleSelectDeliverySite}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a site..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientSites.map(site => (
+                          <SelectItem key={site.id} value={site.id}>
+                            {site.site_number} — {site.site_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedDeliverySiteId && (() => {
+                      const site = clientSites.find(s => s.id === selectedDeliverySiteId);
+                      return site ? (
+                        <div className="text-sm text-muted-foreground mt-1 p-2 bg-muted/30 rounded">
+                          <span className="font-medium text-foreground">{site.site_number}</span> — {site.site_name}
+                          {site.site_address && <span> • {site.site_address}</span>}
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="rounded-lg border border-border p-4 bg-muted/30">
               <div className="flex items-center gap-2 mb-1">
                 <h4 className="font-semibold">Hire Return</h4>
@@ -4396,7 +4409,20 @@ const HireQuotationWorkflow = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <Label>Return Note Number</Label>
+                    <Input value={returnNote.returnNoteNo} readOnly className="bg-muted" />
+                  </div>
+                  <div>
+                    <Label>Return Date</Label>
+                    <Input
+                      type="date"
+                      value={returnNote.returnDate}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnDate: e.target.value }))}
+                      disabled={returnProcessed}
+                    />
+                  </div>
                   <div>
                     <Label>Hire End Date</Label>
                     <Input
@@ -4407,28 +4433,31 @@ const HireQuotationWorkflow = ({
                     />
                   </div>
                   <div>
-                    <Label>Returned To Site ID</Label>
-                    <Select
-                      value={selectedDeliverySiteId}
-                      onValueChange={handleSelectDeliverySite}
-                      disabled={returnProcessed || !(clientSites?.some((site) => site.is_active))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select active site..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(clientSites || [])
-                          .filter((site) => site.is_active)
-                          .map((site) => (
-                            <SelectItem key={site.id} value={site.id}>
-                              {site.site_number} — {site.site_name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Shows active sites for this client only.
-                    </p>
+                    <Label>Vehicle Number</Label>
+                    <Input
+                      value={returnNote.vehicleNo}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
+                      placeholder="e.g. KBZ 123A"
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Returned By</Label>
+                    <Input
+                      value={returnNote.returnedBy}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnedBy: e.target.value }))}
+                      placeholder="Name of person returning"
+                      disabled={returnProcessed}
+                    />
+                  </div>
+                  <div>
+                    <Label>Received By</Label>
+                    <Input
+                      value={returnNote.receivedBy}
+                      onChange={(e) => setReturnNote(prev => ({ ...prev, receivedBy: e.target.value }))}
+                      placeholder="Name of person receiving"
+                      disabled={returnProcessed}
+                    />
                   </div>
                 </div>
               </CardContent>

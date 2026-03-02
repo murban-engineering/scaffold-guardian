@@ -203,8 +203,8 @@ const withPrintOption = (html: string) => {
 };
 
 // ── Shared print styles used in every report ──────────────────────────────────
-// Key technique: wrap entire body in a single <table>. The <thead> holds the
-// compact page-header and browser automatically repeats it on every printed page.
+// Key technique: .page-header is position:fixed at top during print so it
+// repeats on every page. The .page-header-spacer pushes content below it.
 const SHARED_PRINT_STYLES = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; }
@@ -213,46 +213,29 @@ const SHARED_PRINT_STYLES = `
   body { padding: 12px; }
 
   /* ── Repeating page header (print only) ── */
-  /* Hidden on screen — the full report header is shown instead */
-  .page-header { display: none; }
-
+  .page-header {
+    display: none; /* hidden on screen – only shown at print */
+  }
   @media print {
-    body { padding: 0; margin: 0; font-size: 8.5px; }
-
-    /* The outer wrapper table drives header repetition */
-    .print-wrapper-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    /* thead repeats on every page automatically */
-    .print-wrapper-table > thead {
-      display: table-header-group;
-    }
-    .print-wrapper-table > tbody {
-      display: table-row-group;
-    }
-    /* The header cell shown only on page 2+ */
-    .print-wrapper-table > thead > tr > td {
-      padding: 5px 10px 4px;
-      border-bottom: 1.5px solid #111;
+    body { padding: 0; font-size: 8.5px; }
+    .page-header {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       background: white;
+      border-bottom: 1.5px solid #111;
+      padding: 5px 10px 4px;
+      z-index: 9999;
     }
-    /* On the very first page the full screen header is visible — hide the
-       compact thead so it doesn't double up. We achieve this by making the
-       thead invisible on the first page via a zero-height trick: we insert a
-       1px ghost first-row that pushes the real thead to page 2 rendering.
-       But actually the simpler approach: always show the compact header in
-       thead — it appears on EVERY page including page 1, which is fine because
-       the screen-only full header (.standard-report-layout) is hidden at print. */
-    .standard-report-layout { display: none !important; }
-    .page-header { display: block; }
-
+    /* push body content below the fixed header */
+    .page-header-spacer { display: block; height: 56px; }
     /* avoid page break inside table rows */
     tr { page-break-inside: avoid; }
-    /* inner data table header repeats too */
+    /* table header repeats on every printed page */
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
-    .page-header-spacer { display: none; }
   }
   .page-header-spacer { display: none; }
 
@@ -330,45 +313,24 @@ const SHARED_PRINT_STYLES = `
   .page:last-child { page-break-after: auto; }
 `;
 
-// ── Compact repeating page-header (appears on every printed page via thead) ───
-// Returns the thead HTML — the outer print-wrapper-table in wrapBodyContent()
-// ensures the browser repeats this on every page automatically.
+// ── Compact page-header HTML (shown only at print, fixed at top) ─────────────
 const renderPageHeader = (docTitle: string, docNumber: string, clientName: string) => `
-  <thead class="print-only-thead">
-    <tr>
-      <td style="padding:5px 10px 4px;border-bottom:1.5px solid #111;background:white;width:100%;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;"/>
-            <div>
-              <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
-              <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;font-weight:800;text-transform:uppercase;">${docTitle}</div>
-            <div style="font-size:8px;color:#555;">${docNumber} &bull; ${clientName}</div>
-          </div>
+  <div class="page-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;"/>
+        <div>
+          <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
+          <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
         </div>
-      </td>
-    </tr>
-  </thead>
-`;
-
-// ── Wraps all report body content in the print-wrapper-table ──────────────────
-// The <thead> (renderPageHeader) repeats on every printed page; the <tbody>
-// contains all actual report content.
-const wrapBodyContent = (theadHtml: string, bodyHtml: string) => `
-  <table class="print-wrapper-table" style="width:100%;border-collapse:collapse;">
-    ${theadHtml}
-    <tbody>
-      <tr>
-        <td style="padding:8px 10px;vertical-align:top;">
-          ${bodyHtml}
-        </td>
-      </tr>
-    </tbody>
-  </table>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;">${docTitle}</div>
+        <div style="font-size:8px;color:#555;">${docNumber} &bull; ${clientName}</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-header-spacer"></div>
 `;
 
 // ── Standard two-column layout (screen heading + client/site panels) ─────────
@@ -469,9 +431,9 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
-  const deliveryNotePage = () => wrapBodyContent(
-    renderPageHeader("Hire Delivery Note", data.deliveryNoteNumber, data.companyName),
-    `
+  const deliveryNotePage = () => `
+    <div class="page">
+      ${renderPageHeader("Hire Delivery Note", data.deliveryNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Delivery Note",
         documentNumber: data.deliveryNoteNumber,
@@ -563,8 +525,8 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
         <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
       </div>
-    `
-  );
+    </div>
+  `;
 
   const html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
     <style>${SHARED_PRINT_STYLES}</style></head><body>
@@ -586,9 +548,9 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
   const noteTitle = data.noteTitle ?? "Hire Loading Report";
 
-  const loadingNotePage = (copyLabel: string) => wrapBodyContent(
-    renderPageHeader(noteTitle, data.quotationNumber, data.companyName),
-    `
+  const loadingNotePage = (copyLabel: string) => `
+    <div class="page">
+      ${renderPageHeader(noteTitle, data.quotationNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: noteTitle,
         documentNumber: data.quotationNumber,
@@ -684,8 +646,8 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
         <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
       </div>
-    `
-  );
+    </div>
+  `;
 
   const html = `<!DOCTYPE html><html><head><title>${noteTitle} - ${data.quotationNumber}</title>
     <style>${SHARED_PRINT_STYLES}</style></head><body>
@@ -834,10 +796,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
-    ${wrapBodyContent(
-      renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName),
-      `
-      ${renderStandardReportLayout({
+    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    ${renderStandardReportLayout({
       documentType: "Hire Quotation",
       documentNumber: data.quotationNumber,
       documentDate: data.dateCreated,
@@ -909,8 +869,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="signature-box"><p><strong>For Client:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
     </div>
     <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
-    `
-    )}
   </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
@@ -933,10 +891,8 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       .summary-row.grand { font-size: 11px; font-weight: bold; background: #333; color: white; margin: -10px; margin-top: 8px; padding: 10px; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
-    ${wrapBodyContent(
-      renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName),
-      `
-      ${renderStandardReportLayout({
+    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    ${renderStandardReportLayout({
       documentType: "Hire Quotation",
       documentNumber: data.quotationNumber,
       documentDate: data.dateCreated,
@@ -1001,8 +957,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       <div class="signature-box"><p><strong>For Client:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
     </div>
     <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
-    `
-    )}
   </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
@@ -1024,9 +978,9 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<tr><td style='height:22px'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td></tr>"
   ).join("");
 
-  const gatePassPage = (copyLabel: string) => wrapBodyContent(
-    renderPageHeader("Hire Return Form", data.returnNoteNumber, data.companyName),
-    `
+  const gatePassPage = (copyLabel: string) => `
+    <div class="page" style="background:#f8cddd;border:1px solid #c58ea3;padding:12px;">
+      ${renderPageHeader("Hire Return Form", data.returnNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Return Form",
         documentNumber: data.returnNoteNumber,
@@ -1082,8 +1036,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         <p>${COMPANY_NAME} &bull; ${COMPANY_LOCATION}</p>
         <p style="font-size:8px;margin-top:3px;">All transactions are subject to our terms of trade.</p>
       </div>
-    `
-  );
+    </div>
+  `;
 
   // Page 2: System Return Note
   const systemItemRows = data.items.map(item =>
@@ -1100,9 +1054,9 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </tr>`
   ).join("");
 
-  const systemPage = (copyLabel: string) => wrapBodyContent(
-    renderPageHeader("Hire Return Note", data.returnNoteNumber, data.companyName),
-    `
+  const systemPage = (copyLabel: string) => `
+    <div class="page">
+      ${renderPageHeader("Hire Return Note", data.returnNoteNumber, data.companyName)}
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1202,8 +1156,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         <div class="line-row"><span>Processed By:</span><span class="line-fill">${data.createdBy || "-"}</span></div>
         <div class="line-row"><span>Processed Date:</span><span class="line-fill">${formatTimestamp()}</span></div>
       </div>
-    `
-  );
+    </div>
+  `;
 
   const html =
     "<!DOCTYPE html><html><head>" +
