@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore } from "date-fns";
+import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore, isSameMonth } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
@@ -778,12 +778,16 @@ const Accounting = () => {
     return months;
   };
 
-  const openMonthlyInvoice = (invoice: ClientInvoice, _monthStart: Date, monthEnd: Date, monthLabel: string) => {
+  const openMonthlyInvoice = (invoice: ClientInvoice, monthStart: Date, monthEnd: Date, monthLabel: string) => {
     const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
-    // Weeks from dispatch date to end of this month
-    const weeks = calculateBillableWeeks(invoice.dispatchDate, monthEnd);
+    const dispatchDate = asDateOrToday(invoice.dispatchDate);
+    const billingStartDate = isSameMonth(monthStart, dispatchDate) ? dispatchDate : startOfMonth(monthStart);
+    const billingStartIso = format(billingStartDate, "yyyy-MM-dd");
+    // First month bills from dispatch date; subsequent months bill from the first day of the month.
+    const weeks = calculateBillableWeeks(billingStartIso, monthEnd);
     const monthInvoice: ClientInvoice = {
       ...invoice,
+      dispatchDate: billingStartIso,
       hireWeeks: weeks,
       invoiceNumber: `${invoice.invoiceNumber}-${format(monthEnd, "MMyy")}`,
       hireBreakdown: invoice.hireBreakdown.map((l) => ({
