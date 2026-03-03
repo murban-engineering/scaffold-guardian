@@ -812,20 +812,31 @@ const HireQuotationWorkflow = ({
     }));
   }, [header.quotationNo, deliverySequence]);
 
-  const deliveryStorageKey = useMemo(() => {
-    if (savedQuotationId) {
-      return `hire-delivery-history:${savedQuotationId}`;
-    }
-    if (header.quotationNo) {
-      return `hire-delivery-history:${header.quotationNo}`;
-    }
-    return null;
-  }, [savedQuotationId, header.quotationNo]);
-
   useEffect(() => {
-    if (!deliveryStorageKey) return;
-    const stored = window.localStorage.getItem(deliveryStorageKey);
+    if (!initialQuotation) return;
+
+    const persistedHistory = Array.isArray(initialQuotation.delivery_history)
+      ? (initialQuotation.delivery_history as DeliveryRecord[])
+      : [];
+
+    if (persistedHistory.length > 0) {
+      setDeliveryHistory(persistedHistory);
+      setInventoryDeducted(true);
+      setCurrentDeliveryDispatched(true);
+      return;
+    }
+
+    const fallbackStorageKey = savedQuotationId
+      ? `hire-delivery-history:${savedQuotationId}`
+      : header.quotationNo
+        ? `hire-delivery-history:${header.quotationNo}`
+        : null;
+
+    if (!fallbackStorageKey) return;
+
+    const stored = window.localStorage.getItem(fallbackStorageKey);
     if (!stored) return;
+
     try {
       const parsed = JSON.parse(stored) as {
         deliveryHistory?: DeliveryRecord[];
@@ -834,6 +845,7 @@ const HireQuotationWorkflow = ({
         remainingQuantities?: Record<string, number>;
         currentDeliveryDispatched?: boolean;
       };
+
       if (parsed.deliveryHistory) {
         setDeliveryHistory(parsed.deliveryHistory);
       }
@@ -854,26 +866,7 @@ const HireQuotationWorkflow = ({
     } catch (error) {
       console.error("Failed to load delivery history from storage:", error);
     }
-  }, [deliveryStorageKey]);
-
-  useEffect(() => {
-    if (!deliveryStorageKey) return;
-    const payload = {
-      deliveryHistory,
-      inventoryDeducted,
-      deliverySequence,
-      remainingQuantities,
-      currentDeliveryDispatched,
-    };
-    window.localStorage.setItem(deliveryStorageKey, JSON.stringify(payload));
-  }, [
-    deliveryStorageKey,
-    deliveryHistory,
-    inventoryDeducted,
-    deliverySequence,
-    remainingQuantities,
-    currentDeliveryDispatched,
-  ]);
+  }, [initialQuotation, savedQuotationId, header.quotationNo]);
 
   // Return history localStorage persistence
   const returnStorageKey = useMemo(() => {
@@ -2001,7 +1994,8 @@ const HireQuotationWorkflow = ({
     // Create delivery record
     const newDelivery = createDeliveryRecord();
     newDelivery.status = "dispatched";
-    setDeliveryHistory(prev => [newDelivery, ...prev]);
+    const nextDeliveryHistory = [newDelivery, ...deliveryHistory];
+    setDeliveryHistory(nextDeliveryHistory);
 
     // Calculate balance quantities
     const balanceQuantities: Record<string, number> = {};
@@ -2037,6 +2031,7 @@ const HireQuotationWorkflow = ({
           status: "dispatched",
           // Always use the current delivery date – this is the authoritative dispatch date
           dispatch_date: deliveryNote.deliveryDate,
+          delivery_history: nextDeliveryHistory,
         } as any);
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
@@ -2106,16 +2101,28 @@ const HireQuotationWorkflow = ({
   }, [deliverySequence, header.quotationNo, equipmentItems, remainingQuantities]);
 
   // Mark a delivery as dispatched from history
-  const handleMarkDeliveryDispatched = useCallback((deliveryId: string) => {
-    setDeliveryHistory(prev => 
-      prev.map(delivery => 
-        delivery.id === deliveryId 
-          ? { ...delivery, status: "dispatched" as const }
-          : delivery
-      )
+  const handleMarkDeliveryDispatched = useCallback(async (deliveryId: string) => {
+    const updatedDeliveryHistory = deliveryHistory.map((delivery) =>
+      delivery.id === deliveryId
+        ? { ...delivery, status: "dispatched" as const }
+        : delivery
     );
+
+    setDeliveryHistory(updatedDeliveryHistory);
+
+    if (savedQuotationId) {
+      try {
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          delivery_history: updatedDeliveryHistory,
+        } as any);
+      } catch (error) {
+        console.error("Failed to persist delivery history:", error);
+      }
+    }
+
     toast.success("Delivery marked as dispatched");
-  }, []);
+  }, [deliveryHistory, savedQuotationId, updateQuotation]);
 
   // Print delivery note from history
   const handlePrintDeliveryNoteFromHistory = useCallback((delivery: DeliveryRecord) => {

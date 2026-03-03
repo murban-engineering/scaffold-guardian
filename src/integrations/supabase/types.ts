@@ -134,6 +134,7 @@ export type Database = {
           created_by: string
           credit_limit: number | null
           delivery_address: string | null
+          delivery_history: Json
           dispatch_date: string | null
           hire_weeks: number | null
           id: string
@@ -166,6 +167,7 @@ export type Database = {
           created_by: string
           credit_limit?: number | null
           delivery_address?: string | null
+          delivery_history?: Json
           dispatch_date?: string | null
           hire_weeks?: number | null
           id?: string
@@ -198,6 +200,7 @@ export type Database = {
           created_by?: string
           credit_limit?: number | null
           delivery_address?: string | null
+          delivery_history?: Json
           dispatch_date?: string | null
           hire_weeks?: number | null
           id?: string
