@@ -868,39 +868,19 @@ const HireQuotationWorkflow = ({
     }
   }, [initialQuotation, savedQuotationId, header.quotationNo]);
 
-  // Return history localStorage persistence
-  const returnStorageKey = useMemo(() => {
-    if (savedQuotationId) return `hire-return-history:${savedQuotationId}`;
-    if (header.quotationNo) return `hire-return-history:${header.quotationNo}`;
-    return null;
-  }, [savedQuotationId, header.quotationNo]);
-
   useEffect(() => {
-    if (!returnStorageKey) return;
-    const stored = window.localStorage.getItem(returnStorageKey);
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored) as {
-        returnHistory?: ReturnRecord[];
-        returnProcessed?: boolean;
-        returnSequence?: number;
-        returnItems?: ReturnItem[];
-      };
-      if (parsed.returnHistory?.length) setReturnHistory(parsed.returnHistory);
-      if (parsed.returnProcessed !== undefined) setReturnProcessed(parsed.returnProcessed);
-      if (parsed.returnSequence) setReturnSequence(parsed.returnSequence);
-      if (parsed.returnItems?.length) {
-        setReturnItems(prev => prev.map(item => {
-          const saved = parsed.returnItems?.find(s => s.id === item.id);
-          return saved ? { ...item, previouslyReturned: saved.previouslyReturned, returnBalance: saved.returnBalance } : item;
-        }));
-      }
-    } catch (error) {
-      console.error("Failed to load return history from storage:", error);
-    }
-  }, [returnStorageKey]);
+    if (!initialQuotation) return;
 
-  // Return save effect is placed after returnItems declaration below
+    const persistedHistory = Array.isArray(initialQuotation.return_history)
+      ? (initialQuotation.return_history as ReturnRecord[])
+      : [];
+
+    if (persistedHistory.length > 0) {
+      setReturnHistory(persistedHistory);
+      setReturnProcessed(false);
+      setReturnSequence(persistedHistory.length + 1);
+    }
+  }, [initialQuotation]);
 
   useEffect(() => {
     if (!initialQuotation) return;
@@ -1227,17 +1207,6 @@ const HireQuotationWorkflow = ({
       })
     );
   }, [equipmentItems, persistedReturnQuantitiesByItemCode]);
-
-  // Persist return history to localStorage (after returnItems is declared)
-  useEffect(() => {
-    if (!returnStorageKey) return;
-    window.localStorage.setItem(returnStorageKey, JSON.stringify({
-      returnHistory,
-      returnProcessed,
-      returnSequence,
-      returnItems,
-    }));
-  }, [returnStorageKey, returnHistory, returnProcessed, returnSequence, returnItems]);
 
   useEffect(() => {
     if (!initialQuotation) return;
@@ -2773,7 +2742,8 @@ const HireQuotationWorkflow = ({
         totalMass: returnRecordItems.reduce((s, i) => s + i.totalMass, 0),
         createdAt: new Date().toISOString(),
       };
-      setReturnHistory((prev) => [newReturn, ...prev]);
+      const nextReturnHistory = [newReturn, ...returnHistory];
+      setReturnHistory(nextReturnHistory);
 
       // Update return balances
       const updatedReturnItems = returnItems.map((item) => {
@@ -2800,6 +2770,11 @@ const HireQuotationWorkflow = ({
         if (returnUpdates.length > 0) {
           await updateLineItemReturnQuantities.mutateAsync({ quotation_id: savedQuotationId, items: returnUpdates });
         }
+
+        await updateQuotation.mutateAsync({
+          id: savedQuotationId,
+          return_history: nextReturnHistory,
+        } as any);
       }
 
       // Check if all items are fully returned
