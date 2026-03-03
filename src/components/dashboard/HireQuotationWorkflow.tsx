@@ -470,6 +470,7 @@ const HireQuotationWorkflow = ({
   const deleteClientSite = useDeleteClientSite();
   const [showSiteMasterPlan, setShowSiteMasterPlan] = useState(false);
   const [selectedDeliverySiteId, setSelectedDeliverySiteId] = useState<string>("");
+  const [selectedReturnSiteId, setSelectedReturnSiteId] = useState<string>("");
   const [newSite, setNewSite] = useState({
     siteName: "",
     siteLocation: "",
@@ -644,6 +645,7 @@ const HireQuotationWorkflow = ({
     setRemainingQuantities({});
     setDeliveryQuantities({});
     setSelectedDeliverySiteId("");
+    setSelectedReturnSiteId("");
   }, [initialQuotation, initialExistingClient?.id, initialClientMode, isTestQuotation]);
 
   useEffect(() => {
@@ -1478,9 +1480,9 @@ const HireQuotationWorkflow = ({
     toast.success("Site details auto-filled from client information");
   };
 
-  const getSelectedSiteNumber = () => {
-    if (!selectedDeliverySiteId) return "";
-    const site = clientSites?.find(s => s.id === selectedDeliverySiteId);
+  const getSelectedSiteNumber = (selectedSiteId: string) => {
+    if (!selectedSiteId) return "";
+    const site = clientSites?.find(s => s.id === selectedSiteId);
     return site?.site_number || "";
   };
 
@@ -1504,6 +1506,7 @@ const HireQuotationWorkflow = ({
 
   const handleSelectDeliverySiteFromRow = (site: ClientSite) => {
     setSelectedDeliverySiteId(site.id);
+    setSelectedReturnSiteId(site.id);
     setHeader(prev => ({
       ...prev,
       siteName: site.site_name,
@@ -1515,6 +1518,14 @@ const HireQuotationWorkflow = ({
       remarks: `Site: ${site.site_number} - ${site.site_name}`,
     }));
     toast.success(`Site ${site.site_number} selected for this hire loading.`);
+  };
+
+  const handleSelectReturnSite = (siteId: string) => {
+    setSelectedReturnSiteId(siteId);
+    const site = clientSites?.find(s => s.id === siteId);
+    if (site) {
+      toast.success(`Hire return linked to site ${site.site_number}`);
+    }
   };
 
   const handleNext = () => {
@@ -2123,7 +2134,7 @@ const HireQuotationWorkflow = ({
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2150,7 +2161,7 @@ const HireQuotationWorkflow = ({
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       noteTitle: "Hire Loading Report",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
@@ -2189,7 +2200,7 @@ const HireQuotationWorkflow = ({
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
@@ -2288,7 +2299,7 @@ const HireQuotationWorkflow = ({
       contactPhone: header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       noteTitle: noteType === "balance" ? "Hire Loading Report (Balance)" : "Hire Loading Report",
       items: [],
     };
@@ -2427,7 +2438,7 @@ const HireQuotationWorkflow = ({
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       items: [],
     };
 
@@ -2455,7 +2466,7 @@ const HireQuotationWorkflow = ({
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       discountRate: parseNumber(hireQuotationDiscount),
       comments: quotationComments,
       items: equipmentItems.map(item => ({
@@ -2552,7 +2563,7 @@ const HireQuotationWorkflow = ({
       contactEmail: header.clientEmail,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
       items: equipmentItems.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2833,7 +2844,7 @@ const HireQuotationWorkflow = ({
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedReturnSiteId),
       items: record.items.map((item) => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2874,7 +2885,7 @@ const HireQuotationWorkflow = ({
       remarks: returnNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(),
+      siteId: getSelectedSiteNumber(selectedReturnSiteId),
       items: returnItems
         .filter((item) => parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0)
         .map((item) => {
@@ -3960,14 +3971,24 @@ const HireQuotationWorkflow = ({
                                 <td className="px-4 py-3 text-muted-foreground">{site.site_manager_name || "—"}</td>
                                 <td className="px-4 py-3 text-muted-foreground">{site.site_manager_phone || "—"}</td>
                                 <td className="px-4 py-3 text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-destructive hover:text-destructive"
-                                    onClick={() => deleteClientSite.mutate({ id: site.id, quotation_id: site.quotation_id })}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant={selectedDeliverySiteId === site.id ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => handleSelectDeliverySiteFromRow(site)}
+                                    >
+                                      Save Site
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={() => deleteClientSite.mutate({ id: site.id, quotation_id: site.quotation_id })}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -4072,6 +4093,7 @@ const HireQuotationWorkflow = ({
                       return site ? (
                         <div className="text-sm space-y-1">
                           <p className="font-medium">{site.site_name}</p>
+                          <p className="text-muted-foreground">Site ID: {site.site_number}</p>
                           <p className="text-muted-foreground">{site.site_address || site.site_location || "—"}</p>
                           <p className="text-muted-foreground">{site.site_manager_name} • {site.site_manager_phone || "—"}</p>
                         </div>
@@ -4351,7 +4373,7 @@ const HireQuotationWorkflow = ({
                 <CardContent>
                   <div className="space-y-2">
                     <Label>Which site is this return from?</Label>
-                    <Select value={selectedDeliverySiteId} onValueChange={handleSelectDeliverySite}>
+                    <Select value={selectedReturnSiteId} onValueChange={handleSelectReturnSite}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a site..." />
                       </SelectTrigger>
@@ -4363,8 +4385,8 @@ const HireQuotationWorkflow = ({
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedDeliverySiteId && (() => {
-                      const site = clientSites.find(s => s.id === selectedDeliverySiteId);
+                    {selectedReturnSiteId && (() => {
+                      const site = clientSites.find(s => s.id === selectedReturnSiteId);
                       return site ? (
                         <div className="text-sm text-muted-foreground mt-1 p-2 bg-muted/30 rounded">
                           <span className="font-medium text-foreground">{site.site_number}</span> — {site.site_name}
