@@ -1094,18 +1094,8 @@ const HireQuotationWorkflow = ({
     }
   }, [initialExistingClient, initialQuotation, isTestQuotation, previousQuotations, mapDatabaseLineItemsToEquipment]);
 
-  useEffect(() => {
-    if (!isTestQuotation || initialQuotation || !savedQuotationId) {
-      return;
-    }
-
-    const dbQuotation = previousQuotations.find((quotation) => quotation.id === savedQuotationId);
-    if (!dbQuotation?.line_items?.length) {
-      return;
-    }
-
-    setEquipmentItems(mapDatabaseLineItemsToEquipment(dbQuotation.line_items));
-  }, [initialQuotation, isTestQuotation, mapDatabaseLineItemsToEquipment, previousQuotations, savedQuotationId]);
+  // This effect is intentionally left empty - equipment is loaded once during hydration
+  // and must NOT be re-loaded on every realtime update to prevent overwriting user changes.
 
   useEffect(() => {
     if (!hasHydratedTestDraft || !isTestQuotation || initialQuotation) {
