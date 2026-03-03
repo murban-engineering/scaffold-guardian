@@ -749,16 +749,7 @@ const Accounting = () => {
                           </TableCell>
                           <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
                           <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => openInvoicePrint(inv, billingDate)}
-                                title="Print DDS invoice to billing date"
-                              >
-                                <Printer className="h-3.5 w-3.5 mr-1" />
-                                DDS Invoice
-                              </Button>
+                            <div className="flex items-center justify-center">
                               <Select
                                 onValueChange={(action) => {
                                   if (action === "dds") {
