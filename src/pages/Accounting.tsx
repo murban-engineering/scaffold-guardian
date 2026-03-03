@@ -25,7 +25,14 @@ const currency = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 2,
 });
 
-const resolveDispatchDateFromHistory = (quotationId: string, quotationNumber?: string | null) => {
+const resolveDispatchDateFromHistory = (
+  deliveryHistoryPayload: unknown,
+  quotationId: string,
+  quotationNumber?: string | null
+) => {
+  const persistedDispatchDate = resolveDispatchDateFromHistoryPayload(deliveryHistoryPayload);
+  if (persistedDispatchDate) return persistedDispatchDate;
+
   if (typeof window === "undefined") return null;
 
   const keys = [
@@ -683,7 +690,7 @@ const Accounting = () => {
       if (storedDispatchDate) {
         dispatchDate = toIsoDateOrToday(storedDispatchDate);
       } else {
-        const historyDispatchDate = resolveDispatchDateFromHistory(q.id, q.quotation_number);
+        const historyDispatchDate = resolveDispatchDateFromHistory(q.delivery_history, q.id, q.quotation_number);
         if (historyDispatchDate) {
           dispatchDate = toIsoDateOrToday(historyDispatchDate);
         } else {

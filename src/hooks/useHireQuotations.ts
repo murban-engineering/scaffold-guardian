@@ -54,6 +54,7 @@ export interface HireQuotation {
   created_at: string;
   updated_at: string;
   dispatch_date: string | null;
+  delivery_history: unknown;
   line_items?: QuotationLineItem[];
 }
 
