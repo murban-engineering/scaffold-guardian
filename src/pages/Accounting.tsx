@@ -414,6 +414,188 @@ const openScrapReport = (invoice: ClientInvoice) => {
   win.document.close();
 };
 
+const openCustomerStatement = (
+  invoice: ClientInvoice,
+  allInvoices: ClientInvoice[],
+  billingDateStr: string,
+) => {
+  const customerInvoices = allInvoices
+    .filter((entry) => entry.client === invoice.client)
+    .sort((a, b) => {
+      const byDispatch = a.dispatchDate.localeCompare(b.dispatchDate);
+      if (byDispatch !== 0) return byDispatch;
+      return a.invoiceNumber.localeCompare(b.invoiceNumber);
+    });
+
+  if (!customerInvoices.length) {
+    alert("No customer statement entries found for this client.");
+    return;
+  }
+
+  const billingDate = asDateOrToday(billingDateStr);
+  let runningBalance = 0;
+  const rows = customerInvoices.map((entry) => {
+    runningBalance += entry.grandTotal;
+    return {
+      entry,
+      runningBalance,
+    };
+  });
+
+  const totalDue = rows[rows.length - 1]?.runningBalance ?? 0;
+  const ageing = {
+    current: 0,
+    d30: 0,
+    d60: 0,
+    d90: 0,
+    d120: 0,
+    d150: 0,
+    d180: 0,
+  };
+
+  rows.forEach(({ entry }) => {
+    const ageDays = Math.max(differenceInCalendarDays(billingDate, asDateOrToday(entry.dispatchDate)), 0);
+    if (ageDays <= 30) ageing.current += entry.grandTotal;
+    else if (ageDays <= 60) ageing.d30 += entry.grandTotal;
+    else if (ageDays <= 90) ageing.d60 += entry.grandTotal;
+    else if (ageDays <= 120) ageing.d90 += entry.grandTotal;
+    else if (ageDays <= 150) ageing.d120 += entry.grandTotal;
+    else if (ageDays <= 180) ageing.d150 += entry.grandTotal;
+    else ageing.d180 += entry.grandTotal;
+  });
+
+  const win = window.open("", "_blank");
+  if (!win) {
+    alert("Please allow popups to print customer statements");
+    return;
+  }
+
+  const statementRows = rows
+    .map(({ entry, runningBalance: rowBalance }, idx) => `
+      <tr>
+        <td>${escapeHtml(entry.dispatchDate)}</td>
+        <td>${escapeHtml(entry.invoiceNumber)}</td>
+        <td>${escapeHtml(entry.site)}</td>
+        <td>${escapeHtml(entry.quotationNumber)}</td>
+        <td>${idx > 0 ? escapeHtml(rows[idx - 1].entry.invoiceNumber) : "-"}</td>
+        <td class="r">${currency.format(entry.grandTotal)}</td>
+        <td class="r">${currency.format(0)}</td>
+        <td class="r">${currency.format(rowBalance)}</td>
+      </tr>
+    `)
+    .join("");
+
+  const html = `<!doctype html><html><head>
+    <title>Customer Statement - ${escapeHtml(invoice.client)}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
+      h1{margin:0 0 4px;font-size:32px;line-height:1.1}
+      .subtitle{font-size:12px;text-transform:uppercase;color:#4b5563;font-weight:700;letter-spacing:.04em}
+      .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      .left-block{padding:8px 4px;display:grid;gap:10px}
+      .right-block{display:grid;gap:8px}
+      .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+      .logo{width:88px;height:auto}
+      .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
+      .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
+      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
+      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .client-panel h3{font-size:16px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
+      .client-address{white-space:pre-line;min-height:42px}
+      .spacer{height:16px}
+      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
+      table{width:100%;border-collapse:collapse;margin-top:8px}
+      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+      th{background:#f5f5f5;font-size:11px}
+      .r{text-align:right}
+      .totals{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:10px}
+      .total-due{font-size:13px;font-weight:700}
+      .aging{margin-top:12px}
+      .ft{margin-top:10px;font-size:11px;color:#555}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      @media print{.print-bar{display:none} body{margin:0;padding:12px}}
+    </style></head><body>
+    <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Customer Statement</button></div>
+    <div class="header-grid">
+      <div class="left-block">
+        <div class="brand-top">
+          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+          <div>
+            <div class="brand-title">${COMPANY_NAME}</div>
+            <div class="brand-subtitle">A Division of OTNO Access Group</div>
+          </div>
+        </div>
+        <div class="panel client-panel">
+          <h3>${escapeHtml(invoice.client)}</h3>
+          <div class="client-address">${escapeHtml(invoice.siteAddress || "-")}</div>
+          <div class="spacer"></div>
+          <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.contactName || "-")}</span></div>
+          <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.contactPhone || "-")}</span></div>
+        </div>
+      </div>
+      <div class="right-block">
+        <h1>Customer Statement</h1>
+        <div class="subtitle">(and settlement discount credit note)</div>
+        <div class="panel">
+          <h3>OTNO Access Solutions</h3>
+          <div>${escapeHtml(COMPANY_ADDRESS)}</div>
+          <div>${escapeHtml(COMPANY_LOCATION)}</div>
+        </div>
+        <div class="panel">
+          <div class="row"><span class="lbl">Customer No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.accountNumber || "-")}</span></div>
+          <div class="row"><span class="lbl">Date</span><span class="sep">:</span><span class="val">${escapeHtml(billingDateStr)}</span></div>
+          <div class="row"><span class="lbl">Terms</span><span class="sep">:</span><span class="val">Net 30 Days</span></div>
+          <div class="row"><span class="lbl">Deposit Held</span><span class="sep">:</span><span class="val">${currency.format(0)}</span></div>
+          <div class="row"><span class="lbl">Credit Limit</span><span class="sep">:</span><span class="val">-</span></div>
+          <div class="row"><span class="lbl">VAT No</span><span class="sep">:</span><span class="val">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th><th>Document No</th><th>Site No</th><th>Order No</th><th>Prev Doc No</th>
+          <th class="r">Amount (KES)</th><th class="r">Paid (KES)</th><th class="r">Balance (KES)</th>
+        </tr>
+      </thead>
+      <tbody>${statementRows}</tbody>
+    </table>
+
+    <div class="totals">
+      <div>Bank: Stanbic Bank Kenya Plc | Branch Code: 31007</div>
+      <div class="total-due">Total Due: ${currency.format(totalDue)}</div>
+    </div>
+
+    <div class="aging">
+      <table>
+        <thead>
+          <tr>
+            <th>180+ Days</th><th>150 Days</th><th>120 Days</th><th>90 Days</th><th>60 Days</th><th>30 Days</th><th>Current</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="r">${currency.format(ageing.d180)}</td>
+            <td class="r">${currency.format(ageing.d150)}</td>
+            <td class="r">${currency.format(ageing.d120)}</td>
+            <td class="r">${currency.format(ageing.d90)}</td>
+            <td class="r">${currency.format(ageing.d60)}</td>
+            <td class="r">${currency.format(ageing.d30)}</td>
+            <td class="r">${currency.format(ageing.current)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="ft">Customer statement generated for ${escapeHtml(invoice.client)} by ${escapeHtml(COMPANY_NAME)}. All amounts in Kenya Shillings (KES).</p>
+  </body></html>`;
+
+  win.document.write(html);
+  win.document.close();
+};
+
 const Accounting = () => {
   const navigate = useNavigate();
   const { data: quotations = [], isLoading } = useHireQuotations();
@@ -771,6 +953,11 @@ const Accounting = () => {
                                     return;
                                   }
 
+                                  if (action === "customer-statement") {
+                                    openCustomerStatement(inv, invoices, billingDate);
+                                    return;
+                                  }
+
                                   if (action.startsWith("monthly:")) {
                                     const monthIdx = Number(action.replace("monthly:", ""));
                                     const months = generateMonthlyInvoices(inv);
@@ -789,6 +976,9 @@ const Accounting = () => {
                                     disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
                                   >
                                     Scrap Report
+                                  </SelectItem>
+                                  <SelectItem value="customer-statement">
+                                    Customer Statement
                                   </SelectItem>
                                   {generateMonthlyInvoices(inv).map((m, idx) => (
                                     <SelectItem key={idx} value={`monthly:${idx}`}>
