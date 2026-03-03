@@ -4432,33 +4432,6 @@ const HireQuotationWorkflow = ({
                       disabled={returnProcessed}
                     />
                   </div>
-                  <div>
-                    <Label>Vehicle Number</Label>
-                    <Input
-                      value={returnNote.vehicleNo}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, vehicleNo: e.target.value }))}
-                      placeholder="e.g. KBZ 123A"
-                      disabled={returnProcessed}
-                    />
-                  </div>
-                  <div>
-                    <Label>Returned By</Label>
-                    <Input
-                      value={returnNote.returnedBy}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, returnedBy: e.target.value }))}
-                      placeholder="Name of person returning"
-                      disabled={returnProcessed}
-                    />
-                  </div>
-                  <div>
-                    <Label>Received By</Label>
-                    <Input
-                      value={returnNote.receivedBy}
-                      onChange={(e) => setReturnNote(prev => ({ ...prev, receivedBy: e.target.value }))}
-                      placeholder="Name of person receiving"
-                      disabled={returnProcessed}
-                    />
-                  </div>
                 </div>
               </CardContent>
             </Card>
