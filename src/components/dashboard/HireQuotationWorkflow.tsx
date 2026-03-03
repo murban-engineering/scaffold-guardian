@@ -750,7 +750,7 @@ const HireQuotationWorkflow = ({
       })
     );
     
-    if (hasDispatchActivity && !isTestQuotation) {
+    if (hasDispatchActivity) {
       const initialRemainingQuantities = lineItems.reduce<Record<string, number>>((acc, item) => {
         const fallbackBalance = Math.max((item.quantity ?? 0) - (item.delivered_quantity ?? 0), 0);
         acc[item.id] = Math.max(item.balance_quantity ?? fallbackBalance, 0);
@@ -758,18 +758,20 @@ const HireQuotationWorkflow = ({
       }, {});
       setRemainingQuantities(initialRemainingQuantities);
       setCurrentDeliveryDispatched(true);
+      // Mark inventory as deducted so dispatch cannot be triggered again
+      setInventoryDeducted(true);
     }
 
     // If this quotation has balance items from previous delivery, skip to hire-delivery step
     if (hasBalanceItems && !isTestQuotation) {
       setActiveStep("hire-delivery");
       setDeliverySequence(2); // This is at least the 2nd delivery
-      setInventoryDeducted(false); // Reset so they can deliver again
+      setInventoryDeducted(false); // Reset so they can deliver balance
       toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
     } else if (hasDispatchActivity && !isTestQuotation) {
       setActiveStep("return");
       setDeliverySequence(1);
-      setInventoryDeducted(true);
+      // inventoryDeducted already set to true above
     } else {
       setActiveStep("client");
       setDeliverySequence(1);
@@ -2652,6 +2654,12 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    // Require site selection when multiple sites exist
+    if (clientSites && clientSites.length > 0 && !selectedReturnSiteId) {
+      toast.error("Please select a site before processing the return.");
+      return;
+    }
+
     if (!returnItems.length) {
       toast.error("No items available for return.");
       return;
@@ -4361,21 +4369,28 @@ const HireQuotationWorkflow = ({
         {/* Step 7: Hire Return */}
         {activeStep === "return" && (
           <div className="space-y-6">
-            {/* Site Selector for Return */}
+            {/* Site Selector for Return — MANDATORY when multiple sites exist */}
             {clientSites && clientSites.length > 0 && (
-              <Card className="border-primary/20">
+              <Card className={`border-2 ${!selectedReturnSiteId ? "border-destructive/50 bg-destructive/5" : "border-green-500/30 bg-green-500/5"}`}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" />
                     Select Return Site
+                    {!selectedReturnSiteId ? (
+                      <Badge variant="destructive" className="text-xs ml-2">Required</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs ml-2 border-green-500/50 text-green-600">Selected</Badge>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <Label>Which site is this return from?</Label>
+                    <Label className={!selectedReturnSiteId ? "text-destructive font-medium" : ""}>
+                      Which site is this return from? {!selectedReturnSiteId && <span className="text-destructive">*</span>}
+                    </Label>
                     <Select value={selectedReturnSiteId} onValueChange={handleSelectReturnSite}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a site..." />
+                      <SelectTrigger className={!selectedReturnSiteId ? "border-destructive" : "border-green-500/40"}>
+                        <SelectValue placeholder="Select a site to continue..." />
                       </SelectTrigger>
                       <SelectContent>
                         {clientSites.map(site => (
@@ -4385,6 +4400,9 @@ const HireQuotationWorkflow = ({
                         ))}
                       </SelectContent>
                     </Select>
+                    {!selectedReturnSiteId && (
+                      <p className="text-xs text-destructive">⚠ A site must be selected before processing the return.</p>
+                    )}
                     {selectedReturnSiteId && (() => {
                       const site = clientSites.find(s => s.id === selectedReturnSiteId);
                       return site ? (
@@ -4555,13 +4573,22 @@ const HireQuotationWorkflow = ({
               <Button
                 type="button"
                 onClick={handleProcessReturn}
-                disabled={returnProcessed || returnInventory.isPending || createMaintenanceLogs.isPending || updateQuotation.isPending}
+                disabled={
+                  returnProcessed ||
+                  returnInventory.isPending ||
+                  createMaintenanceLogs.isPending ||
+                  updateQuotation.isPending ||
+                  (!!clientSites && clientSites.length > 0 && !selectedReturnSiteId)
+                }
+                title={clientSites && clientSites.length > 0 && !selectedReturnSiteId ? "Select a site first" : undefined}
               >
                 {returnProcessed
                   ? "Return Processed"
                   : updateQuotation.isPending
                     ? "Finalizing..."
-                    : "Process Return"}
+                    : clientSites && clientSites.length > 0 && !selectedReturnSiteId
+                      ? "Select site first"
+                      : "Process Return"}
               </Button>
               <Button
                 type="button"
