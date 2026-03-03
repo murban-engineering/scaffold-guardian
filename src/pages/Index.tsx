@@ -609,8 +609,15 @@ const Index = () => {
               ) : hireQuotations.length ? (
                 <div className="max-h-[60vh] space-y-4 overflow-y-auto">
                   {[
-                    { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations) },
-                    { title: "Test Quotations", rows: filterQuotationsByClient(testQuotations) },
+                    { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations), allowContinue: true },
+                    {
+                      title: "Test Quotations",
+                      rows:
+                        activeItem === "site-master" || activeItem === "yard-verification"
+                          ? []
+                          : filterQuotationsByClient(testQuotations),
+                      allowContinue: false,
+                    },
                   ]
                     .filter((section) => section.rows.length > 0)
                     .map((section) => (
@@ -671,9 +678,13 @@ const Index = () => {
                                   </TableCell>
                                   <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
                                   <TableCell className="text-right">
-                                    <Button size="sm" onClick={() => handleContinueQuotation(quotation)}>
-                                      {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                    </Button>
+                                    {section.allowContinue ? (
+                                      <Button size="sm" onClick={() => handleContinueQuotation(quotation)}>
+                                        {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                      </Button>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">No continue action</span>
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               );
