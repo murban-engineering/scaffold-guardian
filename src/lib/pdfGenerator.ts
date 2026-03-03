@@ -149,6 +149,15 @@ export interface HireReturnNoteData {
 }
 
 const COMPANY_NAME = "OTNO Access Solutions";
+const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
+      Account Name: OTNO ACCESS SOLUTIONS LIMITED<br/>
+      KES Account Number: 02107773676350<br/>
+      Bank Name: I&amp;M BANK LIMITED<br/>
+      Branch Name: Changamwe<br/>
+      Bank Code: 57<br/>
+      Branch Code: 021<br/>
+      Swift Code: IMBLKENA<br/>
+      Mpesa Paybill Code: 542542`;
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
 const COMPANY_PIN = "P052471711M";
@@ -861,7 +870,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
 
     <div class="terms">
       <strong>TERMS:</strong> Order confirmation is through deposit payment before collection. One month deposit required upfront. We do not accept cash payments.<br/>
-      <strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED | KES Acc: 02107773676350 | I&amp;M Bank, Changamwe | Swift: IMBLKENA | Mpesa: 542542
+      ${PAYMENT_DETAILS_HTML}
     </div>
 
     <div class="signature-section">
@@ -949,7 +958,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
 
     <div class="terms">
       <strong>TERMS:</strong> Quote does not include transport. Order confirmation through deposit payment. One month deposit required upfront. We do not accept cash.<br/>
-      <strong>Payment:</strong> Account Name: OTNO ACCESS SOLUTIONS LIMITED | KES Acc: 02107773676350 | I&amp;M Bank, Changamwe | Swift: IMBLKENA | Mpesa: 542542
+      ${PAYMENT_DETAILS_HTML}
     </div>
 
     <div class="signature-section">
