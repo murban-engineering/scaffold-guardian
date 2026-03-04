@@ -812,6 +812,7 @@ const HireQuotationWorkflow = ({
     }));
   }, [header.quotationNo, deliverySequence]);
 
+  // Load delivery history exclusively from database — no localStorage fallback
   useEffect(() => {
     if (!initialQuotation) return;
 
@@ -821,52 +822,11 @@ const HireQuotationWorkflow = ({
 
     if (persistedHistory.length > 0) {
       setDeliveryHistory(persistedHistory);
+      setDeliverySequence(persistedHistory.length + 1);
       setInventoryDeducted(true);
       setCurrentDeliveryDispatched(true);
-      return;
     }
-
-    const fallbackStorageKey = savedQuotationId
-      ? `hire-delivery-history:${savedQuotationId}`
-      : header.quotationNo
-        ? `hire-delivery-history:${header.quotationNo}`
-        : null;
-
-    if (!fallbackStorageKey) return;
-
-    const stored = window.localStorage.getItem(fallbackStorageKey);
-    if (!stored) return;
-
-    try {
-      const parsed = JSON.parse(stored) as {
-        deliveryHistory?: DeliveryRecord[];
-        inventoryDeducted?: boolean;
-        deliverySequence?: number;
-        remainingQuantities?: Record<string, number>;
-        currentDeliveryDispatched?: boolean;
-      };
-
-      if (parsed.deliveryHistory) {
-        setDeliveryHistory(parsed.deliveryHistory);
-      }
-      if (parsed.inventoryDeducted !== undefined) {
-        setInventoryDeducted(parsed.inventoryDeducted);
-      } else if (parsed.deliveryHistory?.length) {
-        setInventoryDeducted(true);
-      }
-      if (parsed.deliverySequence) {
-        setDeliverySequence(parsed.deliverySequence);
-      }
-      if (parsed.remainingQuantities) {
-        setRemainingQuantities(parsed.remainingQuantities);
-      }
-      if (parsed.currentDeliveryDispatched !== undefined) {
-        setCurrentDeliveryDispatched(parsed.currentDeliveryDispatched);
-      }
-    } catch (error) {
-      console.error("Failed to load delivery history from storage:", error);
-    }
-  }, [initialQuotation, savedQuotationId, header.quotationNo]);
+  }, [initialQuotation]);
 
   useEffect(() => {
     if (!initialQuotation) return;
@@ -882,49 +842,7 @@ const HireQuotationWorkflow = ({
     }
   }, [initialQuotation]);
 
-  useEffect(() => {
-    if (!initialQuotation) return;
-    if (deliveryHistory.length > 0) return;
-
-    const lineItems = initialQuotation.line_items ?? [];
-    const persistedDeliveredItems = lineItems
-      .filter((item) => (item.delivered_quantity ?? 0) > 0)
-      .map((item) => {
-        const deliveredQty = item.delivered_quantity ?? 0;
-        const massPerItem = item.mass_per_item ?? 0;
-        return {
-          itemCode: item.part_number ?? "",
-          description: item.description ?? "",
-          quantityDelivered: deliveredQty,
-          balanceAfter: item.balance_quantity ?? 0,
-          massPerItem,
-          totalMass: deliveredQty * massPerItem,
-        };
-      });
-
-    if (!persistedDeliveredItems.length) return;
-
-    const derivedDeliveryDate =
-      initialQuotation.dispatch_date ||
-      initialQuotation.updated_at ||
-      initialQuotation.created_at ||
-      new Date().toISOString();
-
-    setDeliveryHistory([
-      {
-        id: `persisted-delivery-${initialQuotation.id}`,
-        deliveryNoteNumber: deriveDeliveryNoteNumber(initialQuotation.quotation_number || "", 1),
-        deliveryDate: new Date(derivedDeliveryDate).toISOString().split("T")[0],
-        deliveredBy: "",
-        receivedBy: "",
-        vehicleNo: "",
-        status: "dispatched",
-        items: persistedDeliveredItems,
-        totalMass: persistedDeliveredItems.reduce((sum, item) => sum + item.totalMass, 0),
-        createdAt: derivedDeliveryDate,
-      },
-    ]);
-  }, [initialQuotation, deliveryHistory.length]);
+  // Delivery history is loaded exclusively from DB — no line-item fallback needed
 
   useEffect(() => {
     setRemainingQuantities((prev) => {
@@ -1208,49 +1126,7 @@ const HireQuotationWorkflow = ({
     );
   }, [equipmentItems, persistedReturnQuantitiesByItemCode]);
 
-  useEffect(() => {
-    if (!initialQuotation) return;
-    if (returnHistory.length > 0) return;
-
-    const lineItems = initialQuotation.line_items ?? [];
-    const persistedReturnItems = lineItems
-      .filter((item) => (item.returned_quantity ?? 0) > 0)
-      .map((item) => {
-        const returnedQty = item.returned_quantity ?? 0;
-        const massPerItem = item.mass_per_item ?? 0;
-        return {
-          itemCode: item.part_number ?? "",
-          description: item.description ?? "",
-          good: returnedQty,
-          dirty: 0,
-          damaged: 0,
-          scrap: 0,
-          totalReturned: returnedQty,
-          balanceAfter: item.return_balance_quantity ?? 0,
-          massPerItem,
-          totalMass: returnedQty * massPerItem,
-        };
-      });
-
-    if (!persistedReturnItems.length) return;
-
-    setReturnHistory([
-      {
-        id: `persisted-return-${initialQuotation.id}`,
-        returnNoteNumber: deriveReturnNoteNumber(initialQuotation.quotation_number || "", 1),
-        returnDate: new Date(initialQuotation.updated_at || initialQuotation.created_at).toISOString().split("T")[0],
-        hireEndDate: new Date(initialQuotation.updated_at || initialQuotation.created_at).toISOString().split("T")[0],
-        returnedBy: "",
-        receivedBy: "",
-        vehicleNo: "",
-        status: "processed",
-        items: persistedReturnItems,
-        totalReturned: persistedReturnItems.reduce((sum, item) => sum + item.totalReturned, 0),
-        totalMass: persistedReturnItems.reduce((sum, item) => sum + item.totalMass, 0),
-        createdAt: initialQuotation.updated_at || initialQuotation.created_at,
-      },
-    ]);
-  }, [initialQuotation, returnHistory.length]);
+  // Return history is loaded exclusively from DB (see useEffect for initialQuotation.return_history above)
 
   // Auto-fill site form from client details when entering site-master step
   useEffect(() => {
@@ -1998,10 +1874,9 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           status: "dispatched",
-          // Always use the current delivery date – this is the authoritative dispatch date
           dispatch_date: deliveryNote.deliveryDate,
-          delivery_history: nextDeliveryHistory,
-        } as any);
+          delivery_history: nextDeliveryHistory as unknown as import("@/integrations/supabase/types").Json,
+        });
       } catch (error) {
         console.error("Failed to save delivery quantities:", error);
       }
@@ -2083,8 +1958,8 @@ const HireQuotationWorkflow = ({
       try {
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
-          delivery_history: updatedDeliveryHistory,
-        } as any);
+          delivery_history: updatedDeliveryHistory as unknown as import("@/integrations/supabase/types").Json,
+        });
       } catch (error) {
         console.error("Failed to persist delivery history:", error);
       }
@@ -2773,8 +2648,8 @@ const HireQuotationWorkflow = ({
 
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
-          return_history: nextReturnHistory,
-        } as any);
+          return_history: nextReturnHistory as unknown as import("@/integrations/supabase/types").Json,
+        });
       }
 
       // Check if all items are fully returned

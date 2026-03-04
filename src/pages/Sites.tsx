@@ -15,6 +15,10 @@ const Sites = () => {
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("");
+  // Keep selectedQuotation live-synced with realtime DB updates
+  const liveSelectedQuotation = selectedQuotation
+    ? (hireQuotations.find(q => q.id === selectedQuotation.id) ?? selectedQuotation)
+    : null;
 
   const activeQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
@@ -358,7 +362,7 @@ const Sites = () => {
             </div>
             {selectedQuotation ? (
               <HireQuotationWorkflow
-                initialQuotation={selectedQuotation}
+                initialQuotation={liveSelectedQuotation}
                 onClientProcessed={() => setSelectedQuotation(null)}
               />
             ) : (
