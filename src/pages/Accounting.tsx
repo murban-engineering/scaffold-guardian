@@ -972,7 +972,7 @@ const Accounting = () => {
                                   <SelectValue placeholder="Reports" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="dds">Tax Invoice</SelectItem>
+                                  <SelectItem value="dds">Tax Invoice Copy</SelectItem>
                                   <SelectItem
                                     value="scrap"
                                     disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
