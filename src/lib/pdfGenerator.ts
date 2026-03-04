@@ -897,6 +897,11 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
+  const weeklyVatAmount = data.vatRate > 0 ? data.weeklyTotal * (data.vatRate / 100) : 0;
+  const weeklyTotalWithVat = data.weeklyTotal + weeklyVatAmount;
+  const depositTotal = weeklyTotalWithVat * 4;
+  const statementGrandTotal = weeklyTotalWithVat + depositTotal;
+
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
@@ -956,11 +961,12 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
 
     <div class="summary-box">
       <div class="summary-row"><span>Number of Weeks</span><span>× ${data.hireWeeks}</span></div>
-      <div class="summary-row"><span>Total for Hire Period</span><span>${formatCurrency(data.totalForPeriod)}</span></div>
-      <div class="summary-row"><span>VAT (${data.vatRate}%)</span><span>${formatCurrency(data.vatAmount)}</span></div>
+      <div class="summary-row"><span>Hire per Week</span><span>${formatCurrency(data.weeklyTotal)}</span></div>
+      <div class="summary-row"><span>VAT (${data.vatRate}%)</span><span>${formatCurrency(weeklyVatAmount)}</span></div>
       ${data.discountRate > 0 ? `<div class="summary-row"><span>Discount (${data.discountRate}%)</span><span>-${formatCurrency(data.discountAmount)}</span></div>` : ""}
-      <div class="summary-row grand"><span>GRAND TOTAL (incl. VAT)</span><span>${formatCurrency(data.grandTotal)}</span></div>
-      <div class="summary-row grand"><span>PAYMENT TOTAL</span><span>${formatCurrency(data.paymentTotal)}</span></div>
+      <div class="summary-row"><span>TOTAL (Hire/Week + VAT)</span><span>${formatCurrency(weeklyTotalWithVat)}</span></div>
+      <div class="summary-row"><span>DEPOSIT TOTAL (TOTAL × 4)</span><span>${formatCurrency(depositTotal)}</span></div>
+      <div class="summary-row grand"><span>GRAND TOTAL (Deposit + Total)</span><span>${formatCurrency(statementGrandTotal)}</span></div>
     </div>
 
     <div class="terms">
