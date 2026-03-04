@@ -1162,7 +1162,10 @@ const HireQuotationWorkflow = ({
           totalDelivered: hiredQuantity,
           previouslyReturned,
           maxReturnable,
-          returnBalance: Math.min(existing?.returnBalance ?? computedBalance, computedBalance),
+          // Always derive balance from the currently selected site context.
+          // Keeping the previous state's lower value can leave items stuck at 0
+          // after switching/choosing a site, which blocks valid returns.
+          returnBalance: computedBalance,
           siteDelivered,
           sitePreviouslyReturned,
           good: existing?.good ?? "0",
