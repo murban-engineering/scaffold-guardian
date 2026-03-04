@@ -964,7 +964,7 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       <div class="summary-row"><span>Hire per Week</span><span>${formatCurrency(data.weeklyTotal)}</span></div>
       <div class="summary-row"><span>VAT (${data.vatRate}%)</span><span>${formatCurrency(weeklyVatAmount)}</span></div>
       ${data.discountRate > 0 ? `<div class="summary-row"><span>Discount (${data.discountRate}%)</span><span>-${formatCurrency(data.discountAmount)}</span></div>` : ""}
-      <div class="summary-row"><span>TOTAL (Hire/Week + VAT)</span><span>${formatCurrency(weeklyTotalWithVat)}</span></div>
+      <div class="summary-row"><span>TOTAL (VAT + Hire/Week)</span><span>${formatCurrency(weeklyTotalWithVat)}</span></div>
       <div class="summary-row"><span>DEPOSIT TOTAL (TOTAL × 4)</span><span>${formatCurrency(depositTotal)}</span></div>
       <div class="summary-row grand"><span>GRAND TOTAL (Deposit + Total)</span><span>${formatCurrency(statementGrandTotal)}</span></div>
     </div>
