@@ -862,8 +862,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </tr>
         <tr class="total-row"><td colspan="6"><strong>VAT (16%)</strong></td><td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td></tr>
         ${data.discountRate > 0 ? `<tr class="total-row"><td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td><td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td></tr>` : ""}
-        <tr class="total-row" style="background:#333;color:white;">
-          <td colspan="6"><strong>TOTAL (incl. VAT)</strong></td>
+        <tr class="total-row" style="border-top:2px solid #111;border-bottom:2px solid #111;background:#f1f5f9;color:#111;">
+          <td colspan="6"><strong>GRAND TOTAL (incl. VAT)</strong></td>
           <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
         </tr>
       </tbody>
@@ -908,7 +908,16 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       .summary-box { background: #f5f5f5; padding: 10px; margin-bottom: 14px; }
       .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #ddd; font-size: 9.5px; }
       .summary-row:last-child { border-bottom: none; }
-      .summary-row.grand { font-size: 11px; font-weight: bold; background: #333; color: white; margin: -10px; margin-top: 8px; padding: 10px; }
+      .summary-row.grand {
+        font-size: 11px;
+        font-weight: 700;
+        border-top: 2px solid #111;
+        border-bottom: 2px solid #111;
+        margin: 8px -10px -10px;
+        padding: 10px;
+        background: #f1f5f9;
+        color: #111;
+      }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
     ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
