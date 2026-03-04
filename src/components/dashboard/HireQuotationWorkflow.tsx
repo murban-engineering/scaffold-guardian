@@ -775,7 +775,12 @@ const HireQuotationWorkflow = ({
       setDeliverySequence(1);
       // inventoryDeducted already set to true above
     } else {
-      setActiveStep("client");
+      // Keep the user's current step in test quotation mode. This effect can rerun
+      // (e.g. after realtime scaffold updates), and forcing "client" would bounce
+      // users out of Equipment/Quotation unexpectedly.
+      if (!isTestQuotation) {
+        setActiveStep("client");
+      }
       setDeliverySequence(1);
       setCurrentDeliveryDispatched(false);
       setInventoryDeducted(false);
