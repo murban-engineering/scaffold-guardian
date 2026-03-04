@@ -2663,8 +2663,25 @@ const HireQuotationWorkflow = ({
         });
       }
 
-      setReturnProcessed(true);
-      toast.success("Hire return batch processed successfully!");
+      if (allReturned) {
+        setReturnProcessed(true);
+        toast.success("Hire return batch processed successfully!");
+      } else {
+        const nextSequence = returnSequence + 1;
+        setReturnSequence(nextSequence);
+        setReturnProcessed(false);
+        setReturnNote((prev) => ({
+          ...prev,
+          returnNoteNo: deriveReturnNoteNumber(header.quotationNo, nextSequence),
+          returnDate: getToday(),
+          returnedBy: "",
+          receivedBy: "",
+          vehicleNo: "",
+          hireEndDate: getToday(),
+          remarks: "",
+        }));
+        toast.success("Hire return batch processed. Continue with the remaining balance.");
+      }
     } catch (error) {
       console.error("Failed to process return:", error);
     }
