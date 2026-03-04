@@ -822,6 +822,12 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       createdBy: data.createdBy,
     })}
 
+    <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
+      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/><br/>
+      We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/><br/>
+      This quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
+    </div>
+
     <table>
       <thead>
         <tr>
@@ -918,8 +924,9 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
     })}
 
     <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
-      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
-      We thank you for your valued enquiry and are pleased to submit our quotation. Valid for 30 DAYS.
+      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/><br/>
+      We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/><br/>
+      This quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
     </div>
 
     <table>
