@@ -1093,8 +1093,8 @@ const HireQuotationWorkflow = ({
       equipmentItems.map((item) => {
         const existing = prev.find((entry) => entry.id === item.id);
         const orderedQuantity = item.originalQuantity ?? 0;
-        const totalDelivered = parseNumber(item.qtyDelivered);
-        const maxReturnable = Math.min(orderedQuantity, totalDelivered);
+        const hiredQuantity = orderedQuantity > 0 ? orderedQuantity : parseNumber(item.qtyDelivered);
+        const maxReturnable = Math.max(hiredQuantity, 0);
         const persistedReturns = persistedReturnQuantitiesByItemCode.get(item.itemCode);
         const persistedPreviouslyReturned = persistedReturns?.returned ?? 0;
         const persistedBalance = persistedReturns?.balance;
@@ -1112,7 +1112,7 @@ const HireQuotationWorkflow = ({
           itemCode: item.itemCode,
           description: item.description,
           orderedQuantity,
-          totalDelivered,
+          totalDelivered: hiredQuantity,
           previouslyReturned,
           maxReturnable,
           returnBalance: Math.min(existing?.returnBalance ?? computedBalance, computedBalance),
