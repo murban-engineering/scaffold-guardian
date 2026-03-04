@@ -3079,6 +3079,15 @@ const HireQuotationWorkflow = ({
                     placeholder="Company / Trading name"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="clientName">Client Name</Label>
+                  <Input
+                    id="clientName"
+                    value={header.clientName}
+                    onChange={(e) => setHeader(prev => ({ ...prev, clientName: e.target.value }))}
+                    placeholder="Primary client contact name"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="postalAddress">Postal Address</Label>
                   <Input
