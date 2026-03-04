@@ -250,7 +250,7 @@ const Auth = () => {
                 setIsLogin(!isLogin);
                 setErrors({});
               }}
-              className="text-accent hover:underline font-medium"
+              className="text-black hover:text-black/80 hover:underline font-medium"
             >
               {isLogin 
                 ? "Don't have an account? Sign up" 
