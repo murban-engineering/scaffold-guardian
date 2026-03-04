@@ -266,7 +266,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
     ${renderAccountingReportHeader({
-      documentTitle: "DDS (Dirty, Damaged, Scrap) Invoice",
+      documentTitle: "Tax Invoice",
       documentNumber: invoice.invoiceNumber,
       documentDate: billingDateStr,
       client: invoice.client,
@@ -972,7 +972,7 @@ const Accounting = () => {
                                   <SelectValue placeholder="Reports" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="dds">DDS Invoice</SelectItem>
+                                  <SelectItem value="dds">Tax Invoice</SelectItem>
                                   <SelectItem
                                     value="scrap"
                                     disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
@@ -984,7 +984,7 @@ const Accounting = () => {
                                   </SelectItem>
                                   {generateMonthlyInvoices(inv).map((m, idx) => (
                                     <SelectItem key={idx} value={`monthly:${idx}`}>
-                                      Monthly: {m.label}
+                                      Tax Invoice: {m.label}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
