@@ -796,8 +796,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     return sum + item.weeklyRate * (1 - discountRate) * item.quantity;
   }, 0);
   const vatAmount = subtotal * 0.16;
-  const discountAmount = (subtotal + vatAmount) * (data.discountRate / 100);
-  const totalAfterDiscount = subtotal + vatAmount - discountAmount;
+  const totalWithVat = subtotal + vatAmount;
+  const discountAmount = totalWithVat * (data.discountRate / 100);
+  const statementTotal = totalWithVat - discountAmount;
+  const depositTotal = statementTotal * 4;
+  const statementGrandTotal = statementTotal + depositTotal;
 
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
@@ -862,9 +865,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </tr>
         <tr class="total-row"><td colspan="6"><strong>VAT (16%)</strong></td><td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td></tr>
         ${data.discountRate > 0 ? `<tr class="total-row"><td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td><td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td></tr>` : ""}
+        <tr class="total-row"><td colspan="6"><strong>TOTAL (VAT + Hire/Week)</strong></td><td class="text-right"><strong>${formatCurrency(statementTotal)}</strong></td></tr>
+        <tr class="total-row"><td colspan="6"><strong>DEPOSIT TOTAL (TOTAL × 4)</strong></td><td class="text-right"><strong>${formatCurrency(depositTotal)}</strong></td></tr>
         <tr class="total-row" style="border-top:2px solid #111;border-bottom:2px solid #111;background:#f1f5f9;color:#111;">
-          <td colspan="6"><strong>GRAND TOTAL (incl. VAT)</strong></td>
-          <td class="text-right"><strong>${formatCurrency(totalAfterDiscount)}</strong></td>
+          <td colspan="6"><strong>GRAND TOTAL (Deposit + Total)</strong></td>
+          <td class="text-right"><strong>${formatCurrency(statementGrandTotal)}</strong></td>
         </tr>
       </tbody>
     </table>
