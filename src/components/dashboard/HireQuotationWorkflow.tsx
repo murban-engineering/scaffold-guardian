@@ -4002,6 +4002,28 @@ const HireQuotationWorkflow = ({
                 </div>
               </div>
             )}
+
+            {/* Site Master Navigation */}
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="flex gap-2">
+                {(clientSites?.length ?? 0) > 0 && (
+                  <Button
+                    type="button"
+                    onClick={() => goToStep("hire-delivery")}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Truck className="h-4 w-4 mr-2" />
+                    Save & Continue to Hire Loading
+                  </Button>
+                )}
+                {(clientSites?.length ?? 0) === 0 && (
+                  <p className="text-sm text-muted-foreground self-center">Add at least one site to continue.</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

@@ -174,9 +174,11 @@ export const useUpdateQuotation = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<HireQuotation> & { id: string }): Promise<HireQuotation> => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { delivery_history, return_history, line_items, ...safeUpdates } = updates as HireQuotation & { line_items?: unknown };
       const { data, error } = await supabase
         .from("hire_quotations")
-        .update(updates)
+        .update(safeUpdates)
         .eq("id", id)
         .select()
         .single();
