@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import type { DeliveryRecord } from "@/components/dashboard/DeliveryHistorySection";
+import type { ReturnRecord } from "@/components/dashboard/ReturnHistorySection";
 
 export interface QuotationLineItem {
   id: string;
@@ -54,8 +56,8 @@ export interface HireQuotation {
   created_at: string;
   updated_at: string;
   dispatch_date: string | null;
-  delivery_history: unknown;
-  return_history: unknown;
+  delivery_history: DeliveryRecord[] | unknown;
+  return_history: ReturnRecord[] | unknown;
   line_items?: QuotationLineItem[];
 }
 
@@ -175,7 +177,13 @@ export const useUpdateQuotation = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<HireQuotation> & { id: string }): Promise<HireQuotation> => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { delivery_history, return_history, line_items, ...safeUpdates } = updates as HireQuotation & { line_items?: unknown };
+      const { line_items, delivery_history, return_history, ...rest } = updates as HireQuotation & { line_items?: unknown };
+      // Pass delivery/return history as Json-compatible types
+      const safeUpdates = {
+        ...rest,
+        ...(delivery_history !== undefined ? { delivery_history: delivery_history as import("@/integrations/supabase/types").Json } : {}),
+        ...(return_history !== undefined ? { return_history: return_history as import("@/integrations/supabase/types").Json } : {}),
+      };
       const { data, error } = await supabase
         .from("hire_quotations")
         .update(safeUpdates)

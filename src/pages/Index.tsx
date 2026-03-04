@@ -59,6 +59,11 @@ const Index = () => {
   const updateQuotation = useUpdateQuotation();
   const deleteQuotation = useDeleteQuotation();
 
+  // Keep selectedQuotation live-synced with the latest DB state via realtime
+  const liveSelectedQuotation = selectedQuotation
+    ? (hireQuotations.find(q => q.id === selectedQuotation.id) ?? selectedQuotation)
+    : null;
+
   useEffect(() => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
     if (stateItem) {
@@ -367,7 +372,7 @@ const Index = () => {
             <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
               <HireQuotationWorkflow
                 key={`${selectedQuotation.id}-${activeItem}`}
-                initialQuotation={selectedQuotation}
+                initialQuotation={liveSelectedQuotation}
                 initialStep={activeItem === "site-master" ? "site-master" : "delivery"}
                 onClientProcessed={(client) => {
                   setProcessedClient(client);
@@ -555,7 +560,7 @@ const Index = () => {
             </DialogHeader>
             <HireQuotationWorkflow 
               key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
-              initialQuotation={selectedQuotation}
+              initialQuotation={liveSelectedQuotation}
               initialStep={workflowInitialStep}
               initialClientMode={workflowInitialClientMode}
               initialExistingClient={selectedExistingClient}
