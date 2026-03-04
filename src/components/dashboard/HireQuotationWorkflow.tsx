@@ -181,6 +181,8 @@ type ReturnItem = {
   previouslyReturned: number;
   maxReturnable: number;
   returnBalance: number;
+  siteDelivered: number;
+  sitePreviouslyReturned: number;
   good: string;
   dirty: string;
   damaged: string;
@@ -1071,6 +1073,12 @@ const HireQuotationWorkflow = ({
   }, [equipmentItems, savedQuotationId, hasHydratedTestDraft, isTestQuotation]);
 
 
+  const selectedReturnSiteNumber = useMemo(() => {
+    if (!selectedReturnSiteId) return "";
+    const site = clientSites?.find((entry) => entry.id === selectedReturnSiteId);
+    return site?.site_number || "";
+  }, [selectedReturnSiteId, clientSites]);
+
   const persistedReturnQuantitiesByItemCode = useMemo(() => {
     const quantities = new Map<string, { returned: number; balance: number | null }>();
     (initialQuotation?.line_items ?? []).forEach((lineItem) => {
@@ -1088,22 +1096,61 @@ const HireQuotationWorkflow = ({
     return quantities;
   }, [initialQuotation]);
 
+  const returnSiteQuantitiesByItemCode = useMemo(() => {
+    const quantities = new Map<string, { delivered: number; returned: number }>();
+
+    const includeRecordForSelectedSite = (siteNumber?: string) => {
+      if (!selectedReturnSiteNumber) return true;
+      return !siteNumber || siteNumber === selectedReturnSiteNumber;
+    };
+
+    deliveryHistory.forEach((delivery) => {
+      if (!includeRecordForSelectedSite(delivery.siteNumber)) return;
+      delivery.items.forEach((entry) => {
+        const itemCode = entry.itemCode ?? "";
+        if (!itemCode) return;
+        const existing = quantities.get(itemCode) ?? { delivered: 0, returned: 0 };
+        existing.delivered += Math.max(entry.quantityDelivered ?? 0, 0);
+        quantities.set(itemCode, existing);
+      });
+    });
+
+    returnHistory.forEach((record) => {
+      if (!includeRecordForSelectedSite(record.siteNumber)) return;
+      record.items.forEach((entry) => {
+        const itemCode = entry.itemCode ?? "";
+        if (!itemCode) return;
+        const existing = quantities.get(itemCode) ?? { delivered: 0, returned: 0 };
+        existing.returned += Math.max(entry.totalReturned ?? 0, 0);
+        quantities.set(itemCode, existing);
+      });
+    });
+
+    return quantities;
+  }, [deliveryHistory, returnHistory, selectedReturnSiteNumber]);
+
   useEffect(() => {
     setReturnItems((prev) =>
       equipmentItems.map((item) => {
         const existing = prev.find((entry) => entry.id === item.id);
         const orderedQuantity = item.originalQuantity ?? 0;
         const hiredQuantity = orderedQuantity > 0 ? orderedQuantity : parseNumber(item.qtyDelivered);
-        const maxReturnable = Math.max(hiredQuantity, 0);
-        const persistedReturns = persistedReturnQuantitiesByItemCode.get(item.itemCode);
+        const itemCode = item.itemCode ?? "";
+        const siteQuantities = returnSiteQuantitiesByItemCode.get(itemCode);
+        const siteDelivered = Math.max(siteQuantities?.delivered ?? 0, 0);
+        const sitePreviouslyReturned = Math.max(siteQuantities?.returned ?? 0, 0);
+        const maxReturnable = Math.max(selectedReturnSiteNumber ? siteDelivered : hiredQuantity, 0);
+        const persistedReturns = persistedReturnQuantitiesByItemCode.get(itemCode);
         const persistedPreviouslyReturned = persistedReturns?.returned ?? 0;
         const persistedBalance = persistedReturns?.balance;
+        const derivedPreviouslyReturned = selectedReturnSiteNumber ? sitePreviouslyReturned : persistedPreviouslyReturned;
         const previouslyReturned = Math.min(
-          Math.max(existing?.previouslyReturned ?? 0, persistedPreviouslyReturned),
+          Math.max(existing?.previouslyReturned ?? 0, derivedPreviouslyReturned),
           maxReturnable
         );
-        const computedBalance =
-          persistedBalance !== null && persistedBalance !== undefined
+        const computedBalance = selectedReturnSiteNumber
+          ? Math.max(maxReturnable - previouslyReturned, 0)
+          : persistedBalance !== null && persistedBalance !== undefined
             ? Math.min(Math.max(persistedBalance, 0), maxReturnable)
             : Math.max(maxReturnable - previouslyReturned, 0);
         return {
@@ -1116,6 +1163,8 @@ const HireQuotationWorkflow = ({
           previouslyReturned,
           maxReturnable,
           returnBalance: Math.min(existing?.returnBalance ?? computedBalance, computedBalance),
+          siteDelivered,
+          sitePreviouslyReturned,
           good: existing?.good ?? "0",
           dirty: existing?.dirty ?? "0",
           damaged: existing?.damaged ?? "0",
@@ -1124,7 +1173,7 @@ const HireQuotationWorkflow = ({
         };
       })
     );
-  }, [equipmentItems, persistedReturnQuantitiesByItemCode]);
+  }, [equipmentItems, persistedReturnQuantitiesByItemCode, returnSiteQuantitiesByItemCode, selectedReturnSiteNumber]);
 
   // Return history is loaded exclusively from DB (see useEffect for initialQuotation.return_history above)
 
@@ -1326,6 +1375,7 @@ const HireQuotationWorkflow = ({
     return site?.site_number || "";
   };
 
+
   const handleSelectDeliverySite = (siteId: string) => {
     setSelectedDeliverySiteId(siteId);
     const site = clientSites?.find(s => s.id === siteId);
@@ -1367,6 +1417,23 @@ const HireQuotationWorkflow = ({
       toast.success(`Hire return linked to site ${site.site_number}`);
     }
   };
+
+  useEffect(() => {
+    if (!clientSites || clientSites.length === 0 || selectedReturnSiteId) return;
+
+    if (clientSites.length === 1) {
+      setSelectedReturnSiteId(clientSites[0].id);
+      return;
+    }
+
+    const recentReturnWithSite = returnHistory.find((record) => record.siteNumber);
+    if (!recentReturnWithSite?.siteNumber) return;
+
+    const matchingSite = clientSites.find((site) => site.site_number === recentReturnWithSite.siteNumber);
+    if (matchingSite) {
+      setSelectedReturnSiteId(matchingSite.id);
+    }
+  }, [clientSites, selectedReturnSiteId, returnHistory]);
 
   const handleNext = () => {
     const currentIndex = workflowSteps.findIndex((step) => step.key === activeStep);
@@ -1817,8 +1884,9 @@ const HireQuotationWorkflow = ({
       items,
       totalMass,
       createdAt: new Date().toISOString(),
+      siteNumber: getSelectedSiteNumber(selectedDeliverySiteId),
     };
-  }, [equipmentItems, deliveryQuantities, deliveryNote]);
+  }, [equipmentItems, deliveryQuantities, deliveryNote, selectedDeliverySiteId, clientSites]);
 
   // Dispatch a delivery and save to database
   const handleDispatchDelivery = async () => {
@@ -2505,12 +2573,6 @@ const HireQuotationWorkflow = ({
       return;
     }
 
-    // Require site selection when multiple sites exist
-    if (clientSites && clientSites.length > 0 && !selectedReturnSiteId) {
-      toast.error("Please select a site before processing the return.");
-      return;
-    }
-
     if (!returnItems.length) {
       toast.error("No items available for return.");
       return;
@@ -2616,6 +2678,7 @@ const HireQuotationWorkflow = ({
         totalReturned: returnRecordItems.reduce((s, i) => s + i.totalReturned, 0),
         totalMass: returnRecordItems.reduce((s, i) => s + i.totalMass, 0),
         createdAt: new Date().toISOString(),
+        siteNumber: getSelectedSiteNumber(selectedReturnSiteId),
       };
       const nextReturnHistory = [newReturn, ...returnHistory];
       setReturnHistory(nextReturnHistory);
@@ -4402,8 +4465,8 @@ const HireQuotationWorkflow = ({
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-center font-semibold">{item.totalDelivered}</td>
-                        <td className="px-3 py-2 text-center text-muted-foreground">{item.previouslyReturned}</td>
+                        <td className="px-3 py-2 text-center font-semibold">{selectedReturnSiteNumber ? item.siteDelivered : item.totalDelivered}</td>
+                        <td className="px-3 py-2 text-center text-muted-foreground">{selectedReturnSiteNumber ? item.sitePreviouslyReturned : item.previouslyReturned}</td>
                         <td className="px-3 py-2 text-center">
                           <span className={`font-semibold ${item.returnBalance > 0 ? "text-amber-600" : "text-green-600"}`}>
                             {item.returnBalance}
@@ -4473,18 +4536,14 @@ const HireQuotationWorkflow = ({
                   returnProcessed ||
                   returnInventory.isPending ||
                   createMaintenanceLogs.isPending ||
-                  updateQuotation.isPending ||
-                  (!!clientSites && clientSites.length > 0 && !selectedReturnSiteId)
+                  updateQuotation.isPending
                 }
-                title={clientSites && clientSites.length > 0 && !selectedReturnSiteId ? "Select a site first" : undefined}
               >
                 {returnProcessed
                   ? "Return Processed"
                   : updateQuotation.isPending
                     ? "Finalizing..."
-                    : clientSites && clientSites.length > 0 && !selectedReturnSiteId
-                      ? "Select site first"
-                      : "Process Return"}
+                    : "Process Return"}
               </Button>
               <Button
                 type="button"

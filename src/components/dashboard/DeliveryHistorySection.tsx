@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export interface DeliveryRecord {
   id: string;
+  siteNumber?: string;
   deliveryNoteNumber: string;
   deliveryDate: string;
   hireStartDate?: string;
