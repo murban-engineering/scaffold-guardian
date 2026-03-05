@@ -898,6 +898,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </div>
 
     <div class="hire-footer hire-footer-page-break">
+      ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+
       <div class="hire-footer-note">
         <strong class="hire-page-two-heading">Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items (Refer to the Stacking and Loading Procedures of FS equipment.)</strong><br/>
         <strong>Quoted rates excludes transport to and from site</strong>
