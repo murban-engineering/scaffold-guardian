@@ -895,11 +895,15 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="hire-footer-grid">
         <div>
           <div class="hire-footer-box">
-            <h4>Our Banking Details</h4>
-            <div class="hire-footer-row"><span>Account Name</span><span>:</span><span>OTNO Access Solutions Limited</span></div>
-            <div class="hire-footer-row"><span>Account Number</span><span>:</span><span>02107773676350</span></div>
+            <h4>Payment Details</h4>
+            <div class="hire-footer-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
+            <div class="hire-footer-row"><span>KES Account Number</span><span>:</span><span>02107773676350</span></div>
             <div class="hire-footer-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
             <div class="hire-footer-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
+            <div class="hire-footer-row"><span>Bank Code</span><span>:</span><span>57</span></div>
+            <div class="hire-footer-row"><span>Branch Code</span><span>:</span><span>021</span></div>
+            <div class="hire-footer-row"><span>Swift Code</span><span>:</span><span>IMBLKENA</span></div>
+            <div class="hire-footer-row"><span>Mpesa Paybill Code</span><span>:</span><span>542542</span></div>
           </div>
 
           <div class="hire-acknowledge">
