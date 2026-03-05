@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, Fragment } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -463,6 +463,7 @@ const HireQuotationWorkflow = ({
   const [selectedPreviousClientId, setSelectedPreviousClientId] = useState("");
 
   const [activeStep, setActiveStep] = useState<StepKey>(initialStep || "client");
+  const initializedStepForQuotationRef = useRef<string | null>(null);
   const [inventoryDeducted, setInventoryDeducted] = useState(false);
 
   // Site Master Plan state
@@ -764,28 +765,39 @@ const HireQuotationWorkflow = ({
       setInventoryDeducted(true);
     }
 
-    // For test quotations: always land on client details first to keep workflow navigation consistent
+    const quotationId = initialQuotation.id;
+    const shouldInitializeStep = initializedStepForQuotationRef.current !== quotationId;
+
+    if (shouldInitializeStep) {
+      if (initialStep) {
+        setActiveStep(initialStep);
+      } else if (!isTestQuotation && hasBalanceItems) {
+        setActiveStep("hire-delivery");
+        toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
+      } else if (!isTestQuotation && hasDispatchActivity) {
+        setActiveStep("return");
+      } else {
+        setActiveStep("client");
+      }
+      initializedStepForQuotationRef.current = quotationId;
+    }
+
     if (isTestQuotation) {
-      setActiveStep("client");
       setDeliverySequence(1);
       setCurrentDeliveryDispatched(false);
       setInventoryDeducted(false);
     } else if (hasBalanceItems) {
-      setActiveStep("hire-delivery");
       setDeliverySequence(2);
       setInventoryDeducted(false);
-      toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
     } else if (hasDispatchActivity) {
-      setActiveStep("return");
       setDeliverySequence(1);
     } else {
-      setActiveStep("client");
       setDeliverySequence(1);
       setCurrentDeliveryDispatched(false);
       setInventoryDeducted(false);
     }
     setReturnProcessed(false);
-  }, [initialQuotation, isTestQuotation, profile?.full_name, scaffolds]);
+  }, [initialQuotation, initialStep, isTestQuotation, profile?.full_name, scaffolds]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
   const [deliveryQuantities, setDeliveryQuantities] = useState<Record<string, string>>({});
@@ -943,13 +955,9 @@ const HireQuotationWorkflow = ({
         draft = JSON.parse(storedLegacyDraft) as Partial<TestWorkflowDraft>;
       }
 
-      if (isTestQuotation) {
-        setActiveStep("client");
-      } else {
-        const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
-        if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
-          setActiveStep(draft.activeStep);
-        }
+      const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
+      if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
+        setActiveStep(draft.activeStep);
       }
 
       if (draft.header) {
