@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2 } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, UserPlus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -46,7 +47,9 @@ const Index = () => {
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [showClientDetailsDialog, setShowClientDetailsDialog] = useState(false);
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
+  const [continueClientId, setContinueClientId] = useState<string>("");
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
@@ -114,22 +117,11 @@ const Index = () => {
   const toClientId = (quotationNumber: string | null) =>
     (quotationNumber || "No client ID").replace("HSQ-", "CL-").replace("HQ-", "CL-");
 
-  const existingClientOptions = hireQuotations
-    .filter((quotation) => (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
-    .reduce<HireQuotation[]>((acc, quotation) => {
-      const companyKey = (quotation.company_name || "").trim().toLowerCase();
-      const clientId = toClientId(quotation.quotation_number).toLowerCase();
-      const key = `${companyKey}|${clientId}`;
-      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${toClientId(entry.quotation_number).toLowerCase()}` === key)) {
-        return acc;
-      }
-      acc.push(quotation);
-      return acc;
-    }, [])
-    .slice(0, 10);
+  const isTestQuotation = (quotation: HireQuotation) =>
+    (quotation.quotation_number || "").toUpperCase().startsWith("TST-");
 
-  const testClientOptions = hireQuotations
-    .filter((quotation) => quotation.quotation_number)
+  const existingClientOptions = hireQuotations
+    .filter((quotation) => !isTestQuotation(quotation) && (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
     .reduce<HireQuotation[]>((acc, quotation) => {
       const clientId = toClientId(quotation.quotation_number).toLowerCase();
       if (acc.some((entry) => toClientId(entry.quotation_number).toLowerCase() === clientId)) {
@@ -138,32 +130,27 @@ const Index = () => {
       acc.push(quotation);
       return acc;
     }, [])
-    .slice(0, 10);
-
-  const isTestQuotation = (quotation: HireQuotation) =>
-    (quotation.quotation_number || "").toUpperCase().startsWith("CL-");
+    .slice(0, 20);
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
 
-  const continueClientOptions = hireQuotations.reduce<Array<{ value: string; label: string }>>((acc, quotation) => {
-    const companyName = quotation.company_name?.trim() || "Unnamed client";
-    const clientId = toClientId(quotation.quotation_number);
-    const value = `${companyName}|${clientId}`;
-    if (!acc.some((option) => option.value === value)) {
-      acc.push({ value, label: `${companyName} (${clientId})` });
-    }
-    return acc;
-  }, []);
+  // Client ID dropdown options for "Continue Quotation" — deduped by clientId
+  const continueClientIdOptions = existingClientOptions.map((q) => ({
+    value: q.id,
+    label: `${toClientId(q.quotation_number)} — ${q.company_name || "Unnamed client"}`,
+    clientId: toClientId(q.quotation_number),
+    quotation: q,
+  }));
 
-  const filterQuotationsByClient = (rows: HireQuotation[]) =>
-    selectedContinueClient === "all"
-      ? rows
-      : rows.filter((quotation) => {
-          const companyName = quotation.company_name?.trim() || "Unnamed client";
-          const clientId = toClientId(quotation.quotation_number);
-          return `${companyName}|${clientId}` === selectedContinueClient;
-        });
+  // The quotations to show in continue dialog, filtered by selected client ID
+  const filteredContinueQuotations = continueClientId
+    ? standardQuotations.filter((q) => {
+        const selectedQ = hireQuotations.find((hq) => hq.id === continueClientId);
+        if (!selectedQ) return true;
+        return toClientId(q.quotation_number) === toClientId(selectedQ.quotation_number);
+      })
+    : standardQuotations;
 
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
@@ -172,6 +159,15 @@ const Index = () => {
     setWorkflowInitialClientMode("new");
     setIsTestQuotationFlow(false);
     setShowQuotationDialog(true);
+  };
+
+  const handleOpenClientDetails = () => {
+    setSelectedQuotation(null);
+    setSelectedExistingClient(null);
+    setWorkflowInitialStep("client");
+    setWorkflowInitialClientMode("new");
+    setIsTestQuotationFlow(false);
+    setShowClientDetailsDialog(true);
   };
 
   const handleStartExistingClientOrder = (quotation?: HireQuotation) => {
@@ -184,23 +180,11 @@ const Index = () => {
   };
 
   const handleContinueQuotation = (quotation: HireQuotation) => {
-    const continuingFromTestClient = isTestQuotation(quotation);
-
-    if (continuingFromTestClient && activeItem !== "site-master" && activeItem !== "yard-verification") {
-      setSelectedQuotation(null);
-      setSelectedExistingClient(quotation);
-      setWorkflowInitialClientMode("new");
-      setWorkflowInitialStep(undefined);
-      setIsTestQuotationFlow(false);
-      toast.info("Loaded test client details into a normal quotation flow. Update the client form and save to generate a new HSQ quotation.");
-    } else {
-      setSelectedExistingClient(null);
-      setSelectedQuotation(quotation);
-      setWorkflowInitialClientMode("new");
-      setWorkflowInitialStep(undefined);
-      setIsTestQuotationFlow(false);
-    }
-
+    setSelectedExistingClient(null);
+    setSelectedQuotation(quotation);
+    setWorkflowInitialClientMode("new");
+    setWorkflowInitialStep(undefined);
+    setIsTestQuotationFlow(false);
     setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
     if (activeItem === "site-master" || activeItem === "yard-verification") {
@@ -439,8 +423,8 @@ const Index = () => {
                               <FlaskConical className="mr-2 h-4 w-4" />
                               {createQuotation.isPending ? "Opening..." : "Open Test Quotation (TST-0000001)"}
                             </DropdownMenuItem>
-                            {testClientOptions.length ? (
-                              testClientOptions.map((quotation) => {
+                            {testQuotations.length ? (
+                              testQuotations.map((quotation) => {
                                 const clientId = toClientId(quotation.quotation_number);
                                 return (
                                   <DropdownMenuItem
@@ -480,44 +464,48 @@ const Index = () => {
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                         <DropdownMenuItem onClick={handleStartNewQuotation} className="cursor-pointer">
-                          <FileText className="mr-2 h-4 w-4" />
-                          New Hire Quotation
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowContinueDialog(true)} className="cursor-pointer">
-                          <FolderClock className="mr-2 h-4 w-4" />
-                          Continue Quotation
-                        </DropdownMenuItem>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger className="cursor-pointer">
-                            <Building2 className="mr-2 h-4 w-4" />
-                            Existing Client New Quotation
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
-                            {existingClientOptions.length ? (
-                              existingClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation.quotation_number);
-                                return (
-                                  <DropdownMenuItem
-                                    key={quotation.id}
-                                    className="cursor-pointer"
-                                    onClick={() => handleStartExistingClientOrder(quotation)}
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium">
-                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
-                                      </p>
-                                      <p className="truncate text-xs text-muted-foreground">
-                                        {clientId} • {quotation.site_manager_name || "No contact"}
-                                      </p>
-                                    </div>
-                                  </DropdownMenuItem>
-                                );
-                              })
-                            ) : (
-                              <DropdownMenuItem disabled>No existing clients available</DropdownMenuItem>
-                            )}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                           <FileText className="mr-2 h-4 w-4" />
+                           New Hire Quotation
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleOpenClientDetails} className="cursor-pointer">
+                           <UserPlus className="mr-2 h-4 w-4" />
+                           Client Details (Save Client)
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => { setContinueClientId(""); setShowContinueDialog(true); }} className="cursor-pointer">
+                           <FolderClock className="mr-2 h-4 w-4" />
+                           Continue Quotation
+                         </DropdownMenuItem>
+                         <DropdownMenuSub>
+                           <DropdownMenuSubTrigger className="cursor-pointer">
+                             <Building2 className="mr-2 h-4 w-4" />
+                             Existing Client New Quotation
+                           </DropdownMenuSubTrigger>
+                           <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                             {existingClientOptions.length ? (
+                               existingClientOptions.map((quotation) => {
+                                 const clientId = toClientId(quotation.quotation_number);
+                                 return (
+                                   <DropdownMenuItem
+                                     key={quotation.id}
+                                     className="cursor-pointer"
+                                     onClick={() => handleStartExistingClientOrder(quotation)}
+                                   >
+                                     <div className="min-w-0">
+                                       <p className="truncate text-sm font-medium">
+                                         {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
+                                       </p>
+                                       <p className="truncate text-xs text-muted-foreground">
+                                         {clientId} • {quotation.site_manager_name || "No contact"}
+                                       </p>
+                                     </div>
+                                   </DropdownMenuItem>
+                                 );
+                               })
+                             ) : (
+                               <DropdownMenuItem disabled>No existing clients available</DropdownMenuItem>
+                             )}
+                           </DropdownMenuSubContent>
+                         </DropdownMenuSub>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -551,6 +539,33 @@ const Index = () => {
             <MaintenanceLogOverview />
           </div>
         )}
+
+        {/* Client Details Dialog */}
+        <Dialog open={showClientDetailsDialog} onOpenChange={(open) => {
+          setShowClientDetailsDialog(open);
+          if (!open) {
+            setWorkflowInitialStep(undefined);
+            setWorkflowInitialClientMode("new");
+          }
+        }}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Client Details — Save Client &amp; Generate Client ID</DialogTitle>
+            </DialogHeader>
+            <HireQuotationWorkflow
+              key={`client-details:${showClientDetailsDialog}`}
+              initialQuotation={null}
+              initialStep="client"
+              initialClientMode="new"
+              isTestQuotation={false}
+              onClientProcessed={(client) => {
+                setProcessedClient(client);
+                setShowClientDetailsDialog(false);
+                toast.success(`Client saved! You can now use "Continue Quotation" to load their details.`);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
 
         {/* Hire Quotation Dialog - accessible from all views */}
         <Dialog
@@ -586,9 +601,6 @@ const Index = () => {
         </Dialog>
         <Dialog open={showContinueDialog} onOpenChange={(open) => {
           setShowContinueDialog(open);
-          if (open) {
-            setSelectedContinueClient("all");
-          }
           if (!open && (activeItem === "site-master" || activeItem === "yard-verification") && !selectedQuotation) {
             setActiveItem("dashboard");
           }
@@ -606,16 +618,16 @@ const Index = () => {
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
               <div className="grid gap-2 md:w-[360px]">
-                <Label htmlFor="continue-client-filter">Client</Label>
-                <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
+                <Label htmlFor="continue-client-filter">Filter by Client ID</Label>
+                <Select value={continueClientId} onValueChange={setContinueClientId}>
                   <SelectTrigger id="continue-client-filter">
                     <SelectValue placeholder="All clients" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All clients</SelectItem>
-                    {continueClientOptions.map((client) => (
-                      <SelectItem key={client.value} value={client.value}>
-                        {client.label}
+                    <SelectItem value="">All clients</SelectItem>
+                    {continueClientIdOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -625,91 +637,71 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
               ) : hireQuotations.length ? (
                 <div className="max-h-[60vh] space-y-4 overflow-y-auto">
-                  {[
-                    { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations), allowContinue: true },
-                    {
-                      title: "Test Quotations",
-                      rows:
-                        activeItem === "site-master" || activeItem === "yard-verification"
-                          ? []
-                          : filterQuotationsByClient(testQuotations),
-                      allowContinue: false,
-                    },
-                  ]
-                    .filter((section) => section.rows.length > 0)
-                    .map((section) => (
-                      <div key={section.title} className="rounded-lg border border-border">
-                        <div className="border-b px-4 py-2">
-                          <p className="text-sm font-medium">{section.title}</p>
-                        </div>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Quotation</TableHead>
-                              <TableHead>Client</TableHead>
-                              <TableHead>Site</TableHead>
-                              <TableHead>Order Summary</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {section.rows.map((quotation) => {
-                              const lineItems = quotation.line_items ?? [];
-                              const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-                              const weeklyTotal = lineItems.reduce(
-                                (sum, item) => {
-                                  if (item.weekly_total != null) {
-                                    return sum + item.weekly_total;
-                                  }
-                                  const rate = item.weekly_rate ?? 0;
-                                  const qty = item.quantity ?? 0;
-                                  const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
-                                  const hireRate = Math.max(rate * (1 - discountRate), 0);
-                                  return sum + hireRate * qty;
-                                },
-                                0
-                              );
-
-                              return (
-                                <TableRow key={quotation.id}>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.quotation_number || "Draft"}</div>
-                                    <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.company_name || "Unnamed client"}</div>
-                                    <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.site_name || "No site name"}</div>
-                                    <div className="text-xs text-muted-foreground line-clamp-1">
-                                      {quotation.site_address || "No site address"}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{itemCount} item(s)</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Weekly total: Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
-                                  <TableCell className="text-right">
-                                    {section.allowContinue ? (
-                                      <Button size="sm" onClick={() => handleContinueQuotation(quotation)}>
-                                        {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                      </Button>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">No continue action</span>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                  {filteredContinueQuotations.length > 0 ? (
+                    <div className="rounded-lg border border-border">
+                      <div className="border-b px-4 py-2">
+                        <p className="text-sm font-medium">Saved Quotations</p>
                       </div>
-                    ))}
+                         <Table>
+                           <TableHeader>
+                             <TableRow>
+                               <TableHead>Quotation</TableHead>
+                               <TableHead>Client</TableHead>
+                               <TableHead>Site</TableHead>
+                               <TableHead>Order Summary</TableHead>
+                               <TableHead>Status</TableHead>
+                               <TableHead className="text-right">Action</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {filteredContinueQuotations.map((quotation) => {
+                               const lineItems = quotation.line_items ?? [];
+                               const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+                               const weeklyTotal = lineItems.reduce(
+                                 (sum, item) => {
+                                   if (item.weekly_total != null) return sum + item.weekly_total;
+                                   const rate = item.weekly_rate ?? 0;
+                                   const qty = item.quantity ?? 0;
+                                   const disc = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
+                                   return sum + Math.max(rate * (1 - disc), 0) * qty;
+                                 },
+                                 0
+                               );
+                               return (
+                                 <TableRow key={quotation.id}>
+                                   <TableCell>
+                                     <div className="font-medium">{quotation.quotation_number || "Draft"}</div>
+                                     <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
+                                   </TableCell>
+                                   <TableCell>
+                                     <div className="font-medium">{quotation.company_name || "Unnamed client"}</div>
+                                     <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
+                                   </TableCell>
+                                   <TableCell>
+                                     <div className="font-medium">{quotation.site_name || "No site name"}</div>
+                                     <div className="text-xs text-muted-foreground line-clamp-1">{quotation.site_address || "No site address"}</div>
+                                   </TableCell>
+                                   <TableCell>
+                                     <div className="font-medium">{itemCount} item(s)</div>
+                                     <div className="text-xs text-muted-foreground">Weekly: Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}</div>
+                                   </TableCell>
+                                   <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
+                                   <TableCell className="text-right">
+                                     <Button size="sm" onClick={() => handleContinueQuotation(quotation)}>
+                                       {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                     </Button>
+                                   </TableCell>
+                                 </TableRow>
+                               );
+                             })}
+                           </TableBody>
+                         </Table>
+                       </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                      No quotations match the selected client ID.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
