@@ -3065,8 +3065,6 @@ const HireQuotationWorkflow = ({
             </div>
 
 
-            {clientEntryMode !== "existing" && (
-            <>
             {/* Section 1 - Applicant */}
             <div className="rounded-lg border border-border p-4">
               <h4 className="text-sm font-semibold mb-4 text-primary">Section 1 — Applicant Details</h4>
@@ -3462,8 +3460,6 @@ const HireQuotationWorkflow = ({
                 </div>
               </div>
             </div>
-            </>
-            )}
 
             <div className="flex items-center justify-between border-t border-border pt-4">
               <p className="text-xs text-muted-foreground">
