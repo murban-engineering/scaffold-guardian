@@ -911,6 +911,7 @@ const HireQuotationWorkflow = ({
   });
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
   const [hasHydratedTestDraft, setHasHydratedTestDraft] = useState(false);
+  const hasRunInitialEquipmentAutoSyncRef = useRef(false);
 
   useEffect(() => {
     // If there's an initialQuotation (the persistent TST record), skip localStorage hydration.
@@ -1055,6 +1056,10 @@ const HireQuotationWorkflow = ({
     savedQuotationId,
   ]);
 
+  useEffect(() => {
+    hasRunInitialEquipmentAutoSyncRef.current = false;
+  }, [savedQuotationId]);
+
   // Auto-sync equipment items to the database whenever they change (debounced).
   // This ensures test quotations are persisted for all users, not just localStorage.
   const addLineItemsForSync = useAddLineItems();
@@ -1063,6 +1068,14 @@ const HireQuotationWorkflow = ({
     if (!savedQuotationId || !hasHydratedTestDraft) return;
     // Only auto-sync for test quotations that have a DB record
     if (!isTestQuotation) return;
+
+    if (!hasRunInitialEquipmentAutoSyncRef.current) {
+      hasRunInitialEquipmentAutoSyncRef.current = true;
+      // Prevent wiping server line items during refresh before equipment hydration completes.
+      if (equipmentItems.length === 0) {
+        return;
+      }
+    }
 
     const timer = setTimeout(async () => {
       try {
