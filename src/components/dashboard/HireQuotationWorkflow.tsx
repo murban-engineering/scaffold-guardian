@@ -764,23 +764,22 @@ const HireQuotationWorkflow = ({
       setInventoryDeducted(true);
     }
 
-    // If this quotation has balance items from previous delivery, skip to hire-delivery step
-    if (hasBalanceItems && !isTestQuotation) {
+    // For test quotations: always land on equipment step so user can add/edit freely
+    if (isTestQuotation) {
+      setActiveStep("equipment");
+      setDeliverySequence(1);
+      setCurrentDeliveryDispatched(false);
+      setInventoryDeducted(false);
+    } else if (hasBalanceItems) {
       setActiveStep("hire-delivery");
-      setDeliverySequence(2); // This is at least the 2nd delivery
-      setInventoryDeducted(false); // Reset so they can deliver balance
+      setDeliverySequence(2);
+      setInventoryDeducted(false);
       toast.info("Loaded quotation with balance items from previous delivery. Ready for next delivery.");
-    } else if (hasDispatchActivity && !isTestQuotation) {
+    } else if (hasDispatchActivity) {
       setActiveStep("return");
       setDeliverySequence(1);
-      // inventoryDeducted already set to true above
     } else {
-      // Keep the user's current step in test quotation mode. This effect can rerun
-      // (e.g. after realtime scaffold updates), and forcing "client" would bounce
-      // users out of Equipment/Quotation unexpectedly.
-      if (!isTestQuotation) {
-        setActiveStep("client");
-      }
+      setActiveStep("client");
       setDeliverySequence(1);
       setCurrentDeliveryDispatched(false);
       setInventoryDeducted(false);
@@ -902,6 +901,8 @@ const HireQuotationWorkflow = ({
   const [hasHydratedTestDraft, setHasHydratedTestDraft] = useState(false);
 
   useEffect(() => {
+    // If there's an initialQuotation (the persistent TST record), skip localStorage hydration.
+    // Equipment is already loaded from the DB via the initialQuotation effect above.
     if (!isTestQuotation || initialQuotation) {
       setHasHydratedTestDraft(true);
       return;

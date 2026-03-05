@@ -209,11 +209,15 @@ const Index = () => {
     setShowQuotationDialog(true);
   };
 
+  const TEST_QUOTATION_NUMBER = "TST-0000001";
+
   const handleStartTestQuotation = async (quotation?: HireQuotation) => {
+    // Always use the single persistent TST-0000001 record
     if (quotation) {
-      setSelectedQuotation(null);
-      setSelectedExistingClient(quotation);
-      setWorkflowInitialClientMode("existing");
+      // If a specific test quotation was passed (e.g. from list), just open it
+      setSelectedQuotation(quotation);
+      setSelectedExistingClient(null);
+      setWorkflowInitialClientMode("new");
       setIsTestQuotationFlow(true);
       setWorkflowInitialStep("equipment");
       setShowQuotationDialog(true);
@@ -221,33 +225,41 @@ const Index = () => {
     }
 
     try {
-      const todayLabel = new Date().toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" });
-      const quotation = await createQuotation.mutateAsync({
-        company_name: "",
-        site_name: `Price Check ${todayLabel}`,
-        site_manager_name: "",
-        notes: "Temporary quotation for price-check only.",
-      });
+      // Look for existing TST-0000001 record
+      const existing = hireQuotations.find(q => q.quotation_number === TEST_QUOTATION_NUMBER);
 
-      const customerNumber = quotation.quotation_number
-        .replace("HSQ-", "CL-")
-        .replace("HQ-", "CL-");
+      if (existing) {
+        setSelectedQuotation(existing);
+        setSelectedExistingClient(null);
+        setWorkflowInitialClientMode("new");
+        setIsTestQuotationFlow(true);
+        setWorkflowInitialStep("equipment");
+        setShowQuotationDialog(true);
+        toast.info("Opened persistent test quotation TST-0000001. Add or edit equipment.");
+        return;
+      }
+
+      // Create it for the first time with the fixed number
+      const created = await createQuotation.mutateAsync({
+        company_name: "TEST",
+        site_name: "Test / Price Check",
+        notes: "Persistent test quotation — equipment is always saved here.",
+      });
 
       const testQuotation = await updateQuotation.mutateAsync({
-        id: quotation.id,
-        quotation_number: customerNumber,
+        id: created.id,
+        quotation_number: TEST_QUOTATION_NUMBER,
       });
 
-      setSelectedExistingClient(null);
       setSelectedQuotation(testQuotation);
+      setSelectedExistingClient(null);
       setWorkflowInitialClientMode("new");
       setIsTestQuotationFlow(true);
       setWorkflowInitialStep("equipment");
       setShowQuotationDialog(true);
-
-      toast.success(`Test quotation created. Customer number: ${customerNumber}`);
+      toast.success("Test quotation TST-0000001 created. Equipment you add is saved permanently.");
     } catch (error) {
-      console.error("Failed to create test quotation", error);
+      console.error("Failed to open test quotation", error);
     }
   };
 
@@ -425,7 +437,7 @@ const Index = () => {
                               className="cursor-pointer"
                             >
                               <FlaskConical className="mr-2 h-4 w-4" />
-                              {createQuotation.isPending ? "Creating Test Quotation..." : "New Test Quotation"}
+                              {createQuotation.isPending ? "Opening..." : "Open Test Quotation (TST-0000001)"}
                             </DropdownMenuItem>
                             {testClientOptions.length ? (
                               testClientOptions.map((quotation) => {
@@ -556,7 +568,7 @@ const Index = () => {
         >
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create Hire Quotation</DialogTitle>
+              <DialogTitle>{isTestQuotationFlow ? "Test Quotation — TST-0000001" : "Create Hire Quotation"}</DialogTitle>
             </DialogHeader>
             <HireQuotationWorkflow 
               key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
