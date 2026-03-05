@@ -169,6 +169,10 @@ type PolicyLineBreakdown = {
   lineTotal: number;
 };
 
+type DeliveryHistorySiteRecord = {
+  siteNumber?: string;
+};
+
 type ClientInvoice = {
   id: string;
   invoiceNumber: string;
@@ -608,6 +612,24 @@ const Accounting = () => {
   const { data: quotations = [], isLoading } = useHireQuotations();
   const { data: maintenanceLogs = [] } = useMaintenanceLogs();
   const { data: scaffolds = [] } = useScaffolds();
+  const { data: siteNameByQuotationAndNumber = new Map<string, string>() } = useQuery({
+    queryKey: ["accounting-client-sites-name-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_sites")
+        .select("quotation_id, site_number, site_name");
+
+      if (error) throw error;
+
+      const map = new Map<string, string>();
+      (data ?? []).forEach((site) => {
+        if (!site.quotation_id || !site.site_number || !site.site_name) return;
+        map.set(`${site.quotation_id}:${site.site_number}`, site.site_name);
+      });
+
+      return map;
+    },
+  });
   const [billingDate, setBillingDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selectedClient, setSelectedClient] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -683,6 +705,16 @@ const Accounting = () => {
   const invoices = useMemo<ClientInvoice[]>(() => {
     const bd = asDateOrToday(billingDate);
     return activeQuotations.map((q, idx) => {
+      const deliveryHistory = Array.isArray(q.delivery_history)
+        ? (q.delivery_history as DeliveryHistorySiteRecord[])
+        : [];
+      const latestDeliveryWithSiteNumber = [...deliveryHistory]
+        .reverse()
+        .find((record) => typeof record.siteNumber === "string" && record.siteNumber.trim().length > 0);
+      const siteNameFromSavedSite = latestDeliveryWithSiteNumber?.siteNumber
+        ? siteNameByQuotationAndNumber.get(`${q.id}:${latestDeliveryWithSiteNumber.siteNumber}`)
+        : undefined;
+
       const lineItems = q.line_items ?? [];
       // Use stored dispatch_date if available, then delivery history, then a stable fallback.
       const storedDispatchDate = q.dispatch_date;
@@ -732,7 +764,7 @@ const Accounting = () => {
         quotationNumber: qNum,
         accountNumber: q.account_number || "-",
         client: q.company_name || q.site_manager_name || "Unnamed client",
-        site: q.site_name || "-",
+        site: siteNameFromSavedSite || q.site_name || "-",
         siteAddress: q.site_address || "",
         contactName: q.site_manager_name || "",
         contactPhone: q.site_manager_phone || "",
@@ -748,7 +780,7 @@ const Accounting = () => {
         createdDate: toIsoDateOrToday(q.created_at),
       };
     });
-  }, [activeQuotations, billingDate, surchargeMap]);
+  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber]);
 
   const uniqueClients = useMemo(
     () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
