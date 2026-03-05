@@ -910,6 +910,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
               <span>Signature:<span class="hire-ack-line"></span></span>
               <span>Date:<span class="hire-ack-line"></span></span>
             </div>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+              <span>Customer Representative's Name:<span class="hire-ack-line" style="min-width:100px;"></span></span>
+              <span>Signature:<span class="hire-ack-line" style="min-width:90px;"></span></span>
+              <span>Date:<span class="hire-ack-line" style="min-width:80px;"></span></span>
+            </div>
           </div>
         </div>
 
