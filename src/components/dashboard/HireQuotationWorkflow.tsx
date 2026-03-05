@@ -1633,7 +1633,7 @@ const HireQuotationWorkflow = ({
       return null;
     }
     try {
-      const companyName = header.tradingName || header.clientCompanyName || "Test Client";
+      const companyName = header.tradingName || header.clientCompanyName || "";
       const contactName = header.siteContactPerson || header.clientName || undefined;
       const contactPhone = header.landline1 || header.clientPhone || undefined;
       const contactEmail = header.companyEmail || header.clientEmail || undefined;
