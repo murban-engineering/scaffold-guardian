@@ -805,6 +805,19 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       ${SHARED_PRINT_STYLES}
       .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
+      .hire-footer { border: 1px solid #9ca3af; margin-top: 10px; font-size: 8.5px; }
+      .hire-footer-note { padding: 8px; text-align: center; border-bottom: 1px solid #d1d5db; line-height: 1.45; }
+      .hire-footer-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; padding: 8px; }
+      .hire-footer-box { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; margin-bottom: 8px; }
+      .hire-footer-box h4 { margin-bottom: 4px; font-size: 9px; }
+      .hire-footer-row { display: grid; grid-template-columns: 96px 8px 1fr; margin-bottom: 2px; }
+      .hire-acknowledge { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; }
+      .hire-ack-line { display: inline-block; min-width: 120px; border-bottom: 1px solid #6b7280; margin-left: 6px; height: 10px; }
+      .hire-totals { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; align-self: end; }
+      .hire-totals .row { display: flex; justify-content: space-between; margin-bottom: 3px; gap: 6px; }
+      .hire-totals .grand { font-weight: 800; border-top: 1px solid #6b7280; padding-top: 4px; margin-top: 4px; }
+      .hire-footer-brand { background: #facc15; color: #1f2937; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-top: 1px solid #9ca3af; }
+      .hire-footer-legal { text-align: center; font-size: 8px; color: #4b5563; padding: 4px 8px 8px; }
     </style></head><body>
     ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
     ${renderStandardReportLayout({
@@ -872,15 +885,48 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br/>")}
     </div>
 
-    <div class="terms">
-      <strong>TERMS:</strong> Order confirmation is through deposit payment before collection. One month deposit required upfront. We do not accept cash payments.<br/>
-      ${PAYMENT_DETAILS_HTML}
+    <div class="hire-footer">
+      <div class="hire-footer-note">
+        <strong>Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items.</strong><br/>
+        (Refer to the stacking and loading procedures of equipment.)<br/>
+        <strong>Quoted rates excludes transport to and from site.</strong>
+      </div>
+
+      <div class="hire-footer-grid">
+        <div>
+          <div class="hire-footer-box">
+            <h4>Our Banking Details</h4>
+            <div class="hire-footer-row"><span>Account Name</span><span>:</span><span>OTNO Access Solutions Limited</span></div>
+            <div class="hire-footer-row"><span>Account Number</span><span>:</span><span>02107773676350</span></div>
+            <div class="hire-footer-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
+            <div class="hire-footer-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
+          </div>
+
+          <div class="hire-acknowledge">
+            <p style="margin-bottom:6px;">We thank you for affording us the opportunity to quote and await your favourable response.</p>
+            <p style="margin-bottom:6px;">Yours sincerely</p>
+            <p style="font-weight:700;margin-bottom:8px;">${data.createdBy || "Sales Representative"}</p>
+            <div style="display:flex;gap:14px;">
+              <span>Signature:<span class="hire-ack-line"></span></span>
+              <span>Date:<span class="hire-ack-line"></span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hire-totals">
+          <div class="row"><span>Net Value Per Week</span><strong>${formatCurrency(subtotal)}</strong></div>
+          <div class="row"><span>VAT Per Week 16%</span><strong>${formatCurrency(vatAmount)}</strong></div>
+          <div class="row grand"><span>Total Charge Per Week</span><strong>${formatCurrency(statementTotal)}</strong></div>
+        </div>
+      </div>
+
+      <div class="hire-footer-brand">
+        <span>Exclusive Distribution Partner for OTNO Access Solutions.</span>
+        <span style="font-size:12px;">OTNO</span>
+      </div>
+      <div class="hire-footer-legal">All transactions are subject to our standard Terms of Trade and payment requirements.</div>
     </div>
 
-    <div class="signature-section">
-      <div class="signature-box"><p><strong>For ${COMPANY_NAME}:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
-      <div class="signature-box"><p><strong>For Client:</strong></p><p style="margin-bottom:14px;">Name: ___________________________</p><p style="margin-bottom:14px;">Signature: ___________________________</p><p>Date: ___________________________</p></div>
-    </div>
     <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
   </body></html>`;
 
