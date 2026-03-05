@@ -806,13 +806,25 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
       .hire-footer { border: 1px solid #9ca3af; margin-top: 10px; font-size: 8.5px; }
+      .hire-footer-page-break { page-break-before: always; break-before: page; margin-top: 0; }
+      .hire-page-two-heading { break-after: avoid; page-break-after: avoid; }
       .hire-footer-note { padding: 8px; text-align: center; border-bottom: 1px solid #d1d5db; line-height: 1.45; }
       .hire-footer-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; padding: 8px; }
+      .hire-footer-note, .hire-footer-grid, .hire-footer-box, .hire-acknowledge, .hire-totals { break-inside: avoid; page-break-inside: avoid; }
       .hire-footer-box { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; margin-bottom: 8px; }
       .hire-footer-box h4 { margin-bottom: 4px; font-size: 9px; }
       .hire-footer-row { display: grid; grid-template-columns: 96px 8px 1fr; margin-bottom: 2px; }
       .hire-acknowledge { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; }
       .hire-ack-line { display: inline-block; min-width: 120px; border-bottom: 1px solid #6b7280; margin-left: 6px; height: 10px; }
+      .hire-signature-row { display:flex; gap:14px; flex-wrap:wrap; }
+      .hire-signature-row.customer { gap:24px; margin-top:14px; }
+      .hire-signature-cell { display:flex; align-items:flex-end; gap:8px; min-width:120px; }
+      .hire-signature-cell .hire-ack-line { min-width:140px; margin-left:0; }
+      .hire-signature-cell.name { min-width:210px; }
+      .hire-signature-cell.name .hire-ack-line { min-width:190px; }
+      @media print {
+        .hire-footer-page-break { margin-top: 0 !important; }
+      }
       .hire-totals { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; align-self: end; }
       .hire-totals .row { display: flex; justify-content: space-between; margin-bottom: 3px; gap: 6px; }
       .hire-totals .grand { font-weight: 800; border-top: 1px solid #6b7280; padding-top: 4px; margin-top: 4px; }
@@ -885,9 +897,9 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br/>")}
     </div>
 
-    <div class="hire-footer">
+    <div class="hire-footer hire-footer-page-break">
       <div class="hire-footer-note">
-        <strong>Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items.</strong><br/>
+        <strong class="hire-page-two-heading">Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items.</strong><br/>
         (Refer to the stacking and loading procedures of equipment.)<br/>
         <strong>Quoted rates excludes transport to and from site.</strong>
       </div>
@@ -895,7 +907,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="hire-footer-grid">
         <div>
           <div class="hire-footer-box">
-            <h4>Payment Details</h4>
+            <h4 class="hire-page-two-heading">Our Banking Details</h4>
             <div class="hire-footer-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
             <div class="hire-footer-row"><span>KES Account Number</span><span>:</span><span>02107773676350</span></div>
             <div class="hire-footer-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
@@ -910,14 +922,14 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
             <p style="margin-bottom:6px;">We thank you for affording us the opportunity to quote and await your favourable response.</p>
             <p style="margin-bottom:6px;">Yours sincerely</p>
             <p style="font-weight:700;margin-bottom:8px;">${data.createdBy || "Sales Representative"}</p>
-            <div style="display:flex;gap:14px;">
-              <span>Signature:<span class="hire-ack-line"></span></span>
-              <span>Date:<span class="hire-ack-line"></span></span>
+            <div class="hire-signature-row">
+              <span class="hire-signature-cell">Signature:<span class="hire-ack-line"></span></span>
+              <span class="hire-signature-cell">Date:<span class="hire-ack-line"></span></span>
             </div>
-            <div style="display:flex;gap:10px;margin-top:8px;">
-              <span>Customer Representative's Name:<span class="hire-ack-line" style="min-width:100px;"></span></span>
-              <span>Signature:<span class="hire-ack-line" style="min-width:90px;"></span></span>
-              <span>Date:<span class="hire-ack-line" style="min-width:80px;"></span></span>
+            <div class="hire-signature-row customer">
+              <span class="hire-signature-cell name">Customer Representative's Name:<span class="hire-ack-line"></span></span>
+              <span class="hire-signature-cell">Signature:<span class="hire-ack-line"></span></span>
+              <span class="hire-signature-cell">Date:<span class="hire-ack-line"></span></span>
             </div>
           </div>
         </div>
