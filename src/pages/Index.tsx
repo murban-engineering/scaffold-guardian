@@ -224,8 +224,8 @@ const Index = () => {
     try {
       const nextTestQuotationNumber = getNextTestQuotationNumber(hireQuotations);
       const created = await createQuotation.mutateAsync({
-        company_name: "TEST",
-        site_name: "Test / Price Check",
+        company_name: "",
+        site_name: "",
         notes: "Test quotation for equipment and pricing validation.",
       });
 
