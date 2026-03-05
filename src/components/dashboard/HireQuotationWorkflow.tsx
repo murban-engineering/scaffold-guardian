@@ -764,9 +764,9 @@ const HireQuotationWorkflow = ({
       setInventoryDeducted(true);
     }
 
-    // For test quotations: always land on equipment step so user can add/edit freely
+    // For test quotations: always land on client details first to keep workflow navigation consistent
     if (isTestQuotation) {
-      setActiveStep("equipment");
+      setActiveStep("client");
       setDeliverySequence(1);
       setCurrentDeliveryDispatched(false);
       setInventoryDeducted(false);
@@ -943,9 +943,13 @@ const HireQuotationWorkflow = ({
         draft = JSON.parse(storedLegacyDraft) as Partial<TestWorkflowDraft>;
       }
 
-      const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
-      if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
-        setActiveStep(draft.activeStep);
+      if (isTestQuotation) {
+        setActiveStep("client");
+      } else {
+        const allowedSteps: StepKey[] = ["client", "equipment", "quotation"];
+        if (draft.activeStep && allowedSteps.includes(draft.activeStep)) {
+          setActiveStep(draft.activeStep);
+        }
       }
 
       if (draft.header) {

@@ -216,7 +216,7 @@ const Index = () => {
       setSelectedExistingClient(null);
       setWorkflowInitialClientMode("new");
       setIsTestQuotationFlow(true);
-      setWorkflowInitialStep("equipment");
+      setWorkflowInitialStep("client");
       setShowQuotationDialog(true);
       return;
     }
@@ -238,7 +238,7 @@ const Index = () => {
       setSelectedExistingClient(null);
       setWorkflowInitialClientMode("new");
       setIsTestQuotationFlow(true);
-      setWorkflowInitialStep("equipment");
+      setWorkflowInitialStep("client");
       setShowQuotationDialog(true);
       toast.success(`Test quotation ${nextTestQuotationNumber} created. Equipment is saved on this quotation.`);
     } catch (error) {
