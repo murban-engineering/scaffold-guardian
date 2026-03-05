@@ -799,8 +799,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const totalWithVat = subtotal + vatAmount;
   const discountAmount = totalWithVat * (data.discountRate / 100);
   const statementTotal = totalWithVat - discountAmount;
-  const depositTotal = statementTotal * 4;
-  const statementGrandTotal = statementTotal + depositTotal;
 
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
@@ -866,11 +864,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <tr class="total-row"><td colspan="6"><strong>VAT (16%)</strong></td><td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td></tr>
         ${data.discountRate > 0 ? `<tr class="total-row"><td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td><td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td></tr>` : ""}
         <tr class="total-row"><td colspan="6"><strong>TOTAL (VAT + Hire/Week)</strong></td><td class="text-right"><strong>${formatCurrency(statementTotal)}</strong></td></tr>
-        <tr class="total-row"><td colspan="6"><strong>DEPOSIT TOTAL (TOTAL × 4)</strong></td><td class="text-right"><strong>${formatCurrency(depositTotal)}</strong></td></tr>
-        <tr class="total-row" style="border-top:2px solid #111;border-bottom:2px solid #111;background:#f1f5f9;color:#111;">
-          <td colspan="6"><strong>GRAND TOTAL (Deposit + Total)</strong></td>
-          <td class="text-right"><strong>${formatCurrency(statementGrandTotal)}</strong></td>
-        </tr>
       </tbody>
     </table>
 
@@ -904,8 +897,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
 
   const weeklyVatAmount = data.vatRate > 0 ? data.weeklyTotal * (data.vatRate / 100) : 0;
   const weeklyTotalWithVat = data.weeklyTotal + weeklyVatAmount;
-  const depositTotal = weeklyTotalWithVat * 4;
-  const statementGrandTotal = weeklyTotalWithVat + depositTotal;
 
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
@@ -913,16 +904,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       .summary-box { background: #f5f5f5; padding: 10px; margin-bottom: 14px; }
       .summary-row { display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #ddd; font-size: 9.5px; }
       .summary-row:last-child { border-bottom: none; }
-      .summary-row.grand {
-        font-size: 11px;
-        font-weight: 700;
-        border-top: 2px solid #111;
-        border-bottom: 2px solid #111;
-        margin: 8px -10px -10px;
-        padding: 10px;
-        background: #f1f5f9;
-        color: #111;
-      }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
     </style></head><body>
     ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
@@ -979,8 +960,6 @@ export const generateQuotationPDF = (data: QuotationCalculationData) => {
       <div class="summary-row"><span>VAT (${data.vatRate}%)</span><span>${formatCurrency(weeklyVatAmount)}</span></div>
       ${data.discountRate > 0 ? `<div class="summary-row"><span>Discount (${data.discountRate}%)</span><span>-${formatCurrency(data.discountAmount)}</span></div>` : ""}
       <div class="summary-row"><span>TOTAL (VAT + Hire/Week)</span><span>${formatCurrency(weeklyTotalWithVat)}</span></div>
-      <div class="summary-row"><span>DEPOSIT TOTAL (TOTAL × 4)</span><span>${formatCurrency(depositTotal)}</span></div>
-      <div class="summary-row grand"><span>GRAND TOTAL (Deposit + Total)</span><span>${formatCurrency(statementGrandTotal)}</span></div>
     </div>
 
     <div class="terms">
