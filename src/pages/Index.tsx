@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { getNextTestQuotationNumber, isTestQuotationNumber } from "@/lib/testQuotation";
 
 const Index = () => {
   useRealtimeSync();
@@ -129,7 +130,7 @@ const Index = () => {
     .slice(0, 10);
 
   const testClientOptions = hireQuotations
-    .filter((quotation) => quotation.quotation_number)
+    .filter((quotation) => isTestQuotationNumber(quotation.quotation_number))
     .reduce<HireQuotation[]>((acc, quotation) => {
       const clientId = toClientId(quotation.quotation_number).toLowerCase();
       if (acc.some((entry) => toClientId(entry.quotation_number).toLowerCase() === clientId)) {
@@ -141,7 +142,7 @@ const Index = () => {
     .slice(0, 10);
 
   const isTestQuotation = (quotation: HireQuotation) =>
-    (quotation.quotation_number || "").toUpperCase().startsWith("CL-");
+    isTestQuotationNumber(quotation.quotation_number);
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
@@ -209,12 +210,8 @@ const Index = () => {
     setShowQuotationDialog(true);
   };
 
-  const TEST_QUOTATION_NUMBER = "TST-0000001";
-
   const handleStartTestQuotation = async (quotation?: HireQuotation) => {
-    // Always use the single persistent TST-0000001 record
     if (quotation) {
-      // If a specific test quotation was passed (e.g. from list), just open it
       setSelectedQuotation(quotation);
       setSelectedExistingClient(null);
       setWorkflowInitialClientMode("new");
@@ -225,30 +222,16 @@ const Index = () => {
     }
 
     try {
-      // Look for existing TST-0000001 record
-      const existing = hireQuotations.find(q => q.quotation_number === TEST_QUOTATION_NUMBER);
-
-      if (existing) {
-        setSelectedQuotation(existing);
-        setSelectedExistingClient(null);
-        setWorkflowInitialClientMode("new");
-        setIsTestQuotationFlow(true);
-        setWorkflowInitialStep("equipment");
-        setShowQuotationDialog(true);
-        toast.info("Opened persistent test quotation TST-0000001. Add or edit equipment.");
-        return;
-      }
-
-      // Create it for the first time with the fixed number
+      const nextTestQuotationNumber = getNextTestQuotationNumber(hireQuotations);
       const created = await createQuotation.mutateAsync({
         company_name: "TEST",
         site_name: "Test / Price Check",
-        notes: "Persistent test quotation — equipment is always saved here.",
+        notes: "Test quotation for equipment and pricing validation.",
       });
 
       const testQuotation = await updateQuotation.mutateAsync({
         id: created.id,
-        quotation_number: TEST_QUOTATION_NUMBER,
+        quotation_number: nextTestQuotationNumber,
       });
 
       setSelectedQuotation(testQuotation);
@@ -257,7 +240,7 @@ const Index = () => {
       setIsTestQuotationFlow(true);
       setWorkflowInitialStep("equipment");
       setShowQuotationDialog(true);
-      toast.success("Test quotation TST-0000001 created. Equipment you add is saved permanently.");
+      toast.success(`Test quotation ${nextTestQuotationNumber} created. Equipment is saved on this quotation.`);
     } catch (error) {
       console.error("Failed to open test quotation", error);
     }
@@ -437,7 +420,7 @@ const Index = () => {
                               className="cursor-pointer"
                             >
                               <FlaskConical className="mr-2 h-4 w-4" />
-                              {createQuotation.isPending ? "Opening..." : "Open Test Quotation (TST-0000001)"}
+                              {createQuotation.isPending ? "Opening..." : "Open New Test Quotation"}
                             </DropdownMenuItem>
                             {testClientOptions.length ? (
                               testClientOptions.map((quotation) => {
@@ -568,7 +551,7 @@ const Index = () => {
         >
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{isTestQuotationFlow ? "Test Quotation — TST-0000001" : "Create Hire Quotation"}</DialogTitle>
+              <DialogTitle>{isTestQuotationFlow ? `Test Quotation — ${liveSelectedQuotation?.quotation_number ?? "Draft"}` : "Create Hire Quotation"}</DialogTitle>
             </DialogHeader>
             <HireQuotationWorkflow 
               key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
