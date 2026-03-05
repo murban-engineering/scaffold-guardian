@@ -950,7 +950,7 @@ const Accounting = () => {
                                     return;
                                   }
 
-                                  if (action === "scrap") {
+                                  if (action === "dds-invoice") {
                                     openScrapReport(inv);
                                     return;
                                   }
@@ -974,10 +974,10 @@ const Accounting = () => {
                                 <SelectContent>
                                   <SelectItem value="dds">Tax Invoice Copy</SelectItem>
                                   <SelectItem
-                                    value="scrap"
+                                    value="dds-invoice"
                                     disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
                                   >
-                                    Scrap Report
+                                    DDS Invoice
                                   </SelectItem>
                                   <SelectItem value="customer-statement">
                                     Customer Statement
