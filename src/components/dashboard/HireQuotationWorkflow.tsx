@@ -2072,6 +2072,7 @@ const HireQuotationWorkflow = ({
 
   // Print delivery note from history
   const handlePrintDeliveryNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
+    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: delivery.deliveryNoteNumber,
@@ -2079,17 +2080,17 @@ const HireQuotationWorkflow = ({
       deliveryDate: delivery.deliveryDate,
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: selectedSite?.site_name || header.siteName,
+      siteAddress: selectedSite?.site_address || header.siteAddress,
+      contactName: selectedSite?.site_manager_name || header.clientName,
+      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
       deliveredBy: delivery.deliveredBy,
       receivedBy: delivery.receivedBy,
       vehicleNo: delivery.vehicleNo,
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2101,22 +2102,23 @@ const HireQuotationWorkflow = ({
     };
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
-  }, [header]);
+  }, [header, clientSites, selectedDeliverySiteId]);
 
   // Print loading note from history
   const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
+    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: selectedSite?.site_name || header.siteName,
+      siteLocation: selectedSite?.site_location || header.siteLocation,
+      siteAddress: selectedSite?.site_address || header.siteAddress,
+      contactName: selectedSite?.site_manager_name || header.clientName,
+      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
       noteTitle: "Hire Loading Report",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
@@ -2128,7 +2130,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireLoadingNotePDF(data);
     toast.success("Loading note opened for printing");
-  }, [header]);
+  }, [header, clientSites, selectedDeliverySiteId]);
 
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
@@ -2138,6 +2140,7 @@ const HireQuotationWorkflow = ({
 
     const balanceQuantities: Record<string, number> = {};
     const deliveredQuantities: Record<string, number> = {};
+    const activeSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -2145,17 +2148,17 @@ const HireQuotationWorkflow = ({
       deliveryDate: deliveryNote.deliveryDate,
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: activeSite?.site_name || header.siteName,
+      siteAddress: activeSite?.site_address || header.siteAddress,
+      contactName: activeSite?.site_manager_name || header.clientName,
+      contactPhone: activeSite?.site_manager_phone || header.clientPhone,
       deliveredBy: deliveryNote.deliveredBy,
       receivedBy: deliveryNote.receivedBy,
       vehicleNo: deliveryNote.vehicleNo,
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
@@ -2243,18 +2246,19 @@ const HireQuotationWorkflow = ({
       })
       .filter((item) => item.quantity > 0);
 
+    const loadingSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: loadingSite?.site_name || header.siteName,
+      siteLocation: loadingSite?.site_location || header.siteLocation,
+      siteAddress: loadingSite?.site_address || header.siteAddress,
+      contactName: loadingSite?.site_manager_name || header.clientName,
+      contactPhone: loadingSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: loadingSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
       noteTitle: noteType === "balance" ? "Hire Loading Report (Balance)" : "Hire Loading Report",
       items: [],
     };
@@ -4265,11 +4269,12 @@ const HireQuotationWorkflow = ({
                     {!inventoryDeducted ? (
                       <Button
                         onClick={handleDispatchDelivery}
-                        disabled={deductInventory.isPending || updateQuotation.isPending}
-                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600"
+                        disabled={deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
+                        title={!deliveryNote.deliveryDate ? "Set a Dispatch Date above before dispatching" : undefined}
+                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50"
                       >
                         <Truck className="h-4 w-4 mr-2" />
-                        {deductInventory.isPending ? "Dispatching..." : "Dispatch Delivery"}
+                        {deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
                       </Button>
                     ) : (
                       <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
