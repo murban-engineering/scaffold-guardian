@@ -809,28 +809,27 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       html, body { height: 100%; }
       .hq-page2 {
         page-break-before: always; break-before: page;
-        font-size: 8.5px;
+        font-size: 8px;
         display: flex; flex-direction: column;
-        min-height: 267mm; /* A4 minus top margin */
       }
       .hq-page2-body { flex: 1; }
-      .hq-pallets-note { text-align: center; font-size: 9px; line-height: 1.65; margin-bottom: 12px; font-weight: 700; }
-      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 0; }
-      .hq-banking-box { border: 1px solid #374151; border-radius: 3px; padding: 6px 8px; margin-bottom: 8px; }
-      .hq-banking-box h4 { font-size: 9.5px; font-weight: 800; margin-bottom: 5px; }
-      .hq-banking-row { display: grid; grid-template-columns: 120px 8px 1fr; margin-bottom: 2px; font-size: 8.5px; }
-      .hq-acknowledge { border: 1px solid #374151; border-radius: 3px; padding: 7px 8px; }
-      .hq-acknowledge p { margin-bottom: 5px; font-size: 8.5px; }
+      .hq-pallets-note { text-align: center; font-size: 8px; line-height: 1.45; margin-bottom: 8px; font-weight: 700; }
+      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-bottom: 0; }
+      .hq-banking-box { border: 1px solid #374151; border-radius: 3px; padding: 5px 7px; margin-bottom: 6px; }
+      .hq-banking-box h4 { font-size: 9px; font-weight: 800; margin-bottom: 4px; }
+      .hq-banking-row { display: grid; grid-template-columns: 108px 8px 1fr; margin-bottom: 1px; font-size: 8px; }
+      .hq-acknowledge { border: 1px solid #374151; border-radius: 3px; padding: 6px 7px; }
+      .hq-acknowledge p { margin-bottom: 4px; font-size: 8px; }
       .hq-sig-line { display: inline-block; border-bottom: 1px solid #374151; min-width: 110px; height: 10px; margin-left: 6px; vertical-align: bottom; }
-      .hq-sig-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; font-size: 8.5px; align-items: flex-end; }
-      .hq-sig-row.customer { margin-top: 14px; gap: 16px; }
+      .hq-sig-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 3px; font-size: 8px; align-items: flex-end; }
+      .hq-sig-row.customer { margin-top: 8px; gap: 10px; }
       .hq-sig-cell { display: flex; align-items: flex-end; gap: 4px; }
       .hq-sig-cell.name .hq-sig-line { min-width: 150px; }
-      .hq-totals { border: 1px solid #374151; border-radius: 3px; padding: 7px 8px; align-self: start; }
-      .hq-totals-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 8.5px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
+      .hq-totals { border: 1px solid #374151; border-radius: 3px; padding: 6px 7px; align-self: start; }
+      .hq-totals-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; font-size: 8px; padding-bottom: 2px; border-bottom: 1px solid #e5e7eb; }
       .hq-totals-row:last-child { border-bottom: none; }
       .hq-totals-row.grand { font-weight: 800; border-top: 2px solid #374151; border-bottom: none; padding-top: 5px; margin-top: 4px; }
-      .hq-totals-add { margin-top: 10px; }
+      .hq-totals-add { margin-top: 6px; }
       /* Footer pinned to bottom on screen; naturally at bottom when page fills in print */
       .hq-page2-footer { margin-top: auto; }
       .hq-footer-brand {
@@ -841,7 +840,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       .hq-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
       .hq-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
       @media print {
-        .hq-page2 { break-before: page; min-height: 267mm; }
+        .hq-page2 { break-before: page; page-break-inside: avoid; }
+        .hq-acknowledge p:last-of-type { margin-bottom: 2px; }
       }
     </style></head><body>
 
@@ -955,7 +955,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
               <p>We thank you for affording us the opportunity to quote and await your favourable response.</p>
               <p>Yours Sincerely</p>
               <p style="font-weight:800;">${data.createdBy || "Sales Representative"}</p>
-              <div class="hq-sig-row" style="margin-top:20px;">
+              <div class="hq-sig-row" style="margin-top:10px;">
                 <span class="hq-sig-cell">Signature :<span class="hq-sig-line" style="min-width:130px;"></span></span>
                 <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
               </div>
