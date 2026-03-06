@@ -445,6 +445,16 @@ const HireQuotationWorkflow = ({
   isTestQuotation = false,
 }: HireQuotationWorkflowProps) => {
   const { user, profile } = useAuth();
+  const signedInUserName = useMemo(() => {
+    const metadata = user?.user_metadata;
+    const metadataName = typeof metadata?.full_name === "string"
+      ? metadata.full_name
+      : typeof metadata?.name === "string"
+        ? metadata.name
+        : "";
+
+    return profile?.full_name || metadataName || user?.email || "";
+  }, [profile?.full_name, user?.email, user?.user_metadata]);
   const { data: scaffolds, isLoading: scaffoldsLoading } = useScaffolds();
   const deductInventory = useDeductScaffoldInventory();
   const returnInventory = useReturnScaffoldInventory();
@@ -631,10 +641,14 @@ const HireQuotationWorkflow = ({
   }, [initialClientMode]);
 
   useEffect(() => {
-    if (profile?.full_name && !header.createdBy) {
-      setHeader(prev => ({ ...prev, createdBy: profile.full_name }));
-    }
-  }, [profile?.full_name, header.createdBy]);
+    if (!signedInUserName) return;
+
+    setHeader((prev) => (
+      prev.createdBy === signedInUserName
+        ? prev
+        : { ...prev, createdBy: signedInUserName }
+    ));
+  }, [signedInUserName]);
 
   useEffect(() => {
     if (initialQuotation) {
@@ -692,7 +706,7 @@ const HireQuotationWorkflow = ({
         directors: parsedNotes.clientDetails.directors,
         companySection: parsedNotes.clientDetails.companySection,
         otherInformation: parsedNotes.clientDetails.otherInformation,
-        createdBy: prev.createdBy || profile?.full_name || "",
+        createdBy: signedInUserName || prev.createdBy || "",
       };
     });
 
