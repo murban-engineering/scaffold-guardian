@@ -407,7 +407,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
         ${data.hireQuoteNo ? `<div class="info-row"><span class="info-label">Hire Quote No</span><span class="info-sep">:</span><span class="info-value">${data.hireQuoteNo}</span></div>` : ""}
         ${data.hireStartDate ? `<div class="info-row"><span class="info-label">Hire Start Date</span><span class="info-sep">:</span><span class="info-value">${data.hireStartDate}</span></div>` : ""}
         ${data.hireEndDate ? `<div class="info-row"><span class="info-label">Hire End Date</span><span class="info-sep">:</span><span class="info-value">${data.hireEndDate}</span></div>` : ""}
-        ${data.depositRequired ? `<div class="info-row"><span class="info-label">Deposit Required</span><span class="info-sep">:</span><span class="info-value">${data.depositRequired}</span></div>` : ""}
+        <div class="info-row"><span class="info-label">Deposit Required</span><span class="info-sep">:</span><span class="info-value">${data.depositRequired ?? "0.00"}</span></div>
       </div>
 
       <div class="panel">
@@ -803,34 +803,35 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
-      .grand-total { font-size: 12px; background: #333; color: white; }
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
-      .hire-footer { border: 1px solid #9ca3af; margin-top: 10px; font-size: 8.5px; }
-      .hire-footer-page-break { page-break-before: always; break-before: page; margin-top: 0; }
-      .hire-page-two-heading { break-after: avoid; page-break-after: avoid; }
-      .hire-footer-note { padding: 8px; text-align: center; border-bottom: 1px solid #d1d5db; line-height: 1.45; }
-      .hire-footer-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; padding: 8px; }
-      .hire-footer-note, .hire-footer-grid, .hire-footer-box, .hire-acknowledge, .hire-totals { break-inside: avoid; page-break-inside: avoid; }
-      .hire-footer-box { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; margin-bottom: 8px; }
-      .hire-footer-box h4 { margin-bottom: 4px; font-size: 9px; }
-      .hire-footer-row { display: grid; grid-template-columns: 96px 8px 1fr; margin-bottom: 2px; }
-      .hire-acknowledge { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; }
-      .hire-ack-line { display: inline-block; min-width: 120px; border-bottom: 1px solid #6b7280; margin-left: 6px; height: 10px; }
-      .hire-signature-row { display:flex; gap:14px; flex-wrap:wrap; }
-      .hire-signature-row.customer { gap:24px; margin-top:14px; }
-      .hire-signature-cell { display:flex; align-items:flex-end; gap:8px; min-width:120px; }
-      .hire-signature-cell .hire-ack-line { min-width:140px; margin-left:0; }
-      .hire-signature-cell.name { min-width:210px; }
-      .hire-signature-cell.name .hire-ack-line { min-width:190px; }
+
+      /* ── Page 2 layout ── */
+      .hq-page2 { page-break-before: always; break-before: page; font-size: 8.5px; }
+      .hq-pallets-note { text-align: center; font-size: 9px; line-height: 1.55; margin: 0 0 10px 0; font-weight: 700; }
+      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; margin-bottom: 8px; }
+      .hq-banking-box { border: 1px solid #374151; border-radius: 3px; padding: 6px 8px; margin-bottom: 8px; }
+      .hq-banking-box h4 { font-size: 9.5px; font-weight: 800; margin-bottom: 5px; }
+      .hq-banking-row { display: grid; grid-template-columns: 120px 8px 1fr; margin-bottom: 2px; font-size: 8.5px; }
+      .hq-acknowledge { border: 1px solid #374151; border-radius: 3px; padding: 7px 8px; }
+      .hq-acknowledge p { margin-bottom: 5px; font-size: 8.5px; }
+      .hq-sig-line { display: inline-block; border-bottom: 1px solid #374151; min-width: 110px; height: 10px; margin-left: 6px; vertical-align: bottom; }
+      .hq-sig-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; font-size: 8.5px; align-items: flex-end; }
+      .hq-sig-row.customer { margin-top: 12px; gap: 16px; }
+      .hq-sig-cell { display: flex; align-items: flex-end; gap: 4px; }
+      .hq-sig-cell.name .hq-sig-line { min-width: 150px; }
+      .hq-totals { border: 1px solid #374151; border-radius: 3px; padding: 7px 8px; align-self: start; margin-top: 0; }
+      .hq-totals-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 8.5px; padding-bottom: 3px; border-bottom: 1px solid #e5e7eb; }
+      .hq-totals-row:last-child { border-bottom: none; }
+      .hq-totals-row.grand { font-weight: 800; border-top: 2px solid #374151; border-bottom: none; padding-top: 5px; margin-top: 4px; }
+      .hq-totals-add { margin-top: 10px; }
+      .hq-footer-brand { background: #facc15; color: #1f2937; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; margin-top: 10px; }
+      .hq-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 6px; }
       @media print {
-        .hire-footer-page-break { margin-top: 0 !important; }
+        .hq-page2 { break-before: page; }
       }
-      .hire-totals { border: 1px solid #9ca3af; border-radius: 4px; padding: 6px; align-self: end; }
-      .hire-totals .row { display: flex; justify-content: space-between; margin-bottom: 3px; gap: 6px; }
-      .hire-totals .grand { font-weight: 800; border-top: 1px solid #6b7280; padding-top: 4px; margin-top: 4px; }
-      .hire-footer-brand { background: #facc15; color: #1f2937; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-top: 1px solid #9ca3af; }
-      .hire-footer-legal { text-align: center; font-size: 8px; color: #4b5563; padding: 4px 8px 8px; }
     </style></head><body>
+
+    <!-- ═══ PAGE 1 ═══ -->
     ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
     ${renderStandardReportLayout({
       documentType: "Hire Quotation",
@@ -846,110 +847,133 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       siteAddress: data.siteAddress,
       clientId: data.clientId,
       createdBy: data.createdBy,
+      depositRequired: "0.00",
     })}
 
     <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
       <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
       We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/>
-      This quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
+      This Quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
     </div>
 
     <table>
       <thead>
         <tr>
-          <th>#</th><th>Part Number</th><th>Description</th>
+          <th>Part Number</th>
+          <th>Description</th>
           <th class="text-right">Qty</th>
-          <th class="text-right">Mass/Item</th>
+          <th class="text-right">Mass</th>
           <th class="text-right">Rate</th>
-          <th class="text-right">Hire/Week (Net)</th>
+          <th class="text-right">Hire/Week</th>
         </tr>
       </thead>
       <tbody>
-        ${data.items.map((item, idx) => {
+        ${data.items.map((item) => {
           const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
           const discountedRate = item.weeklyRate * (1 - discountRate);
           const discountedTotal = discountedRate * item.quantity;
+          const massValue = item.massPerItem != null ? Number(item.massPerItem).toFixed(2) : "-";
           return `<tr>
-            <td>${idx + 1}</td>
             <td>${item.partNumber || "-"}</td>
             <td>${item.description || "-"}</td>
             <td class="text-right">${item.quantity}</td>
-            <td class="text-right">${formatMass(item.massPerItem)}</td>
-            <td class="text-right">${formatCurrency(discountedRate)}</td>
-            <td class="text-right">${formatCurrency(discountedTotal)}</td>
+            <td class="text-right">${massValue}</td>
+            <td class="text-right">${Number(discountedRate).toFixed(2)}</td>
+            <td class="text-right">${Number(discountedTotal).toFixed(2)}</td>
           </tr>`;
         }).join("")}
         <tr class="total-row">
-          <td colspan="3"><strong>SUBTOTAL</strong></td>
-          <td class="text-right"><strong>${totalQuantity}</strong></td>
-          <td class="text-right"><strong>${formatMass(totalMass)}</strong></td>
-          <td class="text-right">-</td>
-          <td class="text-right"><strong>${formatCurrency(subtotal)}</strong></td>
+          <td colspan="2" style="font-weight:800;"></td>
+          <td class="text-right" style="font-weight:800;"></td>
+          <td class="text-right" style="font-weight:800;">Mass (Ton)</td>
+          <td colspan="2" class="text-right" style="font-weight:800;">${(totalMass / 1000).toFixed(3)}</td>
         </tr>
-        <tr class="total-row"><td colspan="6"><strong>VAT (16%)</strong></td><td class="text-right"><strong>${formatCurrency(vatAmount)}</strong></td></tr>
-        ${data.discountRate > 0 ? `<tr class="total-row"><td colspan="6"><strong>Discount (${data.discountRate}%)</strong></td><td class="text-right"><strong>-${formatCurrency(discountAmount)}</strong></td></tr>` : ""}
-        <tr class="total-row"><td colspan="6"><strong>TOTAL (VAT + Hire/Week)</strong></td><td class="text-right"><strong>${formatCurrency(statementTotal)}</strong></td></tr>
       </tbody>
     </table>
 
     <div class="terms">
-      <strong>COMMENTS</strong><br/>
-      ${(data.comments || "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments.").split("\n").join("<br/>")}
+      <strong>Comments</strong><br/>
+      ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
     </div>
 
-    <div class="hire-footer hire-footer-page-break">
-      ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    <!-- ═══ PAGE 2 ═══ -->
+    <div class="hq-page2">
+      ${renderStandardReportLayout({
+        documentType: "Hire Quotation",
+        documentNumber: data.quotationNumber,
+        documentDate: data.dateCreated,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        createdBy: data.createdBy,
+        depositRequired: "0.00",
+      })}
 
-      <div class="hire-footer-note">
-        <strong class="hire-page-two-heading">Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items (Refer to the Stacking and Loading Procedures of FS equipment.)</strong><br/>
+      <div class="hq-footer-grid">
+        <div>
+          <div class="hq-banking-box">
+            <h4>Our Banking Details</h4>
+            <div class="hq-banking-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
+            <div class="hq-banking-row"><span>KES Account No</span><span>:</span><span>02107773676350</span></div>
+            <div class="hq-banking-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
+            <div class="hq-banking-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
+            <div class="hq-banking-row"><span>Bank Code</span><span>:</span><span>57</span></div>
+            <div class="hq-banking-row"><span>Branch Code</span><span>:</span><span>021</span></div>
+            <div class="hq-banking-row"><span>Swift Code</span><span>:</span><span>IMBLKENA</span></div>
+            <div class="hq-banking-row"><span>Mpesa Paybill</span><span>:</span><span>542542</span></div>
+          </div>
+
+          <div class="hq-acknowledge">
+            <p>We thank you for affording us the opportunity to quote and await your favourable response.</p>
+            <p>Yours Sincerely</p>
+            <p style="font-weight:800;">${data.createdBy || "Sales Representative"}</p>
+            <div class="hq-sig-row">
+              <span class="hq-sig-cell">Signature :<span class="hq-sig-line"></span></span>
+              <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
+            </div>
+            <div class="hq-sig-row customer">
+              <span class="hq-sig-cell name">Customer Representative's Name :<span class="hq-sig-line" style="min-width:180px;"></span></span>
+              <span class="hq-sig-cell">Signature :<span class="hq-sig-line"></span></span>
+              <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="hq-totals">
+            <div class="hq-totals-row"><span>Net Value Per Week</span><span>:</span><strong>${formatCurrency(subtotal)}</strong></div>
+            <div class="hq-totals-row"><span>Vat Per Week 16%</span><span>:</span><strong>${formatCurrency(vatAmount)}</strong></div>
+            <div class="hq-totals-row grand"><span>Total Charge Per Week</span><span>: KES</span><strong>${formatCurrency(statementTotal)}</strong></div>
+            <div class="hq-totals-add">
+              <div class="hq-totals-row"><span>Additional Charges</span><span>:</span><strong>${formatCurrency(0)}</strong></div>
+              <div class="hq-totals-row"><span>Vat 16%</span><span>:</span><strong>${formatCurrency(0)}</strong></div>
+              <div class="hq-totals-row grand"><span>Total Additional Charges</span><span>: KES</span><strong>${formatCurrency(0)}</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pallets note at bottom of page 2 -->
+      <div class="hq-pallets-note" style="margin-top:16px;">
+        Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items<br/>
+        (Refer to the Stacking and Loading Procedures of OTNO Access Solutions equipment.)<br/><br/>
         <strong>Quoted rates excludes transport to and from site</strong>
       </div>
 
-      <div class="hire-footer-grid">
-        <div>
-          <div class="hire-footer-box">
-            <h4 class="hire-page-two-heading">Our Banking Details</h4>
-            <div class="hire-footer-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
-            <div class="hire-footer-row"><span>KES Account Number</span><span>:</span><span>02107773676350</span></div>
-            <div class="hire-footer-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
-            <div class="hire-footer-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
-            <div class="hire-footer-row"><span>Bank Code</span><span>:</span><span>57</span></div>
-            <div class="hire-footer-row"><span>Branch Code</span><span>:</span><span>021</span></div>
-            <div class="hire-footer-row"><span>Swift Code</span><span>:</span><span>IMBLKENA</span></div>
-            <div class="hire-footer-row"><span>Mpesa Paybill Code</span><span>:</span><span>542542</span></div>
-          </div>
-
-          <div class="hire-acknowledge">
-            <p style="margin-bottom:6px;">We thank you for affording us the opportunity to quote and await your favourable response.</p>
-            <p style="margin-bottom:6px;">Yours sincerely</p>
-            <p style="font-weight:700;margin-bottom:8px;">${data.createdBy || "Sales Representative"}</p>
-            <div class="hire-signature-row">
-              <span class="hire-signature-cell">Signature:<span class="hire-ack-line"></span></span>
-              <span class="hire-signature-cell">Date:<span class="hire-ack-line"></span></span>
-            </div>
-            <div class="hire-signature-row customer">
-              <span class="hire-signature-cell name">Customer Representative's Name:<span class="hire-ack-line"></span></span>
-              <span class="hire-signature-cell">Signature:<span class="hire-ack-line"></span></span>
-              <span class="hire-signature-cell">Date:<span class="hire-ack-line"></span></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="hire-totals">
-          <div class="row"><span>Net Value Per Week</span><strong>${formatCurrency(subtotal)}</strong></div>
-          <div class="row"><span>VAT Per Week 16%</span><strong>${formatCurrency(vatAmount)}</strong></div>
-          <div class="row grand"><span>Total Charge Per Week</span><strong>${formatCurrency(statementTotal)}</strong></div>
-        </div>
+      <div class="hq-footer-brand">
+        <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;filter:brightness(0);"/>
       </div>
+      <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com</div>
 
-      <div class="hire-footer-brand">
-        <span>Exclusive Distribution Partner for OTNO Access Solutions.</span>
-        <span style="font-size:12px;">OTNO</span>
-      </div>
-      <div class="hire-footer-legal">All transactions are subject to our standard Terms of Trade and payment requirements.</div>
+      <div style="text-align:right;font-size:7.5px;color:#999;margin-top:6px;">Print date: ${formatTimestamp()}</div>
     </div>
-
-    <div style="text-align:right;font-size:8px;color:#999;margin-top:14px;">Print date: ${formatTimestamp()}</div>
   </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
