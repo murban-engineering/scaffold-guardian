@@ -250,34 +250,130 @@ const SHARED_PRINT_STYLES = `
 
   /* ── Report title ── */
   .report-title {
-    font-size: 18px; font-weight: 900; letter-spacing: -0.3px;
-    color: #111827; text-transform: uppercase; margin-bottom: 6px;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.35px;
+    color: #111827;
+    text-transform: none;
+    margin-bottom: 6px;
+    line-height: 1;
   }
 
   /* ── Standard two-column header (screen) ── */
   .standard-report-layout {
-    display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; margin-bottom: 12px;
+    display: grid;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 14px;
+    margin-bottom: 12px;
+    align-items: start;
   }
-  .standard-report-left { display: grid; gap: 8px; }
-  .standard-report-right { display: grid; gap: 6px; }
+  .standard-report-left { display: grid; gap: 10px; }
+  .standard-report-right { display: grid; gap: 8px; }
+
+  /* ── Hire quotation specific header tuning to match legacy print template ── */
+  .hire-quotation-layout {
+    grid-template-columns: 1.38fr 1fr;
+    gap: 16px;
+  }
+  .hire-quotation-layout .standard-report-left { gap: 12px; }
+  .hire-quotation-layout .standard-report-right { gap: 7px; }
+  .hire-quotation-layout .report-title {
+    font-family: "Arial Black", Impact, "Franklin Gothic Heavy", Arial, sans-serif;
+    font-size: 52px;
+    letter-spacing: -1.35px;
+    margin-bottom: 6px;
+    line-height: 0.86;
+    font-weight: 900;
+    text-transform: none;
+  }
 
   /* ── Branding block (no border) ── */
   .brand-block { padding: 8px 10px; }
-  .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-  .brand-logo { width: 60px; height: auto; }
-  .brand-title { font-size: 14px; font-weight: 800; line-height: 1.15; color: #111827; }
+  .brand-top { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 4px; }
+  .brand-logo { width: 68px; height: auto; }
+  .brand-title { font-size: 14px; font-weight: 800; line-height: 1.05; color: #111827; }
   .brand-meta { font-size: 9px; color: #374151; }
 
+  .hire-quotation-layout .brand-block { padding: 2px 2px 0; }
+  .hire-quotation-layout .brand-top {
+    align-items: flex-end;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .hire-quotation-layout .brand-logo {
+    width: 290px;
+    max-height: 100px;
+    object-fit: contain;
+    object-position: left center;
+  }
+  .hire-quotation-layout .brand-title { display: none; }
+  .hire-quotation-layout .brand-meta {
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    column-gap: 16px;
+    row-gap: 0;
+    padding-left: 4px;
+    font-size: 8.8px;
+    color: #374151;
+  }
+
   /* ── Bordered panels ── */
-  .panel { border: 1px solid #111827; border-radius: 6px; padding: 7px 9px; }
+  .panel {
+    border: 1.6px solid #4b5563;
+    border-radius: 9px;
+    padding: 7px 9px;
+  }
   .panel h3 { font-size: 11px; font-weight: 800; margin-bottom: 4px; color: #111827; }
   .client-panel { min-height: 150px; }
+
+  .hire-quotation-layout .panel {
+    border: 2px solid #6b7280;
+    border-radius: 11px;
+    padding: 7px 10px 8px;
+  }
+  .hire-quotation-layout .client-panel {
+    min-height: 318px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 16px;
+  }
+  .hire-quotation-layout .panel h3 {
+    font-family: "Arial Black", Impact, "Franklin Gothic Heavy", Arial, sans-serif;
+    font-size: 33px;
+    letter-spacing: -0.4px;
+    margin-bottom: 7px;
+    line-height: 0.92;
+  }
 
   /* ── Info rows ── */
   .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
   .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
   .info-sep { color: #6b7280; }
   .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 9px; }
+
+  .hire-quotation-layout .info-row {
+    display: grid;
+    grid-template-columns: 150px 14px 1fr;
+    gap: 2px;
+    margin-bottom: 4px;
+    align-items: baseline;
+    min-height: 13px;
+  }
+  .hire-quotation-layout .info-label {
+    min-width: 0;
+    font-size: 9.5px;
+    font-weight: 700;
+    font-family: "Arial Narrow", Arial, sans-serif;
+  }
+  .hire-quotation-layout .info-sep {
+    justify-self: center;
+    font-size: 9.5px;
+  }
+  .hire-quotation-layout .info-value {
+    font-size: 9.5px;
+    font-family: "Arial Narrow", Arial, sans-serif;
+  }
 
   /* ── Copy badge ── */
   .copy-label {
@@ -369,7 +465,7 @@ interface StandardReportLayoutData {
 }
 
 const renderStandardReportLayout = (data: StandardReportLayoutData) => `
-  <div class="standard-report-layout">
+  <div class="standard-report-layout ${data.documentType === "Hire Quotation" ? "hire-quotation-layout" : ""}">
     <div class="standard-report-left">
       <div class="brand-block">
         <div class="brand-top">
@@ -864,7 +960,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </style></head><body>
 
     <!-- ═══ PAGE 1 ═══ -->
-    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
     ${renderStandardReportLayout({
       documentType: "Hire Quotation",
       documentNumber: data.quotationNumber,
