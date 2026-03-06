@@ -809,28 +809,41 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       html, body { height: 100%; }
       .hq-page2 {
         page-break-before: always; break-before: page;
-        font-size: 8px;
+        font-size: 9px;
         display: flex; flex-direction: column;
         min-height: 92vh;
       }
       .hq-page2-body { flex: 1; display: flex; flex-direction: column; }
-      .hq-pallets-note { text-align: center; font-size: 8px; line-height: 1.45; margin-bottom: 8px; font-weight: 700; }
-      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-top: auto; margin-bottom: 0; }
-      .hq-banking-box { border: 1px solid #374151; border-radius: 3px; padding: 5px 7px; margin-bottom: 6px; }
-      .hq-banking-box h4 { font-size: 9px; font-weight: 800; margin-bottom: 4px; }
-      .hq-banking-row { display: grid; grid-template-columns: 108px 8px 1fr; margin-bottom: 1px; font-size: 8px; }
-      .hq-acknowledge { border: 1px solid #374151; border-radius: 3px; padding: 6px 7px; }
-      .hq-acknowledge p { margin-bottom: 4px; font-size: 8px; }
-      .hq-sig-line { display: inline-block; border-bottom: 1px solid #374151; min-width: 110px; height: 10px; margin-left: 6px; vertical-align: bottom; }
-      .hq-sig-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 3px; font-size: 8px; align-items: flex-end; }
-      .hq-sig-row.customer { margin-top: 8px; gap: 10px; }
+      .hq-pallets-note { text-align: center; font-size: 9.5px; line-height: 1.35; margin-bottom: 10px; font-weight: 700; }
+      .hq-footer-grid { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 10px; margin-top: auto; margin-bottom: 0; align-items: end; }
+      .hq-banking-box { border: 1px solid #4b5563; border-radius: 4px; padding: 6px 10px 9px; margin-bottom: 8px; }
+      .hq-banking-box h4 { font-size: 11px; font-weight: 800; margin-bottom: 5px; }
+      .hq-banking-row { display: grid; grid-template-columns: 140px 10px 1fr; margin-bottom: 3px; font-size: 10px; }
+      .hq-acknowledge { border: 1px solid #4b5563; border-radius: 4px; padding: 8px 10px 9px; min-height: 130px; }
+      .hq-acknowledge p { margin-bottom: 4px; font-size: 10px; }
+      .hq-sig-line { display: inline-block; border-bottom: 1px solid #374151; min-width: 140px; height: 14px; margin-left: 6px; vertical-align: bottom; }
+      .hq-sig-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 5px; font-size: 10px; align-items: flex-end; }
+      .hq-sig-row.customer { margin-top: 12px; gap: 12px; }
       .hq-sig-cell { display: flex; align-items: flex-end; gap: 4px; }
-      .hq-sig-cell.name .hq-sig-line { min-width: 150px; }
-      .hq-totals { border: 1px solid #374151; border-radius: 3px; padding: 6px 7px; align-self: start; }
-      .hq-totals-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; font-size: 8px; padding-bottom: 2px; border-bottom: 1px solid #e5e7eb; }
-      .hq-totals-row:last-child { border-bottom: none; }
-      .hq-totals-row.grand { font-weight: 800; border-top: 2px solid #374151; border-bottom: none; padding-top: 5px; margin-top: 4px; }
-      .hq-totals-add { margin-top: 6px; }
+      .hq-sig-cell.name .hq-sig-line { min-width: 165px; }
+      .hq-totals { padding: 0 0 2px; align-self: end; width: 100%; }
+      .hq-totals-row {
+        display: grid;
+        grid-template-columns: 1fr 16px 118px;
+        align-items: end;
+        column-gap: 8px;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .hq-totals-row strong { font-size: 12px; font-weight: 800; }
+      .hq-totals-row.grand {
+        border-bottom: 2px solid #374151;
+        padding-bottom: 4px;
+        margin-top: 4px;
+        margin-bottom: 10px;
+      }
+      .hq-totals-add { margin-top: 10px; }
       /* Footer pinned to bottom on screen; naturally at bottom when page fills in print */
       .hq-page2-footer { margin-top: auto; }
       .hq-footer-brand {
