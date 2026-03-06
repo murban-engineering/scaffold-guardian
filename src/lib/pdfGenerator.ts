@@ -811,6 +811,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         page-break-before: always; break-before: page;
         font-size: 8px;
         display: flex; flex-direction: column;
+        min-height: 92vh;
       }
       .hq-page2-body { flex: 1; }
       .hq-pallets-note { text-align: center; font-size: 8px; line-height: 1.45; margin-bottom: 8px; font-weight: 700; }
@@ -840,7 +841,11 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       .hq-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
       .hq-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
       @media print {
-        .hq-page2 { break-before: page; page-break-inside: avoid; }
+        .hq-page2 {
+          break-before: page;
+          page-break-inside: avoid;
+          min-height: 92vh;
+        }
         .hq-acknowledge p:last-of-type { margin-bottom: 2px; }
       }
     </style></head><body>
