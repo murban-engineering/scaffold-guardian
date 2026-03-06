@@ -813,9 +813,9 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         display: flex; flex-direction: column;
         min-height: 92vh;
       }
-      .hq-page2-body { flex: 1; }
+      .hq-page2-body { flex: 1; display: flex; flex-direction: column; }
       .hq-pallets-note { text-align: center; font-size: 8px; line-height: 1.45; margin-bottom: 8px; font-weight: 700; }
-      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-bottom: 0; }
+      .hq-footer-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-top: auto; margin-bottom: 0; }
       .hq-banking-box { border: 1px solid #374151; border-radius: 3px; padding: 5px 7px; margin-bottom: 6px; }
       .hq-banking-box h4 { font-size: 9px; font-weight: 800; margin-bottom: 4px; }
       .hq-banking-row { display: grid; grid-template-columns: 108px 8px 1fr; margin-bottom: 1px; font-size: 8px; }
