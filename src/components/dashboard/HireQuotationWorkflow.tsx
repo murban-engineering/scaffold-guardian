@@ -29,6 +29,7 @@ import {
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
+import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
@@ -271,7 +272,7 @@ const parseNumber = (value: string) => {
 };
 
 const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
-  quotationNo ? quotationNo.replace("HSQ-", "CL-") : "";
+  toClientIdFromQuotationNumber(quotationNo);
 
 const deriveDraftIdFromClient = (quotation?: HireQuotation | null) => {
   const clientId = deriveClientIdFromQuotationNumber(quotation?.quotation_number)
