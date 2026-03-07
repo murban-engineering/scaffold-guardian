@@ -180,14 +180,18 @@ const withPrintOption = (html: string, buttonLabel = "Print report") => {
   const printControls = `
     <style>
       .print-controls {
-        position: sticky;
-        top: 0;
+        position: fixed;
+        top: 12px;
+        right: 12px;
         z-index: 9999;
         display: flex;
         justify-content: flex-end;
-        padding: 8px 16px;
+        padding: 8px;
         background: rgba(255, 255, 255, 0.97);
         border-bottom: 1px solid #ddd;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       }
       .print-button {
         border: 1px solid #333;
