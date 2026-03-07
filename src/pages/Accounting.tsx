@@ -193,6 +193,7 @@ type ClientInvoice = {
   policyBreakdown: PolicyLineBreakdown[];
   createdBy: string;
   createdDate: string;
+  workflowStatus: string;
 };
 
 const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
@@ -778,6 +779,7 @@ const Accounting = () => {
         policyBreakdown: surcharge.entries,
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: toIsoDateOrToday(q.created_at),
+        workflowStatus: q.status?.toLowerCase() ?? "",
       };
     });
   }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber]);
@@ -801,6 +803,16 @@ const Accounting = () => {
     }
     return result;
   }, [invoices, selectedClient, searchQuery]);
+
+  const dispatchedInvoices = useMemo(
+    () => filteredInvoices.filter((invoice) => invoice.workflowStatus === "dispatched"),
+    [filteredInvoices]
+  );
+
+  const completedInvoices = useMemo(
+    () => filteredInvoices.filter((invoice) => invoice.workflowStatus === "completed"),
+    [filteredInvoices]
+  );
 
   // Generate monthly invoices from dispatch date to billing date
   const generateMonthlyInvoices = (invoice: ClientInvoice) => {
@@ -938,95 +950,206 @@ const Accounting = () => {
               {isLoading ? (
                 <p className="text-sm text-muted-foreground">Loading...</p>
               ) : filteredInvoices.length ? (
-                <div className="overflow-x-auto rounded-lg border border-border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Invoice</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Site</TableHead>
-                        <TableHead>Dispatch Date</TableHead>
-                        <TableHead className="text-right">Weeks</TableHead>
-                        <TableHead className="text-right">Hire (KES)</TableHead>
-                        <TableHead className="text-right">Policy (KES)</TableHead>
-                        <TableHead className="text-right">Total (KES)</TableHead>
-                        <TableHead className="text-center">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredInvoices.map((inv) => (
-                        <TableRow key={inv.id}>
-                          <TableCell>
-                            <div className="font-medium">{inv.invoiceNumber}</div>
-                            <div className="text-xs text-muted-foreground">{inv.quotationNumber}</div>
-                          </TableCell>
-                          <TableCell className="font-medium">{inv.client}</TableCell>
-                          <TableCell>{inv.site}</TableCell>
-                          <TableCell>{inv.dispatchDate}</TableCell>
-                          <TableCell className="text-right">{inv.hireWeeks}</TableCell>
-                          <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
-                          <TableCell className="text-right">
-                            {inv.policyTotal > 0 ? (
-                              <span className="text-destructive font-medium">{currency.format(inv.policyTotal)}</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center">
-                              <Select
-                                onValueChange={(action) => {
-                                  if (action === "dds") {
-                                    openInvoicePrint(inv, billingDate);
-                                    return;
-                                  }
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Dispatched Workflows</h3>
+                    {dispatchedInvoices.length ? (
+                      <div className="overflow-x-auto rounded-lg border border-border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Invoice</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Site</TableHead>
+                              <TableHead>Dispatch Date</TableHead>
+                              <TableHead className="text-right">Weeks</TableHead>
+                              <TableHead className="text-right">Hire (KES)</TableHead>
+                              <TableHead className="text-right">Policy (KES)</TableHead>
+                              <TableHead className="text-right">Total (KES)</TableHead>
+                              <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {dispatchedInvoices.map((inv) => (
+                              <TableRow key={inv.id}>
+                                <TableCell>
+                                  <div className="font-medium">{inv.invoiceNumber}</div>
+                                  <div className="text-xs text-muted-foreground">{inv.quotationNumber}</div>
+                                </TableCell>
+                                <TableCell className="font-medium">{inv.client}</TableCell>
+                                <TableCell>{inv.site}</TableCell>
+                                <TableCell>{inv.dispatchDate}</TableCell>
+                                <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                                <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
+                                <TableCell className="text-right">
+                                  {inv.policyTotal > 0 ? (
+                                    <span className="text-destructive font-medium">{currency.format(inv.policyTotal)}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center">
+                                    <Select
+                                      onValueChange={(action) => {
+                                        if (action === "dds") {
+                                          openInvoicePrint(inv, billingDate);
+                                          return;
+                                        }
 
-                                  if (action === "scrap") {
-                                    openScrapReport(inv);
-                                    return;
-                                  }
+                                        if (action === "scrap") {
+                                          openScrapReport(inv);
+                                          return;
+                                        }
 
-                                  if (action === "customer-statement") {
-                                    openCustomerStatement(inv, invoices, billingDate);
-                                    return;
-                                  }
+                                        if (action === "customer-statement") {
+                                          openCustomerStatement(inv, invoices, billingDate);
+                                          return;
+                                        }
 
-                                  if (action.startsWith("monthly:")) {
-                                    const monthIdx = Number(action.replace("monthly:", ""));
-                                    const months = generateMonthlyInvoices(inv);
-                                    const m = months[monthIdx];
-                                    if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
-                                  }
-                                }}
-                              >
-                                <SelectTrigger className="h-8 w-[180px] text-xs">
-                                  <SelectValue placeholder="Reports" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="dds">Tax Invoice Copy</SelectItem>
-                                  <SelectItem
-                                    value="scrap"
-                                    disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
-                                  >
-                                    Scrap Report
-                                  </SelectItem>
-                                  <SelectItem value="customer-statement">
-                                    Customer Statement
-                                  </SelectItem>
-                                  {generateMonthlyInvoices(inv).map((m, idx) => (
-                                    <SelectItem key={idx} value={`monthly:${idx}`}>
-                                      Tax Invoice: {m.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                                        if (action.startsWith("monthly:")) {
+                                          const monthIdx = Number(action.replace("monthly:", ""));
+                                          const months = generateMonthlyInvoices(inv);
+                                          const m = months[monthIdx];
+                                          if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                                        <SelectValue placeholder="Reports" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="dds">Tax Invoice Copy</SelectItem>
+                                        <SelectItem
+                                          value="scrap"
+                                          disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
+                                        >
+                                          Scrap Report
+                                        </SelectItem>
+                                        <SelectItem value="customer-statement">
+                                          Customer Statement
+                                        </SelectItem>
+                                        {generateMonthlyInvoices(inv).map((m, idx) => (
+                                          <SelectItem key={idx} value={`monthly:${idx}`}>
+                                            Tax Invoice: {m.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                        No dispatched workflows match the current filters.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Completed Workflows</h3>
+                    {completedInvoices.length ? (
+                      <div className="overflow-x-auto rounded-lg border border-border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Invoice</TableHead>
+                              <TableHead>Client</TableHead>
+                              <TableHead>Site</TableHead>
+                              <TableHead>Dispatch Date</TableHead>
+                              <TableHead className="text-right">Weeks</TableHead>
+                              <TableHead className="text-right">Hire (KES)</TableHead>
+                              <TableHead className="text-right">Policy (KES)</TableHead>
+                              <TableHead className="text-right">Total (KES)</TableHead>
+                              <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {completedInvoices.map((inv) => (
+                              <TableRow key={inv.id}>
+                                <TableCell>
+                                  <div className="font-medium">{inv.invoiceNumber}</div>
+                                  <div className="text-xs text-muted-foreground">{inv.quotationNumber}</div>
+                                </TableCell>
+                                <TableCell className="font-medium">{inv.client}</TableCell>
+                                <TableCell>{inv.site}</TableCell>
+                                <TableCell>{inv.dispatchDate}</TableCell>
+                                <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                                <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
+                                <TableCell className="text-right">
+                                  {inv.policyTotal > 0 ? (
+                                    <span className="text-destructive font-medium">{currency.format(inv.policyTotal)}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-bold">{currency.format(inv.grandTotal)}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center">
+                                    <Select
+                                      onValueChange={(action) => {
+                                        if (action === "dds") {
+                                          openInvoicePrint(inv, billingDate);
+                                          return;
+                                        }
+
+                                        if (action === "scrap") {
+                                          openScrapReport(inv);
+                                          return;
+                                        }
+
+                                        if (action === "customer-statement") {
+                                          openCustomerStatement(inv, invoices, billingDate);
+                                          return;
+                                        }
+
+                                        if (action.startsWith("monthly:")) {
+                                          const monthIdx = Number(action.replace("monthly:", ""));
+                                          const months = generateMonthlyInvoices(inv);
+                                          const m = months[monthIdx];
+                                          if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-8 w-[180px] text-xs">
+                                        <SelectValue placeholder="Reports" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="dds">Tax Invoice Copy</SelectItem>
+                                        <SelectItem
+                                          value="scrap"
+                                          disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
+                                        >
+                                          Scrap Report
+                                        </SelectItem>
+                                        <SelectItem value="customer-statement">
+                                          Customer Statement
+                                        </SelectItem>
+                                        {generateMonthlyInvoices(inv).map((m, idx) => (
+                                          <SelectItem key={idx} value={`monthly:${idx}`}>
+                                            Tax Invoice: {m.label}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                        No completed workflows found yet. Completed workflows include returned goods.
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
