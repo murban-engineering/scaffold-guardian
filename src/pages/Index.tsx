@@ -248,7 +248,7 @@ const Index = () => {
   };
 
   const handleDeleteTestQuotation = async (quotation: HireQuotation) => {
-    const clientId = toClientId(quotation.quotation_number);
+    const clientId = toClientId(quotation);
     const confirmed = window.confirm(
       `Delete test quotation ${clientId}? This will permanently remove its quotation history from the system.`,
     );
