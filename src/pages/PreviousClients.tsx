@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderClock, MapPin, Printer } from "lucide-react";
+import { FolderClock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -10,9 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useClientSites } from "@/hooks/useClientSites";
-import { generateHireQuotationReportPDF } from "@/lib/pdfGenerator";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
-import { toast } from "sonner";
 
 const ClientSitesBadges = ({ quotationId }: { quotationId: string }) => {
   const { data: sites } = useClientSites(quotationId);
@@ -83,42 +80,6 @@ const PreviousClients = () => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   };
 
-  const handlePrintQuotation = (quotation: HireQuotation) => {
-    if (!quotation.line_items?.length) {
-      toast.error("No equipment items found for this hire quotation.");
-      return;
-    }
-
-    generateHireQuotationReportPDF({
-      quotationNumber: quotation.quotation_number,
-      dateCreated: formatDate(quotation.created_at),
-      companyName: quotation.company_name ?? "",
-      siteName: quotation.site_name ?? "",
-      siteLocation: quotation.delivery_address ?? "",
-      siteAddress: quotation.site_address ?? "",
-      contactName: quotation.site_manager_name ?? "",
-      contactPhone: quotation.site_manager_phone ?? "",
-      contactEmail: quotation.site_manager_email ?? "",
-      officeTel: "",
-      officeEmail: "",
-      createdBy: "",
-      clientId: toClientIdFromQuotationNumber(quotation.quotation_number),
-      discountRate: 0,
-      items: quotation.line_items.map((item) => ({
-        partNumber: item.part_number,
-        description: item.description,
-        quantity: item.quantity,
-        warehouseAvailableQty: 0,
-        massPerItem: item.mass_per_item,
-        weeklyRate: item.weekly_rate,
-        weeklyTotal: item.weekly_total ?? item.quantity * item.weekly_rate,
-        discountRate: item.hire_discount ?? 0,
-      })),
-    });
-
-    toast.success("Hire quotation opened for printing");
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="previous-clients" onItemClick={handleSidebarItemClick} />
@@ -178,15 +139,9 @@ const PreviousClients = () => {
                             </TableCell>
                             <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button size="sm" variant="outline" onClick={() => handlePrintQuotation(quotation)}>
-                                  <Printer className="mr-2 h-4 w-4" />
-                                  Print
-                                </Button>
-                                <Button size="sm" onClick={() => handleOpenWorkflow(quotation)}>
-                                  Open workflow
-                                </Button>
-                              </div>
+                              <Button size="sm" onClick={() => handleOpenWorkflow(quotation)}>
+                                Open workflow
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -211,15 +166,9 @@ const PreviousClients = () => {
                 </p>
               </div>
               {selectedQuotation ? (
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => handlePrintQuotation(liveSelectedQuotation ?? selectedQuotation)}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print quotation
-                  </Button>
-                  <Button variant="ghost" onClick={() => setSelectedQuotation(null)}>
-                    Clear selection
-                  </Button>
-                </div>
+                <Button variant="ghost" onClick={() => setSelectedQuotation(null)}>
+                  Clear selection
+                </Button>
               ) : null}
             </div>
             {selectedQuotation ? (
