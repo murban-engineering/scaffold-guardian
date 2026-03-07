@@ -128,6 +128,7 @@ export type Database = {
           account_number: string | null
           basket_discount: number | null
           bulk_order_required: boolean | null
+          client_id: string | null
           company_address: string | null
           company_name: string | null
           created_at: string
@@ -162,6 +163,7 @@ export type Database = {
           account_number?: string | null
           basket_discount?: number | null
           bulk_order_required?: boolean | null
+          client_id?: string | null
           company_address?: string | null
           company_name?: string | null
           created_at?: string
@@ -196,6 +198,7 @@ export type Database = {
           account_number?: string | null
           basket_discount?: number | null
           bulk_order_required?: boolean | null
+          client_id?: string | null
           company_address?: string | null
           company_name?: string | null
           created_at?: string
@@ -581,6 +584,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_next_client_id: { Args: never; Returns: string }
       has_elevated_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
