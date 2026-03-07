@@ -1563,7 +1563,7 @@ const HireQuotationWorkflow = ({
     setLastDeliveredQuantities(null);
     setSavedQuotationId(isTestQuotation ? quotation.id : null);
 
-    const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+    const derivedClientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
     const savedProfile = parsedNotes.clientDetails.profile ?? {};
 
