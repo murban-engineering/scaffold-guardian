@@ -176,7 +176,7 @@ const formatMass = (value: number | string | null | undefined) => {
   return Number.isFinite(parsed) ? `${parsed.toFixed(2)} kg` : "-";
 };
 
-const withPrintOption = (html: string) => {
+const withPrintOption = (html: string, buttonLabel = "Print report") => {
   const printControls = `
     <style>
       .print-controls {
@@ -205,7 +205,7 @@ const withPrintOption = (html: string) => {
     </style>
     <script>const triggerPrint = () => window.print();</script>
     <div class="print-controls">
-      <button type="button" class="print-button" onclick="triggerPrint()">Print report</button>
+      <button type="button" class="print-button" onclick="triggerPrint()">${buttonLabel}</button>
     </div>
   `;
   return html.replace("<body>", `<body>${printControls}`);
@@ -1090,7 +1090,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </div>
   </body></html>`;
 
-  printWindow.document.write(withPrintOption(html));
+  printWindow.document.write(withPrintOption(html, "Print hire quotation report"));
   printWindow.document.close();
 };
 
