@@ -281,35 +281,47 @@ const SHARED_PRINT_STYLES = `
 
   /* ── Hire quotation layout tuning to match legacy print format ── */
   .hire-quotation-layout {
-    grid-template-columns: 1.58fr 1.02fr;
-    gap: 16px;
+    grid-template-columns: 1.52fr 1fr;
+    gap: 12px;
     margin-bottom: 10px;
   }
-  .hire-quotation-layout .standard-report-left { gap: 10px; }
+  .hire-quotation-layout .standard-report-left { gap: 8px; }
   .hire-quotation-layout .standard-report-right { gap: 8px; }
-  .hire-quotation-layout .brand-block { padding: 10px 12px 8px; }
-  .hire-quotation-layout .brand-top { gap: 12px; margin-bottom: 6px; }
-  .hire-quotation-layout .brand-logo { width: 76px; }
-  .hire-quotation-layout .brand-title { font-size: 30px; font-weight: 900; letter-spacing: -0.8px; }
-  .hire-quotation-layout .brand-meta { font-size: 9px; }
-  .hire-quotation-layout .report-title { font-size: 56px; font-weight: 900; margin-bottom: 8px; line-height: 0.95; }
+  .hire-quotation-layout .brand-block { padding: 6px 8px 4px; }
+  .hire-quotation-layout .brand-top { gap: 10px; margin-bottom: 4px; }
+  .hire-quotation-layout .brand-logo { width: 58px; }
+  .hire-quotation-layout .brand-title { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
+  .hire-quotation-layout .brand-meta { font-size: 8px; }
+  .hire-quotation-layout .report-title {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 4px;
+    line-height: 1;
+    letter-spacing: -0.2px;
+    text-transform: none;
+  }
   .hire-quotation-layout .panel {
-    border: 2px solid #5d636e;
-    border-radius: 10px;
-    padding: 6px 10px;
+    border: 1px solid #5d636e;
+    border-radius: 8px;
+    padding: 6px 8px;
   }
   .hire-quotation-layout .panel h3 {
-    font-size: 17px;
-    font-weight: 900;
-    margin-bottom: 5px;
-    letter-spacing: -0.1px;
+    font-size: 9px;
+    font-weight: 800;
+    margin-bottom: 3px;
+    letter-spacing: 0;
   }
-  .hire-quotation-layout .client-panel { min-height: 340px; }
-  .hire-quotation-layout .info-row { margin-bottom: 3px; }
+  .hire-quotation-layout .client-panel { min-height: 310px; }
+  .hire-quotation-layout .info-row { margin-bottom: 2px; }
   .hire-quotation-layout .info-label,
   .hire-quotation-layout .info-value,
-  .hire-quotation-layout .info-sep { font-size: 12px; }
-  .hire-quotation-layout .info-label { min-width: 145px; font-weight: 800; }
+  .hire-quotation-layout .info-sep { font-size: 8.5px; }
+  .hire-quotation-layout .info-label { min-width: 80px; font-weight: 700; }
+
+  .hire-quotation-page .page-header,
+  .hire-quotation-page .page-header-spacer {
+    display: none !important;
+  }
 
   /* ── Copy badge ── */
   .copy-label {
@@ -904,7 +916,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     </style></head><body>
 
     <!-- ═══ PAGE 1 ═══ -->
-    ${renderPageHeader("Hire Quotation", data.quotationNumber, data.companyName)}
+    <div class="hire-quotation-page">
     ${renderStandardReportLayout({
       documentType: "Hire Quotation",
       documentNumber: data.quotationNumber,
@@ -967,10 +979,12 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <strong>Comments</strong><br/>
       ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
     </div>
+    </div>
 
     <!-- ═══ PAGE 2 ═══ -->
     <div class="hq-page2">
       <div class="hq-page2-body">
+        <div class="hire-quotation-page">
         ${renderStandardReportLayout({
           documentType: "Hire Quotation",
           documentNumber: data.quotationNumber,
@@ -987,6 +1001,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           createdBy: data.createdBy,
           depositRequired: "0.00",
         })}
+        </div>
 
         <!-- Pallets note appears at top of page 2 body, above banking/signature -->
         <div class="hq-pallets-note">
