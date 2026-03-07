@@ -425,7 +425,7 @@ const Index = () => {
                             </DropdownMenuItem>
                             {testClientOptions.length ? (
                               testClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation.quotation_number);
+                                const clientId = toClientId(quotation);
                                 return (
                                   <DropdownMenuItem
                                     key={`test-${quotation.id}`}
