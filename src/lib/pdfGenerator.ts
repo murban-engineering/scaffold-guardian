@@ -410,6 +410,7 @@ interface StandardReportLayoutData {
   hireEndDate?: string;
   depositRequired?: string;
   createdBy?: string;
+  hidePanelHeaders?: boolean;
 }
 
 const renderStandardReportLayout = (data: StandardReportLayoutData) => {
@@ -418,6 +419,8 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+  const panelHeadersHidden = Boolean(data.hidePanelHeaders);
 
   return `
   <div class="standard-report-layout ${layoutTypeClass ? `${layoutTypeClass}-layout` : ""}">
@@ -433,7 +436,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
       </div>
 
       <div class="panel client-panel">
-        <h3>${data.clientName || "-"}</h3>
+        ${panelHeadersHidden ? "" : `<h3>${data.clientName || "-"}</h3>`}
         ${data.clientAddress ? `<p style="margin-bottom:4px;font-size:9px;">${data.clientAddress}</p>` : ""}
         <div style="margin-top:8px;">
           <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
@@ -449,7 +452,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
     <div class="standard-report-right">
       <h2 class="report-title">${data.documentType}</h2>
       <div class="panel">
-        <h3>Document Details</h3>
+        ${panelHeadersHidden ? "" : "<h3>Document Details</h3>"}
         <div class="info-row"><span class="info-label">Document No</span><span class="info-sep">:</span><span class="info-value">${data.documentNumber || "-"}</span></div>
         <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">${data.documentType}</span></div>
         <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${data.documentDate || "-"}</span></div>
@@ -462,7 +465,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
       </div>
 
       <div class="panel">
-        <h3>Company Details</h3>
+        ${panelHeadersHidden ? "" : "<h3>Company Details</h3>"}
         <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">${COMPANY_NAME}</span></div>
         <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
         <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
@@ -471,7 +474,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
       </div>
 
       <div class="panel">
-        <h3>Site Details</h3>
+        ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
         <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
         <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
@@ -1216,6 +1219,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         manualNumber: copyLabel,
         hireEndDate: data.hireEndDate,
         createdBy: data.createdBy,
+        hidePanelHeaders: true,
       })}
 
       <table style="border-color:#8a5a6b;">
