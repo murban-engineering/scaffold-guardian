@@ -1680,7 +1680,8 @@ const HireQuotationWorkflow = ({
           notes: structuredNotes,
         });
         setSavedQuotationId(quotation.id);
-        const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+        // Use the stored client_id from DB (independent from quotation number)
+        const clientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,
