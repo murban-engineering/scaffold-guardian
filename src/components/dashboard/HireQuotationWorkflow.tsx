@@ -678,13 +678,14 @@ const HireQuotationWorkflow = ({
     setSavedQuotationId(initialQuotation.id);
     setHeader(prev => {
       const qNum = initialQuotation.quotation_number || prev.quotationNo;
-      const derivedClientId = deriveClientIdFromQuotationNumber(qNum);
+      // Use stored client_id if available; otherwise fall back to derivation
+      const storedClientId = initialQuotation.client_id || deriveClientIdFromQuotationNumber(qNum);
       const savedProfile = parsedNotes.clientDetails.profile ?? {};
       return {
         ...prev,
         ...savedProfile,
         quotationNo: qNum,
-        clientId: derivedClientId,
+        clientId: storedClientId,
         dateCreated: createdDate,
         tradingName: initialQuotation.company_name ?? "",
         clientCompanyName: initialQuotation.company_name ?? "",
@@ -1562,7 +1563,7 @@ const HireQuotationWorkflow = ({
     setLastDeliveredQuantities(null);
     setSavedQuotationId(isTestQuotation ? quotation.id : null);
 
-    const derivedClientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+    const derivedClientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
     const savedProfile = parsedNotes.clientDetails.profile ?? {};
 
@@ -1679,7 +1680,8 @@ const HireQuotationWorkflow = ({
           notes: structuredNotes,
         });
         setSavedQuotationId(quotation.id);
-        const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number);
+        // Use the stored client_id from DB (independent from quotation number)
+        const clientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,

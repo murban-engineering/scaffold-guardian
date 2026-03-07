@@ -60,6 +60,7 @@ const resolveDispatchDateFromHistory = (
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+const COMPANY_PIN = "P052471711M";
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
@@ -197,6 +198,61 @@ type ClientInvoice = {
   workflowStatus: string;
 };
 
+const renderInvoicePageHeader = (invoice: ClientInvoice, billingDateStr: string) => `
+  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:fixed;">
+    <thead style="display:table-header-group;">
+      <tr>
+        <td style="width:58%;padding:0;vertical-align:top;border:none;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="border:none;padding:6px 8px 4px 0;vertical-align:top;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;">
+                  <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:58px;height:auto;"/>
+                  <div>
+                    <div style="font-size:20px;font-weight:900;line-height:1.15;color:#111827;">${COMPANY_NAME}</div>
+                    <div style="font-size:8px;color:#374151;"><strong>Reg No:</strong> ${COMPANY_PIN}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="border:1px solid #5d636e;border-radius:8px;padding:6px 8px;vertical-align:top;">
+                <div style="font-size:9px;font-weight:800;margin-bottom:3px;">${escapeHtml(invoice.client)}</div>
+                <div style="font-size:8.5px;margin-bottom:4px;">${escapeHtml(invoice.siteAddress || "-")}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:80px;display:inline-block;">Contact</span> : ${escapeHtml(invoice.contactName || "-")}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:80px;display:inline-block;">Cell No</span> : ${escapeHtml(invoice.contactPhone || "-")}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:80px;display:inline-block;">Site</span> : ${escapeHtml(invoice.site || "-")}</div>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td style="width:42%;padding:0 0 0 12px;vertical-align:top;border:none;">
+          <div style="font-size:22px;font-weight:900;letter-spacing:-0.2px;color:#111827;margin-bottom:4px;line-height:1;">TAX INVOICE</div>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="border:1px solid #5d636e;border-radius:8px;padding:6px 8px;vertical-align:top;">
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Document No</span> : ${escapeHtml(invoice.invoiceNumber)}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Document Type</span> : Tax Invoice</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Document Date</span> : ${escapeHtml(billingDateStr)}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Quotation No</span> : ${escapeHtml(invoice.quotationNumber)}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Dispatch Date</span> : ${escapeHtml(invoice.dispatchDate)}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Billed Weeks</span> : ${invoice.hireWeeks}</div>
+                <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Printed</span> : ${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</div>
+              </td>
+            </tr>
+            <tr><td style="border:none;padding:4px 0 0 0;border:1px solid #5d636e;border-radius:8px;padding:6px 8px;vertical-align:top;margin-top:4px;">
+              <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Company</span> : ${COMPANY_NAME}</div>
+              <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Address</span> : ${COMPANY_ADDRESS}</div>
+              <div style="font-size:8.5px;"><span style="font-weight:700;min-width:90px;display:inline-block;">Prepared By</span> : ${escapeHtml(invoice.createdBy || "-")}</div>
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+    </thead>
+    <tbody><tr><td colspan="2" style="border:none;padding:0;border-bottom:1.5px solid #111;"></td></tr></tbody>
+  </table>
+`;
+
 const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const win = window.open("", "_blank");
   if (!win) { alert("Please allow popups to print invoices"); return; }
@@ -233,83 +289,53 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const html = `<!doctype html><html><head>
     <title>Invoice ${escapeHtml(invoice.invoiceNumber)}</title>
     <style>
-      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
-      h1{margin:0 0 4px;font-size:16px;line-height:1.2}
-      h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
-      .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
-      .left-block{padding:8px 4px;display:grid;gap:10px}
-      .right-block{display:grid;gap:8px}
-      .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-      .logo{width:88px;height:auto}
-      .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
-      .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
-      .brand-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;color:#374151;font-size:11px}
-      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
-      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
-      .client-panel h3{font-size:20px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
-      .client-address{white-space:pre-line;min-height:42px}
-      .spacer{height:16px}
-      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
-      table{width:100%;border-collapse:collapse;margin-top:8px}
-      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
-      th{background:#f5f5f5;font-size:11px}
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:"Arial Narrow",Arial,sans-serif;color:#111;font-size:9.5px;line-height:1.3;padding:12px;}
+      h2{margin:10px 0 5px;font-size:11px;border-bottom:1px solid #ccc;padding-bottom:3px;text-transform:uppercase;font-weight:800;}
+      table{width:100%;border-collapse:collapse;}
+      th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;font-size:8.5px;vertical-align:top;}
+      th{background:#f5f5f5;font-weight:800;text-transform:uppercase;letter-spacing:0.2px;}
       .r{text-align:right}.c{text-align:center}.cap{text-transform:capitalize}
-      .sum{max-width:360px;margin:14px 0 0 auto}
-      .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
-      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
-      .ft{margin-top:10px;font-size:11px;color:#555}
-      .policy-box{border:1px solid #333;border-radius:6px;padding:10px;margin-top:14px;background:#fcfcfc}
-      .policy-box h4{margin:0 0 6px;font-size:12px;text-transform:uppercase}
-      .policy-box ul{margin:0;padding-left:16px}.policy-box li{margin-bottom:4px}
-      .invoice-page2{margin-top:16px}
-      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
-      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      .sum{max-width:340px;margin:10px 0 0 auto;border:1px solid #ccc;border-radius:4px;padding:8px;}
+      .sum-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;font-size:9px;}
+      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:4px;padding-top:6px;font-size:11px;}
+      .ft{margin-top:8px;font-size:9px;color:#555;}
+      .policy-box{border:1px solid #333;border-radius:6px;padding:8px;margin-top:10px;background:#fcfcfc;}
+      .policy-box h4{margin:0 0 5px;font-size:9px;text-transform:uppercase;font-weight:800;}
+      .policy-box ul{margin:0;padding-left:14px;font-size:8.5px;}.policy-box li{margin-bottom:3px;}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:8px 12px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd;margin:-12px -12px 8px -12px;}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+      .page2-footer{margin-top:12px;}
       @media print{
-        .print-bar{display:none}
-        body{margin:0;padding:12px}
-        .print-header{position:fixed;top:0;left:12px;right:12px;background:#fff;padding-top:8px}
-        .print-content{margin-top:350px}
-        .invoice-page2{page-break-before:always;break-before:page;padding-top:350px;margin-top:0;display:flex;flex-direction:column;min-height:calc(100vh - 24px)}
-        .sum,.policy-box,.ft{break-inside:avoid-page;page-break-inside:avoid}
+        .print-bar{display:none;}
+        body{padding:6px;font-size:8.5px;}
+        .page2{page-break-before:always;break-before:page;}
       }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
-    ${renderAccountingReportHeader({
-      documentTitle: "Tax Invoice",
-      documentNumber: invoice.invoiceNumber,
-      documentDate: billingDateStr,
-      client: invoice.client,
-      site: invoice.site,
-      siteAddress: invoice.siteAddress || "-",
-      contactName: invoice.contactName || "-",
-      contactPhone: invoice.contactPhone || "-",
-      createdBy: invoice.createdBy,
-      extraRows: `
-        <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
-        <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
-        <div class="row"><span class="lbl">Billed Weeks</span><span class="sep">:</span><span class="val">${invoice.hireWeeks}</span></div>
-      `,
-    })}
 
-    <div class="print-content">
-      <h2>A. Weekly Hire Charges</h2>
+    ${renderInvoicePageHeader(invoice, billingDateStr)}
+
+    <h2>A. Weekly Hire Charges</h2>
+    <table>
+      <thead><tr>
+        <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+      </tr></thead>
+      <tbody>${hireRows}</tbody>
+    </table>
+
+    <div class="page2">
+      ${renderInvoicePageHeader(invoice, billingDateStr)}
+      <h2>B. Return Condition Charges</h2>
       <table>
         <thead><tr>
-          <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+          <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
+          <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
         </tr></thead>
-        <tbody>${hireRows}</tbody>
+        <tbody>${policyRows}</tbody>
       </table>
 
-      <div class="invoice-page2">
-        <h2>B. Return Condition Charges</h2>
-        <table>
-          <thead><tr>
-            <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
-            <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
-          </tr></thead>
-          <tbody>${policyRows}</tbody>
-        </table>
-
+      <div class="page2-footer">
         <div class="sum">
           <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
           <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
@@ -1241,7 +1267,7 @@ const Accounting = () => {
                                     dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
                                     createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
                                     discountRate: 0,
-                                    clientId: toClientIdFromQuotationNumber(q.quotation_number),
+                                    clientId: q.client_id || toClientIdFromQuotationNumber(q.quotation_number),
                                     items: lineItems.map((li) => {
                                       const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
                                       const rate = li.weekly_rate ?? 0;

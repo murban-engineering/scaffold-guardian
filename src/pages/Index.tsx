@@ -113,16 +113,16 @@ const Index = () => {
     return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
   };
 
-  const toClientId = (quotationNumber: string | null) =>
-    toClientIdFromQuotationNumber(quotationNumber) || "No client ID";
+  const toClientId = (quotation: HireQuotation | null) =>
+    quotation?.client_id || toClientIdFromQuotationNumber(quotation?.quotation_number) || "No client ID";
 
   const existingClientOptions = hireQuotations
     .filter((quotation) => (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
     .reduce<HireQuotation[]>((acc, quotation) => {
       const companyKey = (quotation.company_name || "").trim().toLowerCase();
-      const clientId = toClientId(quotation.quotation_number).toLowerCase();
+      const clientId = toClientId(quotation).toLowerCase();
       const key = `${companyKey}|${clientId}`;
-      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${toClientId(entry.quotation_number).toLowerCase()}` === key)) {
+      if (acc.some((entry) => `${(entry.company_name || "").trim().toLowerCase()}|${toClientId(entry).toLowerCase()}` === key)) {
         return acc;
       }
       acc.push(quotation);
@@ -133,8 +133,8 @@ const Index = () => {
   const testClientOptions = hireQuotations
     .filter((quotation) => isTestQuotationNumber(quotation.quotation_number))
     .reduce<HireQuotation[]>((acc, quotation) => {
-      const clientId = toClientId(quotation.quotation_number).toLowerCase();
-      if (acc.some((entry) => toClientId(entry.quotation_number).toLowerCase() === clientId)) {
+      const clientId = toClientId(quotation).toLowerCase();
+      if (acc.some((entry) => toClientId(entry).toLowerCase() === clientId)) {
         return acc;
       }
       acc.push(quotation);
@@ -150,7 +150,7 @@ const Index = () => {
 
   const continueClientOptions = hireQuotations.reduce<Array<{ value: string; label: string }>>((acc, quotation) => {
     const companyName = quotation.company_name?.trim() || "Unnamed client";
-    const clientId = toClientId(quotation.quotation_number);
+    const clientId = toClientId(quotation);
     const value = `${companyName}|${clientId}`;
     if (!acc.some((option) => option.value === value)) {
       acc.push({ value, label: `${companyName} (${clientId})` });
@@ -163,7 +163,7 @@ const Index = () => {
       ? rows
       : rows.filter((quotation) => {
           const companyName = quotation.company_name?.trim() || "Unnamed client";
-          const clientId = toClientId(quotation.quotation_number);
+          const clientId = toClientId(quotation);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
 
@@ -248,7 +248,7 @@ const Index = () => {
   };
 
   const handleDeleteTestQuotation = async (quotation: HireQuotation) => {
-    const clientId = toClientId(quotation.quotation_number);
+    const clientId = toClientId(quotation);
     const confirmed = window.confirm(
       `Delete test quotation ${clientId}? This will permanently remove its quotation history from the system.`,
     );
@@ -425,7 +425,7 @@ const Index = () => {
                             </DropdownMenuItem>
                             {testClientOptions.length ? (
                               testClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation.quotation_number);
+                                const clientId = toClientId(quotation);
                                 return (
                                   <DropdownMenuItem
                                     key={`test-${quotation.id}`}
@@ -479,7 +479,7 @@ const Index = () => {
                           <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
                             {existingClientOptions.length ? (
                               existingClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation.quotation_number);
+                                const clientId = toClientId(quotation);
                                 return (
                                   <DropdownMenuItem
                                     key={quotation.id}
