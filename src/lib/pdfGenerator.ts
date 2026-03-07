@@ -208,7 +208,7 @@ const withPrintOption = (html: string, buttonLabel = "Print report") => {
       <button type="button" class="print-button" onclick="triggerPrint()">${buttonLabel}</button>
     </div>
   `;
-  return html.replace("<body>", `<body>${printControls}`);
+  return html.replace(/<body([^>]*)>/i, `<body$1>${printControls}`);
 };
 
 // ── Shared print styles used in every report ──────────────────────────────────
