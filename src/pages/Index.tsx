@@ -479,7 +479,7 @@ const Index = () => {
                           <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
                             {existingClientOptions.length ? (
                               existingClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation.quotation_number);
+                                const clientId = toClientId(quotation);
                                 return (
                                   <DropdownMenuItem
                                     key={quotation.id}
