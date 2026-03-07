@@ -216,7 +216,7 @@ const withPrintOption = (html: string) => {
 // repeats on every page. The .page-header-spacer pushes content below it.
 const SHARED_PRINT_STYLES = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; }
+  body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; }
   
   /* ── Screen layout ── */
   body { padding: 12px; }
@@ -250,8 +250,8 @@ const SHARED_PRINT_STYLES = `
 
   /* ── Report title ── */
   .report-title {
-    font-size: 18px; font-weight: 900; letter-spacing: -0.3px;
-    color: #111827; text-transform: uppercase; margin-bottom: 6px;
+    font-size: 18px; font-weight: 900; letter-spacing: -0.2px;
+    color: #111827; margin-bottom: 6px;
   }
 
   /* ── Standard two-column header (screen) ── */
@@ -278,6 +278,38 @@ const SHARED_PRINT_STYLES = `
   .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
   .info-sep { color: #6b7280; }
   .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 9px; }
+
+  /* ── Hire quotation layout tuning to match legacy print format ── */
+  .hire-quotation-layout {
+    grid-template-columns: 1.58fr 1.02fr;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .hire-quotation-layout .standard-report-left { gap: 10px; }
+  .hire-quotation-layout .standard-report-right { gap: 8px; }
+  .hire-quotation-layout .brand-block { padding: 10px 12px 8px; }
+  .hire-quotation-layout .brand-top { gap: 12px; margin-bottom: 6px; }
+  .hire-quotation-layout .brand-logo { width: 76px; }
+  .hire-quotation-layout .brand-title { font-size: 30px; font-weight: 900; letter-spacing: -0.8px; }
+  .hire-quotation-layout .brand-meta { font-size: 9px; }
+  .hire-quotation-layout .report-title { font-size: 56px; font-weight: 900; margin-bottom: 8px; line-height: 0.95; }
+  .hire-quotation-layout .panel {
+    border: 2px solid #5d636e;
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+  .hire-quotation-layout .panel h3 {
+    font-size: 17px;
+    font-weight: 900;
+    margin-bottom: 5px;
+    letter-spacing: -0.1px;
+  }
+  .hire-quotation-layout .client-panel { min-height: 340px; }
+  .hire-quotation-layout .info-row { margin-bottom: 3px; }
+  .hire-quotation-layout .info-label,
+  .hire-quotation-layout .info-value,
+  .hire-quotation-layout .info-sep { font-size: 12px; }
+  .hire-quotation-layout .info-label { min-width: 145px; font-weight: 800; }
 
   /* ── Copy badge ── */
   .copy-label {
@@ -368,8 +400,15 @@ interface StandardReportLayoutData {
   createdBy?: string;
 }
 
-const renderStandardReportLayout = (data: StandardReportLayoutData) => `
-  <div class="standard-report-layout">
+const renderStandardReportLayout = (data: StandardReportLayoutData) => {
+  const layoutTypeClass = (data.documentType || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `
+  <div class="standard-report-layout ${layoutTypeClass ? `${layoutTypeClass}-layout` : ""}">
     <div class="standard-report-left">
       <div class="brand-block">
         <div class="brand-top">
@@ -432,6 +471,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => `
     </div>
   </div>
 `;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HIRE DELIVERY NOTE
