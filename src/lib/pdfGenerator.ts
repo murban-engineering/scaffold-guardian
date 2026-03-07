@@ -906,14 +906,26 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       .hq-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
       .hq-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
       @media print {
+        @page {
+          size: A4;
+          margin: 8mm;
+        }
+        body.hire-quotation-print {
+          padding: 0 !important;
+        }
         .hq-page2 {
           break-before: page;
           page-break-inside: avoid;
           min-height: 92vh;
         }
+        .hire-quotation-page,
+        .hq-page2 {
+          max-width: 100%;
+          overflow: hidden;
+        }
         .hq-acknowledge p:last-of-type { margin-bottom: 2px; }
       }
-    </style></head><body>
+    </style></head><body class="hire-quotation-print">
 
     <!-- ═══ PAGE 1 ═══ -->
     <div class="hire-quotation-page">
