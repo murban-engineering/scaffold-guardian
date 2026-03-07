@@ -254,22 +254,20 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
       th{background:#f5f5f5;font-size:11px}
       .r{text-align:right}.c{text-align:center}.cap{text-transform:capitalize}
-      .sum{max-width:360px;margin:0 0 0 auto}
+      .sum{max-width:360px;margin:14px 0 0 auto}
       .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
       .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
       .ft{margin-top:10px;font-size:11px;color:#555}
       .policy-box{border:1px solid #333;border-radius:6px;padding:10px;margin-top:14px;background:#fcfcfc}
       .policy-box h4{margin:0 0 6px;font-size:12px;text-transform:uppercase}
       .policy-box ul{margin:0;padding-left:16px}.policy-box li{margin-bottom:4px}
-      .invoice-total-footer{margin-top:18px;break-inside:avoid;page-break-inside:avoid}
       .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
       .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
       @media print{
         .print-bar{display:none}
         body{margin:0;padding:12px}
         .print-header{position:fixed;top:0;left:12px;right:12px;background:#fff;padding-top:8px}
-        .print-content{margin-top:350px;min-height:calc(100vh - 362px);display:flex;flex-direction:column}
-        .invoice-total-footer{margin-top:auto;padding-top:10px;border-top:1px solid #d1d5db}
+        .print-content{margin-top:350px}
       }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
@@ -308,6 +306,14 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <tbody>${policyRows}</tbody>
       </table>
 
+      <div class="sum">
+        <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+        <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
+        <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
+        <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+        <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+      </div>
+
       <div class="policy-box">
         <h4>Return Condition Billing Policy</h4>
         <ul>
@@ -315,16 +321,6 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
           <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
         </ul>
-      </div>
-
-      <div class="invoice-total-footer">
-        <div class="sum">
-          <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
-          <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
-          <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
-          <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-          <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
-        </div>
       </div>
 
       <p class="ft">Invoice date: ${escapeHtml(billingDateStr)}. ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
