@@ -672,8 +672,8 @@ const HireQuotationWorkflow = ({
     setSavedQuotationId(initialQuotation.id);
     setHeader(prev => {
       const qNum = initialQuotation.quotation_number || prev.quotationNo;
-      // Use stored client_id if available; otherwise fall back to derivation
-      const storedClientId = initialQuotation.client_id || deriveClientIdFromQuotationNumber(qNum);
+      // Use stored client_id (fully independent from quotation number)
+      const storedClientId = initialQuotation.client_id || "";
       const savedProfile = parsedNotes.clientDetails.profile ?? {};
       return {
         ...prev,
@@ -1518,7 +1518,7 @@ const HireQuotationWorkflow = ({
     return previousQuotations.filter((quotation) => {
       const companyName = quotation.company_name?.trim() || "";
       const companyKey = companyName.toLowerCase();
-      const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number).toLowerCase();
+      const clientId = (quotation.client_id || "").toLowerCase();
       const uniqueKey = `${companyKey}|${clientId}`;
 
       if (seen.has(uniqueKey)) return false;
@@ -1557,7 +1557,7 @@ const HireQuotationWorkflow = ({
     setLastDeliveredQuantities(null);
     setSavedQuotationId(isTestQuotation ? quotation.id : null);
 
-    const derivedClientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
+    const derivedClientId = quotation.client_id || "";
     const parsedNotes = parseStructuredQuotationNotes(quotation.notes);
     const savedProfile = parsedNotes.clientDetails.profile ?? {};
 
@@ -1675,7 +1675,7 @@ const HireQuotationWorkflow = ({
         });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
-        const clientId = quotation.client_id || deriveClientIdFromQuotationNumber(quotation.quotation_number);
+        const clientId = quotation.client_id || "";
         setHeader(prev => ({
           ...prev,
           quotationNo: quotation.quotation_number,
@@ -3090,7 +3090,7 @@ const HireQuotationWorkflow = ({
                       </SelectTrigger>
                       <SelectContent>
                         {previousClientMatches.map((quotation) => {
-                          const clientId = deriveClientIdFromQuotationNumber(quotation.quotation_number) || "No client ID";
+                          const clientId = quotation.client_id || "No client ID";
                           return (
                             <SelectItem key={quotation.id} value={quotation.id}>
                               {(quotation.company_name || "Unnamed company")} • {clientId}
