@@ -718,9 +718,11 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   `;
 
   const html = `<!DOCTYPE html><html><head><title>${noteTitle} - ${data.quotationNumber}</title>
-    <style>${SHARED_PRINT_STYLES}</style></head><body>
+    <style>${SHARED_PRINT_STYLES}
+    @page { margin: 0; size: A4; }
+    @media print { body { padding: 8mm; } }
+    </style></head><body>
     ${loadingNotePage("Company Copy")}
-    ${loadingNotePage("Client Copy")}
   </body></html>`;
 
   printWindow.document.write(withPrintOption(html));
