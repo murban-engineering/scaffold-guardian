@@ -293,7 +293,7 @@ const SHARED_PRINT_STYLES = `
   .hire-quotation-layout .standard-report-right { gap: 8px; }
   .hire-quotation-layout .brand-block { padding: 6px 8px 4px; }
   .hire-quotation-layout .brand-top { gap: 10px; margin-bottom: 4px; }
-  .hire-quotation-layout .brand-logo { width: 58px; }
+  .hire-quotation-layout .brand-logo { width: 116px; }
   .hire-quotation-layout .brand-title { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
   .hire-quotation-layout .brand-meta { font-size: 8px; }
   .hire-quotation-layout .report-title {
