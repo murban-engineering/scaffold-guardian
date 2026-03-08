@@ -735,6 +735,9 @@ const HireQuotationWorkflow = ({
       initialQuotation.status === "completed" ||
       !!initialQuotation.dispatch_date;
     
+    // Mark that we are about to load items directly from DB so the auto-sync
+    // skips one cycle and avoids the clear → re-insert → realtime → reload loop.
+    justLoadedFromDBRef.current = true;
     setEquipmentItems(
       lineItems.map(item => {
         const originalQty = item.quantity ?? 0;
@@ -927,6 +930,10 @@ const HireQuotationWorkflow = ({
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
   const [hasHydratedTestDraft, setHasHydratedTestDraft] = useState(false);
   const hasRunInitialEquipmentAutoSyncRef = useRef(false);
+  // Tracks when equipment items were just loaded from DB — prevents auto-sync from immediately
+  // re-clearing and re-inserting items that already exist in the database, which would cause
+  // an infinite realtime loop (DB write → realtime update → DB write → ...).
+  const justLoadedFromDBRef = useRef(false);
 
   useEffect(() => {
     // If there's an initialQuotation (the persistent TST record), skip localStorage hydration.
@@ -1083,6 +1090,13 @@ const HireQuotationWorkflow = ({
     if (!savedQuotationId || !hasHydratedTestDraft) return;
     // Only auto-sync for test quotations that have a DB record
     if (!isTestQuotation) return;
+
+    // If items were just loaded FROM the database, skip this sync cycle entirely.
+    // This prevents the clear → re-insert → realtime-update → reload → clear loop.
+    if (justLoadedFromDBRef.current) {
+      justLoadedFromDBRef.current = false;
+      return;
+    }
 
     if (!hasRunInitialEquipmentAutoSyncRef.current) {
       hasRunInitialEquipmentAutoSyncRef.current = true;
