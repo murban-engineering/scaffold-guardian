@@ -258,7 +258,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       .left-block{padding:8px 4px;display:grid;gap:10px}
       .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-      .logo{width:88px;height:auto}
+      .logo{width:176px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
       .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
       .panel{border:1px solid #111827;border-radius:6px;padding:8px}
