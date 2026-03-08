@@ -386,22 +386,22 @@ const Index = () => {
         ) : (
           <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-8">
             {/* Quick Actions with Hire Quotation Button */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[1fr_auto]">
                 {/* Date + Quotation Actions */}
-                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-6 text-white shadow-lg">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 sm:p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
                         {new Date().toLocaleDateString("en-US", { weekday: "long" })}
                       </p>
-                      <p className="mt-1 text-5xl font-bold leading-none tracking-tight">
+                      <p className="mt-0.5 text-4xl sm:text-5xl font-bold leading-none tracking-tight">
                         {new Date().getDate()}
                       </p>
-                      <p className="mt-2 text-sm text-white/70">
+                      <p className="mt-1.5 text-sm text-white/70">
                         {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                       </p>
-                      <p className="mt-1 text-lg font-medium text-white/90">
+                      <p className="mt-0.5 text-base font-medium text-white/90">
                         {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
