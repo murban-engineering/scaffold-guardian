@@ -1415,6 +1415,21 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </div>
   `;
 
+  // Page 2: System Return Note rows
+  const systemItemRows = data.items.map(item =>
+    `<tr>
+      <td>${item.partNumber || "-"}</td>
+      <td>${item.description || "-"}</td>
+      <td class="text-right">${item.totalDelivered - item.totalReturned + item.balanceAfter}</td>
+      <td class="text-right">${item.good}</td>
+      <td class="text-right">${item.dirty}</td>
+      <td class="text-right">${item.damaged}</td>
+      <td class="text-right">${item.scrap}</td>
+      <td class="text-right">${item.totalReturned}</td>
+      <td class="text-right">${item.balanceAfter}</td>
+    </tr>`
+  ).join("");
+
   const systemPage = (copyLabel: string) => `
     <div class="page">
       ${renderPageHeader("Hire Return Note", data.returnNoteNumber, data.companyName)}
