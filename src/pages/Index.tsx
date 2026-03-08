@@ -557,9 +557,9 @@ const Index = () => {
             }
           }}
         >
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-6xl max-h-[92vh] overflow-y-auto p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle>{isTestQuotationFlow ? `Test Quotation — ${liveSelectedQuotation?.quotation_number ?? "Draft"}` : "Create Hire Quotation"}</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">{isTestQuotationFlow ? `Test Quotation — ${liveSelectedQuotation?.quotation_number ?? "Draft"}` : "Create Hire Quotation"}</DialogTitle>
             </DialogHeader>
             <HireQuotationWorkflow 
               key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
