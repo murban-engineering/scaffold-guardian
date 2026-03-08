@@ -1644,6 +1644,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         flex-direction: column;
         min-height: 92vh;
       }
+      .rn-page3 .rn-page3-body { flex: 1; }
+      .rn-page3 .rn-page2-footer { margin-top: auto; }
 
       @media print {
         @page { size: A4; margin: 8mm; }
