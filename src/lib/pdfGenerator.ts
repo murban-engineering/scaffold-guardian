@@ -1484,7 +1484,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const page3 = (copyLabel: string) => `
     <div class="rn-page3">
-      ${rnHeader}
 
       <div class="post-total-grid">
         <div class="section">
