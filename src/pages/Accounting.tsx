@@ -320,94 +320,133 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
 };
 
 const openScrapReport = (invoice: ClientInvoice) => {
-  const scrapItems = invoice.policyBreakdown.filter(l => l.condition === "scrap");
-  if (!scrapItems.length) {
-    alert("No scrap items found for this client.");
+  const allConditionItems = invoice.policyBreakdown;
+  if (!allConditionItems.length) {
+    alert("No return condition charges found for this client.");
     return;
   }
   const win = window.open("", "_blank");
   if (!win) { alert("Please allow popups to print reports"); return; }
 
-  const rows = scrapItems.map(l => `
+  const policyRows = allConditionItems.map(l => `
     <tr>
       <td>${escapeHtml(l.partNumber)}</td>
       <td>${escapeHtml(l.item)}</td>
+      <td class="cap">${escapeHtml(l.condition)}</td>
       <td class="r">${l.quantity}</td>
       <td class="r">${currency.format(l.basePrice)}</td>
+      <td>${escapeHtml(l.multiplierLabel)}</td>
       <td class="r">${currency.format(l.lineTotal)}</td>
     </tr>`).join("");
 
-  const totalScrap = scrapItems.reduce((s, l) => s + l.lineTotal, 0);
-  const vatAmount = totalScrap * 0.16;
-  const totalWithVat = totalScrap + vatAmount;
+  const policyTotal = allConditionItems.reduce((s, l) => s + l.lineTotal, 0);
+  const vatAmount = policyTotal * 0.16;
+  const totalWithVat = policyTotal + vatAmount;
+  const printDate = `${new Date().toLocaleDateString("en-GB")} ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit",minute:"2-digit"})}`;
 
   const html = `<!doctype html><html><head>
-    <title>Scrap Report - ${escapeHtml(invoice.client)}</title>
+    <title>Return Condition Charges - ${escapeHtml(invoice.client)}</title>
     <style>
-      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
-      h1{margin:0 0 4px;font-size:16px;line-height:1.2}
-      h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:Arial,sans-serif;color:#111;font-size:9.5px;line-height:1.3;padding:12px;}
+      h1{margin:0 0 4px;font-size:32px;line-height:1.1}
+      h2{margin:10px 0 5px;font-size:11px;border-bottom:1px solid #ccc;padding-bottom:3px;text-transform:uppercase;font-weight:800;}
       .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
       .left-block{padding:8px 4px;display:grid;gap:10px}
       .right-block{display:grid;gap:8px}
       .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-      .logo{width:88px;height:auto}
+      .logo{width:176px;height:auto}
       .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
       .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
-      .brand-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;color:#374151;font-size:11px}
       .panel{border:1px solid #111827;border-radius:6px;padding:8px}
       .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
       .client-panel h3{font-size:20px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
       .client-address{white-space:pre-line;min-height:42px}
       .spacer{height:16px}
       .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
-      table{width:100%;border-collapse:collapse;margin-top:8px}
-      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
-      th{background:#f5f5f5;font-size:11px}
-      .r{text-align:right}
-      .sum{max-width:360px;margin:14px 0 0 auto}
-      .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
-      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
-      .ft{margin-top:10px;font-size:11px;color:#555}
-      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
-      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      table{width:100%;border-collapse:collapse;}
+      th,td{border:1px solid #ddd;padding:4px 6px;text-align:left;font-size:8.5px;vertical-align:top;}
+      th{background:#f5f5f5;font-weight:800;text-transform:uppercase;letter-spacing:0.2px;}
+      .r{text-align:right}.c{text-align:center}.cap{text-transform:capitalize}
+      .sum{max-width:340px;margin:10px 0 0 auto;border:1px solid #ccc;border-radius:4px;padding:8px;}
+      .sum-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee;font-size:9px;}
+      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:4px;padding-top:6px;font-size:11px;}
+      .ft{margin-top:8px;font-size:9px;color:#555;}
+      .policy-box{border:1px solid #333;border-radius:6px;padding:8px;margin-top:10px;background:#fcfcfc;}
+      .policy-box h4{margin:0 0 5px;font-size:9px;text-transform:uppercase;font-weight:800;}
+      .policy-box ul{margin:0;padding-left:14px;font-size:8.5px;}.policy-box li{margin-bottom:3px;}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:8px 12px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd;margin:-12px -12px 8px -12px;}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+      .branded-footer{margin-top:auto;}
+      .footer-brand{background:#facc15;color:#1f2937;font-weight:700;display:flex;justify-content:space-between;align-items:center;padding:6px 10px;}
+      .footer-legal{text-align:center;font-size:7.5px;color:#4b5563;padding:3px 8px 4px;border:1px solid #e5e7eb;border-top:none;}
+      .footer-processed{display:flex;justify-content:space-between;font-size:7px;color:#6b7280;padding:4px 0 0;}
+      .page-wrap{display:flex;flex-direction:column;min-height:92vh;}
+      .page-body{flex:1;}
       @media print{
-        .print-bar{display:none}
-        body{margin:0;padding:12px}
-        .print-header{position:fixed;top:0;left:12px;right:12px;background:#fff;padding-top:8px}
-        .print-content{margin-top:350px}
+        .print-bar{display:none;}
+        body{padding:6px;font-size:8.5px;}
+        .print-header{position:static;background:#fff;padding-top:8px;break-inside:avoid-page;}
+        .print-content{margin-top:0;}
       }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Scrap Report</button></div>
-    ${renderAccountingReportHeader({
-      documentTitle: "Scrap Items Report",
-      documentNumber: invoice.quotationNumber,
-      documentDate: invoice.createdDate,
-      client: invoice.client,
-      site: invoice.site,
-      siteAddress: invoice.siteAddress || "-",
-      contactName: invoice.contactName || "-",
-      contactPhone: invoice.contactPhone || "-",
-      createdBy: invoice.createdBy,
-      extraRows: `<div class="row"><span class="lbl">Invoice No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>`,
-    })}
+    <div class="page-wrap">
+      <div class="page-body">
+        ${renderAccountingReportHeader({
+          documentTitle: "Return Condition Charges",
+          documentNumber: invoice.quotationNumber,
+          documentDate: invoice.createdDate,
+          client: invoice.client,
+          site: invoice.site,
+          siteAddress: invoice.siteAddress || "-",
+          contactName: invoice.contactName || "-",
+          contactPhone: invoice.contactPhone || "-",
+          createdBy: invoice.createdBy,
+          extraRows: `<div class="row"><span class="lbl">Invoice No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>`,
+        })}
 
-    <div class="print-content">
-      <h2>Scrap Items</h2>
-      <table>
-        <thead><tr>
-          <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Unit Price (KES)</th><th class="r">Amount (KES)</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+        <div class="print-content">
+          <h2>B. Return Condition Charges</h2>
+          <table>
+            <thead><tr>
+              <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
+              <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
+            </tr></thead>
+            <tbody>${policyRows}</tbody>
+          </table>
 
-      <div class="sum">
-        <div class="sum-row"><span>Scrap Total</span><strong>${currency.format(totalScrap)}</strong></div>
-        <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-        <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+          <div class="sum">
+            <div class="sum-row"><span>Return Condition Total</span><strong>${currency.format(policyTotal)}</strong></div>
+            <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+            <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+          </div>
+
+          <div class="policy-box">
+            <h4>Return Condition Billing Policy</h4>
+            <ul>
+              <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
+              <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
+              <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
+            </ul>
+          </div>
+
+          <p class="ft">Return condition charges for ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
+        </div>
       </div>
-
-      <p class="ft">Scrap report for ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
+      <div class="branded-footer">
+        <div class="footer-brand">
+          <span>${COMPANY_NAME} — Your Trusted Scaffolding &amp; Access Partner.</span>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
+        </div>
+        <div class="footer-legal">
+          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 1 of 1
+        </div>
+        <div class="footer-processed">
+          <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
+          <span>Print date: ${printDate}</span>
+        </div>
+      </div>
     </div>
   </body></html>`;
 
