@@ -2698,16 +2698,15 @@ const HireQuotationWorkflow = ({
       return;
     }
     const reportedByUserId = user.id;
-    const conditionPriority: Record<string, "low" | "medium" | "high" | "urgent"> = {
-      dirty: "low",
+    const conditionPriority: Record<"damaged" | "scrap", "high" | "urgent"> = {
       damaged: "high",
       scrap: "urgent",
     };
 
     const maintenanceEntries = returnItems
       .flatMap((item) => {
-        const entries: { condition: "dirty" | "damaged" | "scrap"; qty: number }[] = [
-          { condition: "dirty", qty: parseNumber(item.dirty) },
+        // Only damaged and scrap go to maintenance — dirty returns to inventory, scrap does NOT
+        const entries: { condition: "damaged" | "scrap"; qty: number }[] = [
           { condition: "damaged", qty: parseNumber(item.damaged) },
           { condition: "scrap", qty: parseNumber(item.scrap) },
         ];
@@ -4479,8 +4478,8 @@ const HireQuotationWorkflow = ({
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and scrap items are logged to maintenance.
+                Record the returned quantities by condition. Good and dirty items return to inventory.
+                Damaged and scrap items are logged to maintenance only — scrap is permanently removed from stock.
               </p>
             </div>
 
