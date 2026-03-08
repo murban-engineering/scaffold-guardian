@@ -1718,6 +1718,16 @@ const HireQuotationWorkflow = ({
     if (id) handleNext();
   };
 
+  const handleTestSaveAndContinue = async () => {
+    const id = await ensureQuotationSaved(false);
+    if (id) {
+      toast.success("Client details saved — continuing to Equipment.");
+      goToStep("equipment");
+    } else {
+      toast.error("Failed to save client details. Please try again.");
+    }
+  };
+
   const handleAddFromInventory = async () => {
     if (!selectedScaffoldId) {
       toast.error("Please select an item from inventory");
@@ -3523,10 +3533,14 @@ const HireQuotationWorkflow = ({
                 )}
                 <Button 
                   type="button" 
-                  onClick={handleHeaderSave}
+                  onClick={isTestQuotation ? handleTestSaveAndContinue : handleHeaderSave}
                   disabled={createQuotation.isPending || updateQuotation.isPending}
                 >
-                  {createQuotation.isPending ? "Creating..." : isTestQuotation ? "Continue to Equipment →" : "Save & Continue"}
+                  {createQuotation.isPending || updateQuotation.isPending
+                    ? "Saving..."
+                    : isTestQuotation
+                    ? "Save & Continue →"
+                    : "Save & Continue"}
                 </Button>
               </div>
             </div>
