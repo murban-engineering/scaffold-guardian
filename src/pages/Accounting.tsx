@@ -104,7 +104,7 @@ const renderAccountingReportHeader = ({
     <div class="header-grid">
       <div class="left-block">
         <div class="brand-top">
-          <img src="${window.location.origin}/otn-logo.png" alt="Logo" class="logo"/>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="Logo" class="logo"/>
           <div>
             <div class="brand-title">${COMPANY_NAME}</div>
             <div class="brand-subtitle">A Division of OTNO Access Group</div>
