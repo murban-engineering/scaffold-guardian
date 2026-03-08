@@ -1373,26 +1373,28 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   ).join("");
 
   const gatePassPage = () => `
-    <div class="page" style="background:#f8cddd;border:1px solid #c58ea3;padding:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="rn-gate-pass page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:90px;height:auto;"/>
         <div style="font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#7b1a2e;">Hire Return Form</div>
       </div>
 
-      <table style="border-color:#8a5a6b;">
-        <thead style="background:#f3b9cf;">
-          <tr>
-            <th>Product Description</th>
-            <th class="text-center">Site Number</th>
-            <th class="text-center">Good</th>
-            <th class="text-center">Dirty</th>
-            <th class="text-center">Damaged</th>
-            <th class="text-center">Scrap</th>
-            <th class="text-center">Total</th>
-          </tr>
-        </thead>
-        <tbody>${gatePassItemRows}</tbody>
-      </table>
+      <div class="rn-gate-table-wrap">
+        <table style="border-color:#8a5a6b;height:100%;margin-bottom:0;">
+          <thead style="background:#f3b9cf;">
+            <tr>
+              <th>Product Description</th>
+              <th class="text-center">Site Number</th>
+              <th class="text-center">Good</th>
+              <th class="text-center">Dirty</th>
+              <th class="text-center">Damaged</th>
+              <th class="text-center">Scrap</th>
+              <th class="text-center">Total</th>
+            </tr>
+          </thead>
+          <tbody>${gatePassItemRows}</tbody>
+        </table>
+      </div>
 
       <div style="border:1px solid #8a5a6b;padding:8px;border-radius:4px;margin-bottom:8px;background:#f9dce8;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
@@ -1435,7 +1437,19 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const systemPage = (copyLabel: string) => `
     <div class="page">
-      ${renderPageHeader("Hire Return Note", data.returnNoteNumber, data.companyName)}
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #111;padding-bottom:6px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
+          <div>
+            <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
+            <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Hire Return Note</div>
+          <div style="font-size:8px;color:#555;">${data.returnNoteNumber} &bull; ${data.companyName}</div>
+        </div>
+      </div>
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1542,10 +1556,35 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<!DOCTYPE html><html><head>" +
     "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
     "<style>" + SHARED_PRINT_STYLES + `
-      .page[style*="background:#f8cddd"] .panel { border-color: #8a5a6b; }
-      @page { size: A4; margin: 8mm; }
+      /* ── Return Note specific ── */
+      .page-header { display: none !important; }
+      .page-header-spacer { display: none !important; }
+
+      /* Pink gate pass fills the full page */
+      .rn-gate-pass {
+        background: #f8cddd;
+        border: 1px solid #c58ea3;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        min-height: 96vh;
+      }
+      .rn-gate-table-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 8px;
+      }
+      .rn-gate-table-wrap table {
+        flex: 1;
+        height: 100%;
+        margin-bottom: 0;
+      }
+      .rn-gate-table-wrap tbody tr { height: 22px; }
       @media print {
+        @page { size: A4; margin: 8mm; }
         body { padding: 0 !important; }
+        .rn-gate-pass { min-height: 96vh; }
       }
     ` + "</style>" +
     "</head><body>" +
