@@ -1374,7 +1374,10 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const gatePassPage = () => `
     <div class="page" style="background:#f8cddd;border:1px solid #c58ea3;padding:12px;">
-      ${renderPageHeader("Hire Return Form", data.returnNoteNumber, data.companyName)}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:90px;height:auto;"/>
+        <div style="font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#7b1a2e;">Hire Return Form</div>
+      </div>
 
       <table style="border-color:#8a5a6b;">
         <thead style="background:#f3b9cf;">
