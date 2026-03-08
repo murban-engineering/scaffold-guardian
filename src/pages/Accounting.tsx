@@ -285,8 +285,9 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       @media print{
         .print-bar{display:none;}
         body{padding:6px;font-size:8.5px;}
-        .print-header{position:fixed;top:6px;left:6px;right:6px;background:#fff;padding-top:8px}
-        .print-content{margin-top:350px}
+        /* Keep headers in document flow to avoid sections being clipped/omitted by print engines. */
+        .print-header{position:static;background:#fff;padding-top:8px;break-inside:avoid-page;}
+        .print-content{margin-top:0;}
         .page2{page-break-before:always;break-before:page;}
       }
     </style></head><body>
