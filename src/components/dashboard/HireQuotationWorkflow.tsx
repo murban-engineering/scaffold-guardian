@@ -271,14 +271,8 @@ const parseNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const deriveClientIdFromQuotationNumber = (quotationNo?: string | null) =>
-  toClientIdFromQuotationNumber(quotationNo);
-
 const deriveDraftIdFromClient = (quotation?: HireQuotation | null) => {
-  const clientId = deriveClientIdFromQuotationNumber(quotation?.quotation_number)
-    .trim()
-    .toLowerCase();
-
+  const clientId = (quotation?.client_id || "").trim().toLowerCase();
   return clientId ? `client:${clientId}` : null;
 };
 
