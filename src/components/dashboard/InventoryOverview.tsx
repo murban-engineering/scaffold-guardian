@@ -105,7 +105,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
 
   const chartData = useMemo(
     () => [
-      { name: "Opening Stock", quantity: totals.openingStock },
+      { name: "Qty at Start", quantity: totals.openingStock },
       { name: "Available", quantity: totals.availableStock },
       { name: "On Hire", quantity: totals.onHire },
     ],
