@@ -1692,6 +1692,9 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
+          // Pass existing client ID (e.g. from promoted test quotation) so it is preserved;
+          // if empty, useCreateQuotation will generate a fresh one from the sequence.
+          client_id: header.clientId || undefined,
         });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
