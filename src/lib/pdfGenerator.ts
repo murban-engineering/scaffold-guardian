@@ -355,11 +355,22 @@ const SHARED_PRINT_STYLES = `
     display: flex;
     flex-direction: column;
   }
-  body > .hire-quotation-page {
+  body > .hire-quotation-page,
+  body.hire-quotation-print > .hire-quotation-page {
     min-height: 92vh;
   }
+  /* Nested header wrappers inside page-2 containers must never get min-height */
+  .hq-page2 .hire-quotation-page,
+  .hl-page2 .hire-quotation-page,
+  .hd-page2 .hire-quotation-page {
+    min-height: unset !important;
+  }
   @media print {
-    body > .hire-quotation-page { min-height: 92vh; }
+    body > .hire-quotation-page,
+    body.hire-quotation-print > .hire-quotation-page { min-height: 92vh; }
+    .hq-page2 .hire-quotation-page,
+    .hl-page2 .hire-quotation-page,
+    .hd-page2 .hire-quotation-page { min-height: unset !important; }
   }
 
   /* ── Copy badge ── */
