@@ -3533,10 +3533,14 @@ const HireQuotationWorkflow = ({
                 )}
                 <Button 
                   type="button" 
-                  onClick={handleHeaderSave}
+                  onClick={isTestQuotation ? handleTestSaveAndContinue : handleHeaderSave}
                   disabled={createQuotation.isPending || updateQuotation.isPending}
                 >
-                  {createQuotation.isPending ? "Creating..." : isTestQuotation ? "Continue to Equipment →" : "Save & Continue"}
+                  {createQuotation.isPending || updateQuotation.isPending
+                    ? "Saving..."
+                    : isTestQuotation
+                    ? "Save & Continue →"
+                    : "Save & Continue"}
                 </Button>
               </div>
             </div>
