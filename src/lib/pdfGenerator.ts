@@ -431,7 +431,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
     <div class="standard-report-left">
       <div class="brand-block">
         <div class="brand-top">
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
           <div class="brand-title">${COMPANY_NAME}</div>
         </div>
         <div class="brand-meta">
