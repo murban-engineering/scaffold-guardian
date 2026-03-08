@@ -744,7 +744,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
         body { font-family: Arial, sans-serif; padding: 16px; font-size: 11px; }
         .yard-note h1 { text-align: center; font-size: 16px; margin-bottom: 8px; letter-spacing: 0.6px; text-transform: uppercase; }
         .yard-note-header { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px; }
-        .yard-note-header .brand-logo { width: 48px; height: auto; }
+        .yard-note-header .brand-logo { width: 96px; height: auto; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 10px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 5px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
