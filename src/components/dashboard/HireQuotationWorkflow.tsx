@@ -927,6 +927,10 @@ const HireQuotationWorkflow = ({
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
   const [hasHydratedTestDraft, setHasHydratedTestDraft] = useState(false);
   const hasRunInitialEquipmentAutoSyncRef = useRef(false);
+  // Tracks when equipment items were just loaded from DB — prevents auto-sync from immediately
+  // re-clearing and re-inserting items that already exist in the database, which would cause
+  // an infinite realtime loop (DB write → realtime update → DB write → ...).
+  const justLoadedFromDBRef = useRef(false);
 
   useEffect(() => {
     // If there's an initialQuotation (the persistent TST record), skip localStorage hydration.
