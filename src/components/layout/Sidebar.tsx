@@ -71,7 +71,7 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
            <img
              src={otnLogoBlack}
              alt="OTNO Logo"
-             className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-12" : "w-28")}
+             className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-20" : "w-48")}
           />
           {!closeOnSelect && (
             <Button
