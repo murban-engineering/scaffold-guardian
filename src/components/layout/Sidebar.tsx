@@ -67,11 +67,11 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
     <>
       {/* Logo */}
       <div className="border-b border-sidebar-border p-5">
-        <div className={cn("flex items-center", collapsed && !closeOnSelect ? "justify-center" : "justify-between")}>
-          <img
-            src={otnLogo}
-            alt="OTN Logo"
-            className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-10" : "w-24")}
+         <div className={cn("flex items-center", collapsed && !closeOnSelect ? "justify-center" : "justify-between")}>
+           <img
+             src={otnLogoBlack}
+             alt="OTNO Logo"
+             className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-20" : "w-48")}
           />
           {!closeOnSelect && (
             <Button
