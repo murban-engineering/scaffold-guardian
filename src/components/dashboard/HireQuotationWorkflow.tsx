@@ -652,11 +652,17 @@ const HireQuotationWorkflow = ({
     // Prevent stale quotation IDs from previous sessions from being reused
     // when starting a new quotation (including test-quotation flows).
     setSavedQuotationId(null);
-    setEquipmentItems([]);
     setRemainingQuantities({});
     setDeliveryQuantities({});
     setSelectedDeliverySiteId("");
     setSelectedReturnSiteId("");
+
+    // When promoting a test quotation to a real HSQ workflow, carry over equipment items
+    if (!isTestQuotation && initialExistingClient?.line_items?.length) {
+      setEquipmentItems(mapDatabaseLineItemsToEquipment(initialExistingClient.line_items));
+    } else {
+      setEquipmentItems([]);
+    }
   }, [initialQuotation, initialExistingClient?.id, initialClientMode, isTestQuotation]);
 
   useEffect(() => {
