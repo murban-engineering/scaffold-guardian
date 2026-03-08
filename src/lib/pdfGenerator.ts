@@ -1083,6 +1083,10 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           max-width: 100%;
           overflow: hidden;
         }
+        /* Nested header wrapper on page 2 must NOT stretch to full page height */
+        .hq-page2 .hire-quotation-page {
+          min-height: unset !important;
+        }
         .hq-acknowledge p:last-of-type { margin-bottom: 2px; }
       }
     </style></head><body class="hire-quotation-print">
