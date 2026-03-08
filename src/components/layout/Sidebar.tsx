@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState } from "react";
 
-const otnLogo = "/otn-logo-red.png";
+const otnLogo = "/otn-logo.png";
 
 interface SidebarProps {
   activeItem: string;
