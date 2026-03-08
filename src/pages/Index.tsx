@@ -184,17 +184,26 @@ const Index = () => {
     setShowQuotationDialog(true);
   };
 
-  const handleContinueQuotation = (quotation: HireQuotation) => {
-    const continuingFromTestClient = isTestQuotation(quotation);
+  const handleContinueQuotation = (quotation: HireQuotation, mode: "continue" | "test" | "promote" = "continue") => {
+    setShowContinueDialog(false);
 
-    if (continuingFromTestClient && activeItem !== "site-master" && activeItem !== "yard-verification") {
+    if (mode === "test") {
+      // Open the test quotation in test mode (full test workflow)
+      setSelectedQuotation(quotation);
+      setSelectedExistingClient(null);
+      setWorkflowInitialClientMode("new");
+      setWorkflowInitialStep("client");
+      setIsTestQuotationFlow(true);
+    } else if (mode === "promote") {
+      // Promote test quotation → new standard HSQ quotation pre-filled with test data
       setSelectedQuotation(null);
       setSelectedExistingClient(quotation);
       setWorkflowInitialClientMode("new");
       setWorkflowInitialStep(undefined);
       setIsTestQuotationFlow(false);
-      toast.info("Loaded test client details into a normal quotation flow. Update the client form and save to generate a new HSQ quotation.");
+      toast.info("Test quotation loaded. Fill in client details and save to generate a real HSQ quotation.");
     } else {
+      // Standard continue
       setSelectedExistingClient(null);
       setSelectedQuotation(quotation);
       setWorkflowInitialClientMode("new");
@@ -202,7 +211,6 @@ const Index = () => {
       setIsTestQuotationFlow(false);
     }
 
-    setShowContinueDialog(false);
     // If coming from sidebar site-master or yard-verification, show inline view
     if (activeItem === "site-master" || activeItem === "yard-verification") {
       return;
