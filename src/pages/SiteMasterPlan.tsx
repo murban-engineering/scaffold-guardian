@@ -137,7 +137,7 @@ const SiteMasterPlan = () => {
             {/* Top Header */}
             <div className="top-header">
               <h1>Site Master</h1>
-              <img src="/otnologo-removebg-preview.png" alt="O+N Logo" />
+              <img src="/otn-logo-red.png" alt="O+N Logo" />
             </div>
 
             <table>
@@ -311,7 +311,7 @@ const SiteMasterPlan = () => {
 
             {/* Footer with logo and signature lines */}
             <div className="footer-row">
-              <img src="/otnologo-removebg-preview.png" alt="O+N Logo" />
+              <img src="/otn-logo-red.png" alt="O+N Logo" />
               <div className="sig-box">Sales Rep</div>
               <div className="sig-box">Branch Co-ordinator</div>
               <div className="sig-box">Branch Manager</div>

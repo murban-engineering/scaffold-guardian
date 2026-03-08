@@ -375,7 +375,7 @@ const renderPageHeader = (docTitle: string, docNumber: string, clientName: strin
   <div class="page-header">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;"/>
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:36px;height:auto;"/>
         <div>
           <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
           <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
@@ -431,7 +431,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
     <div class="standard-report-left">
       <div class="brand-block">
         <div class="brand-top">
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
           <div class="brand-title">${COMPANY_NAME}</div>
         </div>
         <div class="brand-meta">
@@ -761,7 +761,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     <body>
       <div class="yard-note">
         <div class="yard-note-header">
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
           <h1>Yard Verification Report</h1>
         </div>
         <table class="yard-note-table">
@@ -1078,7 +1078,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="hq-page2-footer">
         <div class="hq-footer-brand">
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:40px;height:auto;filter:brightness(0);"/>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:40px;height:auto;"/>
         </div>
         <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
         <div class="hq-footer-processed">
