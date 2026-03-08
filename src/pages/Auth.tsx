@@ -106,9 +106,9 @@ const Auth = () => {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div className="flex items-center">
             <img 
-              src={otnLogo} 
-              alt="OTN Logo" 
-              className="w-36 h-auto object-contain"
+              src={otnLogoBlack} 
+              alt="OTNO Logo" 
+              className="w-72 h-auto object-contain"
             />
           </div>
           
