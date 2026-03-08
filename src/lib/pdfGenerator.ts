@@ -349,6 +349,16 @@ const SHARED_PRINT_STYLES = `
     display: none !important;
   }
 
+  /* ── Page-1 flex wrapper so footer sticks to bottom ── */
+  .hire-quotation-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 92vh;
+  }
+  @media print {
+    .hire-quotation-page { min-height: 92vh; }
+  }
+
   /* ── Copy badge ── */
   .copy-label {
     display: inline-block; font-size: 9px; font-weight: 700;
