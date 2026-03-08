@@ -1435,25 +1435,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </tr>`
   ).join("");
 
-  // ── Inline header used on pages 2 and 3 ────────────────────────────────────
-  const rnHeader = `
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #111;padding-bottom:6px;margin-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
-        <div>
-          <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
-          <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
-        </div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Hire Return Note</div>
-        <div style="font-size:8px;color:#555;">${data.returnNoteNumber} &bull; ${data.companyName}</div>
-      </div>
-    </div>`;
-
   const systemPage = (copyLabel: string) => `
     <div class="page">
-      ${rnHeader}
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1501,7 +1484,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const page3 = (copyLabel: string) => `
     <div class="rn-page3">
-      ${rnHeader}
 
       <div class="post-total-grid">
         <div class="section">
