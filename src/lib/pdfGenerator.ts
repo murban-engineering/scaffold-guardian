@@ -350,13 +350,16 @@ const SHARED_PRINT_STYLES = `
   }
 
   /* ── Page-1 flex wrapper so footer sticks to bottom ── */
+  /* Only top-level (direct body child) gets min-height; nested page-2 headers must not stretch */
   .hire-quotation-page {
     display: flex;
     flex-direction: column;
+  }
+  body > .hire-quotation-page {
     min-height: 92vh;
   }
   @media print {
-    .hire-quotation-page { min-height: 92vh; }
+    body > .hire-quotation-page { min-height: 92vh; }
   }
 
   /* ── Copy badge ── */
