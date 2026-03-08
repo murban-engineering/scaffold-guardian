@@ -597,6 +597,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       </table>
 
       ${data.remarks ? `<div class="section" style="margin-top:6px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+      ${renderPage1Footer(data.createdBy || "", data.deliveryDate || "")}
     </div>
 
     <!-- ═══ PAGE 2: Header repeat + signature/verification sections ═══ -->
