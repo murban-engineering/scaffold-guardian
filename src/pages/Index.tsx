@@ -34,7 +34,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { getNextTestQuotationNumber, isTestQuotationNumber } from "@/lib/testQuotation";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 const Index = () => {
   useRealtimeSync();

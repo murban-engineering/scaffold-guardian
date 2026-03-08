@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Printer, CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
