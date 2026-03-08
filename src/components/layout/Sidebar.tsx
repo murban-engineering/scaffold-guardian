@@ -108,33 +108,45 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
         </ul>
       </nav>
 
-      {/* Bottom Section */}
-      <div className="border-t border-sidebar-border p-3">
-        <button
-          className={cn(
-            "sidebar-item w-full mb-1",
-            collapsed && !closeOnSelect && "justify-center px-2",
-            activeItem === "settings" && "sidebar-item-active"
-          )}
-          onClick={() => handleItemClick("settings", closeOnSelect)}
-          title={collapsed && !closeOnSelect ? "Settings" : undefined}
-        >
-          <SlidersHorizontal className="h-5 w-5 shrink-0" />
-          <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Settings</span>
-        </button>
-        <button
-          className={cn(
-            "sidebar-item w-full text-danger/70 hover:bg-danger/10 hover:text-danger",
-            collapsed && !closeOnSelect && "justify-center px-2"
-          )}
-          onClick={handleLogout}
-          type="button"
-          title={collapsed && !closeOnSelect ? "Logout" : undefined}
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Logout</span>
-        </button>
-      </div>
+       {/* Bottom Section */}
+       <div className="border-t border-sidebar-border p-3">
+         <button
+           className={cn(
+             "sidebar-item w-full mb-1",
+             collapsed && !closeOnSelect && "justify-center px-2",
+             activeItem === "settings" && "sidebar-item-active"
+           )}
+           onClick={() => handleItemClick("settings", closeOnSelect)}
+           title={collapsed && !closeOnSelect ? "Settings" : undefined}
+         >
+           <SlidersHorizontal className="h-5 w-5 shrink-0" />
+           <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Settings</span>
+         </button>
+         <button
+           className={cn(
+             "sidebar-item w-full text-danger/70 hover:bg-danger/10 hover:text-danger",
+             collapsed && !closeOnSelect && "justify-center px-2"
+           )}
+           onClick={handleLogout}
+           type="button"
+           title={collapsed && !closeOnSelect ? "Logout" : undefined}
+         >
+           <LogOut className="h-5 w-5 shrink-0" />
+           <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Logout</span>
+         </button>
+         <a
+           href="https://nyotaai.vercel.app/"
+           target="_blank"
+           rel="noreferrer"
+           className={cn(
+             "sidebar-item w-full text-muted-foreground hover:text-primary hover:bg-muted/50 mt-2 text-xs",
+             collapsed && !closeOnSelect && "justify-center px-2"
+           )}
+           title={collapsed && !closeOnSelect ? "Powered by NYOTAI" : undefined}
+         >
+           <span className={cn("font-medium", collapsed && !closeOnSelect && "hidden")}>Powered by NYOTAI</span>
+         </a>
+       </div>
     </>
   );
 
