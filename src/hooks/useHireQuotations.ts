@@ -86,6 +86,8 @@ export interface CreateQuotationInput {
   delivery_address?: string;
   hire_weeks?: number;
   notes?: string;
+  /** If provided, use this client_id instead of generating a new one (e.g. when promoting a test quotation). */
+  client_id?: string;
 }
 
 export interface CreateLineItemInput {
