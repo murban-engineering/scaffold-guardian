@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
 
-const otnLogo = "/otn-logo-red.png";
+const otnLogo = "/otn-logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
