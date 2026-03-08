@@ -1372,28 +1372,9 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<tr><td style='height:22px'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td></tr>"
   ).join("");
 
-  const gatePassPage = (copyLabel: string) => `
+  const gatePassPage = () => `
     <div class="page" style="background:#f8cddd;border:1px solid #c58ea3;padding:12px;">
       ${renderPageHeader("Hire Return Form", data.returnNoteNumber, data.companyName)}
-      ${renderStandardReportLayout({
-        documentType: "Hire Return Form",
-        documentNumber: data.returnNoteNumber,
-        documentDate: data.returnDate,
-        clientName: data.companyName,
-        contactName: data.contactName,
-        contactPhone: data.contactPhone,
-        contactEmail: data.contactEmail,
-        siteName: data.siteName,
-        siteId: data.siteId,
-        siteLocation: data.siteLocation,
-        siteAddress: data.siteAddress,
-        clientId: data.clientId,
-        orderNumber: data.quotationNumber,
-        manualNumber: copyLabel,
-        hireEndDate: data.hireEndDate,
-        createdBy: data.createdBy,
-        hidePanelHeaders: true,
-      })}
 
       <table style="border-color:#8a5a6b;">
         <thead style="background:#f3b9cf;">
@@ -1434,7 +1415,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </div>
   `;
 
-  // Page 2: System Return Note
+  // Page 2: System Return Note rows
   const systemItemRows = data.items.map(item =>
     `<tr>
       <td>${item.partNumber || "-"}</td>
@@ -1561,10 +1542,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       .page[style*="background:#f8cddd"] .panel { border-color: #8a5a6b; }
     ` + "</style>" +
     "</head><body>" +
-    gatePassPage("Company Copy") +
+    gatePassPage() +
     systemPage("Company Copy") +
-    gatePassPage("Client Copy") +
-    systemPage("Client Copy") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
