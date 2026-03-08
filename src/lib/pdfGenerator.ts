@@ -1138,6 +1138,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <strong>Comments</strong><br/>
       ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
     </div>
+      ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
 
     <!-- ═══ PAGE 2 ═══ -->
