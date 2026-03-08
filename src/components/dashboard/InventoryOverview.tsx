@@ -187,7 +187,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
               <span className="text-xs text-violet-600">{onHirePct}%</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-sky-400" /> Opening Stock</span>
+              <span className="inline-flex items-center gap-2 text-slate-700"><span className="h-2 w-2 rounded-full bg-sky-400" /> Qty at Start</span>
               <span className="font-semibold text-slate-900">{totals.openingStock}</span>
               <span className="text-xs text-slate-500">100%</span>
             </div>
