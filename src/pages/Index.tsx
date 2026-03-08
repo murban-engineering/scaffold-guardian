@@ -705,10 +705,7 @@ const Index = () => {
                                     <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
                                     <TableCell className="text-right">
                                       {section.isTest ? (
-                                        <div className="flex items-center justify-end gap-1.5">
-                                          <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
-                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
-                                        </div>
+                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
                                       ) : (
                                         <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
                                           {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
