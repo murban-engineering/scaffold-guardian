@@ -3874,7 +3874,7 @@ const HireQuotationWorkflow = ({
                   Print Hire Quotation
                 </Button>
                 <Button type="button" onClick={handleHireQuotationSave}>
-                  Continue to Site Master Plan
+                  Continue to Site Details
                 </Button>
               </div>
             </div>
