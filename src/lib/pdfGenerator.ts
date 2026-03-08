@@ -167,6 +167,28 @@ const formatTimestamp = () => {
   return now.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
 };
 
+// ── Page-1 footer band (yellow brand bar + legal text + processed info) ────────
+const renderPage1Footer = (createdBy: string, dateCreated: string) => `
+  <div style="margin-top:auto;">
+    <div style="background:#facc15;color:#1f2937;font-weight:700;display:flex;justify-content:space-between;align-items:center;padding:6px 10px;">
+      <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+      <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+    </div>
+    <div style="text-align:center;font-size:7.5px;color:#4b5563;padding:3px 8px 4px;border:1px solid #e5e7eb;border-top:none;">
+      All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of 2
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:7px;color:#6b7280;padding:4px 0 0;">
+      <div>
+        <div>Processed By : ${createdBy || ""}</div>
+        <div>Processed Date : ${dateCreated || ""}</div>
+      </div>
+      <div style="text-align:right;">
+        <div>Print date : ${formatTimestamp()}</div>
+      </div>
+    </div>
+  </div>
+`;
+
 const formatCurrency = (value: number) =>
   `Ksh ${value.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
