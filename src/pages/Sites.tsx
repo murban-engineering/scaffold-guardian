@@ -235,23 +235,23 @@ const Sites = () => {
         />
 
         <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-          <section className="space-y-4">
+          <section className="space-y-3 md:space-y-4">
             <Card>
-              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
                 <div>
-                  <CardTitle>Inventory Removal Report</CardTitle>
+                  <CardTitle className="text-base md:text-lg">Inventory Removal Report</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Generate client-specific reports from dispatched and completed quotations only.
                   </p>
                 </div>
-                <Button variant="outline" onClick={handlePrintRemovalReport}>
+                <Button variant="outline" size="sm" onClick={handlePrintRemovalReport} className="w-full md:w-auto">
                   Print Report
                 </Button>
               </CardHeader>
               <CardContent>
                 {removalReportRows.length ? (
                   <div className="space-y-4">
-                    <div className="grid max-w-md gap-2">
+                    <div className="grid gap-2">
                       <label className="text-sm font-medium text-foreground">Select client</label>
                       <Select value={selectedClient} onValueChange={setSelectedClient}>
                         <SelectTrigger>
@@ -266,22 +266,22 @@ const Sites = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="rounded-lg border border-border">
+                    <div className="rounded-lg border border-border overflow-x-auto">
                       <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Item Description</TableHead>
-                          <TableHead>Quantity Removed</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summarizedRemovalRows.map((row) => (
-                          <TableRow key={`${selectedClient}-${row.itemDescription}`}>
-                            <TableCell className="font-medium">{row.itemDescription}</TableCell>
-                            <TableCell>{row.quantity}</TableCell>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Item Description</TableHead>
+                            <TableHead className="text-right">Qty Removed</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
+                        </TableHeader>
+                        <TableBody>
+                          {summarizedRemovalRows.map((row) => (
+                            <TableRow key={`${selectedClient}-${row.itemDescription}`}>
+                              <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
+                              <TableCell className="text-right font-bold">{row.quantity}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
                       </Table>
                     </div>
                     {!summarizedRemovalRows.length ? (
@@ -299,43 +299,40 @@ const Sites = () => {
             </Card>
           </section>
 
-          <section className="grid grid-cols-1 gap-6">
+          <section className="grid grid-cols-1 gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                   <MapPin className="h-5 w-5" />
                   Active & Pending Quotations
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pt-0">
                 {isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading active quotations...</p>
                 ) : activeQuotations.length ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {activeQuotations.map((quotation) => (
                       <div
                         key={quotation.id}
-                        className="rounded-lg border border-border bg-muted/30 p-4 space-y-2"
+                        className="rounded-xl border border-border bg-muted/30 p-3.5 space-y-2"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">
                               {quotation.company_name || quotation.site_manager_name || "Client pending"}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              {quotation.site_name || "Site name pending"}
+                            <p className="text-xs text-muted-foreground truncate">
+                              {quotation.site_name || "Site name pending"} · Saved {formatDate(quotation.created_at)}
                             </p>
                           </div>
-                          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase text-primary">
                             {quotation.status || "pending"}
                           </span>
                         </div>
-                        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                          <span>Saved {formatDate(quotation.created_at)}</span>
-                          <Button size="sm" variant="outline" onClick={() => handleOpenWorkflow(quotation)}>
-                            Open workflow
-                          </Button>
-                        </div>
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => handleOpenWorkflow(quotation)}>
+                          Open workflow
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -346,16 +343,16 @@ const Sites = () => {
             </Card>
           </section>
 
-          <section className="space-y-4">
+          <section className="space-y-3 md:space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold">Saved Hire Quotation Workflow</h2>
+                <h2 className="text-base md:text-lg font-semibold">Saved Hire Quotation Workflow</h2>
                 <p className="text-sm text-muted-foreground">
                   Continue the selected client workflow, update equipment, and generate reports.
                 </p>
               </div>
               {selectedQuotation ? (
-                <Button variant="ghost" onClick={() => setSelectedQuotation(null)}>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedQuotation(null)}>
                   Clear selection
                 </Button>
               ) : null}
@@ -378,5 +375,4 @@ const Sites = () => {
     </div>
   );
 };
-
 export default Sites;

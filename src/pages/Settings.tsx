@@ -121,7 +121,7 @@ const Settings = () => {
       <main className="ml-0 md:ml-64">
         <Header title="Settings" subtitle="Manage support contacts and help resources." />
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Support Tickets</CardTitle>
