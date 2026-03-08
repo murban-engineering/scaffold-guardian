@@ -1,16 +1,19 @@
-import { ArrowLeft, ClipboardCheck, AlertTriangle, Wrench, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  ClipboardCheck, AlertTriangle, Wrench, Trash2,
+  Search, Filter, ChevronDown, ArrowLeft, TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -29,78 +32,91 @@ const parseReturnLog = (description: string) => {
   };
 };
 
-const getConditionBadge = (condition: string | null) => {
-  switch (condition) {
-    case "dirty":
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Dirty</Badge>;
-    case "damaged":
-      return <Badge variant="destructive" className="bg-orange-100 text-orange-800">Damaged</Badge>;
-    case "scrap":
-      return <Badge variant="destructive" className="bg-red-100 text-red-800">Scrap</Badge>;
-    default:
-      return <Badge variant="outline">Maintenance</Badge>;
-  }
+const conditionConfig = {
+  dirty: {
+    label: "Dirty",
+    icon: Wrench,
+    badgeClass: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    iconClass: "text-yellow-600",
+    cardBg: "bg-yellow-50 border-yellow-100",
+    dotClass: "bg-yellow-400",
+  },
+  damaged: {
+    label: "Damaged",
+    icon: AlertTriangle,
+    badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
+    iconClass: "text-orange-600",
+    cardBg: "bg-orange-50 border-orange-100",
+    dotClass: "bg-orange-400",
+  },
+  scrap: {
+    label: "Scrap",
+    icon: Trash2,
+    badgeClass: "bg-red-100 text-red-800 border-red-200",
+    iconClass: "text-red-600",
+    cardBg: "bg-red-50 border-red-100",
+    dotClass: "bg-red-500",
+  },
 };
 
-const getConditionIcon = (condition: string | null) => {
-  switch (condition) {
-    case "dirty":
-      return <Wrench className="w-4 h-4 text-yellow-600" />;
-    case "damaged":
-      return <AlertTriangle className="w-4 h-4 text-orange-600" />;
-    case "scrap":
-      return <Trash2 className="w-4 h-4 text-red-600" />;
-    default:
-      return <ClipboardCheck className="w-4 h-4 text-muted-foreground" />;
-  }
+const priorityConfig: Record<string, { label: string; class: string }> = {
+  urgent: { label: "Urgent", class: "bg-red-100 text-red-700 border-red-200" },
+  high: { label: "High", class: "bg-orange-100 text-orange-700 border-orange-200" },
+  medium: { label: "Medium", class: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  low: { label: "Low", class: "bg-green-100 text-green-700 border-green-200" },
 };
 
 const MaintenanceLogs = () => {
   const navigate = useNavigate();
   const { data: logs, isLoading, error } = useMaintenanceLogs();
+  const [search, setSearch] = useState("");
+  const [conditionFilter, setConditionFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
-  const maintenanceLogs = (logs ?? []).filter((log) => {
+  const allLogs = (logs ?? []).filter((log) => {
     const parsed = parseReturnLog(log.issue_description ?? "");
     return parsed.condition === "dirty" || parsed.condition === "damaged" || parsed.condition === "scrap";
   });
 
+  const filtered = allLogs.filter((log) => {
+    const parsed = parseReturnLog(log.issue_description ?? "");
+    const item = log.scaffolds?.description || log.scaffolds?.part_number || "";
+    const matchesSearch =
+      !search ||
+      item.toLowerCase().includes(search.toLowerCase()) ||
+      (parsed.client ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (parsed.quotation ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchesCondition = conditionFilter === "all" || parsed.condition === conditionFilter;
+    const matchesPriority = priorityFilter === "all" || log.priority === priorityFilter;
+    return matchesSearch && matchesCondition && matchesPriority;
+  });
+
   const stats = {
-    dirty: maintenanceLogs.filter(log => parseReturnLog(log.issue_description ?? "").condition === "dirty").length,
-    damaged: maintenanceLogs.filter(log => parseReturnLog(log.issue_description ?? "").condition === "damaged").length,
-    scrap: maintenanceLogs.filter(log => parseReturnLog(log.issue_description ?? "").condition === "scrap").length,
+    dirty: allLogs.filter((l) => parseReturnLog(l.issue_description ?? "").condition === "dirty").length,
+    damaged: allLogs.filter((l) => parseReturnLog(l.issue_description ?? "").condition === "damaged").length,
+    scrap: allLogs.filter((l) => parseReturnLog(l.issue_description ?? "").condition === "scrap").length,
   };
+  const totalQty = allLogs.reduce((sum, l) => sum + (parseReturnLog(l.issue_description ?? "").quantity ?? 0), 0);
 
   const handleSidebarItemClick = (item: string) => {
-    if (item === "dashboard") {
-      navigate("/", { state: { activeItem: "dashboard" }, replace: true });
-      return;
-    }
-    if (item === "inventory" || item === "workforce") {
-      navigate("/", { state: { activeItem: item }, replace: true });
-      return;
-    }
-    if (item === "sites") {
-      navigate("/sites");
-      return;
-    }
-    if (item === "revenue") {
-      navigate("/revenue");
-      return;
-    }
-    if (item === "accounting") {
-      navigate("/accounting");
-      return;
-    }
-    if (item === "site-master-plan") {
-      navigate("/site-master-plan");
-      return;
-    }
-    if (item === "settings") {
-      navigate("/settings");
-      return;
-    }
-    if (item === "maintenance") {
-      navigate("/maintenance-logs");
+    const routes: Record<string, string> = {
+      dashboard: "/",
+      inventory: "/",
+      workforce: "/",
+      sites: "/sites",
+      revenue: "/revenue",
+      accounting: "/accounting",
+      "site-master-plan": "/site-master-plan",
+      settings: "/settings",
+      maintenance: "/maintenance-logs",
+    };
+    const path = routes[item];
+    if (path) {
+      if (item === "dashboard" || item === "inventory" || item === "workforce") {
+        navigate("/", { state: { activeItem: item }, replace: true });
+      } else {
+        navigate(path);
+      }
     }
   };
 
@@ -108,141 +124,219 @@ const MaintenanceLogs = () => {
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="maintenance" onItemClick={handleSidebarItemClick} />
       <div className="ml-0 md:ml-64">
-        <Header title="Maintenance Logs" subtitle="Track damaged, dirty, and scrap returns" />
-        <main className="p-6">
-          <Button
-            variant="ghost"
-            className="mb-6"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+        <Header title="Maintenance Logs" subtitle="Equipment return condition tracker" />
+        <main className="p-6 space-y-6">
+
+          {/* Back */}
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
             Back to Dashboard
           </Button>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-100">
-                    <Wrench className="w-5 h-5 text-yellow-600" />
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Total */}
+            <Card className="border shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <TrendingUp className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats.dirty}</p>
-                    <p className="text-sm text-muted-foreground">Dirty Items</p>
-                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">TOTAL ITEMS</span>
                 </div>
+                <p className="text-3xl font-bold">{totalQty}</p>
+                <p className="text-xs text-muted-foreground mt-1">{allLogs.length} log entries</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-100">
-                    <AlertTriangle className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats.damaged}</p>
-                    <p className="text-sm text-muted-foreground">Damaged Items</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-red-100">
-                    <Trash2 className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats.scrap}</p>
-                    <p className="text-sm text-muted-foreground">Scrap Items</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+            {(["dirty", "damaged", "scrap"] as const).map((cond) => {
+              const cfg = conditionConfig[cond];
+              const Icon = cfg.icon;
+              const count = allLogs
+                .filter((l) => parseReturnLog(l.issue_description ?? "").condition === cond)
+                .reduce((sum, l) => sum + (parseReturnLog(l.issue_description ?? "").quantity ?? 0), 0);
+              return (
+                <Card key={cond} className={`border shadow-sm ${cfg.cardBg}`}>
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 rounded-lg bg-white/60">
+                        <Icon className={`w-4 h-4 ${cfg.iconClass}`} />
+                      </div>
+                      <span className="text-xs font-medium text-muted-foreground uppercase">{cond}</span>
+                    </div>
+                    <p className="text-3xl font-bold">{count}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stats[cond]} entries</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
-          {/* Main Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5" />
-                All Maintenance Returns
-              </CardTitle>
+          {/* Table Card */}
+          <Card className="border shadow-sm">
+            <CardHeader className="border-b pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <ClipboardCheck className="w-5 h-5 text-primary" />
+                  <CardTitle className="text-lg">Return Condition Log</CardTitle>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-wrap gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search item, client, quotation…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-8 h-8 w-52 text-sm"
+                    />
+                  </div>
+                  <Select value={conditionFilter} onValueChange={setConditionFilter}>
+                    <SelectTrigger className="h-8 w-32 text-sm gap-1">
+                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                      <SelectValue placeholder="Condition" />
+                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Conditions</SelectItem>
+                      <SelectItem value="dirty">Dirty</SelectItem>
+                      <SelectItem value="damaged">Damaged</SelectItem>
+                      <SelectItem value="scrap">Scrap</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                    <SelectTrigger className="h-8 w-28 text-sm">
+                      <SelectValue placeholder="Priority" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priority</SelectItem>
+                      <SelectItem value="urgent">Urgent</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {filtered.length !== allLogs.length && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Showing {filtered.length} of {allLogs.length} entries
+                </p>
+              )}
             </CardHeader>
-            <CardContent>
+
+            <CardContent className="p-0">
               {isLoading ? (
-                <div className="space-y-4">
+                <div className="p-6 space-y-3">
                   {[1, 2, 3, 4, 5].map((row) => (
-                    <Skeleton key={row} className="h-12 w-full" />
+                    <Skeleton key={row} className="h-12 w-full rounded-lg" />
                   ))}
                 </div>
               ) : error ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Unable to load maintenance logs</p>
+                <div className="text-center py-16 text-muted-foreground">
+                  <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                  <p className="font-medium">Unable to load maintenance logs</p>
                 </div>
-              ) : maintenanceLogs.length ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-10"></TableHead>
-                      <TableHead>Item</TableHead>
-                      <TableHead>Condition</TableHead>
-                      <TableHead className="text-center">Qty</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Quotation</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {maintenanceLogs.map((log) => {
-                      const parsed = parseReturnLog(log.issue_description ?? "");
-                      const itemLabel = log.scaffolds?.description || log.scaffolds?.part_number || "Scaffold item";
-                      return (
-                        <TableRow key={log.id} className="hover:bg-muted/30">
-                          <TableCell>{getConditionIcon(parsed.condition)}</TableCell>
-                          <TableCell className="font-medium">{itemLabel}</TableCell>
-                          <TableCell>{getConditionBadge(parsed.condition)}</TableCell>
-                          <TableCell className="text-center font-semibold">
-                            {parsed.quantity ?? "—"}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {parsed.client || <span className="text-muted-foreground">—</span>}
-                          </TableCell>
-                          <TableCell className="text-sm font-mono">
-                            {parsed.quotation || <span className="text-muted-foreground">—</span>}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={log.priority === "urgent" ? "destructive" : log.priority === "high" ? "default" : "secondary"}
-                            >
-                              {log.priority}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={log.is_resolved ? "outline" : "default"}>
-                              {log.is_resolved ? "Resolved" : "Open"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(log.created_at).toLocaleDateString("en-ZA", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              ) : filtered.length ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="w-8 pl-4"></TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Item</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Condition</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-center">Qty</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Client</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Quotation</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Priority</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Status</TableHead>
+                        <TableHead className="font-semibold text-xs uppercase tracking-wide pr-4">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((log) => {
+                        const parsed = parseReturnLog(log.issue_description ?? "");
+                        const cond = parsed.condition as keyof typeof conditionConfig | null;
+                        const cfg = cond ? conditionConfig[cond] : null;
+                        const Icon = cfg?.icon ?? ClipboardCheck;
+                        const itemLabel = log.scaffolds?.description || log.scaffolds?.part_number || "Scaffold item";
+                        const pCfg = priorityConfig[log.priority] ?? priorityConfig.medium;
+
+                        return (
+                          <TableRow key={log.id} className="hover:bg-muted/20 transition-colors">
+                            <TableCell className="pl-4">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${cfg ? cfg.cardBg : "bg-muted"}`}>
+                                <Icon className={`w-3.5 h-3.5 ${cfg?.iconClass ?? "text-muted-foreground"}`} />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium text-sm">{itemLabel}</span>
+                            </TableCell>
+                            <TableCell>
+                              {cfg ? (
+                                <Badge className={`text-xs border font-medium ${cfg.badgeClass}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${cfg.dotClass}`} />
+                                  {cfg.label}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">Unknown</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="font-bold text-base tabular-nums">
+                                {parsed.quantity ?? "—"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm">{parsed.client || <span className="text-muted-foreground text-xs">—</span>}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                {parsed.quotation || "—"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-xs border ${pCfg.class}`}>
+                                {pCfg.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-1.5 h-1.5 rounded-full ${log.is_resolved ? "bg-green-400" : "bg-amber-400"}`} />
+                                <span className="text-xs text-muted-foreground">
+                                  {log.is_resolved ? "Resolved" : "Open"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="pr-4 text-xs text-muted-foreground whitespace-nowrap">
+                              {new Date(log.created_at).toLocaleDateString("en-ZA", {
+                                year: "numeric", month: "short", day: "numeric",
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <ClipboardCheck className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium">No maintenance returns logged yet</p>
-                  <p className="text-sm mt-2">Dirty, damaged, and scrap returns from hire workflows will appear here.</p>
+                <div className="text-center py-20 text-muted-foreground">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                    <ClipboardCheck className="w-8 h-8 opacity-40" />
+                  </div>
+                  <p className="font-semibold text-foreground">
+                    {allLogs.length > 0 ? "No results match your filters" : "No maintenance logs yet"}
+                  </p>
+                  <p className="text-sm mt-1 max-w-xs mx-auto">
+                    {allLogs.length > 0
+                      ? "Try adjusting your search or filter criteria."
+                      : "Dirty, damaged, and scrap returns from hire workflows will appear here."}
+                  </p>
+                  {allLogs.length > 0 && (
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setConditionFilter("all"); setPriorityFilter("all"); }}>
+                      Clear Filters
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
