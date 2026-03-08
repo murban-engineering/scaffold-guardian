@@ -1504,6 +1504,25 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
 
   const page3 = (copyLabel: string) => `
     <div class="rn-page3">
+      ${renderStandardReportLayout({
+        documentType: "Hire Return Note",
+        documentNumber: data.returnNoteNumber,
+        documentDate: data.returnDate,
+        clientName: data.companyName,
+        contactName: data.contactName,
+        contactPhone: data.contactPhone,
+        contactEmail: data.contactEmail,
+        siteName: data.siteName,
+        siteId: data.siteId,
+        siteLocation: data.siteLocation,
+        siteAddress: data.siteAddress,
+        clientId: data.clientId,
+        orderNumber: data.quotationNumber,
+        manualNumber: copyLabel,
+        hireEndDate: data.hireEndDate,
+        createdBy: data.createdBy,
+      })}
+
       <div class="post-total-grid">
         <div class="section">
           <h4>SAFETY VERIFICATION</h4>
