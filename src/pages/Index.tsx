@@ -584,9 +584,9 @@ const Index = () => {
             setActiveItem("dashboard");
           }
         }}>
-          <DialogContent className="max-w-5xl">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 {activeItem === "site-master" ? "Select Quotation for Site Master Plan" : activeItem === "yard-verification" ? "Select Quotation for Yard Verification" : "Continue Saved Quotation"}
               </DialogTitle>
             </DialogHeader>
@@ -596,8 +596,8 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
-              <div className="grid gap-2 md:w-[360px]">
-                <Label htmlFor="continue-client-filter">Client</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="continue-client-filter">Filter by client</Label>
                 <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
                   <SelectTrigger id="continue-client-filter">
                     <SelectValue placeholder="All clients" />
@@ -615,7 +615,7 @@ const Index = () => {
               {quotationsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
               ) : hireQuotations.length ? (
-                <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+                <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
                   {[
                     { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations), isTest: false },
                     {
@@ -629,83 +629,101 @@ const Index = () => {
                   ]
                     .filter((section) => section.rows.length > 0)
                     .map((section) => (
-                      <div key={section.title} className="rounded-lg border border-border">
-                        <div className="border-b px-4 py-2">
-                          <p className="text-sm font-medium">{section.title}</p>
+                      <div key={section.title} className="rounded-lg border border-border overflow-hidden">
+                        <div className="border-b px-4 py-2 bg-muted/30">
+                          <p className="text-sm font-semibold">{section.title}</p>
                         </div>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Quotation</TableHead>
-                              <TableHead>Client</TableHead>
-                              <TableHead>Site</TableHead>
-                              <TableHead>Order Summary</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Continue</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {section.rows.map((quotation) => {
-                              const lineItems = quotation.line_items ?? [];
-                              const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-                              const weeklyTotal = lineItems.reduce(
-                                (sum, item) => {
-                                  if (item.weekly_total != null) {
-                                    return sum + item.weekly_total;
-                                  }
+                        {/* Mobile cards */}
+                        <div className="divide-y divide-border sm:hidden">
+                          {section.rows.map((quotation) => {
+                            const lineItems = quotation.line_items ?? [];
+                            const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+                            return (
+                              <div key={quotation.id} className="p-3 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-sm truncate">{quotation.company_name || "Unnamed client"}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">{quotation.quotation_number || "Draft"} · {formatDate(quotation.created_at)}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{quotation.site_name || "No site"}</p>
+                                  </div>
+                                  <span className="shrink-0 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5 capitalize">{quotation.status || "draft"}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
+                                {section.isTest ? (
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
+                                  </div>
+                                ) : (
+                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                    {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Desktop table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Quotation</TableHead>
+                                <TableHead>Client</TableHead>
+                                <TableHead>Site</TableHead>
+                                <TableHead>Items</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {section.rows.map((quotation) => {
+                                const lineItems = quotation.line_items ?? [];
+                                const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+                                const weeklyTotal = lineItems.reduce((sum, item) => {
+                                  if (item.weekly_total != null) return sum + item.weekly_total;
                                   const rate = item.weekly_rate ?? 0;
                                   const qty = item.quantity ?? 0;
-                                  const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
-                                  const hireRate = Math.max(rate * (1 - discountRate), 0);
-                                  return sum + hireRate * qty;
-                                },
-                                0
-                              );
-
-                              return (
-                                <TableRow key={quotation.id}>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.quotation_number || "Draft"}</div>
-                                    <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.company_name || "Unnamed client"}</div>
-                                    <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.site_name || "No site name"}</div>
-                                    <div className="text-xs text-muted-foreground line-clamp-1">
-                                      {quotation.site_address || "No site address"}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{itemCount} item(s)</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Weekly total: Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
-                                  <TableCell className="text-right">
-                                    {section.isTest ? (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>
-                                          Open Test
+                                  const d = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
+                                  return sum + Math.max(rate * (1 - d), 0) * qty;
+                                }, 0);
+                                return (
+                                  <TableRow key={quotation.id}>
+                                    <TableCell>
+                                      <div className="font-medium text-xs">{quotation.quotation_number || "Draft"}</div>
+                                      <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-medium text-sm">{quotation.company_name || "Unnamed client"}</div>
+                                      <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-medium text-sm">{quotation.site_name || "No site name"}</div>
+                                      <div className="text-xs text-muted-foreground line-clamp-1">{quotation.site_address || "No site address"}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-sm">{itemCount} item(s)</div>
+                                      <div className="text-xs text-muted-foreground">Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}/wk</div>
+                                    </TableCell>
+                                    <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
+                                    <TableCell className="text-right">
+                                      {section.isTest ? (
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
+                                        </div>
+                                      ) : (
+                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                          {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
                                         </Button>
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>
-                                          Promote → HSQ
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                        {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                      </Button>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
                     ))}
                 </div>
