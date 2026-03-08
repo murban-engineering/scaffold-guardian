@@ -597,8 +597,10 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
   `;
 
   const html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
-    <style>${SHARED_PRINT_STYLES}</style></head><body>
-    ${deliveryNotePage()}
+    <style>${SHARED_PRINT_STYLES}
+    @page { margin: 0; size: A4; }
+    @media print { body { padding: 8mm; } }
+    </style></head><body>
     ${deliveryNotePage()}
   </body></html>`;
 
