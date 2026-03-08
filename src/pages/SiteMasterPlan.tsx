@@ -137,7 +137,7 @@ const SiteMasterPlan = () => {
             {/* Top Header */}
             <div className="top-header">
               <h1>Site Master</h1>
-              <img src="/otnologo-removebg-preview.png" alt="O+N Logo" />
+              <img src="/otn-logo-red.png" alt="O+N Logo" />
             </div>
 
             <table>
