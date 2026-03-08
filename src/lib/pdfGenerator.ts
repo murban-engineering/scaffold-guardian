@@ -719,11 +719,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
 
   const html = `<!DOCTYPE html><html><head><title>${noteTitle} - ${data.quotationNumber}</title>
     <style>${SHARED_PRINT_STYLES}
-    @media print {
-      @page { margin-top: 0; }
-      /* Hide browser's default print header (date/time/title) */
-      html { -webkit-print-color-adjust: exact; }
-    }
+    @page { margin: 10mm; margin-top: 10mm; size: A4; }
     </style></head><body>
     ${loadingNotePage("Company Copy")}
   </body></html>`;
