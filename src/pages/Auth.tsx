@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import constructionImage from "@/assets/construction-silhouette.jpg";
+import otnLogoBlack from "@/assets/otno-logo-black.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
-
-const otnLogo = "/otn-logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -107,9 +106,9 @@ const Auth = () => {
         <div className="relative z-10 flex flex-col justify-between p-12 text-primary-foreground">
           <div className="flex items-center">
             <img 
-              src={otnLogo} 
-              alt="OTN Logo" 
-              className="w-36 h-auto object-contain"
+              src={otnLogoBlack} 
+              alt="OTNO Logo" 
+              className="w-72 h-auto object-contain"
             />
           </div>
           
@@ -151,12 +150,12 @@ const Auth = () => {
       {/* Right Panel - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center mb-8">
+           {/* Mobile Logo */}
+           <div className="lg:hidden flex items-center justify-center mb-8">
             <img 
-              src={otnLogo} 
-              alt="OTN Logo" 
-              className="w-32 h-auto object-contain"
+              src={otnLogoBlack} 
+              alt="OTNO Logo" 
+              className="w-64 h-auto object-contain"
             />
           </div>
 
