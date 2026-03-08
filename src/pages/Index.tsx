@@ -650,10 +650,7 @@ const Index = () => {
                                 </div>
                                 <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
                                 {section.isTest ? (
-                                  <div className="flex gap-2">
-                                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
-                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
-                                  </div>
+                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
                                 ) : (
                                   <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
                                     {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
