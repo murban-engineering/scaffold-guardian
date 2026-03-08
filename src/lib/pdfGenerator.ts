@@ -1543,6 +1543,10 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "<title>Hire Return Note - " + data.returnNoteNumber + "</title>" +
     "<style>" + SHARED_PRINT_STYLES + `
       .page[style*="background:#f8cddd"] .panel { border-color: #8a5a6b; }
+      @page { size: A4; margin: 8mm; }
+      @media print {
+        body { padding: 0 !important; }
+      }
     ` + "</style>" +
     "</head><body>" +
     gatePassPage() +
