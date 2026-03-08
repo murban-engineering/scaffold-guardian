@@ -1436,7 +1436,55 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   ).join("");
 
   const systemPage = (copyLabel: string) => `
-    <div class="page">
+    <div class="rn-page2">
+      <div class="rn-page2-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Part Number</th><th>Description</th>
+              <th class="text-right">On Site</th>
+              <th class="text-right">Good</th><th class="text-right">Dirty</th>
+              <th class="text-right">Damaged</th><th class="text-right">Scrap</th>
+              <th class="text-right">This Return</th><th class="text-right">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${systemItemRows}
+            <tr class="total-row">
+              <td colspan="7"><strong>Total This Return</strong></td>
+              <td class="text-right"><strong>${totalReturned}</strong></td>
+              <td></td>
+            </tr>
+            <tr class="total-row">
+              <td colspan="8"><strong>Mass (Ton)</strong></td>
+              <td class="text-right"><strong>${(totalMass / 1000).toFixed(3)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Yellow footer pinned at bottom of page 2 -->
+      <div class="rn-page2-footer">
+        <div class="rn-footer-brand">
+          <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+        </div>
+        <div class="rn-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 3</div>
+        <div class="rn-footer-processed">
+          <div>
+            <div>Processed By : ${data.createdBy || ""}</div>
+            <div>Processed Date : ${data.returnDate || ""}</div>
+          </div>
+          <div style="text-align:right;">
+            <div>Print date : ${formatTimestamp()}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const page3 = (copyLabel: string) => `
+    <div class="rn-page3">
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1455,35 +1503,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         hireEndDate: data.hireEndDate,
         createdBy: data.createdBy,
       })}
-
-      <table>
-        <thead>
-          <tr>
-            <th>Part Number</th><th>Description</th>
-            <th class="text-right">On Site</th>
-            <th class="text-right">Good</th><th class="text-right">Dirty</th>
-            <th class="text-right">Damaged</th><th class="text-right">Scrap</th>
-            <th class="text-right">This Return</th><th class="text-right">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${systemItemRows}
-          <tr class="total-row">
-            <td colspan="7"><strong>Total This Return</strong></td>
-            <td class="text-right"><strong>${totalReturned}</strong></td>
-            <td></td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="8"><strong>Mass (Ton)</strong></td>
-            <td class="text-right"><strong>${(totalMass / 1000).toFixed(3)}</strong></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  const page3 = (copyLabel: string) => `
-    <div class="rn-page3">
 
       <div class="post-total-grid">
         <div class="section">
@@ -1549,7 +1568,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       .page-header { display: none !important; }
       .page-header-spacer { display: none !important; }
 
-      /* Pink gate pass fills the full page */
+      /* Page 1: Pink gate pass fills the full page */
       .rn-gate-pass {
         background: #f8cddd;
         border: 1px solid #c58ea3;
@@ -1564,14 +1583,29 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         flex-direction: column;
         margin-bottom: 8px;
       }
-      .rn-gate-table-wrap table {
-        flex: 1;
-        height: 100%;
-        margin-bottom: 0;
-      }
+      .rn-gate-table-wrap table { flex: 1; height: 100%; margin-bottom: 0; }
       .rn-gate-table-wrap tbody tr { height: 22px; }
 
-      /* Page 3: break before + delivery-style layout */
+      /* Page 2: items table + yellow footer */
+      .rn-page2 {
+        page-break-before: always;
+        break-before: page;
+        display: flex;
+        flex-direction: column;
+        min-height: 92vh;
+        font-size: 9px;
+      }
+      .rn-page2-body { flex: 1; }
+      .rn-page2-footer { margin-top: auto; }
+      .rn-footer-brand {
+        background: #facc15; color: #1f2937; font-weight: 700;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 6px 10px;
+      }
+      .rn-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
+      .rn-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
+
+      /* Page 3: 4-panel headers + safety/signature section */
       .rn-page3 {
         page-break-before: always;
         break-before: page;
@@ -1585,6 +1619,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         @page { size: A4; margin: 8mm; }
         body { padding: 0 !important; }
         .rn-gate-pass { min-height: 96vh; }
+        .rn-page2 { break-before: page; min-height: 92vh; }
         .rn-page3 { break-before: page; min-height: 92vh; }
       }
     ` + "</style>" +
