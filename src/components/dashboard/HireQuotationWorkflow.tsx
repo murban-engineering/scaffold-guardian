@@ -4478,8 +4478,8 @@ const HireQuotationWorkflow = ({
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                Record the returned quantities by condition. Good and dirty items return to inventory,
-                while damaged and scrap items are logged to maintenance.
+                Record the returned quantities by condition. Good and dirty items return to inventory.
+                Damaged and scrap items are logged to maintenance only — scrap is permanently removed from stock.
               </p>
             </div>
 
