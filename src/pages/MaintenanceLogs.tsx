@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardCheck, AlertTriangle, Wrench, Trash2,
-  Search, Filter, ChevronDown, ArrowLeft, TrendingUp,
+  Search, Filter, ArrowLeft, TrendingUp, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,9 @@ const conditionConfig = {
     iconClass: "text-yellow-600",
     cardBg: "bg-yellow-50 border-yellow-100",
     dotClass: "bg-yellow-400",
+    statBg: "bg-yellow-50",
+    statBorder: "border-yellow-200",
+    statText: "text-yellow-700",
   },
   damaged: {
     label: "Damaged",
@@ -48,6 +51,9 @@ const conditionConfig = {
     iconClass: "text-orange-600",
     cardBg: "bg-orange-50 border-orange-100",
     dotClass: "bg-orange-400",
+    statBg: "bg-orange-50",
+    statBorder: "border-orange-200",
+    statText: "text-orange-700",
   },
   scrap: {
     label: "Scrap",
@@ -56,6 +62,9 @@ const conditionConfig = {
     iconClass: "text-red-600",
     cardBg: "bg-red-50 border-red-100",
     dotClass: "bg-red-500",
+    statBg: "bg-red-50",
+    statBorder: "border-red-200",
+    statText: "text-red-700",
   },
 };
 
@@ -98,6 +107,14 @@ const MaintenanceLogs = () => {
   };
   const totalQty = allLogs.reduce((sum, l) => sum + (parseReturnLog(l.issue_description ?? "").quantity ?? 0), 0);
 
+  const hasActiveFilters = search || conditionFilter !== "all" || priorityFilter !== "all";
+
+  const clearFilters = () => {
+    setSearch("");
+    setConditionFilter("all");
+    setPriorityFilter("all");
+  };
+
   const handleSidebarItemClick = (item: string) => {
     const routes: Record<string, string> = {
       dashboard: "/",
@@ -125,27 +142,34 @@ const MaintenanceLogs = () => {
       <Sidebar activeItem="maintenance" onItemClick={handleSidebarItemClick} />
       <div className="ml-0 md:ml-64">
         <Header title="Maintenance Logs" subtitle="Equipment return condition tracker" />
-        <main className="p-6 space-y-6">
+        <main className="p-4 md:p-6 space-y-4 md:space-y-6">
 
           {/* Back */}
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="text-muted-foreground hover:text-foreground -ml-1"
+          >
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Back to Dashboard
           </Button>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Stats Row — 2 cols on mobile, 4 on lg */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {/* Total */}
-            <Card className="border shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 rounded-lg bg-muted">
+            <Card className="border shadow-sm col-span-2 lg:col-span-1">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-muted shrink-0">
                     <TrendingUp className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <span className="text-xs text-muted-foreground font-medium">TOTAL ITEMS</span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide truncate">Total Items</p>
+                    <p className="text-2xl md:text-3xl font-bold leading-tight">{totalQty}</p>
+                    <p className="text-xs text-muted-foreground">{allLogs.length} entries</p>
+                  </div>
                 </div>
-                <p className="text-3xl font-bold">{totalQty}</p>
-                <p className="text-xs text-muted-foreground mt-1">{allLogs.length} log entries</p>
               </CardContent>
             </Card>
 
@@ -156,46 +180,62 @@ const MaintenanceLogs = () => {
                 .filter((l) => parseReturnLog(l.issue_description ?? "").condition === cond)
                 .reduce((sum, l) => sum + (parseReturnLog(l.issue_description ?? "").quantity ?? 0), 0);
               return (
-                <Card key={cond} className={`border shadow-sm ${cfg.cardBg}`}>
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="p-2 rounded-lg bg-white/60">
+                <Card key={cond} className={`border shadow-sm ${cfg.statBg} ${cfg.statBorder}`}>
+                  <CardContent className="p-4 md:p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-white/70 shrink-0">
                         <Icon className={`w-4 h-4 ${cfg.iconClass}`} />
                       </div>
-                      <span className="text-xs font-medium text-muted-foreground uppercase">{cond}</span>
+                      <div className="min-w-0">
+                        <p className={`text-xs font-medium uppercase tracking-wide truncate ${cfg.statText}`}>{cfg.label}</p>
+                        <p className="text-2xl md:text-3xl font-bold leading-tight">{count}</p>
+                        <p className="text-xs text-muted-foreground">{stats[cond]} entries</p>
+                      </div>
                     </div>
-                    <p className="text-3xl font-bold">{count}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stats[cond]} entries</p>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
 
-          {/* Table Card */}
+          {/* Main Card */}
           <Card className="border shadow-sm">
-            <CardHeader className="border-b pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <ClipboardCheck className="w-5 h-5 text-primary" />
-                  <CardTitle className="text-lg">Return Condition Log</CardTitle>
+            <CardHeader className="border-b pb-4 px-4 md:px-6">
+              {/* Title row */}
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardCheck className="w-5 h-5 text-primary shrink-0" />
+                <CardTitle className="text-base md:text-lg">Return Condition Log</CardTitle>
+                {filtered.length !== allLogs.length && (
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {filtered.length}/{allLogs.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Filters — stacked on mobile */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search item, client, quotation…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 h-9 text-sm w-full"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                {/* Filters */}
-                <div className="flex flex-wrap gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search item, client, quotation…"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-8 h-8 w-52 text-sm"
-                    />
-                  </div>
+                <div className="flex gap-2">
                   <Select value={conditionFilter} onValueChange={setConditionFilter}>
-                    <SelectTrigger className="h-8 w-32 text-sm gap-1">
-                      <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                    <SelectTrigger className="h-9 flex-1 sm:w-36 text-sm">
+                      <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1 shrink-0" />
                       <SelectValue placeholder="Condition" />
-                      <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Conditions</SelectItem>
@@ -205,7 +245,7 @@ const MaintenanceLogs = () => {
                     </SelectContent>
                   </Select>
                   <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                    <SelectTrigger className="h-8 w-28 text-sm">
+                    <SelectTrigger className="h-9 flex-1 sm:w-32 text-sm">
                       <SelectValue placeholder="Priority" />
                     </SelectTrigger>
                     <SelectContent>
@@ -216,20 +256,20 @@ const MaintenanceLogs = () => {
                       <SelectItem value="low">Low</SelectItem>
                     </SelectContent>
                   </Select>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={clearFilters} title="Clear filters">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
-              {filtered.length !== allLogs.length && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Showing {filtered.length} of {allLogs.length} entries
-                </p>
-              )}
             </CardHeader>
 
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 space-y-3">
+                <div className="p-4 md:p-6 space-y-3">
                   {[1, 2, 3, 4, 5].map((row) => (
-                    <Skeleton key={row} className="h-12 w-full rounded-lg" />
+                    <Skeleton key={row} className="h-16 w-full rounded-xl" />
                   ))}
                 </div>
               ) : error ? (
@@ -238,93 +278,154 @@ const MaintenanceLogs = () => {
                   <p className="font-medium">Unable to load maintenance logs</p>
                 </div>
               ) : filtered.length ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead className="w-8 pl-4"></TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Item</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Condition</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide text-center">Qty</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Client</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Quotation</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Priority</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide">Status</TableHead>
-                        <TableHead className="font-semibold text-xs uppercase tracking-wide pr-4">Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((log) => {
-                        const parsed = parseReturnLog(log.issue_description ?? "");
-                        const cond = parsed.condition as keyof typeof conditionConfig | null;
-                        const cfg = cond ? conditionConfig[cond] : null;
-                        const Icon = cfg?.icon ?? ClipboardCheck;
-                        const itemLabel = log.scaffolds?.description || log.scaffolds?.part_number || "Scaffold item";
-                        const pCfg = priorityConfig[log.priority] ?? priorityConfig.medium;
+                <>
+                  {/* Mobile card list */}
+                  <div className="md:hidden divide-y divide-border">
+                    {filtered.map((log) => {
+                      const parsed = parseReturnLog(log.issue_description ?? "");
+                      const cond = parsed.condition as keyof typeof conditionConfig | null;
+                      const cfg = cond ? conditionConfig[cond] : null;
+                      const Icon = cfg?.icon ?? ClipboardCheck;
+                      const itemLabel = log.scaffolds?.description || log.scaffolds?.part_number || "Scaffold item";
+                      const pCfg = priorityConfig[log.priority] ?? priorityConfig.medium;
 
-                        return (
-                          <TableRow key={log.id} className="hover:bg-muted/20 transition-colors">
-                            <TableCell className="pl-4">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${cfg ? cfg.cardBg : "bg-muted"}`}>
-                                <Icon className={`w-3.5 h-3.5 ${cfg?.iconClass ?? "text-muted-foreground"}`} />
+                      return (
+                        <div key={log.id} className="px-4 py-3.5 hover:bg-muted/20 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${cfg ? cfg.cardBg : "bg-muted"}`}>
+                              <Icon className={`w-4 h-4 ${cfg?.iconClass ?? "text-muted-foreground"}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="font-semibold text-sm truncate">{itemLabel}</span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${log.is_resolved ? "bg-green-400" : "bg-amber-400"}`} />
+                                  <span className="text-xs text-muted-foreground">{log.is_resolved ? "Resolved" : "Open"}</span>
+                                </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-medium text-sm">{itemLabel}</span>
-                            </TableCell>
-                            <TableCell>
-                              {cfg ? (
-                                <Badge className={`text-xs border font-medium ${cfg.badgeClass}`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${cfg.dotClass}`} />
-                                  {cfg.label}
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">Unknown</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="font-bold text-base tabular-nums">
-                                {parsed.quantity ?? "—"}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-sm">{parsed.client || <span className="text-muted-foreground text-xs">—</span>}</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
-                                {parsed.quotation || "—"}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={`text-xs border ${pCfg.class}`}>
-                                {pCfg.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5">
-                                <span className={`w-1.5 h-1.5 rounded-full ${log.is_resolved ? "bg-green-400" : "bg-amber-400"}`} />
-                                <span className="text-xs text-muted-foreground">
-                                  {log.is_resolved ? "Resolved" : "Open"}
+                              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                {cfg && (
+                                  <Badge className={`text-xs border font-medium ${cfg.badgeClass}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full mr-1 inline-block ${cfg.dotClass}`} />
+                                    {cfg.label}
+                                  </Badge>
+                                )}
+                                <Badge className={`text-xs border ${pCfg.class}`}>{pCfg.label}</Badge>
+                                {parsed.quantity !== null && (
+                                  <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-full">
+                                    Qty: {parsed.quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                                {parsed.client && <span className="truncate max-w-[140px]">👤 {parsed.client}</span>}
+                                {parsed.quotation && (
+                                  <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">
+                                    {parsed.quotation}
+                                  </span>
+                                )}
+                                <span>
+                                  {new Date(log.created_at).toLocaleDateString("en-ZA", {
+                                    year: "numeric", month: "short", day: "numeric",
+                                  })}
                                 </span>
                               </div>
-                            </TableCell>
-                            <TableCell className="pr-4 text-xs text-muted-foreground whitespace-nowrap">
-                              {new Date(log.created_at).toLocaleDateString("en-ZA", {
-                                year: "numeric", month: "short", day: "numeric",
-                              })}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-20 text-muted-foreground">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                    <ClipboardCheck className="w-8 h-8 opacity-40" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="font-semibold text-foreground">
+
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                          <TableHead className="w-8 pl-6"></TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Item</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Condition</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide text-center">Qty</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Client</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Quotation</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Priority</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide">Status</TableHead>
+                          <TableHead className="font-semibold text-xs uppercase tracking-wide pr-6">Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map((log) => {
+                          const parsed = parseReturnLog(log.issue_description ?? "");
+                          const cond = parsed.condition as keyof typeof conditionConfig | null;
+                          const cfg = cond ? conditionConfig[cond] : null;
+                          const Icon = cfg?.icon ?? ClipboardCheck;
+                          const itemLabel = log.scaffolds?.description || log.scaffolds?.part_number || "Scaffold item";
+                          const pCfg = priorityConfig[log.priority] ?? priorityConfig.medium;
+
+                          return (
+                            <TableRow key={log.id} className="hover:bg-muted/20 transition-colors">
+                              <TableCell className="pl-6">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center ${cfg ? cfg.cardBg : "bg-muted"}`}>
+                                  <Icon className={`w-3.5 h-3.5 ${cfg?.iconClass ?? "text-muted-foreground"}`} />
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-medium text-sm">{itemLabel}</span>
+                              </TableCell>
+                              <TableCell>
+                                {cfg ? (
+                                  <Badge className={`text-xs border font-medium ${cfg.badgeClass}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${cfg.dotClass}`} />
+                                    {cfg.label}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">Unknown</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <span className="font-bold text-base tabular-nums">
+                                  {parsed.quantity ?? "—"}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm">{parsed.client || <span className="text-muted-foreground text-xs">—</span>}</span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                                  {parsed.quotation || "—"}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={`text-xs border ${pCfg.class}`}>
+                                  {pCfg.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${log.is_resolved ? "bg-green-400" : "bg-amber-400"}`} />
+                                  <span className="text-xs text-muted-foreground">
+                                    {log.is_resolved ? "Resolved" : "Open"}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="pr-6 text-xs text-muted-foreground whitespace-nowrap">
+                                {new Date(log.created_at).toLocaleDateString("en-ZA", {
+                                  year: "numeric", month: "short", day: "numeric",
+                                })}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-16 px-4 text-muted-foreground">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                    <ClipboardCheck className="w-7 h-7 opacity-40" />
+                  </div>
+                  <p className="font-semibold text-foreground text-sm md:text-base">
                     {allLogs.length > 0 ? "No results match your filters" : "No maintenance logs yet"}
                   </p>
                   <p className="text-sm mt-1 max-w-xs mx-auto">
@@ -333,7 +434,7 @@ const MaintenanceLogs = () => {
                       : "Dirty, damaged, and scrap returns from hire workflows will appear here."}
                   </p>
                   {allLogs.length > 0 && (
-                    <Button variant="outline" size="sm" className="mt-4" onClick={() => { setSearch(""); setConditionFilter("all"); setPriorityFilter("all"); }}>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
                       Clear Filters
                     </Button>
                   )}
