@@ -2698,8 +2698,7 @@ const HireQuotationWorkflow = ({
       return;
     }
     const reportedByUserId = user.id;
-    const conditionPriority: Record<string, "low" | "medium" | "high" | "urgent"> = {
-      dirty: "low",
+    const conditionPriority: Record<"damaged" | "scrap", "high" | "urgent"> = {
       damaged: "high",
       scrap: "urgent",
     };
