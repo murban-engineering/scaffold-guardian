@@ -641,7 +641,7 @@ const Index = () => {
                               <TableHead>Site</TableHead>
                               <TableHead>Order Summary</TableHead>
                               <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Continue</TableHead>
+                              <TableHead className="text-right">Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
