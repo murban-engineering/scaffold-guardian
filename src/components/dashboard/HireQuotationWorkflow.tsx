@@ -1091,6 +1091,13 @@ const HireQuotationWorkflow = ({
     // Only auto-sync for test quotations that have a DB record
     if (!isTestQuotation) return;
 
+    // If items were just loaded FROM the database, skip this sync cycle entirely.
+    // This prevents the clear → re-insert → realtime-update → reload → clear loop.
+    if (justLoadedFromDBRef.current) {
+      justLoadedFromDBRef.current = false;
+      return;
+    }
+
     if (!hasRunInitialEquipmentAutoSyncRef.current) {
       hasRunInitialEquipmentAutoSyncRef.current = true;
       // Prevent wiping server line items during refresh before equipment hydration completes.
