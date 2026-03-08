@@ -268,7 +268,7 @@ const SHARED_PRINT_STYLES = `
   /* ── Branding block (no border) ── */
   .brand-block { padding: 8px 10px; }
   .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-  .brand-logo { width: 60px; height: auto; }
+  .brand-logo { width: 120px; height: auto; }
   .brand-title { font-size: 14px; font-weight: 800; line-height: 1.15; color: #111827; }
   .brand-meta { font-size: 9px; color: #374151; }
 
@@ -293,7 +293,7 @@ const SHARED_PRINT_STYLES = `
   .hire-quotation-layout .standard-report-right { gap: 8px; }
   .hire-quotation-layout .brand-block { padding: 6px 8px 4px; }
   .hire-quotation-layout .brand-top { gap: 10px; margin-bottom: 4px; }
-  .hire-quotation-layout .brand-logo { width: 58px; }
+  .hire-quotation-layout .brand-logo { width: 116px; }
   .hire-quotation-layout .brand-title { font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
   .hire-quotation-layout .brand-meta { font-size: 8px; }
   .hire-quotation-layout .report-title {
@@ -375,7 +375,7 @@ const renderPageHeader = (docTitle: string, docNumber: string, clientName: strin
   <div class="page-header">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:36px;height:auto;"/>
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
         <div>
           <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
           <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
@@ -744,7 +744,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
         body { font-family: Arial, sans-serif; padding: 16px; font-size: 11px; }
         .yard-note h1 { text-align: center; font-size: 16px; margin-bottom: 8px; letter-spacing: 0.6px; text-transform: uppercase; }
         .yard-note-header { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 8px; }
-        .yard-note-header .brand-logo { width: 48px; height: auto; }
+        .yard-note-header .brand-logo { width: 96px; height: auto; }
         .yard-note-table { width: 100%; border-collapse: collapse; font-size: 10px; }
         .yard-note-table th, .yard-note-table td { border: 1px solid #333; padding: 5px; }
         .yard-note-table th { background: #f5f5f5; text-align: center; }
@@ -1078,7 +1078,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="hq-page2-footer">
         <div class="hq-footer-brand">
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:40px;height:auto;"/>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
         </div>
         <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
         <div class="hq-footer-processed">
