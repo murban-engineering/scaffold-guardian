@@ -355,11 +355,22 @@ const SHARED_PRINT_STYLES = `
     display: flex;
     flex-direction: column;
   }
-  body > .hire-quotation-page {
+  body > .hire-quotation-page,
+  body.hire-quotation-print > .hire-quotation-page {
     min-height: 92vh;
   }
+  /* Nested header wrappers inside page-2 containers must never get min-height */
+  .hq-page2 .hire-quotation-page,
+  .hl-page2 .hire-quotation-page,
+  .hd-page2 .hire-quotation-page {
+    min-height: unset !important;
+  }
   @media print {
-    body > .hire-quotation-page { min-height: 92vh; }
+    body > .hire-quotation-page,
+    body.hire-quotation-print > .hire-quotation-page { min-height: 92vh; }
+    .hq-page2 .hire-quotation-page,
+    .hl-page2 .hire-quotation-page,
+    .hd-page2 .hire-quotation-page { min-height: unset !important; }
   }
 
   /* ── Copy badge ── */
@@ -1082,6 +1093,10 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         .hq-page2 {
           max-width: 100%;
           overflow: hidden;
+        }
+        /* Nested header wrapper on page 2 must NOT stretch to full page height */
+        .hq-page2 .hire-quotation-page {
+          min-height: unset !important;
         }
         .hq-acknowledge p:last-of-type { margin-bottom: 2px; }
       }
