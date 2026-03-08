@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Printer, CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
 import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -1248,7 +1247,7 @@ const Accounting = () => {
                                     dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
                                     createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
                                     discountRate: 0,
-                                    clientId: q.client_id || toClientIdFromQuotationNumber(q.quotation_number),
+                                    clientId: q.client_id || "",
                                     items: lineItems.map((li) => {
                                       const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
                                       const rate = li.weekly_rate ?? 0;

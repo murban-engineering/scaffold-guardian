@@ -34,7 +34,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { getNextTestQuotationNumber, isTestQuotationNumber } from "@/lib/testQuotation";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 const Index = () => {
   useRealtimeSync();
@@ -114,7 +113,7 @@ const Index = () => {
   };
 
   const toClientId = (quotation: HireQuotation | null) =>
-    quotation?.client_id || toClientIdFromQuotationNumber(quotation?.quotation_number) || "No client ID";
+    quotation?.client_id || "No client ID";
 
   const existingClientOptions = hireQuotations
     .filter((quotation) => (quotation.company_name || quotation.site_manager_name) && quotation.quotation_number)
