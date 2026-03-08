@@ -2706,8 +2706,8 @@ const HireQuotationWorkflow = ({
 
     const maintenanceEntries = returnItems
       .flatMap((item) => {
-        const entries: { condition: "dirty" | "damaged" | "scrap"; qty: number }[] = [
-          { condition: "dirty", qty: parseNumber(item.dirty) },
+        // Only damaged and scrap go to maintenance — dirty returns to inventory, scrap does NOT
+        const entries: { condition: "damaged" | "scrap"; qty: number }[] = [
           { condition: "damaged", qty: parseNumber(item.damaged) },
           { condition: "scrap", qty: parseNumber(item.scrap) },
         ];
