@@ -19,6 +19,12 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Mounts realtime sync globally so ALL pages stay in sync across all users
+const GlobalSync = () => {
+  useRealtimeSync();
+  return null;
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -44,6 +50,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <GlobalSync />
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route
