@@ -353,26 +353,26 @@ const Index = () => {
         <Header title={headerTitle} subtitle={headerSubtitle} searchValue={globalSearch} onSearchChange={(v) => { setGlobalSearch(v); if (v.trim() && activeItem === "dashboard") setActiveItem("inventory"); }} />
 
         {activeItem === "inventory" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur">
               <InventoryOverview externalSearch={globalSearch} />
             </div>
           </div>
         ) : activeItem === "workforce" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur">
               <SignedInUsers />
             </div>
           </div>
         ) : activeItem === "otnoai" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur overflow-hidden" style={{ height: "calc(100vh - 160px)" }}>
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur overflow-hidden" style={{ height: "calc(100vh - 140px)" }}>
               <AIChatAssistant embedded />
             </div>
           </div>
         ) : (activeItem === "site-master" || activeItem === "yard-verification") && selectedQuotation ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-3 sm:p-6 shadow-sm backdrop-blur">
               <HireQuotationWorkflow
                 key={`${selectedQuotation.id}-${activeItem}`}
                 initialQuotation={liveSelectedQuotation}
@@ -384,7 +384,7 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
+          <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-8">
             {/* Quick Actions with Hire Quotation Button */}
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
