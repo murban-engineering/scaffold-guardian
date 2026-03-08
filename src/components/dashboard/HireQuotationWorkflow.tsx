@@ -735,6 +735,9 @@ const HireQuotationWorkflow = ({
       initialQuotation.status === "completed" ||
       !!initialQuotation.dispatch_date;
     
+    // Mark that we are about to load items directly from DB so the auto-sync
+    // skips one cycle and avoids the clear → re-insert → realtime → reload loop.
+    justLoadedFromDBRef.current = true;
     setEquipmentItems(
       lineItems.map(item => {
         const originalQty = item.quantity ?? 0;
