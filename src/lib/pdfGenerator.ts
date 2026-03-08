@@ -769,6 +769,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
           </tr>
         </tbody>
       </table>
+      ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
 
     <!-- ═══ PAGE 2: Header repeat + 4 signature/verification sections ═══ -->
