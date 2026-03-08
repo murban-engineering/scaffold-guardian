@@ -663,7 +663,7 @@ const HireQuotationWorkflow = ({
     } else {
       setEquipmentItems([]);
     }
-  }, [initialQuotation, initialExistingClient?.id, initialClientMode, isTestQuotation]);
+  }, [initialQuotation, initialExistingClient?.id, initialExistingClient?.line_items, initialClientMode, isTestQuotation, mapDatabaseLineItemsToEquipment]);
 
   useEffect(() => {
     if (!initialQuotation) return;
