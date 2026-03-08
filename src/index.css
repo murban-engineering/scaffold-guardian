@@ -6,30 +6,30 @@
 
 @layer base {
   :root {
-    /* O+N Brand Red Theme */
+    /* Neutral light dashboard theme */
     --background: 0 0% 100%;
-    --foreground: 0 10% 13%;
+    --foreground: 190 30% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 10% 13%;
+    --card-foreground: 190 30% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 10% 13%;
+    --popover-foreground: 190 30% 17%;
 
-    /* O+N Logo Red */
-    --primary: 4 82% 52%;
+    --primary: 186 74% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 10% 96%;
-    --secondary-foreground: 0 10% 13%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 190 30% 17%;
 
-    --muted: 0 8% 95%;
-    --muted-foreground: 0 6% 45%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 194 14% 43%;
 
-    --accent: 0 8% 94%;
-    --accent-foreground: 0 10% 20%;
+    --accent: 210 20% 95%;
+    --accent-foreground: 215 25% 27%;
 
-    --destructive: 0 84% 45%;
+    /* Warm Red Destructive */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     /* Status Colors */
@@ -39,32 +39,32 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
 
-    --danger: 0 84% 45%;
+    --danger: 0 72% 51%;
     --danger-foreground: 0 0% 100%;
 
-    --border: 0 8% 88%;
-    --input: 0 8% 88%;
-    --ring: 4 82% 52%;
+    --border: 214 21% 89%;
+    --input: 214 21% 89%;
+    --ring: 186 74% 39%;
 
     --radius: 1rem;
 
-    /* Sidebar — white with red accents */
+    /* Sidebar — neutral light */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 10% 13%;
-    --sidebar-primary: 4 82% 52%;
+    --sidebar-foreground: 190 30% 17%;
+    --sidebar-primary: 186 74% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 8% 94%;
-    --sidebar-accent-foreground: 0 10% 20%;
-    --sidebar-border: 0 8% 88%;
-    --sidebar-ring: 4 82% 52%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 215 25% 27%;
+    --sidebar-border: 214 21% 89%;
+    --sidebar-ring: 186 74% 39%;
 
     /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(4 82% 52%), hsl(10 80% 60%));
+    --gradient-primary: linear-gradient(135deg, hsl(186 74% 39%), hsl(194 74% 46%));
     --gradient-success: linear-gradient(135deg, hsl(152 60% 40%), hsl(160 55% 50%));
     --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(45 90% 55%));
-    --gradient-danger: linear-gradient(135deg, hsl(0 84% 45%), hsl(8 78% 52%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(10 70% 55%));
 
-    --chart-1: 4 82% 52%;
+    --chart-1: 186 74% 39%;
     --chart-2: 152 60% 40%;
     --chart-3: 38 92% 50%;
     --chart-4: 200 50% 50%;
@@ -78,10 +78,10 @@
 
     --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.03);
     --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.04);
-    --shadow-sm: 0 6px 14px -8px hsl(4 60% 40% / 0.22);
-    --shadow: 0 10px 30px -16px hsl(4 60% 35% / 0.24);
-    --shadow-md: 0 16px 34px -18px hsl(4 60% 32% / 0.3);
-    --shadow-lg: 0 20px 45px -22px hsl(4 60% 30% / 0.34);
+    --shadow-sm: 0 6px 14px -8px hsl(189 35% 35% / 0.22);
+    --shadow: 0 10px 30px -16px hsl(189 35% 30% / 0.24);
+    --shadow-md: 0 16px 34px -18px hsl(189 35% 28% / 0.3);
+    --shadow-lg: 0 20px 45px -22px hsl(189 35% 26% / 0.34);
     --shadow-xl: 0 16px 40px -6px hsl(0 0% 0% / 0.1), 0 8px 16px -4px hsl(0 0% 0% / 0.04);
     --shadow-2xl: 0 24px 48px -8px hsl(0 0% 0% / 0.15);
 
@@ -90,51 +90,50 @@
   }
 
   .dark {
-    --background: 0 8% 9%;
-    --foreground: 0 5% 95%;
+    --background: 210 15% 10%;
+    --foreground: 160 10% 95%;
 
-    --card: 0 6% 12%;
-    --card-foreground: 0 5% 95%;
+    --card: 210 12% 14%;
+    --card-foreground: 160 10% 95%;
 
-    --popover: 0 6% 12%;
-    --popover-foreground: 0 5% 95%;
+    --popover: 210 12% 14%;
+    --popover-foreground: 160 10% 95%;
 
-    /* O+N Red — slightly lighter in dark mode */
-    --primary: 4 78% 58%;
+    --primary: 172 50% 42%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 6% 16%;
-    --secondary-foreground: 0 5% 95%;
+    --secondary: 210 12% 18%;
+    --secondary-foreground: 160 10% 95%;
 
-    --muted: 0 6% 16%;
-    --muted-foreground: 0 5% 55%;
+    --muted: 210 12% 18%;
+    --muted-foreground: 160 8% 55%;
 
-    --accent: 0 6% 18%;
-    --accent-foreground: 4 78% 65%;
+    --accent: 210 12% 20%;
+    --accent-foreground: 172 50% 60%;
 
-    --destructive: 0 70% 48%;
+    --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 6% 18%;
-    --input: 0 6% 20%;
-    --ring: 4 78% 58%;
+    --border: 210 10% 20%;
+    --input: 210 10% 22%;
+    --ring: 172 50% 42%;
 
-    --sidebar-background: 0 8% 10%;
-    --sidebar-foreground: 0 5% 90%;
-    --sidebar-primary: 4 78% 58%;
+    --sidebar-background: 210 15% 11%;
+    --sidebar-foreground: 160 10% 90%;
+    --sidebar-primary: 172 50% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 6% 16%;
-    --sidebar-accent-foreground: 4 78% 65%;
-    --sidebar-border: 0 6% 16%;
-    --sidebar-ring: 4 78% 58%;
+    --sidebar-accent: 210 12% 18%;
+    --sidebar-accent-foreground: 172 50% 60%;
+    --sidebar-border: 210 10% 18%;
+    --sidebar-ring: 172 50% 42%;
 
-    --chart-1: 4 78% 58%;
+    --chart-1: 172 50% 42%;
     --chart-2: 152 50% 45%;
     --chart-3: 38 80% 55%;
     --chart-4: 200 50% 55%;
     --chart-5: 280 40% 60%;
 
-    --sidebar: 0 6% 12%;
+    --sidebar: 210 12% 14%;
 
     --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.1);
     --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.12);
