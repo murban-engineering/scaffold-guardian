@@ -1051,7 +1051,7 @@ const Accounting = () => {
                                         <SelectItem value="dds">Tax Invoice Copy</SelectItem>
                                         <SelectItem
                                           value="scrap"
-                                          disabled={inv.policyBreakdown.filter((l) => l.condition === "scrap").length === 0}
+                                          disabled={inv.policyBreakdown.length === 0}
                                         >
                                           Scrap Report
                                         </SelectItem>
