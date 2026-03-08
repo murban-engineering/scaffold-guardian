@@ -150,12 +150,12 @@ const Auth = () => {
       {/* Right Panel - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center mb-8">
+           {/* Mobile Logo */}
+           <div className="lg:hidden flex items-center justify-center mb-8">
             <img 
-              src={otnLogo} 
-              alt="OTN Logo" 
-              className="w-32 h-auto object-contain"
+              src={otnLogoBlack} 
+              alt="OTNO Logo" 
+              className="w-64 h-auto object-contain"
             />
           </div>
 
