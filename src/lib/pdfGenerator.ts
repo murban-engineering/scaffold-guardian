@@ -1435,21 +1435,25 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </tr>`
   ).join("");
 
-  const systemPage = (copyLabel: string) => `
-    <div class="page">
-      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #111;padding-bottom:6px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
-          <div>
-            <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
-            <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
-          </div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Hire Return Note</div>
-          <div style="font-size:8px;color:#555;">${data.returnNoteNumber} &bull; ${data.companyName}</div>
+  // ── Inline header used on pages 2 and 3 ────────────────────────────────────
+  const rnHeader = `
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid #111;padding-bottom:6px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
+        <div>
+          <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
+          <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
         </div>
       </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Hire Return Note</div>
+        <div style="font-size:8px;color:#555;">${data.returnNoteNumber} &bull; ${data.companyName}</div>
+      </div>
+    </div>`;
+
+  const systemPage = (copyLabel: string) => `
+    <div class="page">
+      ${rnHeader}
       ${renderStandardReportLayout({
         documentType: "Hire Return Note",
         documentNumber: data.returnNoteNumber,
@@ -1492,8 +1496,14 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           </tr>
         </tbody>
       </table>
+    </div>
+  `;
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+  const page3 = (copyLabel: string) => `
+    <div class="rn-page3">
+      ${rnHeader}
+
+      <div class="post-total-grid">
         <div class="section">
           <h4>SAFETY VERIFICATION</h4>
           <p>Vehicle safely loaded as per palletizing &amp; loading procedure</p>
@@ -1507,40 +1517,37 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
-        <div style="border-top:2px solid #333;padding-top:6px;">
-          <p><strong>OTNO Representative</strong></p>
-          <p>Name: ${data.receivedBy || "_______________"}</p>
-          <p>Signature: _______________ &nbsp; Date: _______________</p>
-        </div>
-        <div style="border-top:2px solid #333;padding-top:6px;">
-          <p><strong>Vehicle Reg No:</strong> ${data.vehicleNo || "_______________"}</p>
-          <p><strong>Transporter / Customer / Driver</strong></p>
-          <p>Name: ${data.returnedBy || "_______________"}</p>
-          <p>Signature: _______________ &nbsp; Date: _______________</p>
-        </div>
-        <div style="border-top:2px solid #333;padding-top:6px;">
-          <p><strong>Customer Representative</strong></p>
-          <p>Name: _______________</p>
-          <p>Signature: _______________ &nbsp; Date: _______________</p>
+      <div class="section" style="margin-bottom:8px;">
+        <div class="signing-grid">
+          <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Transporter / Customer / Driver:</span><span class="line-fill">${data.returnedBy || ""}</span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
         </div>
       </div>
 
-      <div class="line-row" style="margin-top:8px;">
-        <span>Time Arrive:</span><span class="line-fill"></span>
-        <span style="margin-left:24px;">Time Depart:</span><span class="line-fill"></span>
+      <div class="section" style="margin-bottom:8px;">
+        <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
+        <div class="line-row"><span>Name of Transporter / Customer:</span><span class="line-fill"></span></div>
+        <div class="line-row split-row">
+          <span>Time Arrive:</span><span class="line-fill"></span>
+          <span>Time Depart:</span><span class="line-fill"></span>
+        </div>
       </div>
 
-      <p style="margin-top:8px;font-size:9px;">Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on <strong>${data.returnDate}</strong>.</p>
-      <p style="font-size:9px;">All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+      <div class="section" style="margin-bottom:8px;min-height:40px;">
+        <h3>Customer Comments:</h3>
+      </div>
 
-      <div class="section" style="margin-top:8px;">
-        <strong>Charges:</strong>
-        <ul style="padding-left:14px;margin-top:3px;font-size:9px;">
-          <li><strong>Dirty Equipment:</strong> Will be charged at 2× the list hire price of the item.</li>
-          <li><strong>Damaged Equipment:</strong> Will be charged at 4× the list hire price of the item.</li>
-          <li><strong>Lost / Scrap Equipment:</strong> Will be charged at the selling price of the item.</li>
-        </ul>
+      <div class="section terms-section">
+        <p><strong>Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on ${data.returnDate}.</strong></p>
+        <p>All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+        <p><strong>Charges:</strong> Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost / Scrap: selling price of item.</p>
       </div>
 
       ${data.remarks ? `<div class="section" style="margin-top:8px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
@@ -1581,15 +1588,28 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         margin-bottom: 0;
       }
       .rn-gate-table-wrap tbody tr { height: 22px; }
+
+      /* Page 3: break before + delivery-style layout */
+      .rn-page3 {
+        page-break-before: always;
+        break-before: page;
+        font-size: 9px;
+        display: flex;
+        flex-direction: column;
+        min-height: 92vh;
+      }
+
       @media print {
         @page { size: A4; margin: 8mm; }
         body { padding: 0 !important; }
         .rn-gate-pass { min-height: 96vh; }
+        .rn-page3 { break-before: page; min-height: 92vh; }
       }
     ` + "</style>" +
     "</head><body>" +
     gatePassPage() +
     systemPage("Company Copy") +
+    page3("Company Copy") +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
