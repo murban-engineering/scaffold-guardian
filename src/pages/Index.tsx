@@ -514,8 +514,8 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Mini Calendar */}
-                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 text-white shadow-lg">
+                {/* Mini Calendar — hidden on mobile to save space */}
+                <div className="hidden lg:block rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 text-white shadow-lg">
                   <DashboardCalendar />
                 </div>
               </div>
@@ -523,7 +523,7 @@ const Index = () => {
             </div>
 
             {/* Chart + Clients Row */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[1fr_1fr]">
               <ActiveClients />
               <InventoryOverview chartOnly />
             </div>
@@ -534,7 +534,7 @@ const Index = () => {
             </div>
 
             {/* Bottom Grid */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               <RecentInspections />
               <ActiveSites processedClient={processedClient} />
             </div>
