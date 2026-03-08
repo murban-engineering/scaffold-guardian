@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import Index from "./pages/Index";
 import Sites from "./pages/Sites";
 import PreviousClients from "./pages/PreviousClients";
@@ -17,6 +18,12 @@ import SiteMasterPlan from "./pages/SiteMasterPlan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Mounts realtime sync globally so ALL pages stay in sync across all users
+const GlobalSync = () => {
+  useRealtimeSync();
+  return null;
+};
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -43,6 +50,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <GlobalSync />
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route
