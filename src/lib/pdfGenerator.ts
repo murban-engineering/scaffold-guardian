@@ -268,7 +268,7 @@ const SHARED_PRINT_STYLES = `
   /* ── Branding block (no border) ── */
   .brand-block { padding: 8px 10px; }
   .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-  .brand-logo { width: 60px; height: auto; }
+  .brand-logo { width: 120px; height: auto; }
   .brand-title { font-size: 14px; font-weight: 800; line-height: 1.15; color: #111827; }
   .brand-meta { font-size: 9px; color: #374151; }
 
