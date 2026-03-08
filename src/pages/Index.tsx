@@ -353,26 +353,26 @@ const Index = () => {
         <Header title={headerTitle} subtitle={headerSubtitle} searchValue={globalSearch} onSearchChange={(v) => { setGlobalSearch(v); if (v.trim() && activeItem === "dashboard") setActiveItem("inventory"); }} />
 
         {activeItem === "inventory" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur">
               <InventoryOverview externalSearch={globalSearch} />
             </div>
           </div>
         ) : activeItem === "workforce" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-6 shadow-sm backdrop-blur">
               <SignedInUsers />
             </div>
           </div>
         ) : activeItem === "otnoai" ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur overflow-hidden" style={{ height: "calc(100vh - 160px)" }}>
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur overflow-hidden" style={{ height: "calc(100vh - 140px)" }}>
               <AIChatAssistant embedded />
             </div>
           </div>
         ) : (activeItem === "site-master" || activeItem === "yard-verification") && selectedQuotation ? (
-          <div className="mx-auto w-full max-w-7xl px-6 py-8">
-            <div className="rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+          <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+            <div className="rounded-2xl border border-border/60 bg-card/80 p-3 sm:p-6 shadow-sm backdrop-blur">
               <HireQuotationWorkflow
                 key={`${selectedQuotation.id}-${activeItem}`}
                 initialQuotation={liveSelectedQuotation}
@@ -384,24 +384,24 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-7xl space-y-8 px-6 py-8">
+          <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-8 px-3 py-4 sm:px-6 sm:py-8">
             {/* Quick Actions with Hire Quotation Button */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[1fr_auto]">
                 {/* Date + Quotation Actions */}
-                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-6 text-white shadow-lg">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 sm:p-6 text-white shadow-lg">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
                         {new Date().toLocaleDateString("en-US", { weekday: "long" })}
                       </p>
-                      <p className="mt-1 text-5xl font-bold leading-none tracking-tight">
+                      <p className="mt-0.5 text-4xl sm:text-5xl font-bold leading-none tracking-tight">
                         {new Date().getDate()}
                       </p>
-                      <p className="mt-2 text-sm text-white/70">
+                      <p className="mt-1.5 text-sm text-white/70">
                         {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                       </p>
-                      <p className="mt-1 text-lg font-medium text-white/90">
+                      <p className="mt-0.5 text-base font-medium text-white/90">
                         {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
@@ -514,8 +514,8 @@ const Index = () => {
                   </div>
                 </div>
 
-                {/* Mini Calendar */}
-                <div className="rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 text-white shadow-lg">
+                {/* Mini Calendar — hidden on mobile to save space */}
+                <div className="hidden lg:block rounded-2xl bg-gradient-to-br from-[hsl(172_50%_26%)] to-[hsl(172_50%_20%)] p-4 text-white shadow-lg">
                   <DashboardCalendar />
                 </div>
               </div>
@@ -523,7 +523,7 @@ const Index = () => {
             </div>
 
             {/* Chart + Clients Row */}
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[1fr_1fr]">
               <ActiveClients />
               <InventoryOverview chartOnly />
             </div>
@@ -534,7 +534,7 @@ const Index = () => {
             </div>
 
             {/* Bottom Grid */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               <RecentInspections />
               <ActiveSites processedClient={processedClient} />
             </div>
@@ -557,9 +557,9 @@ const Index = () => {
             }
           }}
         >
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-6xl max-h-[92vh] overflow-y-auto p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle>{isTestQuotationFlow ? `Test Quotation — ${liveSelectedQuotation?.quotation_number ?? "Draft"}` : "Create Hire Quotation"}</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">{isTestQuotationFlow ? `Test Quotation — ${liveSelectedQuotation?.quotation_number ?? "Draft"}` : "Create Hire Quotation"}</DialogTitle>
             </DialogHeader>
             <HireQuotationWorkflow 
               key={`${selectedQuotation?.id ?? "new"}:${selectedExistingClient?.id ?? "none"}:${workflowInitialClientMode}:${workflowInitialStep ?? "client"}:${isTestQuotationFlow ? "test" : "standard"}`}
@@ -584,9 +584,9 @@ const Index = () => {
             setActiveItem("dashboard");
           }
         }}>
-          <DialogContent className="max-w-5xl">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">
                 {activeItem === "site-master" ? "Select Quotation for Site Master Plan" : activeItem === "yard-verification" ? "Select Quotation for Yard Verification" : "Continue Saved Quotation"}
               </DialogTitle>
             </DialogHeader>
@@ -596,8 +596,8 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
-              <div className="grid gap-2 md:w-[360px]">
-                <Label htmlFor="continue-client-filter">Client</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="continue-client-filter">Filter by client</Label>
                 <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
                   <SelectTrigger id="continue-client-filter">
                     <SelectValue placeholder="All clients" />
@@ -615,7 +615,7 @@ const Index = () => {
               {quotationsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
               ) : hireQuotations.length ? (
-                <div className="max-h-[60vh] space-y-4 overflow-y-auto">
+                <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
                   {[
                     { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations), isTest: false },
                     {
@@ -629,83 +629,101 @@ const Index = () => {
                   ]
                     .filter((section) => section.rows.length > 0)
                     .map((section) => (
-                      <div key={section.title} className="rounded-lg border border-border">
-                        <div className="border-b px-4 py-2">
-                          <p className="text-sm font-medium">{section.title}</p>
+                      <div key={section.title} className="rounded-lg border border-border overflow-hidden">
+                        <div className="border-b px-4 py-2 bg-muted/30">
+                          <p className="text-sm font-semibold">{section.title}</p>
                         </div>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Quotation</TableHead>
-                              <TableHead>Client</TableHead>
-                              <TableHead>Site</TableHead>
-                              <TableHead>Order Summary</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Continue</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {section.rows.map((quotation) => {
-                              const lineItems = quotation.line_items ?? [];
-                              const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
-                              const weeklyTotal = lineItems.reduce(
-                                (sum, item) => {
-                                  if (item.weekly_total != null) {
-                                    return sum + item.weekly_total;
-                                  }
+                        {/* Mobile cards */}
+                        <div className="divide-y divide-border sm:hidden">
+                          {section.rows.map((quotation) => {
+                            const lineItems = quotation.line_items ?? [];
+                            const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+                            return (
+                              <div key={quotation.id} className="p-3 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-sm truncate">{quotation.company_name || "Unnamed client"}</p>
+                                    <p className="text-xs text-muted-foreground font-mono">{quotation.quotation_number || "Draft"} · {formatDate(quotation.created_at)}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{quotation.site_name || "No site"}</p>
+                                  </div>
+                                  <span className="shrink-0 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5 capitalize">{quotation.status || "draft"}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
+                                {section.isTest ? (
+                                  <div className="flex gap-2">
+                                    <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
+                                  </div>
+                                ) : (
+                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                    {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Desktop table */}
+                        <div className="hidden sm:block overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Quotation</TableHead>
+                                <TableHead>Client</TableHead>
+                                <TableHead>Site</TableHead>
+                                <TableHead>Items</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {section.rows.map((quotation) => {
+                                const lineItems = quotation.line_items ?? [];
+                                const itemCount = lineItems.reduce((sum, item) => sum + (item.quantity ?? 0), 0);
+                                const weeklyTotal = lineItems.reduce((sum, item) => {
+                                  if (item.weekly_total != null) return sum + item.weekly_total;
                                   const rate = item.weekly_rate ?? 0;
                                   const qty = item.quantity ?? 0;
-                                  const discountRate = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
-                                  const hireRate = Math.max(rate * (1 - discountRate), 0);
-                                  return sum + hireRate * qty;
-                                },
-                                0
-                              );
-
-                              return (
-                                <TableRow key={quotation.id}>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.quotation_number || "Draft"}</div>
-                                    <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.company_name || "Unnamed client"}</div>
-                                    <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{quotation.site_name || "No site name"}</div>
-                                    <div className="text-xs text-muted-foreground line-clamp-1">
-                                      {quotation.site_address || "No site address"}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="font-medium">{itemCount} item(s)</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Weekly total: Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell className="capitalize">{quotation.status || "draft"}</TableCell>
-                                  <TableCell className="text-right">
-                                    {section.isTest ? (
-                                      <div className="flex items-center justify-end gap-2">
-                                        <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>
-                                          Open Test
+                                  const d = Math.min(Math.max(item.hire_discount ?? 0, 0), 100) / 100;
+                                  return sum + Math.max(rate * (1 - d), 0) * qty;
+                                }, 0);
+                                return (
+                                  <TableRow key={quotation.id}>
+                                    <TableCell>
+                                      <div className="font-medium text-xs">{quotation.quotation_number || "Draft"}</div>
+                                      <div className="text-xs text-muted-foreground">{formatDate(quotation.created_at)}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-medium text-sm">{quotation.company_name || "Unnamed client"}</div>
+                                      <div className="text-xs text-muted-foreground">{quotation.site_manager_name || "No contact"}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="font-medium text-sm">{quotation.site_name || "No site name"}</div>
+                                      <div className="text-xs text-muted-foreground line-clamp-1">{quotation.site_address || "No site address"}</div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="text-sm">{itemCount} item(s)</div>
+                                      <div className="text-xs text-muted-foreground">Ksh {weeklyTotal.toLocaleString("en-KE", { minimumFractionDigits: 2 })}/wk</div>
+                                    </TableCell>
+                                    <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
+                                    <TableCell className="text-right">
+                                      {section.isTest ? (
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>Open Test</Button>
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>Promote → HSQ</Button>
+                                        </div>
+                                      ) : (
+                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                          {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
                                         </Button>
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>
-                                          Promote → HSQ
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                        {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                      </Button>
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
                     ))}
                 </div>
