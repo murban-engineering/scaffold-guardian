@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
 import constructionImage from "@/assets/construction-silhouette.jpg";
+import otnLogoBlack from "@/assets/otno-logo-black.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
-
-const otnLogo = "/otn-logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
