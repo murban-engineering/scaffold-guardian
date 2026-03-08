@@ -761,7 +761,7 @@ export const generateYardVerificationNotePDF = (data: DeliveryNoteData) => {
     <body>
       <div class="yard-note">
         <div class="yard-note-header">
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO Logo" class="brand-logo" />
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
           <h1>Yard Verification Report</h1>
         </div>
         <table class="yard-note-table">
