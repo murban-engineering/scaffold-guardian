@@ -21,8 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState } from "react";
-
-const otnLogo = "/otn-logo.png";
+import otnLogoBlack from "@/assets/otno-logo-black.png";
 
 interface SidebarProps {
   activeItem: string;
