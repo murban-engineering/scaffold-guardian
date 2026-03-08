@@ -29,7 +29,6 @@ import {
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
-import { toClientIdFromQuotationNumber } from "@/lib/clientId";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
