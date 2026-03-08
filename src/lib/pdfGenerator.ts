@@ -1078,7 +1078,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       <div class="hq-page2-footer">
         <div class="hq-footer-brand">
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:40px;height:auto;filter:brightness(0);"/>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:40px;height:auto;"/>
         </div>
         <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
         <div class="hq-footer-processed">
