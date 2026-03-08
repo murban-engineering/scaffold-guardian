@@ -375,7 +375,7 @@ const renderPageHeader = (docTitle: string, docNumber: string, clientName: strin
   <div class="page-header">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:8px;">
-        <img src="${window.location.origin}/otnologo-removebg-preview.png" alt="OTNO" style="width:36px;height:auto;"/>
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:36px;height:auto;"/>
         <div>
           <div style="font-size:10px;font-weight:800;">${COMPANY_NAME}</div>
           <div style="font-size:8px;color:#555;">${COMPANY_ADDRESS} &bull; PIN: ${COMPANY_PIN}</div>
