@@ -1810,6 +1810,9 @@ const HireQuotationWorkflow = ({
   };
 
   const isEquipmentItemLocked = useCallback((item: EquipmentItem) => {
+    // Test quotations never lock equipment — allow full add/edit/remove at any time
+    if (isTestQuotation) return false;
+
     if (item.previouslyDelivered > 0) return true;
 
     const deliveredFromHistory = deliveryHistory.some((delivery) =>
@@ -1827,7 +1830,7 @@ const HireQuotationWorkflow = ({
     );
 
     return returnedFromHistory;
-  }, [deliveryHistory, returnHistory]);
+  }, [isTestQuotation, deliveryHistory, returnHistory]);
 
   const removeItem = (index: number) => {
     const item = equipmentItems[index];
