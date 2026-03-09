@@ -68,11 +68,11 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
       {/* Logo */}
       <div className="border-b border-sidebar-border p-5">
          <div className={cn("flex items-center", collapsed && !closeOnSelect ? "justify-center" : "justify-between")}>
-           <img
-             src={otnLogoBlack}
-             alt="OTNO Logo"
-             className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-20" : "w-48")}
-          />
+            <img
+              src={otnLogoBlack}
+              alt="OTNO Logo"
+              className={cn("h-auto object-contain transition-all", collapsed && !closeOnSelect ? "w-12" : "w-32")}
+           />
           {!closeOnSelect && (
             <Button
               variant="ghost"
