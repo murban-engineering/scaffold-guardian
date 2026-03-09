@@ -144,74 +144,192 @@ const Sites = () => {
       return;
     }
 
+    const origin = window.location.origin;
+    const printDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
+    const docDate = new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+
     const tableRows = summarizedRemovalRows
       .map(
         (row) => `
           <tr>
             <td>${row.itemDescription}</td>
-            <td>${row.quantity}</td>
+            <td class="text-right">${row.quantity}</td>
           </tr>
         `
       )
       .join("");
 
-    const html = `
-      <html>
-        <head>
-          <title>Inventory Removal Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
-            h1 { font-size: 20px; margin-bottom: 8px; }
-            p { margin-top: 0; color: #555; }
-            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
-            th { background: #f3f4f6; }
-            .print-controls {
-              position: sticky;
-              top: 0;
-              z-index: 9999;
-              display: flex;
-              justify-content: flex-end;
-              padding-bottom: 12px;
-              margin-bottom: 12px;
-              border-bottom: 1px solid #ddd;
-              background: rgba(255, 255, 255, 0.96);
-            }
-            .print-button {
-              border: 1px solid #333;
-              border-radius: 6px;
-              background: #111;
-              color: #fff;
-              padding: 8px 14px;
-              font-size: 12px;
-              font-weight: 600;
-              cursor: pointer;
-            }
-            @media print {
-              .print-controls { display: none; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-controls">
-            <button type="button" class="print-button" onclick="window.print()">Print report</button>
+    const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; padding: 12px; }
+
+        /* ── Print controls ── */
+        .print-controls {
+          position: fixed; top: 12px; right: 12px; z-index: 9999;
+          display: flex; padding: 8px; background: rgba(255,255,255,0.97);
+          border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .print-button {
+          border: 1px solid #333; border-radius: 6px; background: #111; color: #fff;
+          padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+        }
+
+        /* ── 4-panel header layout ── */
+        .standard-report-layout {
+          display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; margin-bottom: 12px;
+        }
+        .standard-report-left { display: grid; gap: 8px; }
+        .standard-report-right { display: grid; gap: 6px; }
+        .brand-block { padding: 8px 10px; }
+        .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .brand-logo { width: 120px; height: auto; }
+        .brand-title { font-size: 14px; font-weight: 800; line-height: 1.15; color: #111827; }
+        .brand-meta { font-size: 9px; color: #374151; }
+        .panel { border: 1px solid #111827; border-radius: 6px; padding: 7px 9px; }
+        .panel h3 { font-size: 11px; font-weight: 800; margin-bottom: 4px; color: #111827; }
+        .client-panel { min-height: 150px; }
+        .report-title { font-size: 18px; font-weight: 900; letter-spacing: -0.2px; color: #111827; margin-bottom: 6px; }
+        .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
+        .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
+        .info-sep { color: #6b7280; }
+        .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 9px; }
+
+        /* ── Repeating page header (print only) ── */
+        .page-header { display: none; }
+        @media print {
+          body { padding: 0 !important; font-size: 8.5px; }
+          .print-controls { display: none; }
+          .page-header {
+            display: block; position: fixed; top: 0; left: 0; right: 0;
+            background: white; border-bottom: 1.5px solid #111; padding: 5px 10px 4px; z-index: 9999;
+          }
+          .page-header-spacer { display: block; height: 56px; }
+          @page { size: A4; margin: 8mm; }
+          tr { page-break-inside: avoid; }
+          thead { display: table-header-group; }
+        }
+        .page-header-spacer { display: none; }
+
+        /* ── Table ── */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th, td { border: 1px solid #111827; padding: 4px 6px; font-size: 8.5px; vertical-align: top; }
+        th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+        .text-right { text-align: right; }
+
+        /* ── Page wrapper (flex so footer sticks) ── */
+        .report-page { display: flex; flex-direction: column; min-height: 92vh; }
+        @media print { .report-page { min-height: 92vh; } }
+
+        /* ── Yellow footer ── */
+        .footer-wrap { margin-top: auto; }
+        .footer-brand {
+          background: #facc15; color: #1f2937; font-weight: 700;
+          display: flex; justify-content: space-between; align-items: center; padding: 6px 10px;
+        }
+        .footer-legal {
+          text-align: center; font-size: 7.5px; color: #4b5563;
+          padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none;
+        }
+        .footer-processed {
+          display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0;
+        }
+      </style>
+    </head><body>
+
+      <!-- Print button (screen only) -->
+      <div class="print-controls">
+        <button type="button" class="print-button" onclick="window.print()">Print report</button>
+      </div>
+
+      <!-- Fixed page header (repeats on every printed page) -->
+      <div class="page-header">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
+            <div>
+              <div style="font-size:10px;font-weight:800;">OTNO Access Solutions</div>
+              <div style="font-size:8px;color:#555;">99215-80107 Mombasa, Kenya &bull; PIN: P052471711M</div>
+            </div>
           </div>
-          <h1>Inventory Removal Report</h1>
-          <p>Client: <strong>${selectedClient}</strong></p>
-          <table>
-            <thead>
-              <tr>
-                <th>Item Description</th>
-                <th>Quantity Removed</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `;
+          <div style="text-align:right;">
+            <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Inventory Removal Report</div>
+            <div style="font-size:8px;color:#555;">${selectedClient}</div>
+          </div>
+        </div>
+      </div>
+      <div class="page-header-spacer"></div>
+
+      <!-- Main page content -->
+      <div class="report-page">
+
+        <!-- 4-panel header (screen view) -->
+        <div class="standard-report-layout">
+          <div class="standard-report-left">
+            <div class="brand-block">
+              <div class="brand-top">
+                <img src="${origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
+                <div class="brand-title">OTNO Access Solutions</div>
+              </div>
+              <div class="brand-meta"><span><strong>Reg No:</strong> P052471711M</span></div>
+            </div>
+            <div class="panel client-panel">
+              <h3>${selectedClient}</h3>
+              <div style="margin-top:8px;">
+                <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient}</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="standard-report-right">
+            <h2 class="report-title">Inventory Removal Report</h2>
+            <div class="panel">
+              <h3>Document Details</h3>
+              <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">Inventory Removal Report</span></div>
+              <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${docDate}</span></div>
+            </div>
+            <div class="panel">
+              <h3>Company Details</h3>
+              <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">OTNO Access Solutions</span></div>
+              <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">99215-80107 Mombasa, Kenya</span></div>
+              <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">Embakasi, Old North Airport Rd, next to Naivas Embakasi</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+            </div>
+            <div class="panel">
+              <h3>Site Details</h3>
+              <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value">${selectedClient}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items table -->
+        <table>
+          <thead>
+            <tr>
+              <th>Item Description</th>
+              <th class="text-right">Quantity Removed</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+
+        <!-- Yellow branded footer -->
+        <div class="footer-wrap">
+          <div class="footer-brand">
+            <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+            <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+          </div>
+          <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com</div>
+          <div class="footer-processed">
+            <div><div>Processed Date : ${docDate}</div></div>
+            <div style="text-align:right;"><div>Print date : ${printDate}</div></div>
+          </div>
+        </div>
+
+      </div>
+    </body></html>`;
 
     const printWindow = window.open("", "_blank", "width=900,height=700");
     if (!printWindow) {
