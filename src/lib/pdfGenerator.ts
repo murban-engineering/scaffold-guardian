@@ -1425,7 +1425,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     `<tr>
       <td>${item.partNumber || "-"}</td>
       <td>${item.description || "-"}</td>
-      <td class="text-right">${item.totalDelivered - item.totalReturned + item.balanceAfter}</td>
       <td class="text-right">${item.good}</td>
       <td class="text-right">${item.dirty}</td>
       <td class="text-right">${item.damaged}</td>
