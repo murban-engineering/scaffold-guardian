@@ -1931,13 +1931,6 @@ const HireQuotationWorkflow = ({
     });
   }, [equipmentItems, deliveryQuantities]);
 
-  const isFullyDelivered = useMemo(
-    () =>
-      equipmentItems.length > 0 &&
-      equipmentItems.every((item) => getOrderedQuantity(item) <= 0),
-    [equipmentItems, remainingQuantities]
-  );
-
   // Create a delivery record and add to history
   const createDeliveryRecord = useCallback((): DeliveryRecord => {
     const items = equipmentItems.map(item => {
@@ -4333,23 +4326,12 @@ const HireQuotationWorkflow = ({
                     {!inventoryDeducted ? (
                       <Button
                         onClick={handleDispatchDelivery}
-                        disabled={
-                          deductInventory.isPending ||
-                          updateQuotation.isPending ||
-                          !deliveryNote.deliveryDate ||
-                          isFullyDelivered
-                        }
+                        disabled={deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
                         title={!deliveryNote.deliveryDate ? "Set a Dispatch Date above before dispatching" : undefined}
                         className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50"
                       >
                         <Truck className="h-4 w-4 mr-2" />
-                        {deductInventory.isPending
-                          ? "Dispatching..."
-                          : isFullyDelivered
-                            ? "Fully Delivered"
-                            : !deliveryNote.deliveryDate
-                              ? "Set Dispatch Date First"
-                              : "Dispatch Delivery"}
+                        {deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
                       </Button>
                     ) : (
                       <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
