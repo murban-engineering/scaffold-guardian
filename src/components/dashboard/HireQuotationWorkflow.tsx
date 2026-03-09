@@ -3775,14 +3775,21 @@ const HireQuotationWorkflow = ({
                         </tr>
                       );
                     })
-                  )}
-                  {equipmentItems.length > 0 && (
-                    <tr className="bg-muted/40 font-semibold">
-                      <td colSpan={7} className="px-3 py-2 text-right">Weekly Hire Total:</td>
-                      <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
-                      <td></td>
-                    </tr>
-                  )}
+                   )}
+                   {equipmentItems.length > 0 && (
+                     <>
+                       <tr className="bg-muted/50 font-semibold border-t border-border">
+                         <td colSpan={2} className="px-3 py-2 text-right">Total Quantity:</td>
+                         <td className="px-3 py-2 text-right">{equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered), 0)}</td>
+                         <td colSpan={6}></td>
+                       </tr>
+                       <tr className="bg-muted/40 font-semibold">
+                         <td colSpan={7} className="px-3 py-2 text-right">Weekly Hire Total:</td>
+                         <td className="px-3 py-2 text-right">{formatCurrency(weeklyHireTotal)}</td>
+                         <td></td>
+                       </tr>
+                     </>
+                   )}
                 </tbody>
               </table>
             </div>
