@@ -1154,8 +1154,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           </tr>`;
         }).join("")}
         <tr class="total-row">
-          <td colspan="2" style="font-weight:800;"></td>
-          <td class="text-right" style="font-weight:800;"></td>
+          <td colspan="2" style="font-weight:800;">Total Equipment</td>
+          <td class="text-right" style="font-weight:800;">${totalQuantity}</td>
           <td class="text-right" style="font-weight:800;">Mass (Ton)</td>
           <td colspan="2" class="text-right" style="font-weight:800;">${(totalMass / 1000).toFixed(3)}</td>
         </tr>
