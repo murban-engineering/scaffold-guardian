@@ -1425,7 +1425,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     `<tr>
       <td>${item.partNumber || "-"}</td>
       <td>${item.description || "-"}</td>
-      <td class="text-right">${item.totalDelivered - item.totalReturned + item.balanceAfter}</td>
       <td class="text-right">${item.good}</td>
       <td class="text-right">${item.dirty}</td>
       <td class="text-right">${item.damaged}</td>
@@ -1461,7 +1460,6 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <thead>
             <tr>
               <th>Part Number</th><th>Description</th>
-              <th class="text-right">On Site</th>
               <th class="text-right">Good</th><th class="text-right">Dirty</th>
               <th class="text-right">Damaged</th><th class="text-right">Scrap</th>
               <th class="text-right">This Return</th><th class="text-right">Balance</th>
@@ -1470,12 +1468,12 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <tbody>
             ${systemItemRows}
             <tr class="total-row">
-              <td colspan="7"><strong>Total This Return</strong></td>
+              <td colspan="6"><strong>Total This Return</strong></td>
               <td class="text-right"><strong>${totalReturned}</strong></td>
               <td></td>
             </tr>
             <tr class="total-row">
-              <td colspan="8"><strong>Mass (Ton)</strong></td>
+              <td colspan="7"><strong>Mass (Ton)</strong></td>
               <td class="text-right"><strong>${(totalMass / 1000).toFixed(3)}</strong></td>
             </tr>
           </tbody>
