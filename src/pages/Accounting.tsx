@@ -88,6 +88,7 @@ const renderAccountingReportHeader = ({
   contactPhone,
   createdBy,
   extraRows = "",
+  showBrandSubtitle = true,
 }: {
   documentTitle: string;
   documentNumber: string;
@@ -99,6 +100,7 @@ const renderAccountingReportHeader = ({
   contactPhone: string;
   createdBy: string;
   extraRows?: string;
+  showBrandSubtitle?: boolean;
 }) => `
   <div class="print-header">
     <div class="header-grid">
@@ -107,7 +109,7 @@ const renderAccountingReportHeader = ({
           <img src="${window.location.origin}/otn-logo-red.png" alt="Logo" class="logo"/>
           <div>
             <div class="brand-title">${COMPANY_NAME}</div>
-            <div class="brand-subtitle">A Division of OTNO Access Group</div>
+            ${showBrandSubtitle ? '<div class="brand-subtitle">A Division of OTNO Access Group</div>' : ""}
           </div>
         </div>
         <div class="panel client-panel">
@@ -207,6 +209,7 @@ const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) 
     contactName: invoice.contactName || "-",
     contactPhone: invoice.contactPhone || "-",
     createdBy: invoice.createdBy,
+    showBrandSubtitle: false,
     extraRows: `
       <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
       <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
