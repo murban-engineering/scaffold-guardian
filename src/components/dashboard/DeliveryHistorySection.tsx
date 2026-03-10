@@ -119,7 +119,7 @@ export const DeliveryHistorySection = ({
             </div>
           </div>
 
-          {hasRemainingBalance && (
+          {hasRemainingBalance && progressPercentage < 100 && (
             <Button
               onClick={onDeliverBalance}
               className="w-full mt-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
