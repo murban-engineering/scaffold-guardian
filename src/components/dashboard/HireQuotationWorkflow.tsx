@@ -857,10 +857,13 @@ const HireQuotationWorkflow = ({
       : [];
 
     if (persistedHistory.length > 0) {
+      const hasRemainingBalance = (initialQuotation.line_items ?? []).some(
+        (item) => (item.balance_quantity ?? Math.max((item.quantity ?? 0) - (item.delivered_quantity ?? 0), 0)) > 0
+      );
       setDeliveryHistory(persistedHistory);
       setDeliverySequence(persistedHistory.length + 1);
-      setInventoryDeducted(true);
-      setCurrentDeliveryDispatched(true);
+      setInventoryDeducted(!hasRemainingBalance);
+      setCurrentDeliveryDispatched(!hasRemainingBalance);
     }
   }, [initialQuotation]);
 
@@ -1844,8 +1847,17 @@ const HireQuotationWorkflow = ({
     setEquipmentItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const getOrderedQuantity = (item: EquipmentItem) =>
-    remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
+  const getOrderedQuantity = (item: EquipmentItem) => {
+    if (remainingQuantities[item.id] != null) {
+      return Math.max(remainingQuantities[item.id], 0);
+    }
+
+    if (item.originalQuantity > 0) {
+      return Math.max(item.originalQuantity - (item.previouslyDelivered || 0), 0);
+    }
+
+    return parseNumber(item.qtyDelivered);
+  };
 
   const getDeliveredQuantity = (item: EquipmentItem) => {
     const orderedQty = getOrderedQuantity(item);
