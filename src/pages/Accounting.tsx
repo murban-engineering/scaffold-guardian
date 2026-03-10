@@ -74,6 +74,13 @@ const calculateBillableWeeks = (dispatchDateValue: string, billingDate: Date) =>
   return Math.max(Math.ceil((elapsedDays + 1) / 7), 1);
 };
 
+const calculateMonthlyInvoiceWeeks = (periodStart: Date, periodEnd: Date, isFirstBillingMonth: boolean) => {
+  if (!isFirstBillingMonth) return 4;
+
+  const elapsedDays = differenceInCalendarDays(periodEnd, periodStart) + 1;
+  return Math.max(Math.floor(elapsedDays / 7), 0);
+};
+
 const escapeHtml = (value: string) =>
   value.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;").split("'").join("&#39;");
 
@@ -896,10 +903,10 @@ const Accounting = () => {
   const openMonthlyInvoice = (invoice: ClientInvoice, monthStart: Date, monthEnd: Date, monthLabel: string) => {
     const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
     const dispatchDate = asDateOrToday(invoice.dispatchDate);
-    const billingStartDate = isSameMonth(monthStart, dispatchDate) ? dispatchDate : startOfMonth(monthStart);
+    const isFirstBillingMonth = isSameMonth(monthStart, dispatchDate);
+    const billingStartDate = isFirstBillingMonth ? dispatchDate : startOfMonth(monthStart);
     const billingStartIso = format(billingStartDate, "yyyy-MM-dd");
-    // First month bills from dispatch date; subsequent months bill from the first day of the month.
-    const weeks = calculateBillableWeeks(billingStartIso, monthEnd);
+    const weeks = calculateMonthlyInvoiceWeeks(billingStartDate, monthEnd, isFirstBillingMonth);
     const monthInvoice: ClientInvoice = {
       ...invoice,
       dispatchDate: billingStartIso,
