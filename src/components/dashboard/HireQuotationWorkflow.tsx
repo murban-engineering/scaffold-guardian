@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Truck, UserRoundPen, Plus, Trash2, Printer, PackageSearch, RotateCcw, CheckCircle2, Clock, History, ClipboardSignature, ScanBarcode, FileCheck2, ClipboardList, MapPin } from "lucide-react";
+import { FileText, Truck, UserRoundPen, Plus, Trash2, Printer, PackageSearch, RotateCcw, CheckCircle2, Clock, History, ClipboardSignature, ScanBarcode, FileCheck2, ClipboardList, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useScaffolds, useDeductScaffoldInventory, useReturnScaffoldInventory, Scaffold } from "@/hooks/useScaffolds";
 import { useCreateQuotation, useUpdateQuotation, useAddLineItems, useClearLineItems, useUpdateLineItemQuantities, useUpdateLineItemReturnQuantities, useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
@@ -546,6 +546,9 @@ const HireQuotationWorkflow = ({
   const [deliverySequence, setDeliverySequence] = useState(1); // Track delivery sequence for DN numbering
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]); // Track all deliveries
   const [currentDeliveryDispatched, setCurrentDeliveryDispatched] = useState(false);
+  const [isDispatchFinalizing, setIsDispatchFinalizing] = useState(false);
+  const [showDispatchCompletedPopup, setShowDispatchCompletedPopup] = useState(false);
+  const [dispatchCompletedMessage, setDispatchCompletedMessage] = useState("Dispatch completed successfully.");
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [quotationComments, setQuotationComments] = useState(
     "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments."
@@ -1993,105 +1996,120 @@ const HireQuotationWorkflow = ({
     }
     if (!validateDeliveryQuantities()) return;
 
-    // Deduct inventory first
-    const success = await handleEquipmentHired();
-    if (!success) return;
+    setIsDispatchFinalizing(true);
 
-    // Create delivery record
-    const newDelivery = createDeliveryRecord();
-    newDelivery.status = "dispatched";
-    const nextDeliveryHistory = [newDelivery, ...deliveryHistory];
-    setDeliveryHistory(nextDeliveryHistory);
+    try {
+      // Deduct inventory first
+      const success = await handleEquipmentHired();
+      if (!success) return;
 
-    // Calculate balance quantities
-    const balanceQuantities: Record<string, number> = {};
-    const deliveredQuantities: Record<string, number> = {};
-    
-    equipmentItems.forEach(item => {
-      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
-      const orderedQty = getOrderedQuantity(item);
-      balanceQuantities[item.id] = Math.max(orderedQty - deliveredQty, 0);
-      deliveredQuantities[item.id] = deliveredQty;
-    });
+      // Create delivery record
+      const newDelivery = createDeliveryRecord();
+      newDelivery.status = "dispatched";
+      const nextDeliveryHistory = [newDelivery, ...deliveryHistory];
+      setDeliveryHistory(nextDeliveryHistory);
 
-    // Save to database
-    if (savedQuotationId) {
-      try {
-        const quantityUpdates = equipmentItems
-          .filter(item => item.itemCode)
-          .map(item => ({
-            part_number: item.itemCode,
-            delivered_quantity: (item.previouslyDelivered || 0) + (deliveredQuantities[item.id] ?? 0),
-            balance_quantity: balanceQuantities[item.id] ?? 0,
-          }));
-        
-        if (quantityUpdates.length > 0) {
-          await updateLineItemQuantities.mutateAsync({
-            quotation_id: savedQuotationId,
-            items: quantityUpdates,
-          });
-        }
+      // Calculate balance quantities
+      const balanceQuantities: Record<string, number> = {};
+      const deliveredQuantities: Record<string, number> = {};
 
-        await updateQuotation.mutateAsync({
-          id: savedQuotationId,
-          status: "dispatched",
-          dispatch_date: deliveryNote.deliveryDate,
-          delivery_history: nextDeliveryHistory as unknown as import("@/integrations/supabase/types").Json,
-        });
-      } catch (error) {
-        console.error("Failed to save delivery quantities:", error);
-      }
-    }
-
-    // Update remaining quantities for next delivery
-    setRemainingQuantities(balanceQuantities);
-    setDeliveryQuantities((prev) => {
-      const next = { ...prev };
-      equipmentItems.forEach((item) => {
-        if (balanceQuantities[item.id] != null) {
-          next[item.id] = String(balanceQuantities[item.id]);
-        }
+      equipmentItems.forEach(item => {
+        const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
+        const orderedQty = getOrderedQuantity(item);
+        balanceQuantities[item.id] = Math.max(orderedQty - deliveredQty, 0);
+        deliveredQuantities[item.id] = deliveredQty;
       });
-      return next;
-    });
-    setLastDeliveredQuantities(deliveredQuantities);
-    setEquipmentItems((prev) =>
-      prev.map((item) => {
-        const deliveredNow = deliveredQuantities[item.id] ?? 0;
-        if (deliveredNow <= 0) return item;
-        const newPreviouslyDelivered = Math.max(item.previouslyDelivered + deliveredNow, 0);
-        return {
-          ...item,
-          previouslyDelivered: newPreviouslyDelivered,
-          dbBalanceQuantity: balanceQuantities[item.id] ?? item.dbBalanceQuantity,
-        };
-      })
-    );
 
-    const hasOutstandingBalance = Object.values(balanceQuantities).some((qty) => qty > 0);
+      // Save to database
+      if (savedQuotationId) {
+        try {
+          const quantityUpdates = equipmentItems
+            .filter(item => item.itemCode)
+            .map(item => ({
+              part_number: item.itemCode,
+              delivered_quantity: (item.previouslyDelivered || 0) + (deliveredQuantities[item.id] ?? 0),
+              balance_quantity: balanceQuantities[item.id] ?? 0,
+            }));
 
-    if (hasOutstandingBalance) {
-      const nextSequence = deliverySequence + 1;
-      setDeliverySequence(nextSequence);
-      setInventoryDeducted(false);
-      setCurrentDeliveryDispatched(false);
-      setDeliveryNote((prev) => ({
-        ...prev,
-        deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, nextSequence),
-        deliveryDate: getToday(),
-        hireStartDate: getToday(),
-        deliveredBy: "",
-        receivedBy: "",
-        vehicleNo: "",
-        remarks: "",
-      }));
-      toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched. Remaining balance is ready for batch ${nextSequence}.`);
-      return;
+          if (quantityUpdates.length > 0) {
+            await updateLineItemQuantities.mutateAsync({
+              quotation_id: savedQuotationId,
+              items: quantityUpdates,
+            });
+          }
+
+          await updateQuotation.mutateAsync({
+            id: savedQuotationId,
+            status: "dispatched",
+            dispatch_date: deliveryNote.deliveryDate,
+            delivery_history: nextDeliveryHistory as unknown as import("@/integrations/supabase/types").Json,
+          });
+        } catch (error) {
+          console.error("Failed to save delivery quantities:", error);
+        }
+      }
+
+      // Update remaining quantities for next delivery
+      setRemainingQuantities(balanceQuantities);
+      setDeliveryQuantities((prev) => {
+        const next = { ...prev };
+        equipmentItems.forEach((item) => {
+          if (balanceQuantities[item.id] != null) {
+            next[item.id] = String(balanceQuantities[item.id]);
+          }
+        });
+        return next;
+      });
+      setLastDeliveredQuantities(deliveredQuantities);
+      setEquipmentItems((prev) =>
+        prev.map((item) => {
+          const deliveredNow = deliveredQuantities[item.id] ?? 0;
+          if (deliveredNow <= 0) return item;
+          const newPreviouslyDelivered = Math.max(item.previouslyDelivered + deliveredNow, 0);
+          return {
+            ...item,
+            previouslyDelivered: newPreviouslyDelivered,
+            dbBalanceQuantity: balanceQuantities[item.id] ?? item.dbBalanceQuantity,
+          };
+        })
+      );
+
+      const hasOutstandingBalance = Object.values(balanceQuantities).some((qty) => qty > 0);
+
+      if (hasOutstandingBalance) {
+        const nextSequence = deliverySequence + 1;
+        setDeliverySequence(nextSequence);
+        setInventoryDeducted(false);
+        setCurrentDeliveryDispatched(false);
+        setDeliveryNote((prev) => ({
+          ...prev,
+          deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, nextSequence),
+          deliveryDate: getToday(),
+          hireStartDate: getToday(),
+          deliveredBy: "",
+          receivedBy: "",
+          vehicleNo: "",
+          remarks: "",
+        }));
+        const completionMessage = `Dispatch completed. Delivery ${newDelivery.deliveryNoteNumber} finalized and batch ${nextSequence} is ready.`;
+        setDispatchCompletedMessage(completionMessage);
+        setShowDispatchCompletedPopup(true);
+        toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched. Remaining balance is ready for batch ${nextSequence}.`);
+        return;
+      }
+
+      setCurrentDeliveryDispatched(true);
+
+      const completionMessage = `Dispatch completed. Delivery ${newDelivery.deliveryNoteNumber} is fully finalized.`;
+      setDispatchCompletedMessage(completionMessage);
+      setShowDispatchCompletedPopup(true);
+      toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
+    } catch (error) {
+      console.error("Failed to dispatch delivery:", error);
+      toast.error("Dispatch failed. Please try again.");
+    } finally {
+      setIsDispatchFinalizing(false);
     }
-
-    setCurrentDeliveryDispatched(true);
-    
-    toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
   };
 
   // Start a new delivery for remaining balance
@@ -3035,6 +3053,7 @@ const HireQuotationWorkflow = ({
   };
 
   return (
+    <>
     <Card className="animate-fade-in">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Hire Quotation Workflow</CardTitle>
@@ -4368,12 +4387,12 @@ const HireQuotationWorkflow = ({
                         {!inventoryDeducted ? (
                           <Button
                             onClick={handleDispatchDelivery}
-                            disabled={deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
+                            disabled={isDispatchFinalizing || deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
                             title={!deliveryNote.deliveryDate ? "Set a Dispatch Date above before dispatching" : undefined}
                             className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50"
                           >
                             <Truck className="h-4 w-4 mr-2" />
-                            {deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
+                            {isDispatchFinalizing || deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
                           </Button>
                         ) : isFullyDelivered ? (
                           <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
@@ -4789,6 +4808,37 @@ const HireQuotationWorkflow = ({
         )}
       </CardContent>
     </Card>
+    {isDispatchFinalizing && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md border-primary/40 shadow-xl">
+          <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <h3 className="text-lg font-semibold">Finalizing Dispatch</h3>
+            <p className="text-sm text-muted-foreground">
+              Please wait while we complete this dispatch and prepare the next delivery batch.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+    {showDispatchCompletedPopup && !isDispatchFinalizing && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 backdrop-blur-sm">
+        <Card className="w-full max-w-md border-primary/40 shadow-xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Dispatch Completed</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">{dispatchCompletedMessage}</p>
+            <div className="flex justify-end">
+              <Button type="button" onClick={() => setShowDispatchCompletedPopup(false)}>
+                OK
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )}
+    </>
   );
 };
 
