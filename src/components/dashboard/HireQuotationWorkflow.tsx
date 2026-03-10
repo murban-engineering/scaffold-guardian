@@ -549,6 +549,7 @@ const HireQuotationWorkflow = ({
   const [isDispatchFinalizing, setIsDispatchFinalizing] = useState(false);
   const [showDispatchCompletedPopup, setShowDispatchCompletedPopup] = useState(false);
   const [dispatchCompletedMessage, setDispatchCompletedMessage] = useState("Dispatch completed successfully.");
+  const hydratedQuotationVersionRef = useRef<string | null>(null);
   const [hireQuotationDiscount, setHireQuotationDiscount] = useState("0");
   const [quotationComments, setQuotationComments] = useState(
     "Quotes exclude transport to and from site.\nOne month deposit is required upfront.\nWe do not accept cash payments."
@@ -652,6 +653,8 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    hydratedQuotationVersionRef.current = null;
+
     // Prevent stale quotation IDs from previous sessions from being reused
     // when starting a new quotation (including test-quotation flows).
     setSavedQuotationId(null);
@@ -670,6 +673,11 @@ const HireQuotationWorkflow = ({
 
   useEffect(() => {
     if (!initialQuotation) return;
+
+    const quotationVersion = `${initialQuotation.id}:${initialQuotation.updated_at ?? ""}`;
+    if (hydratedQuotationVersionRef.current === quotationVersion) {
+      return;
+    }
 
     const createdDate = initialQuotation.created_at
       ? new Date(initialQuotation.created_at).toISOString().split("T")[0]
@@ -818,6 +826,7 @@ const HireQuotationWorkflow = ({
       setInventoryDeducted(false);
     }
     setReturnProcessed(false);
+    hydratedQuotationVersionRef.current = quotationVersion;
   }, [initialQuotation, initialStep, isTestQuotation, profile?.full_name, scaffolds]);
 
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([]);
