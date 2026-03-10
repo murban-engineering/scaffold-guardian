@@ -1933,21 +1933,21 @@ const HireQuotationWorkflow = ({
     }
   };
 
-  // Calculate totals for delivery progress
-  const totalDeliveredFromHistory = useMemo(() => 
-    deliveryHistory.reduce((sum, delivery) => 
-      sum + delivery.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
-    ), 
-    [deliveryHistory]
+  // Calculate totals for delivery progress.
+  // Prefer line-item state (previously delivered + remaining) over history-only totals,
+  // because history can be present before all async quantity updates settle.
+  const totalDeliveredFromItems = useMemo(
+    () => equipmentItems.reduce((sum, item) => sum + Math.max(item.previouslyDelivered || 0, 0), 0),
+    [equipmentItems]
   );
 
   const totalRemainingFromTopTable = useMemo(
-    () => balanceDeliveryItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0),
-    [balanceDeliveryItems, getOrderedQuantity]
+    () => equipmentItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0),
+    [equipmentItems, getOrderedQuantity]
   );
 
   const hasRemainingBalance = totalRemainingFromTopTable > 0;
-  const totalOrdered = totalDeliveredFromHistory + totalRemainingFromTopTable;
+  const totalOrdered = totalDeliveredFromItems + totalRemainingFromTopTable;
 
   // Create a delivery record and add to history
   const createDeliveryRecord = useCallback((): DeliveryRecord => {
@@ -4368,11 +4368,7 @@ const HireQuotationWorkflow = ({
             <Card className="border-2 border-dashed">
               <CardContent className="py-4">
                 {(() => {
-                  const totalDelivered = deliveryHistory.reduce((sum, d) => 
-                    sum + d.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
-                  );
-                  const totalOrdered = equipmentItems.reduce((sum, item) => sum + item.originalQuantity, 0);
-                  const isFullyDelivered = totalOrdered > 0 && totalDelivered >= totalOrdered;
+                  const isFullyDelivered = !hasRemainingBalance;
                   return (
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="space-y-1">
@@ -4439,7 +4435,7 @@ const HireQuotationWorkflow = ({
                 onMarkDispatched={handleMarkDeliveryDispatched}
                 onDeliverBalance={handleDeliverBalance}
                 hasRemainingBalance={hasRemainingBalance}
-                totalDelivered={totalDeliveredFromHistory}
+                totalDelivered={totalDeliveredFromItems}
                 totalOrdered={totalOrdered}
               />
             )}
