@@ -2058,7 +2058,6 @@ const HireQuotationWorkflow = ({
       setEquipmentItems((prev) =>
         prev.map((item) => {
           const deliveredNow = deliveredQuantities[item.id] ?? 0;
-          if (deliveredNow <= 0) return item;
           const newPreviouslyDelivered = Math.max(item.previouslyDelivered + deliveredNow, 0);
           return {
             ...item,
