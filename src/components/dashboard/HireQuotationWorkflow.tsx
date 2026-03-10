@@ -4313,50 +4313,66 @@ const HireQuotationWorkflow = ({
             {/* Action Buttons */}
             <Card className="border-2 border-dashed">
               <CardContent className="py-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Delivery Actions</p>
-                    <p className="text-xs text-muted-foreground">
-                      {!inventoryDeducted 
-                        ? "Click 'Dispatch Delivery' to deduct from inventory and record this delivery."
-                        : "Delivery dispatched. Generate reports or continue to next step."}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {!inventoryDeducted ? (
-                      <Button
-                        onClick={handleDispatchDelivery}
-                        disabled={deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
-                        title={!deliveryNote.deliveryDate ? "Set a Dispatch Date above before dispatching" : undefined}
-                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50"
-                      >
-                        <Truck className="h-4 w-4 mr-2" />
-                        {deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
-                      </Button>
-                    ) : (
-                      <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Dispatched
-                      </Badge>
-                    )}
-                    {currentDeliveryDispatched && (
-                      <>
-                        <Button variant="outline" onClick={() => handlePrintHireLoadingNote("current")}>
+                {(() => {
+                  const totalDelivered = deliveryHistory.reduce((sum, d) => 
+                    sum + d.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
+                  );
+                  const totalOrdered = equipmentItems.reduce((sum, item) => sum + item.originalQuantity, 0);
+                  const isFullyDelivered = totalOrdered > 0 && totalDelivered >= totalOrdered;
+                  return (
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Delivery Actions</p>
+                        <p className="text-xs text-muted-foreground">
+                          {!inventoryDeducted 
+                            ? "Click 'Dispatch Delivery' to deduct from inventory and record this delivery."
+                            : isFullyDelivered
+                              ? "All items fully delivered. Continue to Hire Return."
+                              : "Delivery dispatched. Generate reports or dispatch remaining balance."}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {!inventoryDeducted ? (
+                          <Button
+                            onClick={handleDispatchDelivery}
+                            disabled={deductInventory.isPending || updateQuotation.isPending || !deliveryNote.deliveryDate}
+                            title={!deliveryNote.deliveryDate ? "Set a Dispatch Date above before dispatching" : undefined}
+                            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:opacity-50"
+                          >
+                            <Truck className="h-4 w-4 mr-2" />
+                            {deductInventory.isPending ? "Dispatching..." : !deliveryNote.deliveryDate ? "Set Dispatch Date First" : "Dispatch Delivery"}
+                          </Button>
+                        ) : isFullyDelivered ? (
+                          <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Fully Delivered
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Dispatched
+                          </Badge>
+                        )}
+                        {currentDeliveryDispatched && (
+                          <>
+                            <Button variant="outline" onClick={() => handlePrintHireLoadingNote("current")}>
+                              <Printer className="h-4 w-4 mr-2" />
+                              Loading Note
+                            </Button>
+                            <Button variant="outline" onClick={handlePrintDeliveryNote}>
+                              <Printer className="h-4 w-4 mr-2" />
+                              Delivery Note
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="outline" onClick={handlePrintYardVerificationNote}>
                           <Printer className="h-4 w-4 mr-2" />
-                          Loading Note
+                          Yard Verification
                         </Button>
-                        <Button variant="outline" onClick={handlePrintDeliveryNote}>
-                          <Printer className="h-4 w-4 mr-2" />
-                          Delivery Note
-                        </Button>
-                      </>
-                    )}
-                    <Button variant="outline" onClick={handlePrintYardVerificationNote}>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Yard Verification
-                    </Button>
-                  </div>
-                </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
 
