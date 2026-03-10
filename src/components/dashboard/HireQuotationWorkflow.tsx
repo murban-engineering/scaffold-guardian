@@ -2055,7 +2055,6 @@ const HireQuotationWorkflow = ({
       return next;
     });
     setLastDeliveredQuantities(deliveredQuantities);
-    setCurrentDeliveryDispatched(true);
     setEquipmentItems((prev) =>
       prev.map((item) => {
         const deliveredNow = deliveredQuantities[item.id] ?? 0;
@@ -2068,6 +2067,29 @@ const HireQuotationWorkflow = ({
         };
       })
     );
+
+    const hasOutstandingBalance = Object.values(balanceQuantities).some((qty) => qty > 0);
+
+    if (hasOutstandingBalance) {
+      const nextSequence = deliverySequence + 1;
+      setDeliverySequence(nextSequence);
+      setInventoryDeducted(false);
+      setCurrentDeliveryDispatched(false);
+      setDeliveryNote((prev) => ({
+        ...prev,
+        deliveryNoteNo: deriveDeliveryNoteNumber(header.quotationNo, nextSequence),
+        deliveryDate: getToday(),
+        hireStartDate: getToday(),
+        deliveredBy: "",
+        receivedBy: "",
+        vehicleNo: "",
+        remarks: "",
+      }));
+      toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched. Remaining balance is ready for batch ${nextSequence}.`);
+      return;
+    }
+
+    setCurrentDeliveryDispatched(true);
     
     toast.success(`Delivery ${newDelivery.deliveryNoteNumber} dispatched successfully!`);
   };
