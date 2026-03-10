@@ -2510,7 +2510,6 @@ const HireQuotationWorkflow = ({
   };
 
   const handleHireQuotationSave = () => {
-    handlePrintHireQuotationReport();
     handleNext();
   };
 
