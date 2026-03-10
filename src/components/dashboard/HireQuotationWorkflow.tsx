@@ -1925,11 +1925,6 @@ const HireQuotationWorkflow = ({
   };
 
   // Calculate totals for delivery progress
-  const totalOrdered = useMemo(() => 
-    equipmentItems.reduce((sum, item) => sum + parseNumber(item.qtyDelivered), 0), 
-    [equipmentItems]
-  );
-
   const totalDeliveredFromHistory = useMemo(() => 
     deliveryHistory.reduce((sum, delivery) => 
       sum + delivery.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
@@ -1937,14 +1932,13 @@ const HireQuotationWorkflow = ({
     [deliveryHistory]
   );
 
-  const hasRemainingBalance = useMemo(() => {
-    // Check if there are items with balance quantities
-    return equipmentItems.some(item => {
-      const orderedQty = getOrderedQuantity(item);
-      const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
-      return orderedQty > deliveredQty;
-    });
-  }, [equipmentItems, deliveryQuantities]);
+  const totalRemainingFromTopTable = useMemo(
+    () => balanceDeliveryItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0),
+    [balanceDeliveryItems, getOrderedQuantity]
+  );
+
+  const hasRemainingBalance = totalRemainingFromTopTable > 0;
+  const totalOrdered = totalDeliveredFromHistory + totalRemainingFromTopTable;
 
   // Create a delivery record and add to history
   const createDeliveryRecord = useCallback((): DeliveryRecord => {
@@ -4436,11 +4430,9 @@ const HireQuotationWorkflow = ({
                 onPrintLoadingNote={handlePrintLoadingNoteFromHistory}
                 onMarkDispatched={handleMarkDeliveryDispatched}
                 onDeliverBalance={handleDeliverBalance}
-                hasRemainingBalance={Object.values(remainingQuantities).some(qty => qty > 0)}
-                totalDelivered={deliveryHistory.reduce((sum, d) => 
-                  sum + d.items.reduce((itemSum, item) => itemSum + item.quantityDelivered, 0), 0
-                )}
-                totalOrdered={equipmentItems.reduce((sum, item) => sum + item.originalQuantity, 0)}
+                hasRemainingBalance={hasRemainingBalance}
+                totalDelivered={totalDeliveredFromHistory}
+                totalOrdered={totalOrdered}
               />
             )}
 
