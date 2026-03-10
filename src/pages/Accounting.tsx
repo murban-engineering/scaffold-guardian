@@ -630,7 +630,17 @@ const openCustomerStatement = (
     </table>
 
     <div class="totals">
-      <div>Bank: Stanbic Bank Kenya Plc | Branch Code: 31007</div>
+      <div>
+        <div><strong>Payment Details:</strong></div>
+        <div>Account Name: OTNO ACCESS SOLUTIONS LIMITED</div>
+        <div>KES Account Number: 02107773676350</div>
+        <div>Bank Name: I&amp;M BANK LIMITED</div>
+        <div>Branch Name: Changamwe</div>
+        <div>Bank Code: 57</div>
+        <div>Branch Code: 021</div>
+        <div>Swift Code: IMBLKENA</div>
+        <div>Mpesa Paybill Code: 542542</div>
+      </div>
       <div class="total-due">Total Due: ${currency.format(totalDue)}</div>
     </div>
 
