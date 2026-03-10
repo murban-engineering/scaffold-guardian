@@ -4381,16 +4381,10 @@ const HireQuotationWorkflow = ({
                             Fully Delivered
                           </Badge>
                         ) : (
-                          <>
-                            <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Dispatched
-                            </Badge>
-                            <Button variant="outline" onClick={handleDeliverBalance}>
-                              <Truck className="h-4 w-4 mr-2" />
-                              Dispatch Remaining Balance
-                            </Button>
-                          </>
+                          <Badge variant="outline" className="gap-1 border-green-500/50 bg-green-500/10 text-green-600 h-9 px-3">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Dispatched
+                          </Badge>
                         )}
                         {currentDeliveryDispatched && (
                           <>
