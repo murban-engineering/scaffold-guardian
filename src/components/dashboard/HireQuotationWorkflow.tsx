@@ -1934,20 +1934,34 @@ const HireQuotationWorkflow = ({
   };
 
   // Calculate totals for delivery progress.
-  // Prefer line-item state (previously delivered + remaining) over history-only totals,
-  // because history can be present before all async quantity updates settle.
-  const totalDeliveredFromItems = useMemo(
-    () => equipmentItems.reduce((sum, item) => sum + Math.max(item.previouslyDelivered || 0, 0), 0),
+  // Use originalQuantity (the true total ordered) so that totals are stable across
+  // batches and never drop to 0/0 after a dispatch updates remainingQuantities.
+  const totalOrdered = useMemo(
+    () => equipmentItems.reduce((sum, item) => {
+      // originalQuantity is set when item is created from inventory and never changes
+      const ordered = item.originalQuantity > 0 ? item.originalQuantity : parseNumber(item.qtyDelivered);
+      return sum + ordered;
+    }, 0),
     [equipmentItems]
   );
 
+  const totalDeliveredFromItems = useMemo(
+    () => equipmentItems.reduce((sum, item) => {
+      const ordered = item.originalQuantity > 0 ? item.originalQuantity : parseNumber(item.qtyDelivered);
+      const remaining = remainingQuantities[item.id] ?? getOrderedQuantity(item);
+      // delivered = original - remaining balance
+      const delivered = Math.max(ordered - remaining, item.previouslyDelivered || 0);
+      return sum + delivered;
+    }, 0),
+    [equipmentItems, remainingQuantities, getOrderedQuantity]
+  );
+
   const totalRemainingFromTopTable = useMemo(
-    () => equipmentItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0),
-    [equipmentItems, getOrderedQuantity]
+    () => Math.max(totalOrdered - totalDeliveredFromItems, 0),
+    [totalOrdered, totalDeliveredFromItems]
   );
 
   const hasRemainingBalance = totalRemainingFromTopTable > 0;
-  const totalOrdered = totalDeliveredFromItems + totalRemainingFromTopTable;
 
   // Create a delivery record and add to history
   const createDeliveryRecord = useCallback((): DeliveryRecord => {
