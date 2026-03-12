@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2 } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, RotateCcw } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -251,6 +251,15 @@ const Index = () => {
       toast.success(`Test quotation ${nextTestQuotationNumber} created. Equipment is saved on this quotation.`);
     } catch (error) {
       console.error("Failed to open test quotation", error);
+    }
+  };
+
+  const handleRevertToDraft = async (quotation: HireQuotation) => {
+    try {
+      await updateQuotation.mutateAsync({ id: quotation.id, status: "draft" });
+      toast.success(`${quotation.quotation_number} reverted to draft.`);
+    } catch (error) {
+      console.error("Failed to revert quotation to draft", error);
     }
   };
 
@@ -649,13 +658,21 @@ const Index = () => {
                                   <span className="shrink-0 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5 capitalize">{quotation.status || "draft"}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
-                                {section.isTest ? (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
-                                ) : (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                    {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                  </Button>
-                                )}
+                                <div className="flex gap-2">
+                                  {section.isTest ? (
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                  ) : (
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                      {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                    </Button>
+                                  )}
+                                  {quotation.status === "completed" && !section.isTest && (
+                                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => handleRevertToDraft(quotation)} disabled={updateQuotation.isPending}>
+                                      <RotateCcw className="h-3 w-3" />
+                                      Revert to Draft
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
@@ -704,13 +721,21 @@ const Index = () => {
                                     </TableCell>
                                     <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
                                     <TableCell className="text-right">
-                                      {section.isTest ? (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
-                                      ) : (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                          {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                        </Button>
-                                      )}
+                                      <div className="flex items-center justify-end gap-2">
+                                        {section.isTest ? (
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                        ) : (
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                            {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                          </Button>
+                                        )}
+                                        {quotation.status === "completed" && !section.isTest && (
+                                          <Button size="sm" variant="outline" className="gap-1" onClick={() => handleRevertToDraft(quotation)} disabled={updateQuotation.isPending}>
+                                            <RotateCcw className="h-3.5 w-3.5" />
+                                            Revert to Draft
+                                          </Button>
+                                        )}
+                                      </div>
                                     </TableCell>
                                   </TableRow>
                                 );
