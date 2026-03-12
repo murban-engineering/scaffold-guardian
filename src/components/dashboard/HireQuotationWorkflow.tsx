@@ -4394,8 +4394,8 @@ const HireQuotationWorkflow = ({
               <Button type="button" variant="outline" onClick={handleBack}>
                 Back
               </Button>
-              <Button type="button" onClick={handleNext} disabled={!inventoryDeducted}>
-                {inventoryDeducted ? "Continue to Hire Return" : "Dispatch delivery first"}
+              <Button type="button" onClick={handleNext}>
+                Continue to Hire Return
               </Button>
             </div>
           </div>
