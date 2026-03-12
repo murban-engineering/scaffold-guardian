@@ -721,13 +721,21 @@ const Index = () => {
                                     </TableCell>
                                     <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
                                     <TableCell className="text-right">
-                                      {section.isTest ? (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
-                                      ) : (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                          {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                        </Button>
-                                      )}
+                                      <div className="flex items-center justify-end gap-2">
+                                        {section.isTest ? (
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                        ) : (
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                            {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                          </Button>
+                                        )}
+                                        {quotation.status === "completed" && !section.isTest && (
+                                          <Button size="sm" variant="outline" className="gap-1" onClick={() => handleRevertToDraft(quotation)} disabled={updateQuotation.isPending}>
+                                            <RotateCcw className="h-3.5 w-3.5" />
+                                            Revert to Draft
+                                          </Button>
+                                        )}
+                                      </div>
                                     </TableCell>
                                   </TableRow>
                                 );
