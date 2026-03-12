@@ -254,6 +254,15 @@ const Index = () => {
     }
   };
 
+  const handleRevertToDraft = async (quotation: HireQuotation) => {
+    try {
+      await updateQuotation.mutateAsync({ id: quotation.id, status: "draft" });
+      toast.success(`${quotation.quotation_number} reverted to draft.`);
+    } catch (error) {
+      console.error("Failed to revert quotation to draft", error);
+    }
+  };
+
   const handleDeleteTestQuotation = async (quotation: HireQuotation) => {
     const clientId = toClientId(quotation);
     const confirmed = window.confirm(
