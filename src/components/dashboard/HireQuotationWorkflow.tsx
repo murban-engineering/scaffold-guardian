@@ -3501,49 +3501,6 @@ const HireQuotationWorkflow = ({
             </div>
 
 
-            {/* Transport */}
-            <div className="rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold mb-4 text-primary">Transport</h4>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="fixedRateAgreed">Fixed Rate Agreed</Label>
-                  <Input
-                    id="fixedRateAgreed"
-                    value={header.fixedRateAgreed}
-                    onChange={(e) => setHeader(prev => ({ ...prev, fixedRateAgreed: e.target.value }))}
-                    placeholder="Fixed rate"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="returns">Returns</Label>
-                  <Input
-                    id="returns"
-                    value={header.returns}
-                    onChange={(e) => setHeader(prev => ({ ...prev, returns: e.target.value }))}
-                    placeholder="Return details"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="delivery">Delivery</Label>
-                  <Input
-                    id="delivery"
-                    value={header.delivery}
-                    onChange={(e) => setHeader(prev => ({ ...prev, delivery: e.target.value }))}
-                    placeholder="Delivery details"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="specialTransportArrangement">Special Transport Arrangement</Label>
-                  <Textarea
-                    id="specialTransportArrangement"
-                    rows={2}
-                    value={header.specialTransportArrangement}
-                    onChange={(e) => setHeader(prev => ({ ...prev, specialTransportArrangement: e.target.value }))}
-                    placeholder="Special arrangements"
-                  />
-                </div>
-              </div>
-            </div>
             {/* Project Type & Market Segmentation */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border border-border p-4">
