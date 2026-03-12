@@ -3304,15 +3304,6 @@ const HireQuotationWorkflow = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="siteContactPerson">Site Contact Person *</Label>
-                  <Input
-                    id="siteContactPerson"
-                    value={header.siteContactPerson}
-                    onChange={(e) => setHeader(prev => ({ ...prev, siteContactPerson: e.target.value }))}
-                    placeholder="Full name"
-                  />
-                </div>
-                <div>
                   <Label htmlFor="accountsContact">Accounts Contact</Label>
                   <Input
                     id="accountsContact"
