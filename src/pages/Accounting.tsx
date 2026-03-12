@@ -178,7 +178,10 @@ type HireLineBreakdown = {
   weeklyRate: number;
   discountRate: number;
   effectiveWeeklyRate: number;
+  /** Fractional weeks (days / 7) used for amount calculation */
   weeks: number;
+  /** Display label e.g. "2 weeks 4 days" */
+  weeksLabel: string;
   lineTotal: number;
 };
 
@@ -208,7 +211,12 @@ type ClientInvoice = {
   contactPhone: string;
   contactEmail: string;
   dispatchDate: string;
+  /** Total billable days */
+  hireDays: number;
+  /** Fractional weeks (hireDays / 7) */
   hireWeeks: number;
+  /** Human label e.g. "2 weeks 4 days" */
+  hireWeeksLabel: string;
   hireTotal: number;
   policyTotal: number;
   grandTotal: number;
