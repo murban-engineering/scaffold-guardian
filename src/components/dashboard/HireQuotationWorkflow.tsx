@@ -1672,10 +1672,6 @@ const HireQuotationWorkflow = ({
       toast.error("Trading Name / Company Name is required.");
       return false;
     }
-    if (!header.siteContactPerson && !header.clientName) {
-      toast.error("Site Contact Person is required.");
-      return false;
-    }
     if (!header.landline1 && !header.clientPhone) {
       toast.error("At least one telephone number is required.");
       return false;
