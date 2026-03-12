@@ -1672,10 +1672,6 @@ const HireQuotationWorkflow = ({
       toast.error("Trading Name / Company Name is required.");
       return false;
     }
-    if (!header.siteContactPerson && !header.clientName) {
-      toast.error("Site Contact Person is required.");
-      return false;
-    }
     if (!header.landline1 && !header.clientPhone) {
       toast.error("At least one telephone number is required.");
       return false;
@@ -3301,15 +3297,6 @@ const HireQuotationWorkflow = ({
                     value={header.faxNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, faxNumber: e.target.value }))}
                     placeholder="Fax"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="siteContactPerson">Site Contact Person *</Label>
-                  <Input
-                    id="siteContactPerson"
-                    value={header.siteContactPerson}
-                    onChange={(e) => setHeader(prev => ({ ...prev, siteContactPerson: e.target.value }))}
-                    placeholder="Full name"
                   />
                 </div>
                 <div>
