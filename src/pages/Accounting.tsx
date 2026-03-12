@@ -69,10 +69,16 @@ const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) 
 };
 
 /** Returns the exact number of billable DAYS (not weeks). */
+/**
+ * Billing starts the day AFTER dispatch.
+ * e.g. dispatched 12 Mar → first billable day is 13 Mar (day 1), week 1 ends 19 Mar.
+ * On the dispatch day itself, 0 days are billed.
+ */
 const calculateBillableDays = (dispatchDateValue: string, billingDate: Date) => {
   const dispatchDate = asDateOrToday(dispatchDateValue);
   const elapsedDays = differenceInCalendarDays(billingDate, dispatchDate);
-  return Math.max(elapsedDays + 1, 1);
+  // elapsedDays == 0 on dispatch day (0 billable), == 1 the next day (1 billable day), etc.
+  return Math.max(elapsedDays, 0);
 };
 
 /** Fractional weeks (days / 7) used for billing calculations. */
