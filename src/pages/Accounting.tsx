@@ -936,14 +936,19 @@ const Accounting = () => {
     const billingStartDate = isFirstBillingMonth ? dispatchDate : startOfMonth(monthStart);
     const billingStartIso = format(billingStartDate, "yyyy-MM-dd");
     const weeks = calculateMonthlyInvoiceWeeks(billingStartDate, monthEnd, isFirstBillingMonth);
+    const monthDays = weeks * 7; // for monthly invoices keep whole-week multiples
+    const monthWeeksLabel = formatWeeksDaysLabel(monthDays);
     const monthInvoice: ClientInvoice = {
       ...invoice,
       dispatchDate: billingStartIso,
+      hireDays: monthDays,
       hireWeeks: weeks,
+      hireWeeksLabel: monthWeeksLabel,
       invoiceNumber: `${invoice.invoiceNumber}-${format(monthEnd, "MMyy")}`,
       hireBreakdown: invoice.hireBreakdown.map((l) => ({
         ...l,
         weeks,
+        weeksLabel: monthWeeksLabel,
         lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
       })),
       hireTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0),
