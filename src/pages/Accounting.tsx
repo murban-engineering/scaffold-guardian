@@ -829,13 +829,17 @@ const Accounting = () => {
           dispatchDate = toIsoDateOrToday(dispatchDateRaw);
         }
       }
-      const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
+      const hireDays = calculateBillableDays(dispatchDate, bd);
+      const hireWeeks = billableDaysToWeeks(hireDays);
+      const hireWeeksLabel = formatWeeksDaysLabel(hireDays);
 
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
         const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
         const weeklyRate = li.weekly_rate ?? 0;
         const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
         const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
+        // Exact fractional billing: days/7 * weekly rate (no ceiling rounding)
+        const lineTotal = qty * effectiveWeeklyRate * hireWeeks;
         return {
           partNumber: li.part_number || "-",
           item: li.description || li.part_number || "Unnamed",
@@ -844,7 +848,8 @@ const Accounting = () => {
           discountRate,
           effectiveWeeklyRate,
           weeks: hireWeeks,
-          lineTotal: qty * effectiveWeeklyRate * hireWeeks,
+          weeksLabel: hireWeeksLabel,
+          lineTotal,
         };
       });
 
@@ -864,7 +869,9 @@ const Accounting = () => {
         contactPhone: q.site_manager_phone || "",
         contactEmail: q.site_manager_email || "",
         dispatchDate,
+        hireDays,
         hireWeeks,
+        hireWeeksLabel,
         hireTotal,
         policyTotal: surcharge.total,
         grandTotal: hireTotal + surcharge.total,
