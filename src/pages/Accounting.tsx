@@ -68,10 +68,24 @@ const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) 
   return `INV-${String(fallbackSequence).padStart(4, "0")}`;
 };
 
-const calculateBillableWeeks = (dispatchDateValue: string, billingDate: Date) => {
+/** Returns the exact number of billable DAYS (not weeks). */
+const calculateBillableDays = (dispatchDateValue: string, billingDate: Date) => {
   const dispatchDate = asDateOrToday(dispatchDateValue);
   const elapsedDays = differenceInCalendarDays(billingDate, dispatchDate);
-  return Math.max(Math.ceil((elapsedDays + 1) / 7), 1);
+  return Math.max(elapsedDays + 1, 1);
+};
+
+/** Fractional weeks (days / 7) used for billing calculations. */
+const billableDaysToWeeks = (days: number) => days / 7;
+
+/** Human-readable label: "2 weeks 4 days", "1 week", "3 days", etc. */
+const formatWeeksDaysLabel = (days: number) => {
+  const fullWeeks = Math.floor(days / 7);
+  const remainderDays = days % 7;
+  const weekPart = fullWeeks > 0 ? `${fullWeeks} week${fullWeeks !== 1 ? "s" : ""}` : "";
+  const dayPart = remainderDays > 0 ? `${remainderDays} day${remainderDays !== 1 ? "s" : ""}` : "";
+  if (weekPart && dayPart) return `${weekPart} ${dayPart}`;
+  return weekPart || dayPart || "1 day";
 };
 
 const calculateMonthlyInvoiceWeeks = (periodStart: Date, periodEnd: Date, isFirstBillingMonth: boolean) => {
