@@ -658,13 +658,21 @@ const Index = () => {
                                   <span className="shrink-0 rounded-full bg-primary/10 text-primary text-xs px-2 py-0.5 capitalize">{quotation.status || "draft"}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
-                                {section.isTest ? (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
-                                ) : (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                    {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                  </Button>
-                                )}
+                                <div className="flex gap-2">
+                                  {section.isTest ? (
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                  ) : (
+                                    <Button size="sm" className="flex-1 text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                      {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                    </Button>
+                                  )}
+                                  {quotation.status === "completed" && !section.isTest && (
+                                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => handleRevertToDraft(quotation)} disabled={updateQuotation.isPending}>
+                                      <RotateCcw className="h-3 w-3" />
+                                      Revert to Draft
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
