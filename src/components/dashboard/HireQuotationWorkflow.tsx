@@ -3291,15 +3291,6 @@ const HireQuotationWorkflow = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="faxNumber">Fax Number</Label>
-                  <Input
-                    id="faxNumber"
-                    value={header.faxNumber}
-                    onChange={(e) => setHeader(prev => ({ ...prev, faxNumber: e.target.value }))}
-                    placeholder="Fax"
-                  />
-                </div>
-                <div>
                   <Label htmlFor="accountsContact">Accounts Contact</Label>
                   <Input
                     id="accountsContact"
