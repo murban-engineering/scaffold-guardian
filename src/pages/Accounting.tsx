@@ -256,7 +256,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <td>${escapeHtml(l.partNumber)}</td>
         <td>${escapeHtml(l.item)}</td>
         <td class="r">${l.quantity}</td>
-        <td class="r">${l.weeks}</td>
+        <td class="r">${escapeHtml(l.weeksLabel)}</td>
         <td class="r">${currency.format(l.lineTotal)}</td>
       </tr>`).join("")
     : `<tr><td colspan="5" class="c">No hire items.</td></tr>`;
