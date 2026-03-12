@@ -1184,7 +1184,7 @@ const Accounting = () => {
                                 <TableCell className="font-medium">{inv.client}</TableCell>
                                 <TableCell>{inv.site}</TableCell>
                                 <TableCell>{inv.dispatchDate}</TableCell>
-                                <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                                <TableCell className="text-right">{inv.hireWeeksLabel}</TableCell>
                                 <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                                 <TableCell className="text-right">
                                   {inv.policyTotal > 0 ? (
