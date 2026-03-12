@@ -68,10 +68,24 @@ const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) 
   return `INV-${String(fallbackSequence).padStart(4, "0")}`;
 };
 
-const calculateBillableWeeks = (dispatchDateValue: string, billingDate: Date) => {
+/** Returns the exact number of billable DAYS (not weeks). */
+const calculateBillableDays = (dispatchDateValue: string, billingDate: Date) => {
   const dispatchDate = asDateOrToday(dispatchDateValue);
   const elapsedDays = differenceInCalendarDays(billingDate, dispatchDate);
-  return Math.max(Math.ceil((elapsedDays + 1) / 7), 1);
+  return Math.max(elapsedDays + 1, 1);
+};
+
+/** Fractional weeks (days / 7) used for billing calculations. */
+const billableDaysToWeeks = (days: number) => days / 7;
+
+/** Human-readable label: "2 weeks 4 days", "1 week", "3 days", etc. */
+const formatWeeksDaysLabel = (days: number) => {
+  const fullWeeks = Math.floor(days / 7);
+  const remainderDays = days % 7;
+  const weekPart = fullWeeks > 0 ? `${fullWeeks} week${fullWeeks !== 1 ? "s" : ""}` : "";
+  const dayPart = remainderDays > 0 ? `${remainderDays} day${remainderDays !== 1 ? "s" : ""}` : "";
+  if (weekPart && dayPart) return `${weekPart} ${dayPart}`;
+  return weekPart || dayPart || "1 day";
 };
 
 const calculateMonthlyInvoiceWeeks = (periodStart: Date, periodEnd: Date, isFirstBillingMonth: boolean) => {
@@ -164,7 +178,10 @@ type HireLineBreakdown = {
   weeklyRate: number;
   discountRate: number;
   effectiveWeeklyRate: number;
+  /** Fractional weeks (days / 7) used for amount calculation */
   weeks: number;
+  /** Display label e.g. "2 weeks 4 days" */
+  weeksLabel: string;
   lineTotal: number;
 };
 
@@ -194,7 +211,12 @@ type ClientInvoice = {
   contactPhone: string;
   contactEmail: string;
   dispatchDate: string;
+  /** Total billable days */
+  hireDays: number;
+  /** Fractional weeks (hireDays / 7) */
   hireWeeks: number;
+  /** Human label e.g. "2 weeks 4 days" */
+  hireWeeksLabel: string;
   hireTotal: number;
   policyTotal: number;
   grandTotal: number;
@@ -220,7 +242,7 @@ const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) 
     extraRows: `
       <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
       <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
-      <div class="row"><span class="lbl">Billed Weeks</span><span class="sep">:</span><span class="val">${invoice.hireWeeks}</span></div>
+      <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>
     `,
   });
 
@@ -234,7 +256,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         <td>${escapeHtml(l.partNumber)}</td>
         <td>${escapeHtml(l.item)}</td>
         <td class="r">${l.quantity}</td>
-        <td class="r">${l.weeks}</td>
+        <td class="r">${escapeHtml(l.weeksLabel)}</td>
         <td class="r">${currency.format(l.lineTotal)}</td>
       </tr>`).join("")
     : `<tr><td colspan="5" class="c">No hire items.</td></tr>`;
@@ -807,13 +829,17 @@ const Accounting = () => {
           dispatchDate = toIsoDateOrToday(dispatchDateRaw);
         }
       }
-      const hireWeeks = calculateBillableWeeks(dispatchDate, bd);
+      const hireDays = calculateBillableDays(dispatchDate, bd);
+      const hireWeeks = billableDaysToWeeks(hireDays);
+      const hireWeeksLabel = formatWeeksDaysLabel(hireDays);
 
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
         const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
         const weeklyRate = li.weekly_rate ?? 0;
         const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
         const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
+        // Exact fractional billing: days/7 * weekly rate (no ceiling rounding)
+        const lineTotal = qty * effectiveWeeklyRate * hireWeeks;
         return {
           partNumber: li.part_number || "-",
           item: li.description || li.part_number || "Unnamed",
@@ -822,7 +848,8 @@ const Accounting = () => {
           discountRate,
           effectiveWeeklyRate,
           weeks: hireWeeks,
-          lineTotal: qty * effectiveWeeklyRate * hireWeeks,
+          weeksLabel: hireWeeksLabel,
+          lineTotal,
         };
       });
 
@@ -842,7 +869,9 @@ const Accounting = () => {
         contactPhone: q.site_manager_phone || "",
         contactEmail: q.site_manager_email || "",
         dispatchDate,
+        hireDays,
         hireWeeks,
+        hireWeeksLabel,
         hireTotal,
         policyTotal: surcharge.total,
         grandTotal: hireTotal + surcharge.total,
@@ -907,14 +936,19 @@ const Accounting = () => {
     const billingStartDate = isFirstBillingMonth ? dispatchDate : startOfMonth(monthStart);
     const billingStartIso = format(billingStartDate, "yyyy-MM-dd");
     const weeks = calculateMonthlyInvoiceWeeks(billingStartDate, monthEnd, isFirstBillingMonth);
+    const monthDays = weeks * 7; // for monthly invoices keep whole-week multiples
+    const monthWeeksLabel = formatWeeksDaysLabel(monthDays);
     const monthInvoice: ClientInvoice = {
       ...invoice,
       dispatchDate: billingStartIso,
+      hireDays: monthDays,
       hireWeeks: weeks,
+      hireWeeksLabel: monthWeeksLabel,
       invoiceNumber: `${invoice.invoiceNumber}-${format(monthEnd, "MMyy")}`,
       hireBreakdown: invoice.hireBreakdown.map((l) => ({
         ...l,
         weeks,
+        weeksLabel: monthWeeksLabel,
         lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
       })),
       hireTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0),
@@ -1050,7 +1084,7 @@ const Accounting = () => {
                                 <TableCell className="font-medium">{inv.client}</TableCell>
                                 <TableCell>{inv.site}</TableCell>
                                 <TableCell>{inv.dispatchDate}</TableCell>
-                                <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                                <TableCell className="text-right">{inv.hireWeeksLabel}</TableCell>
                                 <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                                 <TableCell className="text-right">
                                   {inv.policyTotal > 0 ? (
@@ -1150,7 +1184,7 @@ const Accounting = () => {
                                 <TableCell className="font-medium">{inv.client}</TableCell>
                                 <TableCell>{inv.site}</TableCell>
                                 <TableCell>{inv.dispatchDate}</TableCell>
-                                <TableCell className="text-right">{inv.hireWeeks}</TableCell>
+                                <TableCell className="text-right">{inv.hireWeeksLabel}</TableCell>
                                 <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                                 <TableCell className="text-right">
                                   {inv.policyTotal > 0 ? (
