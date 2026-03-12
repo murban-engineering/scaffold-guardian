@@ -1214,7 +1214,9 @@ const HireQuotationWorkflow = ({
         const siteQuantities = returnSiteQuantitiesByItemCode.get(itemCode);
         const siteDelivered = Math.max(siteQuantities?.delivered ?? 0, 0);
         const sitePreviouslyReturned = Math.max(siteQuantities?.returned ?? 0, 0);
-        const maxReturnable = Math.max(selectedReturnSiteNumber ? siteDelivered : hiredQuantity, 0);
+        // Allow return before dispatch: fall back to orderedQuantity when nothing has been delivered yet
+        const effectiveDelivered = hiredQuantity > 0 ? hiredQuantity : orderedQuantity;
+        const maxReturnable = Math.max(selectedReturnSiteNumber ? siteDelivered : effectiveDelivered, 0);
         const persistedReturns = persistedReturnQuantitiesByItemCode.get(itemCode);
         const persistedPreviouslyReturned = persistedReturns?.returned ?? 0;
         const persistedBalance = persistedReturns?.balance;
