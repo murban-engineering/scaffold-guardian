@@ -130,7 +130,9 @@ const Sites = () => {
 
   const handleOpenWorkflow = (quotation: HireQuotation) => {
     setSelectedQuotation(quotation);
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }, 100);
   };
 
   const handlePrintRemovalReport = () => {
