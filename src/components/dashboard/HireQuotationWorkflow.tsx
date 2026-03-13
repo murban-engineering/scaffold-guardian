@@ -755,13 +755,9 @@ const HireQuotationWorkflow = ({
         const deliveredQty = item.delivered_quantity ?? 0;
         const balanceQty = item.balance_quantity ?? 0;
         
-        // If this quotation has a balance delivery, show only the balance quantities.
-        // Once a quotation has been dispatched and fully delivered, do not allow redispatching.
-        const qtyToShow = hasBalanceItems
-          ? balanceQty
-          : hasDispatchActivity
-            ? Math.max(balanceQty, 0)
-            : originalQty;
+        // Always show the original ordered quantity in the Equipment step so items
+        // remain visible even after dispatch. The Hire Delivery step handles balance tracking.
+        const qtyToShow = originalQty;
         
         return {
           id: item.id,
