@@ -10,6 +10,7 @@ export interface DeliveryRecord {
   deliveryNoteNumber: string;
   deliveryDate: string;
   hireStartDate?: string;
+  dispatchedDate?: string;  // stamped once when Dispatch is clicked — never changes
   deliveredBy: string;
   receivedBy: string;
   vehicleNo: string;
