@@ -313,7 +313,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     win.addEventListener("unload", () => URL.revokeObjectURL(url), { once: true });
   };
 
-
+  if (chartOnly) {
     const safeOpeningStock = Math.max(totals.openingStock, 1);
     const availablePct = Math.round((totals.availableStock / safeOpeningStock) * 100);
     const onHirePct = Math.round((totals.onHire / safeOpeningStock) * 100);
@@ -603,3 +603,4 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
 };
 
 export default InventoryOverview;
+
