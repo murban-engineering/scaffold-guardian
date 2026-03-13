@@ -1,5 +1,5 @@
 import { Fragment, useState, useMemo, useEffect } from "react";
-import { Package, ArrowRight, Search, Boxes, Warehouse, Truck } from "lucide-react";
+import { Package, ArrowRight, Search, Boxes, Warehouse, Truck, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
