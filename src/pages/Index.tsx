@@ -483,7 +483,7 @@ const Index = () => {
                             <Building2 className="mr-2 h-4 w-4" />
                             Existing Client New Quotation
                           </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
                             {existingClientOptions.length ? (
                               existingClientOptions.map((quotation) => {
                                 const clientId = toClientId(quotation);
