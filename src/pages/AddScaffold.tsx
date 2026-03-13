@@ -268,10 +268,16 @@ const AddScaffold = () => {
         toast.error(`Cannot remove ${removeQuantity}. Only ${currentQuantity} available.`);
         return;
       }
-      await updateScaffold.mutateAsync({
-        id: selectedScaffold.id,
-        quantity: currentQuantity - removeQuantity,
+      // Use the safe DB function that ONLY updates quantity, never qty_at_start
+      const { error } = await supabase.rpc("adjust_scaffold_quantity", {
+        p_scaffold_id: selectedScaffold.id,
+        p_new_quantity: currentQuantity - removeQuantity,
       });
+      if (error) {
+        toast.error(`Failed to remove quantity: ${error.message}`);
+        return;
+      }
+      toast.success("Quantity removed successfully");
       navigate("/");
       return;
     }
