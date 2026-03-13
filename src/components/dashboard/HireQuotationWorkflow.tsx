@@ -1408,6 +1408,13 @@ const HireQuotationWorkflow = ({
     handleSelectDeliverySiteFromRow(createdSite);
 
     setNewSite({ siteName: "", siteLocation: "", siteAddress: "", siteManagerName: "", siteManagerPhone: "", siteManagerEmail: "", siteOpenedBy: "", notes: "" });
+
+    // Auto-print loading note, delivery note, and latest return note on site add
+    setTimeout(() => {
+      handlePrintHireLoadingNote("current");
+      handlePrintDeliveryNote();
+      if (returnHistory.length > 0) handlePrintReturnNoteFromHistory(returnHistory[returnHistory.length - 1]);
+    }, 300);
   };
 
   const handleAutoFillSiteFromClient = () => {
@@ -3302,12 +3309,12 @@ const HireQuotationWorkflow = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="companyFax">Fax No</Label>
+                  <Label htmlFor="companyFax">Mobile No</Label>
                   <Input
                     id="companyFax"
                     value={header.companyFax}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
-                    placeholder="Fax number"
+                    placeholder="Mobile number"
                   />
                 </div>
                 <div>
