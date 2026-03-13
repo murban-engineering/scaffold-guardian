@@ -7,6 +7,13 @@ export interface DeliveryNoteData {
   deliveryDate: string;
   hireStartDate?: string;
   companyName: string;
+  companyAddress?: string;
+  companyCityTown?: string;
+  companyTel?: string;
+  companyFax?: string;
+  companyEmail?: string;
+  companyPinNumber?: string;
+  companyRegNumber?: string;
   siteName: string;
   siteAddress: string;
   contactName: string;
