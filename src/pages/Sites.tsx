@@ -144,6 +144,16 @@ const Sites = () => {
       return;
     }
 
+    // Pull site details from the first matching quotation for this client
+    const clientQuotation = removalReportQuotations.find(
+      (q) => (q.company_name || q.site_manager_name || "Unknown client") === selectedClient
+    );
+    const siteName = clientQuotation?.site_name || "";
+    const siteAddress = clientQuotation?.site_address || clientQuotation?.delivery_address || "";
+    const contactName = clientQuotation?.site_manager_name || "";
+    const contactPhone = clientQuotation?.site_manager_phone || "";
+    const clientId = clientQuotation?.client_id || "";
+
     const origin = window.location.origin;
     const printDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
     const docDate = new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
@@ -297,7 +307,12 @@ const Sites = () => {
             </div>
             <div class="panel">
               <h3>Site Details</h3>
-              <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value">${selectedClient}</span></div>
+              ${clientId ? `<div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${clientId}</span></div>` : ""}
+              <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient}</span></div>
+              ${siteName ? `<div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${siteName}</span></div>` : ""}
+              ${siteAddress ? `<div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${siteAddress}</span></div>` : ""}
+              ${contactName ? `<div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${contactName}</span></div>` : ""}
+              ${contactPhone ? `<div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${contactPhone}</span></div>` : ""}
             </div>
           </div>
         </div>
