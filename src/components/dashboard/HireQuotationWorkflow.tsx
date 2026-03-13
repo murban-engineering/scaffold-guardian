@@ -3255,6 +3255,70 @@ const HireQuotationWorkflow = ({
                     placeholder="Primary client contact name"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="physicalAddress">Physical Address (Street)</Label>
+                  <Input
+                    id="physicalAddress"
+                    value={header.physicalAddress}
+                    onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
+                    placeholder="Street / Road address"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="cityTown">City / Town</Label>
+                  <Input
+                    id="cityTown"
+                    value={header.cityTown}
+                    onChange={(e) => setHeader(prev => ({ ...prev, cityTown: e.target.value }))}
+                    placeholder="e.g. Nairobi, Mombasa"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyTel">Tel No</Label>
+                  <Input
+                    id="companyTel"
+                    value={header.companyTel}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyTel: e.target.value, landline1: e.target.value }))}
+                    placeholder="+254 ..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyFax">Fax No</Label>
+                  <Input
+                    id="companyFax"
+                    value={header.companyFax}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
+                    placeholder="Fax number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pinNumber">VAT / PIN Number</Label>
+                  <Input
+                    id="pinNumber"
+                    value={header.pinNumber}
+                    onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value }))}
+                    placeholder="e.g. A003674298L"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyRegNumber">Company Reg No</Label>
+                  <Input
+                    id="companyRegNumber"
+                    value={header.companyRegNumber}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value }))}
+                    placeholder="e.g. BN-ZMCLAZ3A"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="companyEmail">Company Email</Label>
+                  <Input
+                    id="companyEmail"
+                    type="email"
+                    value={header.companyEmail}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
+                    placeholder="info@company.co.ke"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="postalAddress">Postal Address</Label>
                   <Input
@@ -3271,43 +3335,6 @@ const HireQuotationWorkflow = ({
                     value={header.postalCode}
                     onChange={(e) => setHeader(prev => ({ ...prev, postalCode: e.target.value }))}
                     placeholder="Code"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="physicalAddress">Physical Address</Label>
-                  <Input
-                    id="physicalAddress"
-                    value={header.physicalAddress}
-                    onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
-                    placeholder="Street address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="physicalCode">Physical Code</Label>
-                  <Input
-                    id="physicalCode"
-                    value={header.physicalCode}
-                    onChange={(e) => setHeader(prev => ({ ...prev, physicalCode: e.target.value }))}
-                    placeholder="Code"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="companyEmail">Company Email</Label>
-                  <Input
-                    id="companyEmail"
-                    type="email"
-                    value={header.companyEmail}
-                    onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
-                    placeholder="info@company.co.ke"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="landline1">Landline 1 *</Label>
-                  <Input
-                    id="landline1"
-                    value={header.landline1}
-                    onChange={(e) => setHeader(prev => ({ ...prev, landline1: e.target.value }))}
-                    placeholder="+254 ..."
                   />
                 </div>
                 <div>
