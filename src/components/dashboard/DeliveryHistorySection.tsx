@@ -159,7 +159,9 @@ export const DeliveryHistorySection = ({
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {delivery.deliveryDate} • {formatDistanceToNow(new Date(delivery.createdAt), { addSuffix: true })}
+                      Hire Start: <strong>{delivery.hireStartDate || delivery.deliveryDate}</strong>
+                      {delivery.dispatchedDate && <> · Dispatched: <strong>{delivery.dispatchedDate}</strong></>}
+                      {!delivery.dispatchedDate && <> · {formatDistanceToNow(new Date(delivery.createdAt), { addSuffix: true })}</>}
                     </p>
                     {delivery.deliveredBy && (
                       <p className="text-sm text-muted-foreground">
