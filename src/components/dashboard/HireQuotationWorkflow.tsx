@@ -1255,12 +1255,7 @@ const HireQuotationWorkflow = ({
 
   // Return history is loaded exclusively from DB (see useEffect for initialQuotation.return_history above)
 
-  // Auto-fill site form from client details when entering site-master step
-  useEffect(() => {
-    if (activeStep === "site-master" && savedQuotationId && !clientSites?.length && !newSite.siteName) {
-      handleAutoFillSiteFromClient();
-    }
-  }, [activeStep, savedQuotationId, clientSites?.length]);
+  // Site details start blank — user fills manually. Auto-fill removed intentionally.
 
   const workflowSteps = useMemo(
     () =>
