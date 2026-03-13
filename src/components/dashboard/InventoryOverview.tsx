@@ -89,7 +89,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   }, [hireQuotations]);
 
   const inventoryMetrics = useMemo(() => {
-    return (scaffolds ?? []).map((item) => {
+    return dedupedScaffolds.map((item) => {
       const availableStock = item.quantity ?? 0;
       const onHire = onHireByScaffoldId.get(item.id) ?? 0;
       const openingStock = item.qty_at_start ?? (availableStock + onHire);
@@ -100,10 +100,10 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         openingStock,
       };
     });
-  }, [onHireByScaffoldId, scaffolds]);
+  }, [onHireByScaffoldId, dedupedScaffolds]);
 
   const totals = useMemo(() => {
-    return (scaffolds ?? []).reduce(
+    return dedupedScaffolds.reduce(
       (acc, item, idx) => {
         const metrics = inventoryMetrics[idx];
         if (!metrics) return acc;
@@ -118,7 +118,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
       },
       { openingStock: 0, availableStock: 0, onHire: 0, openingStockTonnage: 0, availableTonnage: 0, onHireTonnage: 0 }
     );
-  }, [inventoryMetrics, scaffolds]);
+  }, [inventoryMetrics, dedupedScaffolds]);
 
   const metricsById = useMemo(() => {
     return new Map(inventoryMetrics.map((metric) => [metric.id, metric]));
