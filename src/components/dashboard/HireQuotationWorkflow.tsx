@@ -2523,16 +2523,17 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    const hqSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: HireQuotationReportData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: hqSite?.site_name || header.siteName,
+      siteLocation: hqSite?.site_location || header.siteLocation,
+      siteAddress: hqSite?.site_address || header.siteAddress,
+      contactName: hqSite?.site_manager_name || header.clientName,
+      contactPhone: hqSite?.site_manager_phone || header.clientPhone,
+      contactEmail: hqSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
