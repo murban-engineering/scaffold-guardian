@@ -863,9 +863,8 @@ const Accounting = () => {
       const qNum = q.quotation_number || "Draft";
       const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
-      return {
         id: q.id,
-        invoiceNumber: deriveInvoiceNumber(qNum, idx),
+        invoiceNumber: q.invoice_number || deriveInvoiceNumber(qNum, idx),
         quotationNumber: qNum,
         accountNumber: q.account_number || "-",
         client: q.company_name || q.site_manager_name || "Unnamed client",
