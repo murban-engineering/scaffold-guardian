@@ -2960,6 +2960,7 @@ const HireQuotationWorkflow = ({
   }, [header, clientSites, selectedReturnSiteId]);
 
   const handlePrintCurrentReturnNote = () => {
+    const returnSite = clientSites?.find(s => s.id === selectedReturnSiteId);
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: returnNote.returnNoteNo,
@@ -2967,12 +2968,12 @@ const HireQuotationWorkflow = ({
       returnDate: returnNote.returnDate,
       hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: returnSite?.site_name || header.siteName,
+      siteLocation: returnSite?.site_location || header.siteLocation,
+      siteAddress: returnSite?.site_address || header.siteAddress,
+      contactName: returnSite?.site_manager_name || header.clientName,
+      contactPhone: returnSite?.site_manager_phone || header.clientPhone,
+      contactEmail: returnSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       returnedBy: returnNote.returnedBy,
