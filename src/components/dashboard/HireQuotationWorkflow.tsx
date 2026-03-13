@@ -2220,6 +2220,7 @@ const HireQuotationWorkflow = ({
       deliveryDate: delivery.deliveryDate,
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: selectedSite?.site_name || header.siteName,
       siteAddress: selectedSite?.site_address || header.siteAddress,
       contactName: selectedSite?.site_manager_name || header.clientName,
