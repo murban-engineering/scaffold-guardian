@@ -421,7 +421,7 @@ const Index = () => {
                             <FlaskConical className="mr-2 h-4 w-4" />
                             Test Quotation
                           </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent side="bottom" alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
+                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
                             <DropdownMenuItem
                               onClick={() => handleStartTestQuotation()}
                               disabled={createQuotation.isPending}
