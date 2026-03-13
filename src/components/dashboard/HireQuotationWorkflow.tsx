@@ -2491,6 +2491,7 @@ const HireQuotationWorkflow = ({
   };
 
   const handlePrintYardVerificationNote = () => {
+    const yardSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -2498,10 +2499,10 @@ const HireQuotationWorkflow = ({
       deliveryDate: deliveryNote.deliveryDate,
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: yardSite?.site_name || header.siteName,
+      siteAddress: yardSite?.site_address || header.siteAddress,
+      contactName: yardSite?.site_manager_name || header.clientName,
+      contactPhone: yardSite?.site_manager_phone || header.clientPhone,
       deliveredBy: deliveryNote.deliveredBy,
       receivedBy: deliveryNote.receivedBy,
       vehicleNo: deliveryNote.vehicleNo,
