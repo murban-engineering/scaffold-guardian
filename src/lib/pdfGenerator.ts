@@ -39,6 +39,13 @@ export interface QuotationCalculationData {
   quotationNumber: string;
   dateCreated: string;
   companyName: string;
+  companyAddress?: string;
+  companyCityTown?: string;
+  companyTel?: string;
+  companyFax?: string;
+  companyEmail?: string;
+  companyPinNumber?: string;
+  companyRegNumber?: string;
   siteName: string;
   siteLocation?: string;
   siteAddress: string;
