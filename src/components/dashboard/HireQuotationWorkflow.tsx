@@ -3030,6 +3030,17 @@ const HireQuotationWorkflow = ({
     toast.success("Return note opened for printing");
   };
 
+  // Helper: shared client company fields passed to every PDF generator
+  const clientPdfFields = {
+    companyAddress: header.physicalAddress || undefined,
+    companyCityTown: header.cityTown || undefined,
+    companyTel: header.companyTel || header.landline1 || undefined,
+    companyFax: header.companyFax || undefined,
+    companyEmail: header.companyEmail || header.clientEmail || undefined,
+    companyPinNumber: header.pinNumber || undefined,
+    companyRegNumber: header.companyRegNumber || undefined,
+  };
+
   const inventoryScaffolds = scaffolds ?? [];
   const normalizedItemCodeSearch = itemCodeSearch.trim().toLowerCase();
   /** Derive a grouping key from the description so similar items cluster together. */
