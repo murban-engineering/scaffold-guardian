@@ -392,9 +392,14 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
-          View All <ArrowRight className="w-4 h-4 ml-1" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+            View All <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrintInventoryReport} className="gap-1.5">
+            <Printer className="w-4 h-4" /> Print Report
+          </Button>
+        </div>
       </div>
 
       <div className="relative mb-4">
