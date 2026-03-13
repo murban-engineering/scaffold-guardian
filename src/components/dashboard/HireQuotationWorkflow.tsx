@@ -42,7 +42,12 @@ type QuotationHeader = {
   postalCode: string;
   physicalAddress: string;
   physicalCode: string;
+  cityTown: string;
+  companyTel: string;
+  companyFax: string;
   companyEmail: string;
+  pinNumber: string;
+  companyRegNumber: string;
   landline1: string;
   landline2: string;
   faxNumber: string;
