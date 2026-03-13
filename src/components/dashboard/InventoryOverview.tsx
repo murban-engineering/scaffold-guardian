@@ -92,7 +92,9 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     return dedupedScaffolds.map((item) => {
       const availableStock = item.quantity ?? 0;
       const onHire = onHireByScaffoldId.get(item.id) ?? 0;
-      const openingStock = item.qty_at_start ?? (availableStock + onHire);
+      // Use ONLY the stored qty_at_start — never a dynamic fallback.
+      // qty_at_start is the immutable baseline; it only changes when stock is added.
+      const openingStock = item.qty_at_start ?? 0;
       return {
         id: item.id,
         availableStock,
