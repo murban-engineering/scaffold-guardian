@@ -557,7 +557,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     siteId: data.siteId,
     siteAddress: data.siteAddress,
     clientId: data.clientId,
-    orderNumber: "",
+    orderNumber: data.quotationNumber,
     hireQuoteNo: data.quotationNumber,
     createdBy: data.createdBy,
   });
