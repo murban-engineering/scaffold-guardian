@@ -1,0 +1,1 @@
+ALTER TABLE public.scaffolds ADD COLUMN IF NOT EXISTS qty_at_start integer DEFAULT 0;

@@ -455,6 +455,7 @@ export type Database = {
           part_number: string | null
           purchase_date: string | null
           qr_code: string | null
+          qty_at_start: number | null
           quantity: number | null
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number: string | null
@@ -476,6 +477,7 @@ export type Database = {
           part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
+          qty_at_start?: number | null
           quantity?: number | null
           scaffold_type: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
@@ -497,6 +499,7 @@ export type Database = {
           part_number?: string | null
           purchase_date?: string | null
           qr_code?: string | null
+          qty_at_start?: number | null
           quantity?: number | null
           scaffold_type?: Database["public"]["Enums"]["scaffold_type"]
           serial_number?: string | null
