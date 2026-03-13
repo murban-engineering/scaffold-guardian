@@ -745,18 +745,34 @@ const HireQuotationWorkflow = ({
       initialQuotation.status === "dispatched" ||
       initialQuotation.status === "completed" ||
       !!initialQuotation.dispatch_date;
+
+    // Build a delivery-history fallback qty map (part_number → total delivered)
+    // so items remain visible even if line item quantities were incorrectly zeroed.
+    const deliveryHistoryQtyMap = new Map<string, number>();
+    const deliveryHistoryArr = Array.isArray(initialQuotation.delivery_history)
+      ? (initialQuotation.delivery_history as { items?: { itemCode?: string; quantityDelivered?: number }[] }[])
+      : [];
+    for (const record of deliveryHistoryArr) {
+      for (const dItem of record.items ?? []) {
+        if (!dItem.itemCode) continue;
+        deliveryHistoryQtyMap.set(dItem.itemCode, (deliveryHistoryQtyMap.get(dItem.itemCode) ?? 0) + (dItem.quantityDelivered ?? 0));
+      }
+    }
     
     // Mark that we are about to load items directly from DB so the auto-sync
     // skips one cycle and avoids the clear → re-insert → realtime → reload loop.
     justLoadedFromDBRef.current = true;
     setEquipmentItems(
       lineItems.map(item => {
-        const originalQty = item.quantity ?? 0;
+        const dbQty = item.quantity ?? 0;
         const deliveredQty = item.delivered_quantity ?? 0;
         const balanceQty = item.balance_quantity ?? 0;
+
+        // If DB quantity is 0 but we have delivery history for this item, use that as the original qty
+        const historyQty = item.part_number ? (deliveryHistoryQtyMap.get(item.part_number) ?? 0) : 0;
+        const originalQty = dbQty > 0 ? dbQty : historyQty;
         
-        // Always show the original ordered quantity in the Equipment step so items
-        // remain visible even after dispatch. The Hire Delivery step handles balance tracking.
+        // Always show the original ordered quantity so items remain visible even after dispatch.
         const qtyToShow = originalQty;
         
         return {
@@ -772,7 +788,7 @@ const HireQuotationWorkflow = ({
           notes: "",
           warehouseAvailableQty: scaffolds?.find((scaffold) => scaffold.id === item.scaffold_id)?.quantity ?? 0,
           originalQuantity: originalQty,
-          previouslyDelivered: deliveredQty,
+          previouslyDelivered: deliveredQty > 0 ? deliveredQty : historyQty,
           dbBalanceQuantity: balanceQty,
         };
       })
