@@ -329,15 +329,15 @@ const Sites = () => {
       </div>
     </body></html>`;
 
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank");
     if (!printWindow) {
       window.alert("Please allow popups to print the report.");
+      URL.revokeObjectURL(url);
       return;
     }
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
+    printWindow.addEventListener("unload", () => URL.revokeObjectURL(url), { once: true });
   };
 
   return (
