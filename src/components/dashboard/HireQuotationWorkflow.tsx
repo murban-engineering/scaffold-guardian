@@ -2394,6 +2394,7 @@ const HireQuotationWorkflow = ({
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: loadingSite?.site_name || header.siteName,
       siteLocation: loadingSite?.site_location || header.siteLocation,
       siteAddress: loadingSite?.site_address || header.siteAddress,
