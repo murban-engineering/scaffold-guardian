@@ -2491,6 +2491,7 @@ const HireQuotationWorkflow = ({
   };
 
   const handlePrintYardVerificationNote = () => {
+    const yardSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -2498,10 +2499,10 @@ const HireQuotationWorkflow = ({
       deliveryDate: deliveryNote.deliveryDate,
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: yardSite?.site_name || header.siteName,
+      siteAddress: yardSite?.site_address || header.siteAddress,
+      contactName: yardSite?.site_manager_name || header.clientName,
+      contactPhone: yardSite?.site_manager_phone || header.clientPhone,
       deliveredBy: deliveryNote.deliveredBy,
       receivedBy: deliveryNote.receivedBy,
       vehicleNo: deliveryNote.vehicleNo,
@@ -2522,16 +2523,17 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    const hqSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: HireQuotationReportData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: hqSite?.site_name || header.siteName,
+      siteLocation: hqSite?.site_location || header.siteLocation,
+      siteAddress: hqSite?.site_address || header.siteAddress,
+      contactName: hqSite?.site_manager_name || header.clientName,
+      contactPhone: hqSite?.site_manager_phone || header.clientPhone,
+      contactEmail: hqSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       createdBy: header.createdBy,
@@ -2620,16 +2622,17 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    const quotSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: QuotationCalculationData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: quotSite?.site_name || header.siteName,
+      siteLocation: quotSite?.site_location || header.siteLocation,
+      siteAddress: quotSite?.site_address || header.siteAddress,
+      contactName: quotSite?.site_manager_name || header.clientName,
+      contactPhone: quotSite?.site_manager_phone || header.clientPhone,
+      contactEmail: quotSite?.site_manager_email || header.clientEmail,
       createdBy: header.createdBy,
       clientId: header.clientId,
       siteId: getSelectedSiteNumber(selectedDeliverySiteId),
@@ -2915,6 +2918,7 @@ const HireQuotationWorkflow = ({
   }, [returnSequence, header.quotationNo]);
 
   const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
+    const returnHistSite = clientSites?.find(s => s.id === selectedReturnSiteId);
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: record.returnNoteNumber,
@@ -2922,12 +2926,12 @@ const HireQuotationWorkflow = ({
       returnDate: record.returnDate,
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: returnHistSite?.site_name || header.siteName,
+      siteLocation: returnHistSite?.site_location || header.siteLocation,
+      siteAddress: returnHistSite?.site_address || header.siteAddress,
+      contactName: returnHistSite?.site_manager_name || header.clientName,
+      contactPhone: returnHistSite?.site_manager_phone || header.clientPhone,
+      contactEmail: returnHistSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       returnedBy: record.returnedBy,
@@ -2953,9 +2957,10 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
-  }, [header]);
+  }, [header, clientSites, selectedReturnSiteId]);
 
   const handlePrintCurrentReturnNote = () => {
+    const returnSite = clientSites?.find(s => s.id === selectedReturnSiteId);
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: returnNote.returnNoteNo,
@@ -2963,12 +2968,12 @@ const HireQuotationWorkflow = ({
       returnDate: returnNote.returnDate,
       hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: returnSite?.site_name || header.siteName,
+      siteLocation: returnSite?.site_location || header.siteLocation,
+      siteAddress: returnSite?.site_address || header.siteAddress,
+      contactName: returnSite?.site_manager_name || header.clientName,
+      contactPhone: returnSite?.site_manager_phone || header.clientPhone,
+      contactEmail: returnSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       returnedBy: returnNote.returnedBy,
