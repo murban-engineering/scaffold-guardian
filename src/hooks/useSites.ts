@@ -42,7 +42,6 @@ export const useActiveSites = () => {
       const { data: sites, error: sitesError } = await supabase
         .from("sites")
         .select("*")
-        .in("status", ["active", "on_hold"])
         .order("created_at", { ascending: false });
 
       if (sitesError) throw sitesError;
