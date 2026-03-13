@@ -2622,16 +2622,17 @@ const HireQuotationWorkflow = ({
       return;
     }
 
+    const quotSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
     const data: QuotationCalculationData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: quotSite?.site_name || header.siteName,
+      siteLocation: quotSite?.site_location || header.siteLocation,
+      siteAddress: quotSite?.site_address || header.siteAddress,
+      contactName: quotSite?.site_manager_name || header.clientName,
+      contactPhone: quotSite?.site_manager_phone || header.clientPhone,
+      contactEmail: quotSite?.site_manager_email || header.clientEmail,
       createdBy: header.createdBy,
       clientId: header.clientId,
       siteId: getSelectedSiteNumber(selectedDeliverySiteId),
