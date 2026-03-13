@@ -71,7 +71,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     return (scaffolds ?? []).map((item) => {
       const availableStock = item.quantity ?? 0;
       const onHire = onHireByScaffoldId.get(item.id) ?? 0;
-      const openingStock = availableStock + onHire;
+      const openingStock = item.qty_at_start ?? (availableStock + onHire);
       return {
         id: item.id,
         availableStock,
