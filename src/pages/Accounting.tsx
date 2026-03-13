@@ -839,8 +839,23 @@ const Accounting = () => {
       const hireWeeks = billableDaysToWeeks(hireDays);
       const hireWeeksLabel = formatWeeksDaysLabel(hireDays);
 
+      // Build a fallback qty map from delivery history in case line item quantities are 0
+      const deliveryHistoryQtyMap = new Map<string, number>();
+      for (const record of deliveryHistory) {
+        if (!Array.isArray((record as { items?: unknown }).items)) continue;
+        for (const item of (record as { items: { itemCode?: string; quantityDelivered?: number }[] }).items) {
+          if (!item.itemCode) continue;
+          const prev = deliveryHistoryQtyMap.get(item.itemCode) ?? 0;
+          deliveryHistoryQtyMap.set(item.itemCode, prev + (item.quantityDelivered ?? 0));
+        }
+      }
+
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
-        const qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
+        let qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
+        // Fallback: if still 0, pull from delivery history by part number
+        if (qty === 0 && li.part_number) {
+          qty = deliveryHistoryQtyMap.get(li.part_number) ?? 0;
+        }
         const weeklyRate = li.weekly_rate ?? 0;
         const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
         const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
