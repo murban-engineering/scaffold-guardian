@@ -22,6 +22,7 @@ export interface Scaffold {
   part_number: string | null;
   description: string | null;
   quantity: number | null;
+  qty_at_start: number | null;
   mass_per_item: number | null;
   weekly_rate: number | null;
   unit_price: number | null;
