@@ -1409,15 +1409,11 @@ const HireQuotationWorkflow = ({
 
     setNewSite({ siteName: "", siteLocation: "", siteAddress: "", siteManagerName: "", siteManagerPhone: "", siteManagerEmail: "", siteOpenedBy: "", notes: "" });
 
-    // Auto-print all three notes immediately after site is registered
+    // Auto-print loading note, delivery note, and latest return note on site add
     setTimeout(() => {
       handlePrintHireLoadingNote("current");
       handlePrintDeliveryNote();
-      // Return note uses existing return state — only print if there are delivered items
-      if (equipmentItems.some(item => (item.previouslyDelivered ?? 0) > 0 || parseNumber(item.qtyDelivered) > 0)) {
-        const returnRecord = returnHistory[returnHistory.length - 1];
-        if (returnRecord) handlePrintReturnNoteFromHistory(returnRecord);
-      }
+      if (returnHistory.length > 0) handlePrintReturnNoteFromHistory(returnHistory[returnHistory.length - 1]);
     }, 300);
   };
 
