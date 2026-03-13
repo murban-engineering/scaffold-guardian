@@ -590,6 +590,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_scaffold_quantity: {
+        Args: { p_new_quantity: number; p_scaffold_id: string }
+        Returns: undefined
+      }
       generate_next_client_id: { Args: never; Returns: string }
       has_elevated_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
