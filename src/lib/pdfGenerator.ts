@@ -533,7 +533,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
             ${data.clientVat ? `<div class="info-row" style="flex:1;"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : ""}
           </div>
           <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:2px;">
-            <div class="info-row" style="flex:1;"><span class="info-label">Fax No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
+            <div class="info-row" style="flex:1;"><span class="info-label">Mobile No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
             ${data.clientReg ? `<div class="info-row" style="flex:1;"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : ""}
           </div>
           <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>

@@ -1408,6 +1408,17 @@ const HireQuotationWorkflow = ({
     handleSelectDeliverySiteFromRow(createdSite);
 
     setNewSite({ siteName: "", siteLocation: "", siteAddress: "", siteManagerName: "", siteManagerPhone: "", siteManagerEmail: "", siteOpenedBy: "", notes: "" });
+
+    // Auto-print all three notes immediately after site is registered
+    setTimeout(() => {
+      handlePrintHireLoadingNote("current");
+      handlePrintDeliveryNote();
+      // Return note uses existing return state — only print if there are delivered items
+      if (equipmentItems.some(item => (item.previouslyDelivered ?? 0) > 0 || parseNumber(item.qtyDelivered) > 0)) {
+        const returnRecord = returnHistory[returnHistory.length - 1];
+        if (returnRecord) handlePrintReturnNoteFromHistory(returnRecord);
+      }
+    }, 300);
   };
 
   const handleAutoFillSiteFromClient = () => {
