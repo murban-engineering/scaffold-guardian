@@ -443,6 +443,9 @@ interface StandardReportLayoutData {
   documentDate: string;
   clientName: string;
   clientAddress?: string;
+  clientCityTown?: string;
+  clientTel?: string;
+  clientFax?: string;
   contactName?: string;
   contactPhone?: string;
   contactEmail?: string;
@@ -486,15 +489,20 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
       </div>
 
       <div class="panel client-panel">
-        ${panelHeadersHidden ? "" : `<h3>${data.clientName || "-"}</h3>`}
-        ${data.clientAddress ? `<p style="margin-bottom:4px;font-size:9px;">${data.clientAddress}</p>` : ""}
-        <div style="margin-top:8px;">
-          <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
-          <div class="info-row"><span class="info-label">Cell No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
-          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
-          ${data.clientVat ? `<div class="info-row"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : ""}
-          ${data.clientReg ? `<div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : ""}
+        ${panelHeadersHidden ? "" : `<h3 style="font-weight:800;">${data.clientName || "-"}</h3>`}
+        ${data.clientAddress ? `<p style="margin-bottom:2px;font-size:9px;">${data.clientAddress}</p>` : ""}
+        ${data.clientCityTown ? `<p style="margin-bottom:6px;font-size:9px;">${data.clientCityTown}</p>` : ""}
+        <div style="margin-top:6px;">
+          <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:2px;">
+            <div class="info-row" style="flex:1;"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.clientTel || data.contactPhone || ""}</span></div>
+            ${data.clientVat ? `<div class="info-row" style="flex:1;"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : ""}
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:2px;">
+            <div class="info-row" style="flex:1;"><span class="info-label">Fax No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
+            ${data.clientReg ? `<div class="info-row" style="flex:1;"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : ""}
+          </div>
           <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
+          <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
         </div>
       </div>
     </div>
