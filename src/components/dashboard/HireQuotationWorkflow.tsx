@@ -2957,6 +2957,7 @@ const HireQuotationWorkflow = ({
       returnDate: record.returnDate,
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
