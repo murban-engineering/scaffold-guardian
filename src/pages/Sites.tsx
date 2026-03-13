@@ -144,6 +144,16 @@ const Sites = () => {
       return;
     }
 
+    // Pull site details from the first matching quotation for this client
+    const clientQuotation = removalReportQuotations.find(
+      (q) => (q.company_name || q.site_manager_name || "Unknown client") === selectedClient
+    );
+    const siteName = clientQuotation?.site_name || "";
+    const siteAddress = clientQuotation?.site_address || clientQuotation?.delivery_address || "";
+    const contactName = clientQuotation?.site_manager_name || "";
+    const contactPhone = clientQuotation?.site_manager_phone || "";
+    const clientId = clientQuotation?.client_id || "";
+
     const origin = window.location.origin;
     const printDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
     const docDate = new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
