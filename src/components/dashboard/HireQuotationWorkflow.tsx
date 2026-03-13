@@ -2918,6 +2918,7 @@ const HireQuotationWorkflow = ({
   }, [returnSequence, header.quotationNo]);
 
   const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
+    const returnHistSite = clientSites?.find(s => s.id === selectedReturnSiteId);
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: record.returnNoteNumber,
@@ -2925,12 +2926,12 @@ const HireQuotationWorkflow = ({
       returnDate: record.returnDate,
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
-      contactEmail: header.clientEmail,
+      siteName: returnHistSite?.site_name || header.siteName,
+      siteLocation: returnHistSite?.site_location || header.siteLocation,
+      siteAddress: returnHistSite?.site_address || header.siteAddress,
+      contactName: returnHistSite?.site_manager_name || header.clientName,
+      contactPhone: returnHistSite?.site_manager_phone || header.clientPhone,
+      contactEmail: returnHistSite?.site_manager_email || header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
       returnedBy: record.returnedBy,
@@ -2956,7 +2957,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
-  }, [header]);
+  }, [header, clientSites, selectedReturnSiteId]);
 
   const handlePrintCurrentReturnNote = () => {
     const data: HireReturnNoteData = {
