@@ -3825,10 +3825,69 @@ const HireQuotationWorkflow = ({
                   <p>{header.siteAddress || "-"}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                {equipmentItems.length} equipment item(s) ready for the hire quotation report.
-              </p>
             </div>
+
+            {/* Equipment table — always visible regardless of dispatch status */}
+            {equipmentItems.length > 0 ? (
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="bg-muted/30 px-4 py-3 border-b border-border">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <PackageSearch className="h-4 w-4" />
+                    Equipment Items ({equipmentItems.length})
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/20">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-muted-foreground">Part No</th>
+                        <th className="px-4 py-2 text-left font-semibold text-muted-foreground">Description</th>
+                        <th className="px-4 py-2 text-right font-semibold text-muted-foreground">Qty</th>
+                        <th className="px-4 py-2 text-right font-semibold text-muted-foreground">Mass/Item</th>
+                        <th className="px-4 py-2 text-right font-semibold text-muted-foreground">Weekly Rate</th>
+                        <th className="px-4 py-2 text-right font-semibold text-muted-foreground">Discount %</th>
+                        <th className="px-4 py-2 text-right font-semibold text-muted-foreground">Hire/Week</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {equipmentItems.map((item) => {
+                        const qty = parseNumber(item.qtyDelivered);
+                        const rate = parseNumber(item.weeklyRate);
+                        const discount = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100);
+                        const effectiveRate = Math.max(rate * (1 - discount / 100), 0);
+                        const hirePerWeek = qty * effectiveRate;
+                        return (
+                          <tr key={item.id} className="border-t border-border hover:bg-muted/20">
+                            <td className="px-4 py-2 font-mono text-xs">{item.itemCode || "-"}</td>
+                            <td className="px-4 py-2">{item.description || "-"}</td>
+                            <td className="px-4 py-2 text-right">{qty}</td>
+                            <td className="px-4 py-2 text-right">{parseNumber(item.massPerItem) > 0 ? `${parseNumber(item.massPerItem).toFixed(2)} kg` : "-"}</td>
+                            <td className="px-4 py-2 text-right">{formatCurrency(rate)}</td>
+                            <td className="px-4 py-2 text-right">{discount > 0 ? `${discount}%` : "-"}</td>
+                            <td className="px-4 py-2 text-right font-medium">{formatCurrency(hirePerWeek)}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="border-t-2 border-border bg-muted/30 font-semibold">
+                        <td colSpan={6} className="px-4 py-2 text-right">Weekly Total</td>
+                        <td className="px-4 py-2 text-right">
+                          {formatCurrency(equipmentItems.reduce((sum, item) => {
+                            const qty = parseNumber(item.qtyDelivered);
+                            const rate = parseNumber(item.weeklyRate);
+                            const discount = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100);
+                            return sum + qty * Math.max(rate * (1 - discount / 100), 0);
+                          }, 0))}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                No equipment items added yet. Go to the Equipment step to add items.
+              </div>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
