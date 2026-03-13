@@ -128,9 +128,13 @@ export type Database = {
           account_number: string | null
           basket_discount: number | null
           bulk_order_required: boolean | null
+          city_town: string | null
           client_id: string | null
           company_address: string | null
+          company_fax: string | null
           company_name: string | null
+          company_reg_number: string | null
+          company_tel: string | null
           created_at: string
           created_by: string
           credit_limit: number | null
@@ -145,6 +149,7 @@ export type Database = {
           official_order_required: boolean | null
           other_discount: number | null
           payment_method: string | null
+          pin_number: string | null
           project_type: string[] | null
           quotation_number: string
           return_history: Json | null
@@ -164,9 +169,13 @@ export type Database = {
           account_number?: string | null
           basket_discount?: number | null
           bulk_order_required?: boolean | null
+          city_town?: string | null
           client_id?: string | null
           company_address?: string | null
+          company_fax?: string | null
           company_name?: string | null
+          company_reg_number?: string | null
+          company_tel?: string | null
           created_at?: string
           created_by: string
           credit_limit?: number | null
@@ -181,6 +190,7 @@ export type Database = {
           official_order_required?: boolean | null
           other_discount?: number | null
           payment_method?: string | null
+          pin_number?: string | null
           project_type?: string[] | null
           quotation_number: string
           return_history?: Json | null
@@ -200,9 +210,13 @@ export type Database = {
           account_number?: string | null
           basket_discount?: number | null
           bulk_order_required?: boolean | null
+          city_town?: string | null
           client_id?: string | null
           company_address?: string | null
+          company_fax?: string | null
           company_name?: string | null
+          company_reg_number?: string | null
+          company_tel?: string | null
           created_at?: string
           created_by?: string
           credit_limit?: number | null
@@ -217,6 +231,7 @@ export type Database = {
           official_order_required?: boolean | null
           other_discount?: number | null
           payment_method?: string | null
+          pin_number?: string | null
           project_type?: string[] | null
           quotation_number?: string
           return_history?: Json | null

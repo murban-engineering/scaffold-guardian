@@ -42,7 +42,12 @@ type QuotationHeader = {
   postalCode: string;
   physicalAddress: string;
   physicalCode: string;
+  cityTown: string;
+  companyTel: string;
+  companyFax: string;
   companyEmail: string;
+  pinNumber: string;
+  companyRegNumber: string;
   landline1: string;
   landline2: string;
   faxNumber: string;
@@ -372,7 +377,12 @@ const buildStructuredQuotationNotes = (paymentTerms: string, header: QuotationHe
         postalCode: header.postalCode,
         physicalAddress: header.physicalAddress,
         physicalCode: header.physicalCode,
+        cityTown: header.cityTown,
+        companyTel: header.companyTel,
+        companyFax: header.companyFax,
         companyEmail: header.companyEmail,
+        pinNumber: header.pinNumber,
+        companyRegNumber: header.companyRegNumber,
         landline1: header.landline1,
         landline2: header.landline2,
         faxNumber: header.faxNumber,
@@ -574,7 +584,12 @@ const HireQuotationWorkflow = ({
     postalCode: "",
     physicalAddress: "",
     physicalCode: "",
+    cityTown: "",
+    companyTel: "",
+    companyFax: "",
     companyEmail: "",
+    pinNumber: "",
+    companyRegNumber: "",
     landline1: "",
     landline2: "",
     faxNumber: "",
@@ -705,9 +720,14 @@ const HireQuotationWorkflow = ({
         companyEmail: initialQuotation.site_manager_email ?? "",
         siteContactPerson: initialQuotation.site_manager_name ?? "",
         landline1: initialQuotation.site_manager_phone ?? "",
+        cityTown: (initialQuotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? "",
+        companyTel: (initialQuotation as HireQuotation & { company_tel?: string }).company_tel ?? savedProfile.companyTel ?? "",
+        companyFax: (initialQuotation as HireQuotation & { company_fax?: string }).company_fax ?? savedProfile.companyFax ?? "",
+        pinNumber: (initialQuotation as HireQuotation & { pin_number?: string }).pin_number ?? savedProfile.pinNumber ?? "",
+        companyRegNumber: (initialQuotation as HireQuotation & { company_reg_number?: string }).company_reg_number ?? savedProfile.companyRegNumber ?? "",
         siteName: initialQuotation.site_name ?? "",
         siteAddress: initialQuotation.site_address ?? "",
-        physicalAddress: initialQuotation.site_address ?? "",
+        physicalAddress: initialQuotation.company_address ?? initialQuotation.site_address ?? "",
         officialOrdersUsed: initialQuotation.official_order_required ? "yes" : "no",
         bulkOrdersUsed: initialQuotation.bulk_order_required ? "yes" : "no",
         telephonicOrders: initialQuotation.telephonic_order_acceptable ? "yes" : "no",
@@ -1703,8 +1723,9 @@ const HireQuotationWorkflow = ({
       if (!savedQuotationId) {
         const quotation = await createQuotation.mutateAsync({
           company_name: companyName,
+          company_address: header.physicalAddress || undefined,
           site_name: header.siteName || undefined,
-          site_address: header.physicalAddress || header.siteAddress || undefined,
+          site_address: header.siteAddress || undefined,
           site_manager_name: contactName,
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
@@ -1713,7 +1734,7 @@ const HireQuotationWorkflow = ({
           // Pass existing client ID (e.g. from promoted test quotation) so it is preserved;
           // if empty, useCreateQuotation will generate a fresh one from the sequence.
           client_id: header.clientId || undefined,
-        });
+        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string; city_town?: string; company_tel?: string; company_fax?: string; pin_number?: string; company_reg_number?: string });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
         const clientId = quotation.client_id || "";
@@ -1732,14 +1753,15 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           company_name: companyName,
+          company_address: header.physicalAddress || undefined,
           site_name: header.siteName || undefined,
-          site_address: header.physicalAddress || header.siteAddress || undefined,
+          site_address: header.siteAddress || undefined,
           site_manager_name: contactName,
           site_manager_phone: contactPhone,
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-        });
+        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string });
         return savedQuotationId;
       }
     } catch (error) {
@@ -2198,6 +2220,7 @@ const HireQuotationWorkflow = ({
       deliveryDate: delivery.deliveryDate,
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: selectedSite?.site_name || header.siteName,
       siteAddress: selectedSite?.site_address || header.siteAddress,
       contactName: selectedSite?.site_manager_name || header.clientName,
@@ -2229,6 +2252,7 @@ const HireQuotationWorkflow = ({
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: selectedSite?.site_name || header.siteName,
       siteLocation: selectedSite?.site_location || header.siteLocation,
       siteAddress: selectedSite?.site_address || header.siteAddress,
@@ -2266,6 +2290,7 @@ const HireQuotationWorkflow = ({
       deliveryDate: deliveryNote.deliveryDate,
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: activeSite?.site_name || header.siteName,
       siteAddress: activeSite?.site_address || header.siteAddress,
       contactName: activeSite?.site_manager_name || header.clientName,
@@ -2369,6 +2394,7 @@ const HireQuotationWorkflow = ({
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: loadingSite?.site_name || header.siteName,
       siteLocation: loadingSite?.site_location || header.siteLocation,
       siteAddress: loadingSite?.site_address || header.siteAddress,
@@ -2533,6 +2559,7 @@ const HireQuotationWorkflow = ({
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
@@ -2631,6 +2658,7 @@ const HireQuotationWorkflow = ({
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
@@ -2929,6 +2957,7 @@ const HireQuotationWorkflow = ({
       returnDate: record.returnDate,
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
@@ -2970,6 +2999,7 @@ const HireQuotationWorkflow = ({
       returnDate: returnNote.returnDate,
       hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
+      ...clientPdfFields,
       siteName: header.siteName,
       siteLocation: header.siteLocation,
       siteAddress: header.siteAddress,
@@ -3006,6 +3036,17 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
+  };
+
+  // Helper: shared client company fields passed to every PDF generator
+  const clientPdfFields = {
+    companyAddress: header.physicalAddress || undefined,
+    companyCityTown: header.cityTown || undefined,
+    companyTel: header.companyTel || header.landline1 || undefined,
+    companyFax: header.companyFax || undefined,
+    companyEmail: header.companyEmail || header.clientEmail || undefined,
+    companyPinNumber: header.pinNumber || undefined,
+    companyRegNumber: header.companyRegNumber || undefined,
   };
 
   const inventoryScaffolds = scaffolds ?? [];
@@ -3233,6 +3274,70 @@ const HireQuotationWorkflow = ({
                     placeholder="Primary client contact name"
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="physicalAddress">Physical Address (Street)</Label>
+                  <Input
+                    id="physicalAddress"
+                    value={header.physicalAddress}
+                    onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
+                    placeholder="Street / Road address"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="cityTown">City / Town</Label>
+                  <Input
+                    id="cityTown"
+                    value={header.cityTown}
+                    onChange={(e) => setHeader(prev => ({ ...prev, cityTown: e.target.value }))}
+                    placeholder="e.g. Nairobi, Mombasa"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyTel">Tel No</Label>
+                  <Input
+                    id="companyTel"
+                    value={header.companyTel}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyTel: e.target.value, landline1: e.target.value }))}
+                    placeholder="+254 ..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyFax">Fax No</Label>
+                  <Input
+                    id="companyFax"
+                    value={header.companyFax}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
+                    placeholder="Fax number"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pinNumber">VAT / PIN Number</Label>
+                  <Input
+                    id="pinNumber"
+                    value={header.pinNumber}
+                    onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value }))}
+                    placeholder="e.g. A003674298L"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyRegNumber">Company Reg No</Label>
+                  <Input
+                    id="companyRegNumber"
+                    value={header.companyRegNumber}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value }))}
+                    placeholder="e.g. BN-ZMCLAZ3A"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="companyEmail">Company Email</Label>
+                  <Input
+                    id="companyEmail"
+                    type="email"
+                    value={header.companyEmail}
+                    onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
+                    placeholder="info@company.co.ke"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="postalAddress">Postal Address</Label>
                   <Input
@@ -3249,43 +3354,6 @@ const HireQuotationWorkflow = ({
                     value={header.postalCode}
                     onChange={(e) => setHeader(prev => ({ ...prev, postalCode: e.target.value }))}
                     placeholder="Code"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="physicalAddress">Physical Address</Label>
-                  <Input
-                    id="physicalAddress"
-                    value={header.physicalAddress}
-                    onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
-                    placeholder="Street address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="physicalCode">Physical Code</Label>
-                  <Input
-                    id="physicalCode"
-                    value={header.physicalCode}
-                    onChange={(e) => setHeader(prev => ({ ...prev, physicalCode: e.target.value }))}
-                    placeholder="Code"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="companyEmail">Company Email</Label>
-                  <Input
-                    id="companyEmail"
-                    type="email"
-                    value={header.companyEmail}
-                    onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
-                    placeholder="info@company.co.ke"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="landline1">Landline 1 *</Label>
-                  <Input
-                    id="landline1"
-                    value={header.landline1}
-                    onChange={(e) => setHeader(prev => ({ ...prev, landline1: e.target.value }))}
-                    placeholder="+254 ..."
                   />
                 </div>
                 <div>
