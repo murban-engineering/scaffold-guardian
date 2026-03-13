@@ -139,6 +139,7 @@ export type Database = {
           dispatch_date: string | null
           hire_weeks: number | null
           id: string
+          invoice_number: string | null
           market_segment: string[] | null
           notes: string | null
           official_order_required: boolean | null
@@ -174,6 +175,7 @@ export type Database = {
           dispatch_date?: string | null
           hire_weeks?: number | null
           id?: string
+          invoice_number?: string | null
           market_segment?: string[] | null
           notes?: string | null
           official_order_required?: boolean | null
@@ -209,6 +211,7 @@ export type Database = {
           dispatch_date?: string | null
           hire_weeks?: number | null
           id?: string
+          invoice_number?: string | null
           market_segment?: string[] | null
           notes?: string | null
           official_order_required?: boolean | null
