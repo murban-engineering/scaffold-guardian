@@ -252,23 +252,6 @@ const Sites = () => {
         <button type="button" class="print-button" onclick="window.print()">Print report</button>
       </div>
 
-      <!-- Fixed page header (repeats on every printed page) -->
-      <div class="page-header">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:72px;height:auto;"/>
-            <div>
-              <div style="font-size:10px;font-weight:800;">OTNO Access Solutions</div>
-              <div style="font-size:8px;color:#555;">99215-80107 Mombasa, Kenya &bull; PIN: P052471711M</div>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:11px;font-weight:800;text-transform:uppercase;">Inventory Removal Report</div>
-            <div style="font-size:8px;color:#555;">${selectedClient}</div>
-          </div>
-        </div>
-      </div>
-      <div class="page-header-spacer"></div>
 
       <!-- Main page content -->
       <div class="report-page">
