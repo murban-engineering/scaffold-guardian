@@ -603,3 +603,4 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
 };
 
 export default InventoryOverview;
+
