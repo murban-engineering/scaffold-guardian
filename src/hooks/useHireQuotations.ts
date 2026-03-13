@@ -28,6 +28,7 @@ export interface QuotationLineItem {
 export interface HireQuotation {
   id: string;
   quotation_number: string;
+  invoice_number: string | null;
   client_id: string | null;
   created_by: string;
   status: string;
