@@ -29,17 +29,38 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     if (externalSearch !== undefined) setSearch(externalSearch);
   }, [externalSearch]);
 
-  const filteredAndGrouped = useMemo(() => {
+  const dedupedScaffolds = useMemo(() => {
     if (!scaffolds) return [];
+    // Group by part_number (or description if no part_number) to find duplicates
+    const groups = new Map<string, typeof scaffolds>();
+    for (const s of scaffolds) {
+      const key = (s.part_number ?? s.description ?? s.id).toLowerCase().trim();
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(s);
+    }
+    // For each group, keep the one with most data fields populated (mass, weekly_rate, unit_price)
+    return Array.from(groups.values()).map((group) => {
+      if (group.length === 1) return group[0];
+      return group.reduce((best, candidate) => {
+        const score = (item: typeof group[0]) =>
+          (item.mass_per_item != null ? 1 : 0) +
+          (item.weekly_rate != null ? 1 : 0) +
+          (item.unit_price != null ? 1 : 0);
+        return score(candidate) >= score(best) ? candidate : best;
+      });
+    });
+  }, [scaffolds]);
+
+  const filteredAndGrouped = useMemo(() => {
     const q = search.toLowerCase();
     const filtered = q
-      ? scaffolds.filter(
+      ? dedupedScaffolds.filter(
           (s) =>
             (s.part_number ?? "").toLowerCase().includes(q) ||
             (s.description ?? "").toLowerCase().includes(q) ||
             s.scaffold_type.toLowerCase().includes(q)
         )
-      : scaffolds;
+      : dedupedScaffolds;
 
     return [...filtered].sort((a, b) => {
       const ga = getInventoryGroupKey(a.description ?? a.scaffold_type);
@@ -47,7 +68,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
       if (ga !== gb) return ga.localeCompare(gb);
       return (a.description ?? "").localeCompare(b.description ?? "");
     });
-  }, [scaffolds, search]);
+  }, [dedupedScaffolds, search]);
 
   const onHireByScaffoldId = useMemo(() => {
     const totals = new Map<string, number>();
