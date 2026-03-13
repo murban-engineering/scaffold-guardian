@@ -415,13 +415,13 @@ const Index = () => {
                           Hire Quotation Actions
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-72">
+                      <DropdownMenuContent align="end" side="bottom" sideOffset={8} className="w-72">
                         <DropdownMenuSub>
                           <DropdownMenuSubTrigger className="cursor-pointer">
                             <FlaskConical className="mr-2 h-4 w-4" />
                             Test Quotation
                           </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
                             <DropdownMenuItem
                               onClick={() => handleStartTestQuotation()}
                               disabled={createQuotation.isPending}
@@ -483,7 +483,7 @@ const Index = () => {
                             <Building2 className="mr-2 h-4 w-4" />
                             Existing Client New Quotation
                           </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="max-h-80 w-72 overflow-y-auto">
+                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
                             {existingClientOptions.length ? (
                               existingClientOptions.map((quotation) => {
                                 const clientId = toClientId(quotation);
