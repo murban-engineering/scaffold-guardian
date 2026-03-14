@@ -72,8 +72,8 @@ const App = () => (
             <Route
               path="/previous-clients"
               element={
-                <ProtectedRoute>
-                  <PreviousClients />
+            <ProtectedRoute>
+                  <ClientReport />
                 </ProtectedRoute>
               }
             />
