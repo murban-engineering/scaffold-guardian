@@ -806,6 +806,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         documentType: noteTitle,
         documentNumber: data.quotationNumber,
         documentDate: data.dateCreated,
+        dispatchDate: data.dispatchDate,
         clientName: data.companyName,
         clientAddress: data.companyAddress,
         clientCityTown: data.companyCityTown,
