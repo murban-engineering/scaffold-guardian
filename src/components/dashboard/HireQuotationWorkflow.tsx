@@ -2292,6 +2292,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
       dateCreated: header.dateCreated,
       deliveryDate: deliveryNote.deliveryDate,
+      dispatchDate: deliveryNote.deliveryDate || initialQuotation?.dispatch_date || "",
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
