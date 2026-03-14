@@ -114,6 +114,7 @@ export interface HireQuotationReportData {
 export interface HireLoadingNoteData {
   quotationNumber: string;
   dateCreated: string;
+  dispatchDate?: string;
   companyName: string;
   companyAddress?: string;
   companyCityTown?: string;
