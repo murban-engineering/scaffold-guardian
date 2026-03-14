@@ -5,6 +5,7 @@ export interface DeliveryNoteData {
   deliveryNoteNumber: string;
   dateCreated: string;
   deliveryDate: string;
+  dispatchDate?: string;
   hireStartDate?: string;
   companyName: string;
   companyAddress?: string;
@@ -113,6 +114,7 @@ export interface HireQuotationReportData {
 export interface HireLoadingNoteData {
   quotationNumber: string;
   dateCreated: string;
+  dispatchDate?: string;
   companyName: string;
   companyAddress?: string;
   companyCityTown?: string;
@@ -476,6 +478,7 @@ interface StandardReportLayoutData {
   documentType: string;
   documentNumber: string;
   documentDate: string;
+  dispatchDate?: string;
   clientName: string;
   clientAddress?: string;
   clientCityTown?: string;
@@ -549,6 +552,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
         <div class="info-row"><span class="info-label">Document No</span><span class="info-sep">:</span><span class="info-value">${data.documentNumber || "-"}</span></div>
         <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">${data.documentType}</span></div>
         <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${data.documentDate || "-"}</span></div>
+        ${data.dispatchDate ? `<div class="info-row"><span class="info-label">Dispatch Date</span><span class="info-sep">:</span><span class="info-value">${data.dispatchDate}</span></div>` : ""}
         ${data.orderNumber ? `<div class="info-row"><span class="info-label">Your Order No</span><span class="info-sep">:</span><span class="info-value">${data.orderNumber}</span></div>` : ""}
         ${data.manualNumber ? `<div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber}</span></div>` : ""}
         ${data.hireQuoteNo ? `<div class="info-row"><span class="info-label">Hire Quote No</span><span class="info-sep">:</span><span class="info-value">${data.hireQuoteNo}</span></div>` : ""}
@@ -592,6 +596,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     documentType: "Hire Delivery Note",
     documentNumber: data.deliveryNoteNumber,
     documentDate: data.deliveryDate,
+    dispatchDate: data.dispatchDate,
     hireStartDate: data.hireStartDate,
     clientName: data.companyName,
     clientAddress: data.companyAddress,
@@ -607,7 +612,6 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     siteId: data.siteId,
     siteAddress: data.siteAddress,
     clientId: data.clientId,
-    orderNumber: data.quotationNumber,
     hireQuoteNo: data.quotationNumber,
     createdBy: data.createdBy,
   });
@@ -802,6 +806,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         documentType: noteTitle,
         documentNumber: data.quotationNumber,
         documentDate: data.dateCreated,
+        dispatchDate: data.dispatchDate,
         clientName: data.companyName,
         clientAddress: data.companyAddress,
         clientCityTown: data.companyCityTown,

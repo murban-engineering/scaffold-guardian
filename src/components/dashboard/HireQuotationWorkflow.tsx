@@ -2220,6 +2220,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: delivery.deliveryNoteNumber,
       dateCreated: header.dateCreated,
       deliveryDate: delivery.deliveryDate,
+      dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
@@ -2245,7 +2246,7 @@ const HireQuotationWorkflow = ({
     };
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId]);
+  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
 
   // Print loading note from history
   const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
@@ -2253,6 +2254,7 @@ const HireQuotationWorkflow = ({
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
+      dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
       siteName: selectedSite?.site_name || header.siteName,
@@ -2274,7 +2276,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireLoadingNotePDF(data);
     toast.success("Loading note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId]);
+  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
 
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
@@ -2290,6 +2292,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
       dateCreated: header.dateCreated,
       deliveryDate: deliveryNote.deliveryDate,
+      dispatchDate: deliveryNote.deliveryDate || initialQuotation?.dispatch_date || "",
       hireStartDate: deliveryNote.hireStartDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
@@ -2395,6 +2398,7 @@ const HireQuotationWorkflow = ({
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
+      dispatchDate: deliveryNote.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
       siteName: loadingSite?.site_name || header.siteName,
