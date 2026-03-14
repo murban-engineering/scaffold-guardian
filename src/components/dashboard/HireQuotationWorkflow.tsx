@@ -2220,6 +2220,7 @@ const HireQuotationWorkflow = ({
       deliveryNoteNumber: delivery.deliveryNoteNumber,
       dateCreated: header.dateCreated,
       deliveryDate: delivery.deliveryDate,
+      dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
@@ -2245,7 +2246,7 @@ const HireQuotationWorkflow = ({
     };
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId]);
+  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
 
   // Print loading note from history
   const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
