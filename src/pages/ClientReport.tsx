@@ -71,9 +71,9 @@ const ClientSitesBadges = ({ quotationId }: { quotationId: string }) => {
 
 const getPdfFields = (q: HireQuotation) => ({
   companyAddress:    q.company_address  ?? undefined,
-  companyCityTown:   undefined,               // not in HireQuotation root; stored in workflow header only
-  companyTel:        q.company_tel       ?? undefined,
-  companyFax:        q.company_fax       ?? undefined,
+  companyCityTown:   q.city_town        ?? undefined,
+  companyTel:        q.company_tel      ?? undefined,
+  companyFax:        q.company_fax      ?? undefined,
   companyEmail:      q.site_manager_email ?? undefined,
   companyPinNumber:  q.pin_number        ?? undefined,
   companyRegNumber:  q.company_reg_number ?? undefined,
