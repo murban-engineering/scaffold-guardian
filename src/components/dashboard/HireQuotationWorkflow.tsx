@@ -2398,6 +2398,7 @@ const HireQuotationWorkflow = ({
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
+      dispatchDate: deliveryNote.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
       siteName: loadingSite?.site_name || header.siteName,
