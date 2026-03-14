@@ -476,6 +476,7 @@ interface StandardReportLayoutData {
   documentType: string;
   documentNumber: string;
   documentDate: string;
+  dispatchDate?: string;
   clientName: string;
   clientAddress?: string;
   clientCityTown?: string;
