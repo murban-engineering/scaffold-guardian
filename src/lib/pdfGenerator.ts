@@ -5,6 +5,7 @@ export interface DeliveryNoteData {
   deliveryNoteNumber: string;
   dateCreated: string;
   deliveryDate: string;
+  dispatchDate?: string;
   hireStartDate?: string;
   companyName: string;
   companyAddress?: string;
