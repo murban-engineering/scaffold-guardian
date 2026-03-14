@@ -2254,6 +2254,7 @@ const HireQuotationWorkflow = ({
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
+      dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
       siteName: selectedSite?.site_name || header.siteName,
@@ -2275,7 +2276,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireLoadingNotePDF(data);
     toast.success("Loading note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId]);
+  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
 
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
