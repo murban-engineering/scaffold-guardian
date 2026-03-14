@@ -4723,43 +4723,43 @@ const HireQuotationWorkflow = ({
                           </span>
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <Input
+                          <input
                             type="number"
                             min="0"
                             value={item.good}
                             onChange={(e) => handleReturnQuantityChange(item.id, "good", e.target.value)}
                             disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
-                            className="h-8 text-center"
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-text"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <Input
+                          <input
                             type="number"
                             min="0"
                             value={item.dirty}
                             onChange={(e) => handleReturnQuantityChange(item.id, "dirty", e.target.value)}
                             disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
-                            className="h-8 text-center"
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-text"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <Input
+                          <input
                             type="number"
                             min="0"
                             value={item.damaged}
                             onChange={(e) => handleReturnQuantityChange(item.id, "damaged", e.target.value)}
                             disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
-                            className="h-8 text-center"
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-text"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
-                          <Input
+                          <input
                             type="number"
                             min="0"
                             value={item.scrap}
                             onChange={(e) => handleReturnQuantityChange(item.id, "scrap", e.target.value)}
                             disabled={returnProcessed || fullyReturned || returnInventory.isPending || createMaintenanceLogs.isPending}
-                            className="h-8 text-center"
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring disabled:cursor-not-allowed disabled:opacity-50 cursor-text"
                           />
                         </td>
                         <td className="px-3 py-2 text-center font-semibold">{totalReturned}</td>
