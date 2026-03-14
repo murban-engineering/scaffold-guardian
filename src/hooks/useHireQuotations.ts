@@ -34,6 +34,11 @@ export interface HireQuotation {
   status: string;
   company_name: string | null;
   company_address: string | null;
+  company_tel: string | null;
+  company_fax: string | null;
+  pin_number: string | null;
+  company_reg_number: string | null;
+  city_town: string | null;
   site_name: string | null;
   site_address: string | null;
   site_manager_name: string | null;

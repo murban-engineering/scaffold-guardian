@@ -33,7 +33,7 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
   { id: "inventory", label: "Inventory", icon: PackageSearch },
   { id: "accounting", label: "Accounting", icon: Receipt },
-  { id: "previous-clients", label: "Previous Clients", icon: FolderClock },
+  { id: "previous-clients", label: "Client Report", icon: FolderClock },
   { id: "site-master-plan", label: "Site Master Plan", icon: ClipboardPenLine },
   { id: "otnoai", label: "OTNOAI", icon: BotMessageSquare },
   { id: "sites", label: "Sites", icon: MapPinned },

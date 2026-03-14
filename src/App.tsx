@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import Index from "./pages/Index";
 import Sites from "./pages/Sites";
-import PreviousClients from "./pages/PreviousClients";
+import ClientReport from "./pages/ClientReport";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AddScaffold from "./pages/AddScaffold";
@@ -72,8 +72,8 @@ const App = () => (
             <Route
               path="/previous-clients"
               element={
-                <ProtectedRoute>
-                  <PreviousClients />
+            <ProtectedRoute>
+                  <ClientReport />
                 </ProtectedRoute>
               }
             />
