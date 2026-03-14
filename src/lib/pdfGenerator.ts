@@ -596,6 +596,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     documentType: "Hire Delivery Note",
     documentNumber: data.deliveryNoteNumber,
     documentDate: data.deliveryDate,
+    dispatchDate: data.dispatchDate,
     hireStartDate: data.hireStartDate,
     clientName: data.companyName,
     clientAddress: data.companyAddress,
@@ -611,7 +612,6 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     siteId: data.siteId,
     siteAddress: data.siteAddress,
     clientId: data.clientId,
-    orderNumber: data.quotationNumber,
     hireQuoteNo: data.quotationNumber,
     createdBy: data.createdBy,
   });
