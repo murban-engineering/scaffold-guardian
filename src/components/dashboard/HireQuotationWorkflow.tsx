@@ -1409,12 +1409,7 @@ const HireQuotationWorkflow = ({
 
     setNewSite({ siteName: "", siteLocation: "", siteAddress: "", siteManagerName: "", siteManagerPhone: "", siteManagerEmail: "", siteOpenedBy: "", notes: "" });
 
-    // Auto-print loading note, delivery note, and latest return note on site add
-    setTimeout(() => {
-      handlePrintHireLoadingNote("current");
-      handlePrintDeliveryNote();
-      if (returnHistory.length > 0) handlePrintReturnNoteFromHistory(returnHistory[returnHistory.length - 1]);
-    }, 300);
+    toast.success(`Site ${siteNumber} added successfully.`);
   };
 
   const handleAutoFillSiteFromClient = () => {
