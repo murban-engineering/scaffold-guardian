@@ -1,12 +1,11 @@
-import { useState, useMemo } from "react";
-import { FileText, ChevronDown, ChevronRight, Printer, FileBarChart2, Truck, RotateCcw, ClipboardList, Search, ArrowDownUp } from "lucide-react";
+import { useState } from "react";
+import { FileText, ChevronDown, ChevronRight, Printer, FileBarChart2, Truck, RotateCcw, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useClientSites } from "@/hooks/useClientSites";
 import type { DeliveryRecord } from "@/components/dashboard/DeliveryHistorySection";
