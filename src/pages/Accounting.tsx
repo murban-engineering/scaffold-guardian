@@ -922,7 +922,8 @@ const Accounting = () => {
         i.invoiceNumber.toLowerCase().includes(q)
       );
     }
-    return result;
+    // Sort latest → earliest by dispatch date
+    return [...result].sort((a, b) => b.dispatchDate.localeCompare(a.dispatchDate));
   }, [invoices, selectedClient, searchQuery]);
 
   const dispatchedInvoices = useMemo(
@@ -1311,7 +1312,8 @@ const Accounting = () => {
                     return (q.company_name || q.site_manager_name || "Unnamed client") === selectedClient;
                   }
                   return true;
-                });
+                // Sort latest → earliest by created_at
+                }).sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
                 return allQuotations.length ? (
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <Table>
