@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 
 /**
  * Subscribes to realtime changes on all key tables and invalidates
@@ -10,6 +10,8 @@ export const useRealtimeSync = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     const channel = supabase
       .channel("realtime-sync-v2")
       .on("postgres_changes", { event: "*", schema: "public", table: "quotation_line_items" }, () => {
