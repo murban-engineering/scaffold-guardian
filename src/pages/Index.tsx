@@ -602,21 +602,27 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
-              <div className="grid gap-2">
-                <Label htmlFor="continue-client-filter">Filter by client</Label>
-                <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
-                  <SelectTrigger id="continue-client-filter">
-                    <SelectValue placeholder="All clients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All clients</SelectItem>
-                    {continueClientOptions.map((client) => (
-                      <SelectItem key={client.value} value={client.value}>
-                        {client.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-end gap-2">
+                <div className="flex-1 grid gap-2">
+                  <Label htmlFor="continue-client-filter">Filter by client</Label>
+                  <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
+                    <SelectTrigger id="continue-client-filter">
+                      <SelectValue placeholder="All clients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All clients</SelectItem>
+                      {continueClientOptions.map((client) => (
+                        <SelectItem key={client.value} value={client.value}>
+                          {client.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-10 shrink-0" onClick={() => setContinueSortAsc((v) => !v)}>
+                  {continueSortAsc ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                  {continueSortAsc ? "Oldest" : "Latest"}
+                </Button>
               </div>
               {quotationsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
