@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -48,6 +48,7 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
+  const [continueSortAsc, setContinueSortAsc] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
@@ -157,14 +158,19 @@ const Index = () => {
     return acc;
   }, []);
 
-  const filterQuotationsByClient = (rows: HireQuotation[]) =>
-    selectedContinueClient === "all"
+  const filterQuotationsByClient = (rows: HireQuotation[]) => {
+    const filtered = selectedContinueClient === "all"
       ? rows
       : rows.filter((quotation) => {
           const companyName = quotation.company_name?.trim() || "Unnamed client";
           const clientId = toClientId(quotation);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
+    return [...filtered].sort((a, b) => {
+      const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
+      return continueSortAsc ? -cmp : cmp;
+    });
+  };
 
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
@@ -596,21 +602,27 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
-              <div className="grid gap-2">
-                <Label htmlFor="continue-client-filter">Filter by client</Label>
-                <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
-                  <SelectTrigger id="continue-client-filter">
-                    <SelectValue placeholder="All clients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All clients</SelectItem>
-                    {continueClientOptions.map((client) => (
-                      <SelectItem key={client.value} value={client.value}>
-                        {client.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-end gap-2">
+                <div className="flex-1 grid gap-2">
+                  <Label htmlFor="continue-client-filter">Filter by client</Label>
+                  <Select value={selectedContinueClient} onValueChange={setSelectedContinueClient}>
+                    <SelectTrigger id="continue-client-filter">
+                      <SelectValue placeholder="All clients" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All clients</SelectItem>
+                      {continueClientOptions.map((client) => (
+                        <SelectItem key={client.value} value={client.value}>
+                          {client.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-10 shrink-0" onClick={() => setContinueSortAsc((v) => !v)}>
+                  {continueSortAsc ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+                  {continueSortAsc ? "Oldest" : "Latest"}
+                </Button>
               </div>
               {quotationsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
