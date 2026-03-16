@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
