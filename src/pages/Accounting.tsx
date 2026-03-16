@@ -922,7 +922,8 @@ const Accounting = () => {
         i.invoiceNumber.toLowerCase().includes(q)
       );
     }
-    return result;
+    // Sort latest → earliest by dispatch date
+    return [...result].sort((a, b) => b.dispatchDate.localeCompare(a.dispatchDate));
   }, [invoices, selectedClient, searchQuery]);
 
   const dispatchedInvoices = useMemo(
