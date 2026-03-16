@@ -48,6 +48,7 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
+  const [continueSortAsc, setContinueSortAsc] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
