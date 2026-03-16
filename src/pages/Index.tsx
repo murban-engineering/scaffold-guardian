@@ -158,14 +158,19 @@ const Index = () => {
     return acc;
   }, []);
 
-  const filterQuotationsByClient = (rows: HireQuotation[]) =>
-    selectedContinueClient === "all"
+  const filterQuotationsByClient = (rows: HireQuotation[]) => {
+    const filtered = selectedContinueClient === "all"
       ? rows
       : rows.filter((quotation) => {
           const companyName = quotation.company_name?.trim() || "Unnamed client";
           const clientId = toClientId(quotation);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
+    return [...filtered].sort((a, b) => {
+      const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
+      return continueSortAsc ? -cmp : cmp;
+    });
+  };
 
   const handleStartNewQuotation = () => {
     setSelectedQuotation(null);
