@@ -2,7 +2,8 @@ name: Deploy static content to Pages
 
 on:
   push:
-    branches: ["main"]
+    # Support repos that still use `master` as the default branch.
+    branches: ["main", "master"]
   workflow_dispatch:
 
 permissions:
