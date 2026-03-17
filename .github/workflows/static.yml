@@ -36,6 +36,9 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://iairnfnjoyxhrkbyigud.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlhaXJuZm5qb3l4aHJrYnlpZ3VkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MDc4MjAsImV4cCI6MjA4NTE4MzgyMH0.cOCyH-r8FWC1JPWhZcmBibLqX7lKTdUAbRVjqP2_xlw
 
       - name: Add SPA fallback for GitHub Pages
         run: cp dist/index.html dist/404.html
