@@ -1722,10 +1722,20 @@ const HireQuotationWorkflow = ({
       const contactEmail = header.companyEmail || header.clientEmail || undefined;
       const structuredNotes = buildStructuredQuotationNotes(calculation.paymentTerms, header);
 
+      // Shared client detail fields saved to DB
+      const clientDbFields = {
+        company_address: header.physicalAddress || null,
+        city_town: header.cityTown || null,
+        company_tel: header.companyTel || header.landline1 || null,
+        company_fax: header.companyFax || null,
+        pin_number: header.pinNumber || null,
+        company_reg_number: header.companyRegNumber || null,
+      };
+
       if (!savedQuotationId) {
         const quotation = await createQuotation.mutateAsync({
           company_name: companyName,
-          company_address: header.physicalAddress || undefined,
+          ...clientDbFields,
           site_name: header.siteName || undefined,
           site_address: header.siteAddress || undefined,
           site_manager_name: contactName,
@@ -1736,7 +1746,7 @@ const HireQuotationWorkflow = ({
           // Pass existing client ID (e.g. from promoted test quotation) so it is preserved;
           // if empty, useCreateQuotation will generate a fresh one from the sequence.
           client_id: header.clientId || undefined,
-        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string; city_town?: string; company_tel?: string; company_fax?: string; pin_number?: string; company_reg_number?: string });
+        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
         const clientId = quotation.client_id || "";
@@ -1755,7 +1765,7 @@ const HireQuotationWorkflow = ({
         await updateQuotation.mutateAsync({
           id: savedQuotationId,
           company_name: companyName,
-          company_address: header.physicalAddress || undefined,
+          ...clientDbFields,
           site_name: header.siteName || undefined,
           site_address: header.siteAddress || undefined,
           site_manager_name: contactName,
@@ -1763,7 +1773,7 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string });
+        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
         return savedQuotationId;
       }
     } catch (error) {

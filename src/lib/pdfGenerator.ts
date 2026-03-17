@@ -528,16 +528,16 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
 
       <div class="panel client-panel" style="border-width:0.5px;border-color:#aaa;">
         <p style="font-weight:800;font-size:10px;margin-bottom:2px;">${data.clientName || "-"}</p>
-        ${data.clientAddress ? `<p style="margin-bottom:1px;font-size:9px;">${data.clientAddress}</p>` : ""}
-        ${data.clientCityTown ? `<p style="margin-bottom:8px;font-size:9px;">${data.clientCityTown}</p>` : ""}
+        <p style="margin-bottom:1px;font-size:9px;">${data.clientAddress || ""}</p>
+        <p style="margin-bottom:8px;font-size:9px;">${data.clientCityTown || ""}</p>
         <div style="margin-top:6px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
             <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.clientTel || data.contactPhone || ""}</span></div>
-            ${data.clientVat ? `<div class="info-row"><span class="info-label">Vat No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat}</span></div>` : "<div></div>"}
+            <div class="info-row"><span class="info-label">VAT / PIN No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat || ""}</span></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
             <div class="info-row"><span class="info-label">Mobile No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
-            ${data.clientReg ? `<div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg}</span></div>` : "<div></div>"}
+            <div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg || ""}</span></div>
           </div>
           <div class="info-row" style="margin-bottom:2px;"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
           <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
