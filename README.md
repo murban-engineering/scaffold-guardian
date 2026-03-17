@@ -62,7 +62,12 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+This repository includes a GitHub Actions workflow that deploys to GitHub Pages on pushes to `main`/`master`.
+
+- Standard `*.github.io/<repo>` Pages deployment works automatically.
+- Optional custom domains are supported by setting the repository variable `PAGES_CUSTOM_DOMAIN` (for example `system.otno.ke`).
+
+You can also publish from [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) via Share -> Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
