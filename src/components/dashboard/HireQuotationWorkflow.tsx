@@ -489,6 +489,9 @@ const HireQuotationWorkflow = ({
   const [showSiteMasterPlan, setShowSiteMasterPlan] = useState(false);
   const [selectedDeliverySiteId, setSelectedDeliverySiteId] = useState<string>("");
   const [selectedReturnSiteId, setSelectedReturnSiteId] = useState<string>("");
+  const [usePreviousSite, setUsePreviousSite] = useState(false);
+  const [selectedPreviousSiteId, setSelectedPreviousSiteId] = useState<string>("");
+  const { data: allClientSites } = useAllClientSites();
   const [newSite, setNewSite] = useState({
     siteName: "",
     siteLocation: "",
