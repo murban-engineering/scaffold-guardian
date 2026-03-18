@@ -4088,9 +4088,74 @@ const HireQuotationWorkflow = ({
                 {/* Add New Site Form */}
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Add New Site</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Add New Site</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="usePreviousSite" className="text-sm text-muted-foreground cursor-pointer">
+                          Use Previous Site
+                        </Label>
+                        <Switch
+                          id="usePreviousSite"
+                          checked={usePreviousSite}
+                          onCheckedChange={(checked) => {
+                            setUsePreviousSite(checked);
+                            if (!checked) {
+                              setSelectedPreviousSiteId("");
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Previous Sites Dropdown */}
+                    {usePreviousSite && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                        <Label className="text-sm font-medium">Select a Previous Site</Label>
+                        <Select
+                          value={selectedPreviousSiteId}
+                          onValueChange={(siteId) => {
+                            setSelectedPreviousSiteId(siteId);
+                            const site = allClientSites?.find(s => s.id === siteId);
+                            if (site) {
+                              setNewSite({
+                                siteName: site.site_name || "",
+                                siteLocation: site.site_location || "",
+                                siteAddress: site.site_address || "",
+                                siteManagerName: site.site_manager_name || "",
+                                siteManagerPhone: site.site_manager_phone || "",
+                                siteManagerEmail: site.site_manager_email || "",
+                                siteOpenedBy: site.site_opened_by || "",
+                                notes: site.notes || "",
+                              });
+                              // Also set the selected site for delivery so its site_number and id are used in prints
+                              handleSelectDeliverySiteFromRow(site);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose from previous sites..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(allClientSites ?? []).map((site) => (
+                              <SelectItem key={site.id} value={site.id}>
+                                {site.site_number} — {site.site_name}{site.site_location ? ` (${site.site_location})` : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedPreviousSiteId && (() => {
+                          const site = allClientSites?.find(s => s.id === selectedPreviousSiteId);
+                          return site ? (
+                            <p className="text-xs text-muted-foreground">
+                              Site ID: <span className="font-mono font-semibold">{site.site_number}</span>
+                              {site.site_address ? ` · ${site.site_address}` : ""}
+                              {site.site_manager_name ? ` · Manager: ${site.site_manager_name}` : ""}
+                            </p>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
                         <Label>Site Name *</Label>
