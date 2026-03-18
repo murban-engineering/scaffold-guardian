@@ -54,6 +54,21 @@ export const useClientSites = (quotationId: string | null) => {
   });
 };
 
+export const useAllClientSites = () => {
+  return useQuery({
+    queryKey: ["all-client-sites"],
+    queryFn: async (): Promise<ClientSite[]> => {
+      const { data, error } = await supabase
+        .from("client_sites")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as ClientSite[];
+    },
+  });
+};
+
 export const deriveSiteNumber = (quotationNo: string, suffix: string = "") => {
   const parts = quotationNo.match(/\d+/g);
   const lastPart = parts?.[parts.length - 1];
