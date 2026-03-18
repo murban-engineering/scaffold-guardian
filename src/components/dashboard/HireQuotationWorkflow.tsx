@@ -4448,16 +4448,23 @@ const HireQuotationWorkflow = ({
                             Totals
                           </td>
                           <td className="px-4 py-3 text-right font-semibold">
-                            {balanceDeliveryItems.reduce((sum, item) => sum + getOrderedQuantity(item), 0)}
+                            {balanceDeliveryItems.reduce((sum, item) => {
+                              const availableQty = item.originalQuantity > 0
+                                ? Math.max(item.originalQuantity - (item.previouslyDelivered || 0), 0)
+                                : parseNumber(item.qtyDelivered);
+                              return sum + availableQty;
+                            }, 0)}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold bg-primary/10">
                             {balanceDeliveryItems.reduce((sum, item) => sum + parseNumber(deliveryQuantities[item.id] ?? "0"), 0)}
                           </td>
                           <td className="px-4 py-3 text-right font-semibold">
                             {balanceDeliveryItems.reduce((sum, item) => {
-                              const orderedQty = getOrderedQuantity(item);
+                              const availableQty = item.originalQuantity > 0
+                                ? Math.max(item.originalQuantity - (item.previouslyDelivered || 0), 0)
+                                : parseNumber(item.qtyDelivered);
                               const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "0");
-                              return sum + Math.max(orderedQty - deliveredQty, 0);
+                              return sum + Math.max(availableQty - deliveredQty, 0);
                             }, 0)}
                           </td>
                         </tr>
