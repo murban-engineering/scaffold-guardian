@@ -28,7 +28,8 @@ import {
 } from "@/lib/pdfGenerator";
 import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection";
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
-import { useClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
+import { useClientSites, useAllClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
+import { Switch } from "@/components/ui/switch";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
