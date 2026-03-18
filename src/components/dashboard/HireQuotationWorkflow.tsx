@@ -948,9 +948,8 @@ const HireQuotationWorkflow = ({
     setDeliveryQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
-        const remaining = remainingQuantities[item.id];
         if (next[item.id] === undefined) {
-          next[item.id] = String(remaining ?? parseNumber(item.qtyDelivered));
+          next[item.id] = "";
         }
       });
       Object.keys(next).forEach((id) => {
