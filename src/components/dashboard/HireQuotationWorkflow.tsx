@@ -948,9 +948,8 @@ const HireQuotationWorkflow = ({
     setDeliveryQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
-        const remaining = remainingQuantities[item.id];
         if (next[item.id] === undefined) {
-          next[item.id] = String(remaining ?? parseNumber(item.qtyDelivered));
+          next[item.id] = "";
         }
       });
       Object.keys(next).forEach((id) => {
@@ -2108,9 +2107,7 @@ const HireQuotationWorkflow = ({
       setDeliveryQuantities((prev) => {
         const next = { ...prev };
         equipmentItems.forEach((item) => {
-          if (balanceQuantities[item.id] != null) {
-            next[item.id] = String(balanceQuantities[item.id]);
-          }
+          next[item.id] = "";
         });
         return next;
       });
@@ -2187,11 +2184,10 @@ const HireQuotationWorkflow = ({
       remarks: "",
     }));
 
-    // Set delivery quantities to remaining balance
+    // Reset delivery quantities to blank for manual entry
     const newDeliveryQuantities: Record<string, string> = {};
     equipmentItems.forEach(item => {
-      const remaining = remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
-      newDeliveryQuantities[item.id] = String(remaining);
+      newDeliveryQuantities[item.id] = "";
     });
     setDeliveryQuantities(newDeliveryQuantities);
     
@@ -2372,9 +2368,7 @@ const HireQuotationWorkflow = ({
     setDeliveryQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
-        if (balanceQuantities[item.id] != null) {
-          next[item.id] = String(balanceQuantities[item.id]);
-        }
+        next[item.id] = "";
       });
       return next;
     });
@@ -2469,9 +2463,7 @@ const HireQuotationWorkflow = ({
       setDeliveryQuantities((prev) => {
         const next = { ...prev };
         equipmentItems.forEach((item) => {
-          const orderedQty = getOrderedQuantity(item);
-          const deliveredQty = deliveredQuantities[item.id] ?? 0;
-          next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
+          next[item.id] = "";
         });
         return next;
       });
