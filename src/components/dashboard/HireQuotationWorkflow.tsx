@@ -2184,11 +2184,10 @@ const HireQuotationWorkflow = ({
       remarks: "",
     }));
 
-    // Set delivery quantities to remaining balance
+    // Reset delivery quantities to blank for manual entry
     const newDeliveryQuantities: Record<string, string> = {};
     equipmentItems.forEach(item => {
-      const remaining = remainingQuantities[item.id] ?? parseNumber(item.qtyDelivered);
-      newDeliveryQuantities[item.id] = String(remaining);
+      newDeliveryQuantities[item.id] = "";
     });
     setDeliveryQuantities(newDeliveryQuantities);
     
