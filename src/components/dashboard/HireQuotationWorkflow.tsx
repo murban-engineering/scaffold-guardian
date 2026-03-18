@@ -4388,10 +4388,15 @@ const HireQuotationWorkflow = ({
                         </tr>
                       ) : (
                         balanceDeliveryItems.map((item, idx) => {
+                          // availableQty = original ordered minus all previously delivered batches
+                          const availableQty = item.originalQuantity > 0
+                            ? Math.max(item.originalQuantity - (item.previouslyDelivered || 0), 0)
+                            : parseNumber(item.qtyDelivered);
+                          // orderedQty = cap for this delivery (respects remainingQuantities from DB)
                           const orderedQty = getOrderedQuantity(item);
                           const deliveredQty = parseNumber(deliveryQuantities[item.id] ?? "");
-                          const remainingQty = Math.max(orderedQty - deliveredQty, 0);
-                          const isFullyDelivered = deliveredQty === orderedQty;
+                          const remainingQty = Math.max(availableQty - deliveredQty, 0);
+                          const isFullyDelivered = deliveredQty >= availableQty && availableQty > 0;
                           return (
                             <tr 
                               key={`hire-delivery-${item.id}`} 
@@ -4405,20 +4410,20 @@ const HireQuotationWorkflow = ({
                                   <td className="px-4 py-3 text-right text-muted-foreground">{item.previouslyDelivered}</td>
                                 </>
                               )}
-                              <td className="px-4 py-3 text-right font-semibold">{orderedQty}</td>
+                              <td className="px-4 py-3 text-right font-semibold">{availableQty}</td>
                               <td className="px-4 py-3 text-right bg-primary/5">
                                 <Input
                                   type="number"
                                   min="0"
-                                  max={orderedQty}
+                                  max={availableQty}
                                   className="h-9 w-24 text-right font-medium border-primary/30 focus:border-primary"
                                   value={deliveryQuantities[item.id] ?? ""}
                                   onChange={(e) => {
                                     const rawValue = e.target.value;
                                     const nextValue = parseNumber(rawValue);
-                                    if (nextValue > orderedQty) {
+                                    if (nextValue > availableQty) {
                                       toast.error("Delivery quantity cannot exceed available quantity.");
-                                      setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(orderedQty) }));
+                                      setDeliveryQuantities((prev) => ({ ...prev, [item.id]: String(availableQty) }));
                                       return;
                                     }
                                     setDeliveryQuantities((prev) => ({ ...prev, [item.id]: rawValue }));
