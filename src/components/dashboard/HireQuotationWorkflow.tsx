@@ -2463,9 +2463,7 @@ const HireQuotationWorkflow = ({
       setDeliveryQuantities((prev) => {
         const next = { ...prev };
         equipmentItems.forEach((item) => {
-          const orderedQty = getOrderedQuantity(item);
-          const deliveredQty = deliveredQuantities[item.id] ?? 0;
-          next[item.id] = String(Math.max(orderedQty - deliveredQty, 0));
+          next[item.id] = "";
         });
         return next;
       });
