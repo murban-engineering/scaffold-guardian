@@ -2368,9 +2368,7 @@ const HireQuotationWorkflow = ({
     setDeliveryQuantities((prev) => {
       const next = { ...prev };
       equipmentItems.forEach((item) => {
-        if (balanceQuantities[item.id] != null) {
-          next[item.id] = String(balanceQuantities[item.id]);
-        }
+        next[item.id] = "";
       });
       return next;
     });
