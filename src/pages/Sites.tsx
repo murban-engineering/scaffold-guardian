@@ -396,7 +396,7 @@ const Sites = () => {
                           {summarizedRemovalRows.map((row) => (
                             <TableRow key={`${selectedClient}-${row.itemDescription}`}>
                               <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
-                              <TableCell className="text-right font-bold">{row.quantity}</TableCell>
+                              <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
