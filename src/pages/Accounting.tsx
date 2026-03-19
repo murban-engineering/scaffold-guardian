@@ -770,11 +770,11 @@ const Accounting = () => {
       const quotationNumber = match[3].trim();
       if (!quotationNumber || !Number.isFinite(quantity) || quantity <= 0) continue;
 
-      const scaffold = scaffoldById.get(log.scaffold_id);
+      const scaffold = scaffoldById.get(log.scaffold_id) as any;
       const partNumber = scaffold?.part_number || "-";
       const itemLabel = scaffold?.description || scaffold?.part_number || "Unknown item";
       const listHirePrice = scaffold?.weekly_rate ?? 0;
-      const unitPrice = (scaffold as { unit_price?: number | null } | undefined)?.unit_price ?? 0;
+      const unitPrice = scaffold?.unit_price ?? 0;
 
       let charge = 0, basePrice = 0, multiplierLabel = "";
       if (condition === "dirty") {

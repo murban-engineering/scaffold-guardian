@@ -43,7 +43,7 @@ const Sites = () => {
       )
     );
 
-    return Array.from(uniqueClients).sort((a, b) => a.localeCompare(b));
+    return (Array.from(uniqueClients) as string[]).sort((a, b) => a.localeCompare(b));
   }, [removalReportQuotations]);
 
   const removalReportRows = useMemo(() => {
