@@ -363,12 +363,12 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             <div
               className="h-52 w-52 rounded-full shadow-[0_16px_40px_-22px_rgba(8,145,178,0.6)]"
               style={{
-                background: `conic-gradient(#14b8a6 0deg ${availableArc}deg, #c4b5fd ${availableArc}deg 360deg)`,
+                background: `conic-gradient(#14b8a6 0deg ${availableArc}deg, #c4b5fd ${availableArc}deg ${availableArc + onHireArc}deg, #e2e8f0 ${availableArc + onHireArc}deg 360deg)`,
               }}
             />
             <div className="absolute flex h-36 w-36 flex-col items-center justify-center rounded-full border border-white/70 bg-white/80 text-center shadow-inner backdrop-blur-md">
-              <span className="text-4xl font-bold text-slate-900">{availablePct}%</span>
-              <span className="text-xs text-slate-500">{totals.availableStock} units</span>
+              <span className="text-4xl font-bold text-slate-900">{onHirePct}%</span>
+              <span className="text-xs text-slate-500">{totals.onHire} units</span>
             </div>
           </div>
 
