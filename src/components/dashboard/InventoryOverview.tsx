@@ -341,6 +341,9 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     const safeOpeningStock = Math.max(totals.openingStock, 1);
     const availablePct = Math.round((totals.availableStock / safeOpeningStock) * 100);
     const onHirePct = Math.round((totals.onHire / safeOpeningStock) * 100);
+    // On Hire = Qty at Start - Available (the deployed portion)
+    const computedOnHire = Math.max(totals.openingStock - totals.availableStock, 0);
+    const onHireArc = (Math.max(Math.min(computedOnHire / safeOpeningStock, 1), 0)) * 360;
     const availableArc = (Math.max(Math.min(availablePct, 100), 0) / 100) * 360;
 
     return (
