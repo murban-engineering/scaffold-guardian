@@ -67,7 +67,7 @@ const Sites = () => {
     }
 
     if (!selectedClient || !clientOptions.includes(selectedClient)) {
-      setSelectedClient(clientOptions[0]);
+      setSelectedClient(clientOptions[0] as string);
     }
   }, [clientOptions, selectedClient]);
 
