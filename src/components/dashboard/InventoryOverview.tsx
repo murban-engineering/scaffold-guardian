@@ -7,7 +7,8 @@ import { useScaffolds } from "@/hooks/useScaffolds";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts" as any;
 import {
   Table,
   TableBody,
