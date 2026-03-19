@@ -22,7 +22,6 @@ import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGro
 
 const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
-  const { data: hireQuotations } = useHireQuotations();
   const [search, setSearch] = useState("");
 
   // Sync with external search from header
@@ -71,31 +70,14 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     });
   }, [dedupedScaffolds, search]);
 
-  const onHireByScaffoldId = useMemo(() => {
-    const totals = new Map<string, number>();
-    (hireQuotations ?? []).forEach((quotation) => {
-      (quotation.line_items ?? []).forEach((lineItem) => {
-        if (!lineItem.scaffold_id) return;
-        const delivered = Math.max(lineItem.delivered_quantity ?? 0, 0);
-        const returned = Math.max(lineItem.returned_quantity ?? 0, 0);
-        const activeOnHire = Math.max(delivered - returned, 0);
-        if (activeOnHire <= 0) return;
-        totals.set(
-          lineItem.scaffold_id,
-          (totals.get(lineItem.scaffold_id) ?? 0) + activeOnHire
-        );
-      });
-    });
-    return totals;
-  }, [hireQuotations]);
-
   const inventoryMetrics = useMemo(() => {
     return dedupedScaffolds.map((item) => {
       const availableStock = item.quantity ?? 0;
-      const onHire = onHireByScaffoldId.get(item.id) ?? 0;
-      // Use ONLY the stored qty_at_start — never a dynamic fallback.
-      // qty_at_start is the immutable baseline; it only changes when stock is added.
+      // qty_at_start is the immutable baseline; only changes when new stock is added.
       const openingStock = item.qty_at_start ?? 0;
+      // On Hire = physical stock dispatched = Qty at Start minus current Available in yard.
+      // This is the ground truth — scaffold.quantity IS reduced on every dispatch.
+      const onHire = Math.max(openingStock - availableStock, 0);
       return {
         id: item.id,
         availableStock,
@@ -103,7 +85,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         openingStock,
       };
     });
-  }, [onHireByScaffoldId, dedupedScaffolds]);
+  }, [dedupedScaffolds]);
 
   const totals = useMemo(() => {
     return dedupedScaffolds.reduce(
