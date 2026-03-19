@@ -60,12 +60,12 @@ const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
 
-const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
+const deriveInvoiceNumber = (quotationNumber: string, fallbackIndex: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
   if (Number.isFinite(quotedSequence) && quotedSequence >= 1000) {
     return `INV-${String(quotedSequence - 1000).padStart(4, "0")}`;
   }
-  return `INV-${String(fallbackSequence).padStart(4, "0")}`;
+  return `INV-${String(fallbackIndex + 1).padStart(4, "0")}`;
 };
 
 /** Returns the exact number of billable DAYS (not weeks). */
