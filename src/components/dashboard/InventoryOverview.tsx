@@ -22,7 +22,6 @@ import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGro
 
 const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
-  const { data: hireQuotations } = useHireQuotations();
   const [search, setSearch] = useState("");
 
   // Sync with external search from header
