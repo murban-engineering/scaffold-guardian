@@ -7,6 +7,7 @@ import { useScaffolds } from "@/hooks/useScaffolds";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// @ts-ignore
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   Table,

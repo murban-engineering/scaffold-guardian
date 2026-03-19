@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
@@ -43,7 +43,7 @@ const Sites = () => {
       )
     );
 
-    return Array.from(uniqueClients).sort((a, b) => a.localeCompare(b));
+    return (Array.from(uniqueClients) as string[]).sort((a, b) => a.localeCompare(b));
   }, [removalReportQuotations]);
 
   const removalReportRows = useMemo(() => {
@@ -67,7 +67,7 @@ const Sites = () => {
     }
 
     if (!selectedClient || !clientOptions.includes(selectedClient)) {
-      setSelectedClient(clientOptions[0]);
+      setSelectedClient(clientOptions[0] as string);
     }
   }, [clientOptions, selectedClient]);
 
@@ -396,7 +396,7 @@ const Sites = () => {
                           {summarizedRemovalRows.map((row) => (
                             <TableRow key={`${selectedClient}-${row.itemDescription}`}>
                               <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
-                              <TableCell className="text-right font-bold">{row.quantity}</TableCell>
+                              <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
