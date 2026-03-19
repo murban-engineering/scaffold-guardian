@@ -340,11 +340,10 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   if (chartOnly) {
     const safeOpeningStock = Math.max(totals.openingStock, 1);
     const availablePct = Math.round((totals.availableStock / safeOpeningStock) * 100);
+    // Use actual on-hire from quotation delivery tracking, not a computed difference
     const onHirePct = Math.round((totals.onHire / safeOpeningStock) * 100);
-    // On Hire = Qty at Start - Available (the deployed portion)
-    const computedOnHire = Math.max(totals.openingStock - totals.availableStock, 0);
-    const onHireArc = (Math.max(Math.min(computedOnHire / safeOpeningStock, 1), 0)) * 360;
-    const availableArc = (Math.max(Math.min(availablePct, 100), 0) / 100) * 360;
+    const availableArc = (totals.availableStock / safeOpeningStock) * 360;
+    const onHireArc = (totals.onHire / safeOpeningStock) * 360;
 
     return (
       <div className="animate-fade-in rounded-3xl border border-white/60 bg-gradient-to-br from-[hsla(174,30%,92%,0.86)] via-[hsla(188,40%,94%,0.88)] to-[hsla(268,48%,93%,0.83)] p-6 text-slate-900 shadow-[0_22px_40px_-24px_rgba(15,23,42,0.4)] backdrop-blur-2xl">
