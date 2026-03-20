@@ -269,10 +269,10 @@ const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) 
     showBrandSubtitle: false,
     extraRows: `
       <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
-      <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
-      <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>
+      ${dispatchDateRow}
     `,
   });
+};
 
 const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const win = window.open("", "_blank");
