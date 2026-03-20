@@ -325,8 +325,8 @@ const MaintenanceLogs = () => {
                                   </span>
                                 )}
                                 <span>
-                                  {new Date(log.created_at).toLocaleDateString("en-ZA", {
-                                    year: "numeric", month: "short", day: "numeric",
+                                  {new Date(log.created_at).toLocaleDateString("en-GB", {
+                                    day: "numeric", month: "short", year: "numeric",
                                   })}
                                 </span>
                               </div>
