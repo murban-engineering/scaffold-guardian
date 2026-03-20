@@ -830,7 +830,8 @@ const Accounting = () => {
         : undefined;
 
       const lineItems = q.line_items ?? [];
-      // Use stored dispatch_date if available, then delivery history, then a stable fallback.
+
+      // ── Resolve the earliest dispatch date (for table display) ──────────────
       const storedDispatchDate = q.dispatch_date;
       let dispatchDate: string;
       if (storedDispatchDate) {
@@ -849,15 +850,93 @@ const Accounting = () => {
           dispatchDate = toIsoDateOrToday(dispatchDateRaw);
         }
       }
+
+      // ── Build weekly rate lookup from line items by part number ──────────────
+      type LineItemMeta = { weeklyRate: number; discountRate: number; effectiveWeeklyRate: number; partNumber: string; description: string };
+      const lineItemMetaByPart = new Map<string, LineItemMeta>();
+      for (const li of lineItems) {
+        if (!li.part_number) continue;
+        const weeklyRate = li.weekly_rate ?? 0;
+        const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
+        const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
+        lineItemMetaByPart.set(li.part_number, {
+          weeklyRate,
+          discountRate,
+          effectiveWeeklyRate,
+          partNumber: li.part_number,
+          description: li.description || li.part_number || "Unnamed",
+        });
+      }
+
+      // ── Build per-batch billing from delivery history ────────────────────────
+      type RawDeliveryRecord = {
+        id?: string;
+        deliveryNoteNumber?: string;
+        deliveryDate?: string;
+        status?: string;
+        items?: { itemCode?: string; description?: string; quantityDelivered?: number }[];
+      };
+
+      const dispatchedBatches = (deliveryHistory as unknown as RawDeliveryRecord[])
+        .filter((rec) => {
+          const s = String(rec?.status ?? "").toLowerCase();
+          return s === "dispatched" || s === "completed";
+        })
+        .sort((a, b) => {
+          const da = a.deliveryDate ?? "";
+          const db = b.deliveryDate ?? "";
+          return da.localeCompare(db);
+        });
+
+      const batches: DispatchBatch[] = dispatchedBatches.map((rec, batchIdx) => {
+        const batchDispatchDate = toIsoDateOrToday(rec.deliveryDate);
+        const batchDays = calculateBillableDays(batchDispatchDate, bd);
+        const batchWeeks = billableDaysToWeeks(batchDays);
+        const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
+
+        const lines: HireLineBreakdown[] = (rec.items ?? []).map((item) => {
+          const partNo = item.itemCode || "-";
+          const meta = lineItemMetaByPart.get(partNo);
+          const weeklyRate = meta?.weeklyRate ?? 0;
+          const discountRate = meta?.discountRate ?? 0;
+          const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
+          const qty = item.quantityDelivered ?? 0;
+          const lineTotal = qty * effectiveWeeklyRate * batchWeeks;
+          return {
+            partNumber: partNo,
+            item: item.description || meta?.description || partNo,
+            quantity: qty,
+            weeklyRate,
+            discountRate,
+            effectiveWeeklyRate,
+            weeks: batchWeeks,
+            weeksLabel: batchWeeksLabel,
+            lineTotal,
+          };
+        });
+
+        const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+        return {
+          batchNumber: batchIdx + 1,
+          deliveryNoteNumber: rec.deliveryNoteNumber || `Batch ${batchIdx + 1}`,
+          dispatchDate: batchDispatchDate,
+          hireDays: batchDays,
+          hireWeeks: batchWeeks,
+          hireWeeksLabel: batchWeeksLabel,
+          lines,
+          batchHireTotal,
+        };
+      });
+
+      // ── Fallback: if no dispatch batches found, build from line items (legacy) ──
       const hireDays = calculateBillableDays(dispatchDate, bd);
       const hireWeeks = billableDaysToWeeks(hireDays);
       const hireWeeksLabel = formatWeeksDaysLabel(hireDays);
 
-      // Build a fallback qty map from delivery history in case line item quantities are 0
       const deliveryHistoryQtyMap = new Map<string, number>();
-      for (const record of deliveryHistory) {
-        if (!Array.isArray((record as { items?: unknown }).items)) continue;
-        for (const item of (record as { items: { itemCode?: string; quantityDelivered?: number }[] }).items) {
+      for (const rec of deliveryHistory) {
+        if (!Array.isArray((rec as { items?: unknown }).items)) continue;
+        for (const item of (rec as { items: { itemCode?: string; quantityDelivered?: number }[] }).items) {
           if (!item.itemCode) continue;
           const prev = deliveryHistoryQtyMap.get(item.itemCode) ?? 0;
           deliveryHistoryQtyMap.set(item.itemCode, prev + (item.quantityDelivered ?? 0));
@@ -866,14 +945,12 @@ const Accounting = () => {
 
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
         let qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
-        // Fallback: if still 0, pull from delivery history by part number
         if (qty === 0 && li.part_number) {
           qty = deliveryHistoryQtyMap.get(li.part_number) ?? 0;
         }
         const weeklyRate = li.weekly_rate ?? 0;
         const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
         const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
-        // Exact fractional billing: days/7 * weekly rate (no ceiling rounding)
         const lineTotal = qty * effectiveWeeklyRate * hireWeeks;
         return {
           partNumber: li.part_number || "-",
@@ -888,7 +965,11 @@ const Accounting = () => {
         };
       });
 
-      const hireTotal = hireBreakdown.reduce((s, l) => s + l.lineTotal, 0);
+      // hireTotal: sum batches if available, else legacy breakdown
+      const hireTotal = batches.length > 0
+        ? batches.reduce((s, b) => s + b.batchHireTotal, 0)
+        : hireBreakdown.reduce((s, l) => s + l.lineTotal, 0);
+
       const qNum = q.quotation_number || "Draft";
       const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
@@ -915,9 +996,10 @@ const Accounting = () => {
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: toIsoDateOrToday(q.created_at),
         workflowStatus: q.status?.toLowerCase() ?? "",
+        dispatchBatches: batches,
       };
     });
-  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber]);
+  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
 
   const uniqueClients = useMemo(
     () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
