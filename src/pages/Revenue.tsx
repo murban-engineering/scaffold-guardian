@@ -146,10 +146,10 @@ const Revenue = () => {
                           <TableCell>
                             <div className="font-medium">{row.quotationNumber}</div>
                             <div className="text-xs text-muted-foreground">
-                              {new Date(row.createdAt).toLocaleDateString("en-ZA", {
-                                year: "numeric",
-                                month: "short",
+                              {new Date(row.createdAt).toLocaleDateString("en-GB", {
                                 day: "numeric",
+                                month: "short",
+                                year: "numeric",
                               })}
                             </div>
                           </TableCell>

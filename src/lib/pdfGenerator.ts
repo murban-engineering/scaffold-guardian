@@ -201,7 +201,9 @@ const COMPANY_PIN = "P052471711M";
 
 const formatTimestamp = () => {
   const now = new Date();
-  return now.toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
+  const day = now.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return `${day} ${time}`;
 };
 
 // ── Page-1 footer band (yellow brand bar + legal text + processed info) ────────
