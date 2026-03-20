@@ -408,12 +408,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         ${renderTaxInvoiceHeader(invoice, billingDateStr)}
         <div class="print-content">
           <h2>A. Weekly Hire Charges</h2>
-          <table>
-            <thead><tr>
-              <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
-            </tr></thead>
-            <tbody>${hireRows}</tbody>
-          </table>
+          ${hireSection}
         </div>
       </div>
       <div class="branded-footer">
