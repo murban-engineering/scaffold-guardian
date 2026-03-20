@@ -205,6 +205,18 @@ type DeliveryHistorySiteRecord = {
   siteNumber?: string;
 };
 
+/** Billing data for a single dispatch batch */
+type DispatchBatch = {
+  batchNumber: number;
+  deliveryNoteNumber: string;
+  dispatchDate: string;
+  hireDays: number;
+  hireWeeks: number;
+  hireWeeksLabel: string;
+  lines: HireLineBreakdown[];
+  batchHireTotal: number;
+};
+
 type ClientInvoice = {
   id: string;
   invoiceNumber: string;
@@ -231,6 +243,8 @@ type ClientInvoice = {
   createdBy: string;
   createdDate: string;
   workflowStatus: string;
+  /** Per-batch billing breakdown for multi-dispatch invoices */
+  dispatchBatches: DispatchBatch[];
 };
 
 const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) =>
