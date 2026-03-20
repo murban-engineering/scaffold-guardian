@@ -195,8 +195,8 @@ const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
       Branch Code: 021<br/>
       Swift Code: IMBLKENA<br/>
       Mpesa Paybill Code: 542542`;
-const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
-const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
+const COMPANY_LOCATION = "P.O.BOX 142-00502 Nairobi Karen";
 const COMPANY_PIN = "P052471711M";
 
 const formatTimestamp = () => {

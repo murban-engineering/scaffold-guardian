@@ -286,8 +286,8 @@ const Sites = () => {
             <div class="panel">
               <h3>Company Details</h3>
               <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">OTNO Access Solutions</span></div>
-              <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">99215-80107 Mombasa, Kenya</span></div>
-              <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">Embakasi, Old North Airport Rd, next to Naivas Embakasi</span></div>
+              <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">P.O.BOX 142-00502 Nairobi Karen</span></div>
+              <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">P.O.BOX 142-00502 Nairobi Karen</span></div>
               <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
             </div>
             <div class="panel">
