@@ -205,6 +205,18 @@ type DeliveryHistorySiteRecord = {
   siteNumber?: string;
 };
 
+/** Billing data for a single dispatch batch */
+type DispatchBatch = {
+  batchNumber: number;
+  deliveryNoteNumber: string;
+  dispatchDate: string;
+  hireDays: number;
+  hireWeeks: number;
+  hireWeeksLabel: string;
+  lines: HireLineBreakdown[];
+  batchHireTotal: number;
+};
+
 type ClientInvoice = {
   id: string;
   invoiceNumber: string;
@@ -231,10 +243,20 @@ type ClientInvoice = {
   createdBy: string;
   createdDate: string;
   workflowStatus: string;
+  /** Per-batch billing breakdown for multi-dispatch invoices */
+  dispatchBatches: DispatchBatch[];
 };
 
-const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) =>
-  renderAccountingReportHeader({
+const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) => {
+  const hasBatches = invoice.dispatchBatches.length > 1;
+  const dispatchDateRow = hasBatches
+    ? invoice.dispatchBatches.map(b =>
+        `<div class="row"><span class="lbl">Batch ${b.batchNumber} Dispatch</span><span class="sep">:</span><span class="val">${escapeHtml(b.dispatchDate)} — ${escapeHtml(b.hireWeeksLabel)}</span></div>`
+      ).join("")
+    : `<div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+       <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>`;
+
+  return renderAccountingReportHeader({
     documentTitle: "Tax Invoice",
     documentNumber: invoice.invoiceNumber,
     documentDate: billingDateStr,
@@ -247,25 +269,76 @@ const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) 
     showBrandSubtitle: false,
     extraRows: `
       <div class="row"><span class="lbl">Quotation No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.quotationNumber)}</span></div>
-      <div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
-      <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>
+      ${dispatchDateRow}
     `,
   });
+};
 
 const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const win = window.open("", "_blank");
   if (!win) { alert("Please allow popups to print invoices"); return; }
 
-  const hireRows = invoice.hireBreakdown.length > 0
-    ? invoice.hireBreakdown.map(l => `
-      <tr>
-        <td>${escapeHtml(l.partNumber)}</td>
-        <td>${escapeHtml(l.item)}</td>
-        <td class="r">${l.quantity}</td>
-        <td class="r">${escapeHtml(l.weeksLabel)}</td>
-        <td class="r">${currency.format(l.lineTotal)}</td>
-      </tr>`).join("")
-    : `<tr><td colspan="5" class="c">No hire items.</td></tr>`;
+  // ── Build hire section: per-batch if multiple dispatches, flat if single ──
+  const hasBatches = invoice.dispatchBatches.length > 0;
+
+  const hireSection = hasBatches
+    ? invoice.dispatchBatches.map((batch, bi) => {
+        const batchRows = batch.lines.length > 0
+          ? batch.lines.map(l => `
+            <tr>
+              <td>${escapeHtml(l.partNumber)}</td>
+              <td>${escapeHtml(l.item)}</td>
+              <td class="r">${l.quantity}</td>
+              <td class="r">${escapeHtml(l.weeksLabel)}</td>
+              <td class="r">${currency.format(l.lineTotal)}</td>
+            </tr>`).join("")
+          : `<tr><td colspan="5" class="c">No items in this batch.</td></tr>`;
+
+        return `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;">
+              <span style="font-size:10px;font-weight:800;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:2px;flex:1;">
+                Batch ${batch.batchNumber} — ${escapeHtml(batch.deliveryNoteNumber)}
+              </span>
+              <span style="font-size:8.5px;color:#555;">
+                Dispatch: ${escapeHtml(batch.dispatchDate)} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
+              </span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Period</th><th class="r">Amount (KES)</th>
+              </tr></thead>
+              <tbody>${batchRows}</tbody>
+              <tfoot>
+                <tr style="background:#f9fafb;">
+                  <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Batch ${batch.batchNumber} Subtotal</td>
+                  <td class="r" style="font-weight:700;">${currency.format(batch.batchHireTotal)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>`;
+      }).join("") +
+      `<div style="margin-top:4px;padding:4px 8px;background:#f3f4f6;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;font-size:9px;font-weight:800;">
+        <span>Total Weekly Hire Charges (All Batches)</span>
+        <span>${currency.format(invoice.hireTotal)}</span>
+      </div>`
+    : (invoice.hireBreakdown.length > 0
+        ? `<table>
+            <thead><tr>
+              <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+            </tr></thead>
+            <tbody>
+              ${invoice.hireBreakdown.map(l => `
+                <tr>
+                  <td>${escapeHtml(l.partNumber)}</td>
+                  <td>${escapeHtml(l.item)}</td>
+                  <td class="r">${l.quantity}</td>
+                  <td class="r">${escapeHtml(l.weeksLabel)}</td>
+                  <td class="r">${currency.format(l.lineTotal)}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>`
+        : `<table><thead><tr><th colspan="5">No hire items.</th></tr></thead></table>`);
 
   const policyRows = invoice.policyBreakdown.length > 0
     ? invoice.policyBreakdown.map(l => `
@@ -343,12 +416,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         ${renderTaxInvoiceHeader(invoice, billingDateStr)}
         <div class="print-content">
           <h2>A. Weekly Hire Charges</h2>
-          <table>
-            <thead><tr>
-              <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
-            </tr></thead>
-            <tbody>${hireRows}</tbody>
-          </table>
+          ${hireSection}
         </div>
       </div>
       <div class="branded-footer">
@@ -816,7 +884,8 @@ const Accounting = () => {
         : undefined;
 
       const lineItems = q.line_items ?? [];
-      // Use stored dispatch_date if available, then delivery history, then a stable fallback.
+
+      // ── Resolve the earliest dispatch date (for table display) ──────────────
       const storedDispatchDate = q.dispatch_date;
       let dispatchDate: string;
       if (storedDispatchDate) {
@@ -835,15 +904,93 @@ const Accounting = () => {
           dispatchDate = toIsoDateOrToday(dispatchDateRaw);
         }
       }
+
+      // ── Build weekly rate lookup from line items by part number ──────────────
+      type LineItemMeta = { weeklyRate: number; discountRate: number; effectiveWeeklyRate: number; partNumber: string; description: string };
+      const lineItemMetaByPart = new Map<string, LineItemMeta>();
+      for (const li of lineItems) {
+        if (!li.part_number) continue;
+        const weeklyRate = li.weekly_rate ?? 0;
+        const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
+        const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
+        lineItemMetaByPart.set(li.part_number, {
+          weeklyRate,
+          discountRate,
+          effectiveWeeklyRate,
+          partNumber: li.part_number,
+          description: li.description || li.part_number || "Unnamed",
+        });
+      }
+
+      // ── Build per-batch billing from delivery history ────────────────────────
+      type RawDeliveryRecord = {
+        id?: string;
+        deliveryNoteNumber?: string;
+        deliveryDate?: string;
+        status?: string;
+        items?: { itemCode?: string; description?: string; quantityDelivered?: number }[];
+      };
+
+      const dispatchedBatches = (deliveryHistory as unknown as RawDeliveryRecord[])
+        .filter((rec) => {
+          const s = String(rec?.status ?? "").toLowerCase();
+          return s === "dispatched" || s === "completed";
+        })
+        .sort((a, b) => {
+          const da = a.deliveryDate ?? "";
+          const db = b.deliveryDate ?? "";
+          return da.localeCompare(db);
+        });
+
+      const batches: DispatchBatch[] = dispatchedBatches.map((rec, batchIdx) => {
+        const batchDispatchDate = toIsoDateOrToday(rec.deliveryDate);
+        const batchDays = calculateBillableDays(batchDispatchDate, bd);
+        const batchWeeks = billableDaysToWeeks(batchDays);
+        const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
+
+        const lines: HireLineBreakdown[] = (rec.items ?? []).map((item) => {
+          const partNo = item.itemCode || "-";
+          const meta = lineItemMetaByPart.get(partNo);
+          const weeklyRate = meta?.weeklyRate ?? 0;
+          const discountRate = meta?.discountRate ?? 0;
+          const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
+          const qty = item.quantityDelivered ?? 0;
+          const lineTotal = qty * effectiveWeeklyRate * batchWeeks;
+          return {
+            partNumber: partNo,
+            item: item.description || meta?.description || partNo,
+            quantity: qty,
+            weeklyRate,
+            discountRate,
+            effectiveWeeklyRate,
+            weeks: batchWeeks,
+            weeksLabel: batchWeeksLabel,
+            lineTotal,
+          };
+        });
+
+        const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+        return {
+          batchNumber: batchIdx + 1,
+          deliveryNoteNumber: rec.deliveryNoteNumber || `Batch ${batchIdx + 1}`,
+          dispatchDate: batchDispatchDate,
+          hireDays: batchDays,
+          hireWeeks: batchWeeks,
+          hireWeeksLabel: batchWeeksLabel,
+          lines,
+          batchHireTotal,
+        };
+      });
+
+      // ── Fallback: if no dispatch batches found, build from line items (legacy) ──
       const hireDays = calculateBillableDays(dispatchDate, bd);
       const hireWeeks = billableDaysToWeeks(hireDays);
       const hireWeeksLabel = formatWeeksDaysLabel(hireDays);
 
-      // Build a fallback qty map from delivery history in case line item quantities are 0
       const deliveryHistoryQtyMap = new Map<string, number>();
-      for (const record of deliveryHistory) {
-        if (!Array.isArray((record as { items?: unknown }).items)) continue;
-        for (const item of (record as { items: { itemCode?: string; quantityDelivered?: number }[] }).items) {
+      for (const rec of deliveryHistory) {
+        if (!Array.isArray((rec as { items?: unknown }).items)) continue;
+        for (const item of (rec as { items: { itemCode?: string; quantityDelivered?: number }[] }).items) {
           if (!item.itemCode) continue;
           const prev = deliveryHistoryQtyMap.get(item.itemCode) ?? 0;
           deliveryHistoryQtyMap.set(item.itemCode, prev + (item.quantityDelivered ?? 0));
@@ -852,14 +999,12 @@ const Accounting = () => {
 
       const hireBreakdown: HireLineBreakdown[] = lineItems.map((li) => {
         let qty = (li.delivered_quantity ?? 0) > 0 ? li.delivered_quantity : li.quantity ?? 0;
-        // Fallback: if still 0, pull from delivery history by part number
         if (qty === 0 && li.part_number) {
           qty = deliveryHistoryQtyMap.get(li.part_number) ?? 0;
         }
         const weeklyRate = li.weekly_rate ?? 0;
         const discountRate = Math.min(Math.max(li.hire_discount ?? 0, 0), 100);
         const effectiveWeeklyRate = Math.max(weeklyRate * (1 - discountRate / 100), 0);
-        // Exact fractional billing: days/7 * weekly rate (no ceiling rounding)
         const lineTotal = qty * effectiveWeeklyRate * hireWeeks;
         return {
           partNumber: li.part_number || "-",
@@ -874,7 +1019,11 @@ const Accounting = () => {
         };
       });
 
-      const hireTotal = hireBreakdown.reduce((s, l) => s + l.lineTotal, 0);
+      // hireTotal: sum batches if available, else legacy breakdown
+      const hireTotal = batches.length > 0
+        ? batches.reduce((s, b) => s + b.batchHireTotal, 0)
+        : hireBreakdown.reduce((s, l) => s + l.lineTotal, 0);
+
       const qNum = q.quotation_number || "Draft";
       const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
@@ -901,9 +1050,10 @@ const Accounting = () => {
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: toIsoDateOrToday(q.created_at),
         workflowStatus: q.status?.toLowerCase() ?? "",
+        dispatchBatches: batches,
       };
     });
-  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber]);
+  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
 
   const uniqueClients = useMemo(
     () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
