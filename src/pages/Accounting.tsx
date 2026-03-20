@@ -270,16 +270,67 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const win = window.open("", "_blank");
   if (!win) { alert("Please allow popups to print invoices"); return; }
 
-  const hireRows = invoice.hireBreakdown.length > 0
-    ? invoice.hireBreakdown.map(l => `
-      <tr>
-        <td>${escapeHtml(l.partNumber)}</td>
-        <td>${escapeHtml(l.item)}</td>
-        <td class="r">${l.quantity}</td>
-        <td class="r">${escapeHtml(l.weeksLabel)}</td>
-        <td class="r">${currency.format(l.lineTotal)}</td>
-      </tr>`).join("")
-    : `<tr><td colspan="5" class="c">No hire items.</td></tr>`;
+  // ── Build hire section: per-batch if multiple dispatches, flat if single ──
+  const hasBatches = invoice.dispatchBatches.length > 0;
+
+  const hireSection = hasBatches
+    ? invoice.dispatchBatches.map((batch, bi) => {
+        const batchRows = batch.lines.length > 0
+          ? batch.lines.map(l => `
+            <tr>
+              <td>${escapeHtml(l.partNumber)}</td>
+              <td>${escapeHtml(l.item)}</td>
+              <td class="r">${l.quantity}</td>
+              <td class="r">${escapeHtml(l.weeksLabel)}</td>
+              <td class="r">${currency.format(l.lineTotal)}</td>
+            </tr>`).join("")
+          : `<tr><td colspan="5" class="c">No items in this batch.</td></tr>`;
+
+        return `
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;">
+              <span style="font-size:10px;font-weight:800;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:2px;flex:1;">
+                Batch ${batch.batchNumber} — ${escapeHtml(batch.deliveryNoteNumber)}
+              </span>
+              <span style="font-size:8.5px;color:#555;">
+                Dispatch: ${escapeHtml(batch.dispatchDate)} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
+              </span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Period</th><th class="r">Amount (KES)</th>
+              </tr></thead>
+              <tbody>${batchRows}</tbody>
+              <tfoot>
+                <tr style="background:#f9fafb;">
+                  <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Batch ${batch.batchNumber} Subtotal</td>
+                  <td class="r" style="font-weight:700;">${currency.format(batch.batchHireTotal)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>`;
+      }).join("") +
+      `<div style="margin-top:4px;padding:4px 8px;background:#f3f4f6;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;font-size:9px;font-weight:800;">
+        <span>Total Weekly Hire Charges (All Batches)</span>
+        <span>${currency.format(invoice.hireTotal)}</span>
+      </div>`
+    : (invoice.hireBreakdown.length > 0
+        ? `<table>
+            <thead><tr>
+              <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Weeks</th><th class="r">Amount (KES)</th>
+            </tr></thead>
+            <tbody>
+              ${invoice.hireBreakdown.map(l => `
+                <tr>
+                  <td>${escapeHtml(l.partNumber)}</td>
+                  <td>${escapeHtml(l.item)}</td>
+                  <td class="r">${l.quantity}</td>
+                  <td class="r">${escapeHtml(l.weeksLabel)}</td>
+                  <td class="r">${currency.format(l.lineTotal)}</td>
+                </tr>`).join("")}
+            </tbody>
+          </table>`
+        : `<table><thead><tr><th colspan="5">No hire items.</th></tr></thead></table>`);
 
   const policyRows = invoice.policyBreakdown.length > 0
     ? invoice.policyBreakdown.map(l => `
