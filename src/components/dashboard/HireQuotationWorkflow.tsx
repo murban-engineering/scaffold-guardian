@@ -2202,7 +2202,7 @@ const HireQuotationWorkflow = ({
   const handleMarkDeliveryDispatched = useCallback(async (deliveryId: string) => {
     const updatedDeliveryHistory = deliveryHistory.map((delivery) =>
       delivery.id === deliveryId
-        ? { ...delivery, status: "dispatched" as const, dispatchedDate: new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" }) }
+        ? { ...delivery, status: "dispatched" as const, dispatchedDate: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) }
         : delivery
     );
 

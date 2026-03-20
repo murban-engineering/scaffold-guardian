@@ -409,8 +409,8 @@ const MaintenanceLogs = () => {
                                 </div>
                               </TableCell>
                               <TableCell className="pr-6 text-xs text-muted-foreground whitespace-nowrap">
-                                {new Date(log.created_at).toLocaleDateString("en-ZA", {
-                                  year: "numeric", month: "short", day: "numeric",
+                                {new Date(log.created_at).toLocaleDateString("en-GB", {
+                                  day: "numeric", month: "short", year: "numeric",
                                 })}
                               </TableCell>
                             </TableRow>

@@ -29,7 +29,7 @@ const formatDate = (value: string | null) => {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };
 
 const statusColor = (status: string) => {
