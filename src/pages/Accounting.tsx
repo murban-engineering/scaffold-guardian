@@ -247,8 +247,16 @@ type ClientInvoice = {
   dispatchBatches: DispatchBatch[];
 };
 
-const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) =>
-  renderAccountingReportHeader({
+const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) => {
+  const hasBatches = invoice.dispatchBatches.length > 1;
+  const dispatchDateRow = hasBatches
+    ? invoice.dispatchBatches.map(b =>
+        `<div class="row"><span class="lbl">Batch ${b.batchNumber} Dispatch</span><span class="sep">:</span><span class="val">${escapeHtml(b.dispatchDate)} — ${escapeHtml(b.hireWeeksLabel)}</span></div>`
+      ).join("")
+    : `<div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+       <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>`;
+
+  return renderAccountingReportHeader({
     documentTitle: "Tax Invoice",
     documentNumber: invoice.invoiceNumber,
     documentDate: billingDateStr,
