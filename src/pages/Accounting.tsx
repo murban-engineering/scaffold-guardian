@@ -57,8 +57,8 @@ const resolveDispatchDateFromHistory = (
 };
 
 const COMPANY_NAME = "OTNO Access Solutions";
-const COMPANY_ADDRESS = "99215-80107 Mombasa, Kenya";
-const COMPANY_LOCATION = "Embakasi, Old North Airport Rd, next to Naivas Embakasi";
+const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
+const COMPANY_LOCATION = "P.O.BOX 142-00502 Nairobi Karen";
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
