@@ -1278,12 +1278,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         })}
         </div>
 
-        <!-- Pallets note appears at top of page 2 body, above banking/signature -->
-        <div class="hq-pallets-note">
-          Please note that pallets and stillages are used for safe loading and it is a stock item. There will be hire charges for these items<br/>
-          (Refer to the Stacking and Loading Procedures of OTNO Access Solutions equipment.)<br/><br/>
-          <strong>Quoted rates excludes transport to and from site</strong>
-        </div>
 
         <div class="hq-footer-grid">
           <div>
