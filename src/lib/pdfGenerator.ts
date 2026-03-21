@@ -196,7 +196,9 @@ const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
       Swift Code: IMBLKENA<br/>
       Mpesa Paybill Code: 542542`;
 const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
-const COMPANY_LOCATION = "P.O.BOX 142-00502 Nairobi Karen";
+const COMPANY_LOCATION = "Embakasi, Old North Airport Rd";
+const COMPANY_WEBSITE = "otno.ke";
+const COMPANY_REG = "YQ192VDK";
 const COMPANY_PIN = "P052471711M";
 
 const formatTimestamp = () => {
