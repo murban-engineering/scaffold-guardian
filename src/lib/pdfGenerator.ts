@@ -526,7 +526,8 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
           <div class="brand-title">${COMPANY_NAME}</div>
         </div>
         <div class="brand-meta">
-          <span><strong>Reg No:</strong> ${COMPANY_PIN}</span>
+          <div><strong>PIN No:</strong> ${COMPANY_PIN}</div>
+          <div><strong>Reg No:</strong> ${COMPANY_REG}</div>
         </div>
       </div>
 
@@ -545,6 +546,17 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
           </div>
           <div class="info-row" style="margin-bottom:2px;"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
           <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
+        </div>
+      </div>
+
+      <div class="panel" style="border-width:0.5px;border-color:#aaa;">
+        ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
+        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
+        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
+        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
+        <div style="margin-top:5px;">
+          <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
+          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
         </div>
       </div>
     </div>
@@ -570,19 +582,9 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
         <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">${COMPANY_NAME}</span></div>
         <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
         <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
-        <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+        <div class="info-row"><span class="info-label">Website</span><span class="info-sep">:</span><span class="info-value">${COMPANY_WEBSITE}</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
         ${data.createdBy ? `<div class="info-row"><span class="info-label">Salesman</span><span class="info-sep">:</span><span class="info-value">${data.createdBy}</span></div>` : ""}
-      </div>
-
-      <div class="panel">
-        ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
-        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
-        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
-        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
-        <div style="margin-top:5px;">
-          <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
-          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
-        </div>
       </div>
     </div>
   </div>
