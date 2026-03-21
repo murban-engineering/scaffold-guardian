@@ -158,9 +158,13 @@ export const useUpdateScaffold = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Scaffold> & { id: string }) => {
+      // Never allow qty_at_start to be overwritten via update — it is only
+      // incremented by upsert_scaffold (adding new stock). Remove it here
+      // so a raw update cannot accidentally zero out the baseline.
+      const { qty_at_start: _ignored, sites: _sites, ...safeUpdates } = updates as typeof updates & { qty_at_start?: number | null; sites?: unknown };
       const { data, error } = await supabase
         .from("scaffolds")
-        .update(updates)
+        .update(safeUpdates)
         .eq("id", id)
         .select()
         .single();
