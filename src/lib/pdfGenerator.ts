@@ -199,6 +199,7 @@ const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
 const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd";
 const COMPANY_WEBSITE = "otno.ke";
+const COMPANY_EMAIL = "otnoacess@gmail.com";
 const COMPANY_REG = "YQ192VDK";
 const COMPANY_PIN = "P052471711M";
 
@@ -627,7 +628,7 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
         <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">${COMPANY_ADDRESS}</span></div>
         <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">${COMPANY_LOCATION}</span></div>
         <div class="info-row"><span class="info-label">Website</span><span class="info-sep">:</span><span class="info-value">${COMPANY_WEBSITE}</span></div>
-        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+        <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${COMPANY_EMAIL}</span></div>
         ${data.createdBy ? `<div class="info-row"><span class="info-label">Salesman</span><span class="info-sep">:</span><span class="info-value">${data.createdBy}</span></div>` : ""}
       </div>
     </div>

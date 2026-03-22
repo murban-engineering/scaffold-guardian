@@ -58,7 +58,9 @@ const resolveDispatchDateFromHistory = (
 
 const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
-const COMPANY_LOCATION = "P.O.BOX 142-00502 Nairobi Karen";
+const COMPANY_LOCATION = "Embakasi, Old North Airport Rd";
+const COMPANY_WEBSITE = "otno.ke";
+const COMPANY_EMAIL = "otnoacess@gmail.com";
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
@@ -162,6 +164,8 @@ const renderAccountingReportHeader = ({
           <div class="row"><span class="lbl">Company</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_NAME)}</span></div>
           <div class="row"><span class="lbl">Address</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_ADDRESS)}</span></div>
           <div class="row"><span class="lbl">Location</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_LOCATION)}</span></div>
+          <div class="row"><span class="lbl">Website</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_WEBSITE)}</span></div>
+          <div class="row"><span class="lbl">Email</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_EMAIL)}</span></div>
           <div class="row"><span class="lbl">Prepared By</span><span class="sep">:</span><span class="val">${escapeHtml(createdBy || "-")}</span></div>
         </div>
         <div class="panel">
@@ -707,9 +711,12 @@ const openCustomerStatement = (
         <h1>Customer Statement</h1>
         <div class="subtitle">(and settlement discount credit note)</div>
         <div class="panel">
-          <h3>OTNO Access Solutions</h3>
-          <div>${escapeHtml(COMPANY_ADDRESS)}</div>
-          <div>${escapeHtml(COMPANY_LOCATION)}</div>
+          <h3>Company Details</h3>
+          <div class="row"><span class="lbl">Company</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_NAME)}</span></div>
+          <div class="row"><span class="lbl">Address</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_ADDRESS)}</span></div>
+          <div class="row"><span class="lbl">Location</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_LOCATION)}</span></div>
+          <div class="row"><span class="lbl">Website</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_WEBSITE)}</span></div>
+          <div class="row"><span class="lbl">Email</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_EMAIL)}</span></div>
         </div>
         <div class="panel">
           <div class="row"><span class="lbl">Customer No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.accountNumber || "-")}</span></div>
