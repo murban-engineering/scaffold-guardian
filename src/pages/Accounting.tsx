@@ -1112,26 +1112,66 @@ const Accounting = () => {
     const monthBillingDate = format(monthEnd, "yyyy-MM-dd");
     const dispatchDate = asDateOrToday(invoice.dispatchDate);
     const isFirstBillingMonth = isSameMonth(monthStart, dispatchDate);
+
+    // Billing start is the dispatch date itself for the first month, otherwise 1st of month
     const billingStartDate = isFirstBillingMonth ? dispatchDate : startOfMonth(monthStart);
     const billingStartIso = format(billingStartDate, "yyyy-MM-dd");
-    const weeks = calculateMonthlyInvoiceWeeks(billingStartDate, monthEnd, isFirstBillingMonth);
-    const monthDays = weeks * 7; // for monthly invoices keep whole-week multiples
+
+    // Day-accurate: count days from dispatch date to end of month (dispatch day = day 0, next day = day 1)
+    const monthDays = differenceInCalendarDays(monthEnd, billingStartDate);
+    const monthWeeks = billableDaysToWeeks(monthDays);
     const monthWeeksLabel = formatWeeksDaysLabel(monthDays);
+
+    // For multi-dispatch batches, recalculate each batch for this month window
+    const monthlyBatches: DispatchBatch[] = invoice.dispatchBatches.map((batch) => {
+      const batchDispatch = asDateOrToday(batch.dispatchDate);
+      // Only bill this batch if it was dispatched before or during this month
+      const batchInMonth = !isBefore(monthEnd, batchDispatch);
+      if (!batchInMonth) {
+        return { ...batch, hireDays: 0, hireWeeks: 0, hireWeeksLabel: "0 days", lines: batch.lines.map(l => ({ ...l, weeks: 0, weeksLabel: "0 days", lineTotal: 0 })), batchHireTotal: 0 };
+      }
+      const batchBillingStart = isSameMonth(monthStart, batchDispatch) ? batchDispatch : startOfMonth(monthStart);
+      const batchDays = differenceInCalendarDays(monthEnd, batchBillingStart);
+      const batchWeeks = billableDaysToWeeks(batchDays);
+      const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
+      const lines = batch.lines.map((l) => ({
+        ...l,
+        weeks: batchWeeks,
+        weeksLabel: batchWeeksLabel,
+        lineTotal: l.quantity * l.effectiveWeeklyRate * batchWeeks,
+      }));
+      return {
+        ...batch,
+        dispatchDate: format(batchBillingStart, "yyyy-MM-dd"),
+        hireDays: batchDays,
+        hireWeeks: batchWeeks,
+        hireWeeksLabel: batchWeeksLabel,
+        lines,
+        batchHireTotal: lines.reduce((s, l) => s + l.lineTotal, 0),
+      };
+    });
+
+    const monthlyHireTotal = monthlyBatches.length > 0
+      ? monthlyBatches.reduce((s, b) => s + b.batchHireTotal, 0)
+      : invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * monthWeeks, 0);
+
     const monthInvoice: ClientInvoice = {
       ...invoice,
       dispatchDate: billingStartIso,
       hireDays: monthDays,
-      hireWeeks: weeks,
+      hireWeeks: monthWeeks,
       hireWeeksLabel: monthWeeksLabel,
-      invoiceNumber: `${invoice.invoiceNumber}-${format(monthEnd, "MMyy")}`,
+      // No date suffix on invoice number
+      invoiceNumber: invoice.invoiceNumber,
+      dispatchBatches: monthlyBatches,
       hireBreakdown: invoice.hireBreakdown.map((l) => ({
         ...l,
-        weeks,
+        weeks: monthWeeks,
         weeksLabel: monthWeeksLabel,
-        lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
+        lineTotal: l.quantity * l.effectiveWeeklyRate * monthWeeks,
       })),
-      hireTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0),
-      grandTotal: invoice.hireBreakdown.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate * weeks, 0) + invoice.policyTotal,
+      hireTotal: monthlyHireTotal,
+      grandTotal: monthlyHireTotal + invoice.policyTotal,
     };
     openInvoicePrint(monthInvoice, monthBillingDate);
   };
