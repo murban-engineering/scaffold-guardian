@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -44,6 +44,7 @@ const Index = () => {
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
     return stateItem ?? "dashboard";
   });
+  const lastHandledLocationKeyRef = useRef(location.key);
   const [globalSearch, setGlobalSearch] = useState("");
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
@@ -68,13 +69,17 @@ const Index = () => {
     : null;
 
   useEffect(() => {
+    if (lastHandledLocationKeyRef.current === location.key) {
+      return;
+    }
+
+    lastHandledLocationKeyRef.current = location.key;
+
     const stateItem = (location.state as { activeItem?: string } | null)?.activeItem;
     if (stateItem) {
       setActiveItem(stateItem);
-      // Clear the state to prevent stale navigation
-      window.history.replaceState({}, document.title);
     }
-  }, [location.state]);
+  }, [location.key, location.state]);
 
   useEffect(() => {
     if (!authLoading && activeItem === "workforce" && !canViewWorkforce) {
