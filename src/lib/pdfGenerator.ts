@@ -1132,6 +1132,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const printWindow = window.open("", "_blank");
   if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
+  const isSinglePage = data.items.length <= 5;
+
   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.massPerItem ?? 0) * item.quantity, 0);
   const subtotal = data.items.reduce((sum, item) => {
