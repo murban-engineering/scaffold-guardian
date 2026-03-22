@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { formatReportDate, formatReportDateTime } from "@/lib/accountingDates";
 import HireQuotationWorkflow from "@/components/dashboard/HireQuotationWorkflow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,12 +87,7 @@ const Sites = () => {
       .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
   }, [filteredRemovalReportRows]);
 
-  const formatDate = (value: string | null) => {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
-  };
+  const formatDate = (value: string | null) => formatReportDate(value);
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -157,8 +153,8 @@ const Sites = () => {
     const clientId = clientQuotation?.client_id || "";
 
     const origin = window.location.origin;
-    const printDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
-    const docDate = new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    const printDate = formatReportDateTime(new Date());
+    const docDate = formatReportDate(new Date());
 
     const tableRows = summarizedRemovalRows
       .map(

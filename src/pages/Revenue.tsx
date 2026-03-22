@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import { formatReportDate } from "@/lib/accountingDates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
@@ -146,11 +147,7 @@ const Revenue = () => {
                           <TableCell>
                             <div className="font-medium">{row.quotationNumber}</div>
                             <div className="text-xs text-muted-foreground">
-                              {new Date(row.createdAt).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              {formatReportDate(row.createdAt)}
                             </div>
                           </TableCell>
                           <TableCell>{row.client}</TableCell>

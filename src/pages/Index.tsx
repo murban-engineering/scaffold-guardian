@@ -19,6 +19,7 @@ import { useCreateQuotation, useDeleteQuotation, useHireQuotations, useUpdateQuo
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { formatReportDate } from "@/lib/accountingDates";
 import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
@@ -108,9 +109,7 @@ const Index = () => {
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    return formatReportDate(value);
   };
 
   const toClientId = (quotation: HireQuotation | null) =>
