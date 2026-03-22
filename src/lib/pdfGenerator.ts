@@ -1132,6 +1132,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const printWindow = window.open("", "_blank");
   if (!printWindow) { alert("Please allow popups for this site to generate PDFs"); return; }
 
+  const isSinglePage = data.items.length <= 5;
+
   const totalQuantity = data.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.massPerItem ?? 0) * item.quantity, 0);
   const subtotal = data.items.reduce((sum, item) => {
@@ -1143,12 +1145,152 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   const discountAmount = totalWithVat * (data.discountRate / 100);
   const statementTotal = totalWithVat - discountAmount;
 
+  // ── Reusable shared layout call ──────────────────────────────────────────────
+  const sharedLayoutData = {
+    documentType: "Hire Quotation",
+    documentNumber: data.quotationNumber,
+    documentDate: data.dateCreated,
+    clientName: data.companyName,
+    clientAddress: data.companyAddress,
+    clientCityTown: data.companyCityTown,
+    clientTel: data.companyTel,
+    clientFax: data.companyFax,
+    contactName: data.contactName,
+    contactPhone: data.contactPhone,
+    contactEmail: data.companyEmail || data.contactEmail,
+    clientVat: data.companyPinNumber,
+    clientReg: data.companyRegNumber,
+    siteName: data.siteName,
+    siteId: data.siteId,
+    siteLocation: data.siteLocation,
+    siteAddress: data.siteAddress,
+    clientId: data.clientId,
+    createdBy: data.createdBy,
+    depositRequired: "0.00",
+  };
+
+  // ── Shared item table HTML ───────────────────────────────────────────────────
+  const itemsTableHtml = `
+    <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
+      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
+      We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/>
+      This Quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Description</th>
+          <th class="text-right">Qty</th>
+          <th class="text-right">Mass</th>
+          <th class="text-right">Rate</th>
+          <th class="text-right">Hire/Week</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map((item) => {
+          const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
+          const discountedRate = item.weeklyRate * (1 - discountRate);
+          const discountedTotal = discountedRate * item.quantity;
+          const massValue = item.massPerItem != null ? Number(item.massPerItem).toFixed(2) : "-";
+          return `<tr>
+            <td>${item.partNumber || "-"}</td>
+            <td>${item.description || "-"}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right">${massValue}</td>
+            <td class="text-right">${Number(discountedRate).toFixed(2)}</td>
+            <td class="text-right">${Number(discountedTotal).toFixed(2)}</td>
+          </tr>`;
+        }).join("")}
+        <tr class="total-row">
+          <td colspan="2" style="font-weight:800;"></td>
+          <td class="text-right" style="font-weight:800;">Mass (Ton)</td>
+          <td class="text-right" style="font-weight:800;">${(totalMass / 1000).toFixed(3)}</td>
+          <td colspan="2" class="text-right" style="font-weight:800;"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="terms">
+      <strong>Comments</strong><br/>
+      ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
+    </div>
+  `;
+
+  // ── Shared banking / totals / signature HTML ─────────────────────────────────
+  const bankingAndTotalsHtml = `
+    <div class="hq-footer-grid">
+      <div>
+        <div class="hq-banking-box">
+          <h4>Our Banking Details</h4>
+          <div class="hq-banking-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
+          <div class="hq-banking-row"><span>KES Account No</span><span>:</span><span>02107773676350</span></div>
+          <div class="hq-banking-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
+          <div class="hq-banking-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
+          <div class="hq-banking-row"><span>Bank Code</span><span>:</span><span>57</span></div>
+          <div class="hq-banking-row"><span>Branch Code</span><span>:</span><span>021</span></div>
+          <div class="hq-banking-row"><span>Swift Code</span><span>:</span><span>IMBLKENA</span></div>
+          <div class="hq-banking-row"><span>Mpesa Paybill</span><span>:</span><span>542542</span></div>
+        </div>
+
+        <div class="hq-acknowledge">
+          <p>We thank you for affording us the opportunity to quote and await your favourable response.</p>
+          <p>Yours Sincerely</p>
+          <p style="font-weight:800;">${data.createdBy || "Sales Representative"}</p>
+          <div class="hq-sig-row" style="margin-top:10px;">
+            <span class="hq-sig-cell">Signature :<span class="hq-sig-line" style="min-width:130px;"></span></span>
+            <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
+          </div>
+          <div class="hq-sig-row customer">
+            <span class="hq-sig-cell name">Customer Representative's Name :<span class="hq-sig-line" style="min-width:140px;"></span></span>
+            <span class="hq-sig-cell">Signature :<span class="hq-sig-line"></span></span>
+            <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="hq-totals">
+          <div class="hq-totals-row"><span>Net Value Per Week</span><span>:</span><strong style="text-align:right;">${Number(subtotal).toFixed(2)}</strong></div>
+          <div class="hq-totals-row"><span>Vat Per Week 16%</span><span>:</span><strong style="text-align:right;">${Number(vatAmount).toFixed(2)}</strong></div>
+          <div class="hq-totals-row grand"><span>Total Charge Per Week</span><span>: KES</span><strong style="text-align:right;">${Number(statementTotal).toFixed(2)}</strong></div>
+          <div class="hq-totals-add">
+            <div class="hq-totals-row"><span>Additional Charges</span><span>:</span><strong style="text-align:right;">0.00</strong></div>
+            <div class="hq-totals-row"><span>Vat 16%</span><span>:</span><strong style="text-align:right;">0.00</strong></div>
+            <div class="hq-totals-row grand"><span>Total Additional Charges</span><span>: KES</span><strong style="text-align:right;">0.00</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── Shared yellow footer ─────────────────────────────────────────────────────
+  const yellowFooterHtml = `
+    <div class="hq-page2-footer">
+      <div class="hq-footer-brand">
+        <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+      </div>
+      <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page ${isSinglePage ? "1 of 1" : "2 of 2"}</div>
+      <div class="hq-footer-processed">
+        <div>
+          <div>Processed By : ${data.createdBy || ""}</div>
+          <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
+        </div>
+        <div style="text-align:right;">
+          <div>Print date : ${formatTimestamp()}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
   const html = `<!DOCTYPE html><html><head><title>Hire Quotation - ${data.quotationNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
       .terms { margin-top: 14px; padding: 8px; background: #f9f9f9; border-left: 3px solid #333; font-size: 9px; line-height: 1.4; }
 
-      /* ── Page 2 layout — fills the page with footer pinned at bottom ── */
+      /* ── Page 2 / single-page container — fills the page with footer pinned at bottom ── */
       html, body { height: 100%; }
       .hq-page2 {
         page-break-before: always; break-before: page;
@@ -1156,8 +1298,13 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         display: flex; flex-direction: column;
         min-height: 92vh;
       }
+      /* Single-page mode: no page break, everything in one flex column */
+      .hq-single-page {
+        font-size: 9px;
+        display: flex; flex-direction: column;
+        min-height: 92vh;
+      }
       .hq-page2-body { flex: 1; display: flex; flex-direction: column; }
-      .hq-pallets-note { text-align: center; font-size: 9.5px; line-height: 1.35; margin-bottom: 10px; font-weight: 700; }
       .hq-footer-grid { display: grid; grid-template-columns: 1.35fr 0.95fr; gap: 10px; margin-top: auto; margin-bottom: 0; align-items: end; }
       .hq-banking-box { border: 1px solid #4b5563; border-radius: 4px; padding: 6px 10px 9px; margin-bottom: 8px; }
       .hq-banking-box h4 { font-size: 11px; font-weight: 800; margin-bottom: 5px; }
@@ -1209,8 +1356,12 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           page-break-inside: avoid;
           min-height: 92vh;
         }
+        .hq-single-page {
+          min-height: 92vh;
+        }
         .hire-quotation-page,
-        .hq-page2 {
+        .hq-page2,
+        .hq-single-page {
           max-width: 100%;
           overflow: hidden;
         }
@@ -1222,171 +1373,42 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       }
     </style></head><body class="hire-quotation-print">
 
-    <!-- ═══ PAGE 1 ═══ -->
+    ${isSinglePage ? `
+    <!-- ═══ SINGLE PAGE (≤5 items): header + table + comments + banking/totals all on one page ═══ -->
+    <div class="hq-single-page">
+      <div class="hq-page2-body">
+        <div class="hire-quotation-page">
+          ${renderStandardReportLayout(sharedLayoutData)}
+        </div>
+
+        ${itemsTableHtml}
+
+        ${bankingAndTotalsHtml}
+      </div>
+      ${yellowFooterHtml}
+    </div>
+    ` : `
+    <!-- ═══ PAGE 1 (>5 items) ═══ -->
     <div class="hire-quotation-page">
-    ${renderStandardReportLayout({
-      documentType: "Hire Quotation",
-      documentNumber: data.quotationNumber,
-      documentDate: data.dateCreated,
-      clientName: data.companyName,
-      clientAddress: data.companyAddress,
-      clientCityTown: data.companyCityTown,
-      clientTel: data.companyTel,
-      clientFax: data.companyFax,
-      contactName: data.contactName,
-      contactPhone: data.contactPhone,
-      contactEmail: data.companyEmail || data.contactEmail,
-      clientVat: data.companyPinNumber,
-      clientReg: data.companyRegNumber,
-      siteName: data.siteName,
-      siteId: data.siteId,
-      siteLocation: data.siteLocation,
-      siteAddress: data.siteAddress,
-      clientId: data.clientId,
-      createdBy: data.createdBy,
-      depositRequired: "0.00",
-    })}
+      ${renderStandardReportLayout(sharedLayoutData)}
 
-    <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
-      <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
-      We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/>
-      This Quote is valid for a period of 30 DAYS and is subject to confirmation thereafter.
-    </div>
+      ${itemsTableHtml}
 
-    <table>
-      <thead>
-        <tr>
-          <th>Part Number</th>
-          <th>Description</th>
-          <th class="text-right">Qty</th>
-          <th class="text-right">Mass</th>
-          <th class="text-right">Rate</th>
-          <th class="text-right">Hire/Week</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.items.map((item) => {
-          const discountRate = Math.min(Math.max(item.discountRate, 0), 100) / 100;
-          const discountedRate = item.weeklyRate * (1 - discountRate);
-          const discountedTotal = discountedRate * item.quantity;
-          const massValue = item.massPerItem != null ? Number(item.massPerItem).toFixed(2) : "-";
-          return `<tr>
-            <td>${item.partNumber || "-"}</td>
-            <td>${item.description || "-"}</td>
-            <td class="text-right">${item.quantity}</td>
-            <td class="text-right">${massValue}</td>
-            <td class="text-right">${Number(discountedRate).toFixed(2)}</td>
-            <td class="text-right">${Number(discountedTotal).toFixed(2)}</td>
-          </tr>`;
-        }).join("")}
-        <tr class="total-row">
-          <td colspan="2" style="font-weight:800;"></td>
-          <td class="text-right" style="font-weight:800;">Mass (Ton)</td>
-          <td class="text-right" style="font-weight:800;">${(totalMass / 1000).toFixed(3)}</td>
-          <td colspan="2" class="text-right" style="font-weight:800;"></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="terms">
-      <strong>Comments</strong><br/>
-      ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
-    </div>
       ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
 
-    <!-- ═══ PAGE 2 ═══ -->
+    <!-- ═══ PAGE 2 (>5 items) ═══ -->
     <div class="hq-page2">
       <div class="hq-page2-body">
         <div class="hire-quotation-page">
-        ${renderStandardReportLayout({
-          documentType: "Hire Quotation",
-          documentNumber: data.quotationNumber,
-          documentDate: data.dateCreated,
-          clientName: data.companyName,
-          clientAddress: data.companyAddress,
-          clientCityTown: data.companyCityTown,
-          clientTel: data.companyTel,
-          clientFax: data.companyFax,
-          contactName: data.contactName,
-          contactPhone: data.contactPhone,
-          contactEmail: data.companyEmail || data.contactEmail,
-          clientVat: data.companyPinNumber,
-          clientReg: data.companyRegNumber,
-          siteName: data.siteName,
-          siteId: data.siteId,
-          siteLocation: data.siteLocation,
-          siteAddress: data.siteAddress,
-          clientId: data.clientId,
-          createdBy: data.createdBy,
-          depositRequired: "0.00",
-        })}
+          ${renderStandardReportLayout(sharedLayoutData)}
         </div>
 
-
-        <div class="hq-footer-grid">
-          <div>
-            <div class="hq-banking-box">
-              <h4>Our Banking Details</h4>
-              <div class="hq-banking-row"><span>Account Name</span><span>:</span><span>OTNO ACCESS SOLUTIONS LIMITED</span></div>
-              <div class="hq-banking-row"><span>KES Account No</span><span>:</span><span>02107773676350</span></div>
-              <div class="hq-banking-row"><span>Bank Name</span><span>:</span><span>I&amp;M BANK LIMITED</span></div>
-              <div class="hq-banking-row"><span>Branch Name</span><span>:</span><span>Changamwe</span></div>
-              <div class="hq-banking-row"><span>Bank Code</span><span>:</span><span>57</span></div>
-              <div class="hq-banking-row"><span>Branch Code</span><span>:</span><span>021</span></div>
-              <div class="hq-banking-row"><span>Swift Code</span><span>:</span><span>IMBLKENA</span></div>
-              <div class="hq-banking-row"><span>Mpesa Paybill</span><span>:</span><span>542542</span></div>
-            </div>
-
-            <div class="hq-acknowledge">
-              <p>We thank you for affording us the opportunity to quote and await your favourable response.</p>
-              <p>Yours Sincerely</p>
-              <p style="font-weight:800;">${data.createdBy || "Sales Representative"}</p>
-              <div class="hq-sig-row" style="margin-top:10px;">
-                <span class="hq-sig-cell">Signature :<span class="hq-sig-line" style="min-width:130px;"></span></span>
-                <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
-              </div>
-              <div class="hq-sig-row customer">
-                <span class="hq-sig-cell name">Customer Representative's Name :<span class="hq-sig-line" style="min-width:140px;"></span></span>
-                <span class="hq-sig-cell">Signature :<span class="hq-sig-line"></span></span>
-                <span class="hq-sig-cell">Date :<span class="hq-sig-line"></span></span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div class="hq-totals">
-              <div class="hq-totals-row"><span>Net Value Per Week</span><span>:</span><strong style="text-align:right;">${Number(subtotal).toFixed(2)}</strong></div>
-              <div class="hq-totals-row"><span>Vat Per Week 16%</span><span>:</span><strong style="text-align:right;">${Number(vatAmount).toFixed(2)}</strong></div>
-              <div class="hq-totals-row grand"><span>Total Charge Per Week</span><span>: KES</span><strong style="text-align:right;">${Number(statementTotal).toFixed(2)}</strong></div>
-              <div class="hq-totals-add">
-                <div class="hq-totals-row"><span>Additional Charges</span><span>:</span><strong style="text-align:right;">0.00</strong></div>
-                <div class="hq-totals-row"><span>Vat 16%</span><span>:</span><strong style="text-align:right;">0.00</strong></div>
-                <div class="hq-totals-row grand"><span>Total Additional Charges</span><span>: KES</span><strong style="text-align:right;">0.00</strong></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        ${bankingAndTotalsHtml}
       </div>
-
-      <!-- Sticky footer pinned at bottom of page 2 -->
-      <div class="hq-page2-footer">
-        <div class="hq-footer-brand">
-          <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
-        </div>
-        <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
-        <div class="hq-footer-processed">
-          <div>
-            <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
-          </div>
-          <div style="text-align:right;">
-            <div>Print date : ${formatTimestamp()}</div>
-          </div>
-        </div>
-      </div>
+      ${yellowFooterHtml}
     </div>
+    `}
   </body></html>`;
 
   printWindow.document.write(withPrintOption(html, "Print hire quotation report"));
