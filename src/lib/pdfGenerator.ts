@@ -378,7 +378,19 @@ const SHARED_PRINT_STYLES = `
     margin-bottom: 3px;
     letter-spacing: 0;
   }
-  .hire-quotation-layout .client-panel { min-height: 310px; }
+  .hire-quotation-layout .client-panel { min-height: 188px; }
+  .hire-quotation-layout .client-and-site-panel {
+    display: grid;
+    gap: 6px;
+  }
+  .hire-quotation-layout .client-site-section {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 0.5px solid #c9ced6;
+  }
+  .hire-quotation-layout .client-site-section h3 {
+    margin-bottom: 3px;
+  }
   .hire-quotation-layout .info-row { margin-bottom: 2px; }
   .hire-quotation-layout .info-label,
   .hire-quotation-layout .info-value,
@@ -531,34 +543,65 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
         </div>
       </div>
 
-      <div class="panel client-panel" style="border-width:0.5px;border-color:#aaa;">
-        <p style="font-weight:800;font-size:10px;margin-bottom:2px;">${data.clientName || "-"}</p>
-        <p style="margin-bottom:1px;font-size:9px;">${data.clientAddress || ""}</p>
-        <p style="margin-bottom:8px;font-size:9px;">${data.clientCityTown || ""}</p>
-        <div style="margin-top:6px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
-            <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.clientTel || data.contactPhone || ""}</span></div>
-            <div class="info-row"><span class="info-label">VAT / PIN No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat || ""}</span></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
-            <div class="info-row"><span class="info-label">Mobile No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
-            <div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg || ""}</span></div>
-          </div>
-          <div class="info-row" style="margin-bottom:2px;"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
-          <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
-        </div>
-      </div>
+      ${layoutTypeClass === "hire-quotation"
+        ? `<div class="panel client-panel client-and-site-panel" style="border-width:0.5px;border-color:#aaa;">
+            <div>
+              <p style="font-weight:800;font-size:10px;margin-bottom:2px;">${data.clientName || "-"}</p>
+              <p style="margin-bottom:1px;font-size:9px;">${data.clientAddress || ""}</p>
+              <p style="margin-bottom:8px;font-size:9px;">${data.clientCityTown || ""}</p>
+              <div style="margin-top:6px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
+                  <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.clientTel || data.contactPhone || ""}</span></div>
+                  <div class="info-row"><span class="info-label">VAT / PIN No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat || ""}</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
+                  <div class="info-row"><span class="info-label">Mobile No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
+                  <div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg || ""}</span></div>
+                </div>
+                <div class="info-row" style="margin-bottom:2px;"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
+                <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
+              </div>
+            </div>
 
-      <div class="panel" style="border-width:0.5px;border-color:#aaa;">
-        ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
-        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
-        <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
-        <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
-        <div style="margin-top:5px;">
-          <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
-          <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
-        </div>
-      </div>
+            <div class="client-site-section">
+              ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
+              <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
+              <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
+              <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || data.siteLocation || ""}</span></div>
+              <div style="margin-top:5px;">
+                <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
+                <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
+              </div>
+            </div>
+          </div>`
+        : `<div class="panel client-panel" style="border-width:0.5px;border-color:#aaa;">
+            <p style="font-weight:800;font-size:10px;margin-bottom:2px;">${data.clientName || "-"}</p>
+            <p style="margin-bottom:1px;font-size:9px;">${data.clientAddress || ""}</p>
+            <p style="margin-bottom:8px;font-size:9px;">${data.clientCityTown || ""}</p>
+            <div style="margin-top:6px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
+                <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.clientTel || data.contactPhone || ""}</span></div>
+                <div class="info-row"><span class="info-label">VAT / PIN No</span><span class="info-sep">:</span><span class="info-value">${data.clientVat || ""}</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px;">
+                <div class="info-row"><span class="info-label">Mobile No</span><span class="info-sep">:</span><span class="info-value">${data.clientFax || ""}</span></div>
+                <div class="info-row"><span class="info-label">Reg No</span><span class="info-sep">:</span><span class="info-value">${data.clientReg || ""}</span></div>
+              </div>
+              <div class="info-row" style="margin-bottom:2px;"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">${data.contactEmail || ""}</span></div>
+              <div class="info-row"><span class="info-label">Customer No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.clientId || ""}</span></div>
+            </div>
+          </div>
+
+          <div class="panel" style="border-width:0.5px;border-color:#aaa;">
+            ${panelHeadersHidden ? "" : "<h3>Site Details</h3>"}
+            <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${data.siteId || ""}</span></div>
+            <div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${data.siteName || ""}</span></div>
+            <div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${data.siteAddress || ""}</span></div>
+            <div style="margin-top:5px;">
+              <div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${data.contactName || ""}</span></div>
+              <div class="info-row"><span class="info-label">Tel No</span><span class="info-sep">:</span><span class="info-value">${data.contactPhone || ""}</span></div>
+            </div>
+          </div>`}
     </div>
 
     <div class="standard-report-right">
