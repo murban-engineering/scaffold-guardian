@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatReportDate, formatReportDateTime } from "@/lib/accountingDates";
 import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGrouping";
 
 const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
@@ -145,8 +146,8 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     }
 
     const origin = window.location.origin;
-    const printDate = new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" });
-    const docDate = new Date().toLocaleDateString("en-ZA", { year: "numeric", month: "short", day: "numeric" });
+    const printDate = formatReportDateTime(new Date());
+    const docDate = formatReportDate(new Date());
 
     // Sort and group all scaffolds
     const sorted = [...scaffolds].sort((a, b) => {

@@ -22,15 +22,11 @@ import {
   HireQuotationReportData,
 } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
+import { formatReportDate } from "@/lib/accountingDates";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const formatDate = (value: string | null) => {
-  if (!value) return "—";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-};
+const formatDate = (value: string | null) => formatReportDate(value);
 
 const statusColor = (status: string) => {
   switch (status?.toLowerCase()) {

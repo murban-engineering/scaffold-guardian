@@ -1,4 +1,5 @@
 // PDF Generation utilities using browser print
+import { formatReportDate, formatReportDateTime } from "@/lib/accountingDates";
 
 export interface DeliveryNoteData {
   quotationNumber: string;
@@ -203,9 +204,7 @@ const COMPANY_PIN = "P052471711M";
 
 const formatTimestamp = () => {
   const now = new Date();
-  const day = now.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  const time = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  return `${day} ${time}`;
+  return formatReportDateTime(now);
 };
 
 // ── Page-1 footer band (yellow brand bar + legal text + processed info) ────────
@@ -221,7 +220,7 @@ const renderPage1Footer = (createdBy: string, dateCreated: string) => `
     <div style="display:flex;justify-content:space-between;font-size:7px;color:#6b7280;padding:4px 0 0;">
       <div>
         <div>Processed By : ${createdBy || ""}</div>
-        <div>Processed Date : ${dateCreated || ""}</div>
+        <div>Processed Date : ${formatReportDate(dateCreated) || ""}</div>
       </div>
       <div style="text-align:right;">
         <div>Print date : ${formatTimestamp()}</div>
@@ -567,13 +566,13 @@ const renderStandardReportLayout = (data: StandardReportLayoutData) => {
         ${panelHeadersHidden ? "" : "<h3>Document Details</h3>"}
         <div class="info-row"><span class="info-label">Document No</span><span class="info-sep">:</span><span class="info-value">${data.documentNumber || "-"}</span></div>
         <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">${data.documentType}</span></div>
-        <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${data.documentDate || "-"}</span></div>
-        ${data.dispatchDate ? `<div class="info-row"><span class="info-label">Dispatch Date</span><span class="info-sep">:</span><span class="info-value">${data.dispatchDate}</span></div>` : ""}
+        <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${formatReportDate(data.documentDate) || "-"}</span></div>
+        ${data.dispatchDate ? `<div class="info-row"><span class="info-label">Dispatch Date</span><span class="info-sep">:</span><span class="info-value">${formatReportDate(data.dispatchDate)}</span></div>` : ""}
         ${data.orderNumber ? `<div class="info-row"><span class="info-label">Your Order No</span><span class="info-sep">:</span><span class="info-value">${data.orderNumber}</span></div>` : ""}
         ${data.manualNumber ? `<div class="info-row"><span class="info-label">Manual No</span><span class="info-sep">:</span><span class="info-value">${data.manualNumber}</span></div>` : ""}
         ${data.hireQuoteNo ? `<div class="info-row"><span class="info-label">Hire Quote No</span><span class="info-sep">:</span><span class="info-value">${data.hireQuoteNo}</span></div>` : ""}
-        ${data.hireStartDate ? `<div class="info-row"><span class="info-label">Hire Start Date</span><span class="info-sep">:</span><span class="info-value">${data.hireStartDate}</span></div>` : ""}
-        ${data.hireEndDate ? `<div class="info-row"><span class="info-label">Hire End Date</span><span class="info-sep">:</span><span class="info-value">${data.hireEndDate}</span></div>` : ""}
+        ${data.hireStartDate ? `<div class="info-row"><span class="info-label">Hire Start Date</span><span class="info-sep">:</span><span class="info-value">${formatReportDate(data.hireStartDate)}</span></div>` : ""}
+        ${data.hireEndDate ? `<div class="info-row"><span class="info-label">Hire End Date</span><span class="info-sep">:</span><span class="info-value">${formatReportDate(data.hireEndDate)}</span></div>` : ""}
         
       </div>
 
@@ -750,7 +749,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
         <div class="hd-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${data.deliveryDate || ""}</div>
+            <div>Processed Date : ${formatReportDate(data.deliveryDate) || ""}</div>
           </div>
           <div style="text-align:right;">
             <div>Print date : ${formatTimestamp()}</div>
@@ -951,7 +950,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
         <div class="hl-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${data.dateCreated || ""}</div>
+            <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
           </div>
           <div style="text-align:right;">
             <div>Print date : ${formatTimestamp()}</div>
@@ -1334,7 +1333,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <div class="hq-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${data.dateCreated || ""}</div>
+            <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
           </div>
           <div style="text-align:right;">
             <div>Print date : ${formatTimestamp()}</div>
@@ -1583,7 +1582,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         <div class="rn-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${data.returnDate || ""}</div>
+            <div>Processed Date : ${formatReportDate(data.returnDate) || ""}</div>
           </div>
           <div style="text-align:right;">
             <div>Print date : ${formatTimestamp()}</div>
@@ -1663,7 +1662,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
         </div>
 
         <div class="section terms-section">
-          <p><strong>Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on ${data.returnDate}.</strong></p>
+          <p><strong>Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on ${formatReportDate(data.returnDate)}.</strong></p>
           <p>All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
           <p><strong>Charges:</strong> Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost / Scrap: selling price of item.</p>
         </div>

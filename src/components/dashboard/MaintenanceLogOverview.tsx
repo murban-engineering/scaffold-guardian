@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatReportDate } from "@/lib/accountingDates";
 
 const parseReturnLog = (description: string) => {
   const conditionMatch = description.match(/Return condition:\s*([a-zA-Z]+)/i);
@@ -76,11 +77,7 @@ const MaintenanceLogOverview = () => {
                   </TableCell>
                   <TableCell>{log.reported_by}</TableCell>
                   <TableCell>
-                    {new Date(log.created_at).toLocaleDateString("en-ZA", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatReportDate(log.created_at)}
                   </TableCell>
                 </TableRow>
               );

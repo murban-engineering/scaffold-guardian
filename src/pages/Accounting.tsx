@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Printer, CalendarDays, DollarSign, Users, Search, ClipboardList } from "lucide-react";
 import { generateHireQuotationReportPDF, HireQuotationReportData } from "@/lib/pdfGenerator";
-import { asDateOrToday, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
+import { asDateOrToday, formatReportDate, formatReportDateTime, resolveDispatchDateFromHistoryPayload, toIsoDateOrToday } from "@/lib/accountingDates";
 
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -153,8 +153,8 @@ const renderAccountingReportHeader = ({
           <h3>Document Details</h3>
           <div class="row"><span class="lbl">Document No</span><span class="sep">:</span><span class="val">${escapeHtml(documentNumber)}</span></div>
           <div class="row"><span class="lbl">Document Type</span><span class="sep">:</span><span class="val">${escapeHtml(documentTitle)}</span></div>
-          <div class="row"><span class="lbl">Document Date</span><span class="sep">:</span><span class="val">${escapeHtml(documentDate)}</span></div>
-          <div class="row"><span class="lbl">Printed</span><span class="sep">:</span><span class="val">${new Date().toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" })}</span></div>
+          <div class="row"><span class="lbl">Document Date</span><span class="sep">:</span><span class="val">${escapeHtml(formatReportDate(documentDate))}</span></div>
+          <div class="row"><span class="lbl">Printed</span><span class="sep">:</span><span class="val">${formatReportDateTime(new Date())}</span></div>
           ${extraRows}
         </div>
         <div class="panel">
@@ -251,9 +251,9 @@ const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) 
   const hasBatches = invoice.dispatchBatches.length > 1;
   const dispatchDateRow = hasBatches
     ? invoice.dispatchBatches.map(b =>
-        `<div class="row"><span class="lbl">Batch ${b.batchNumber} Dispatch</span><span class="sep">:</span><span class="val">${escapeHtml(b.dispatchDate)} — ${escapeHtml(b.hireWeeksLabel)}</span></div>`
+        `<div class="row"><span class="lbl">Batch ${b.batchNumber} Dispatch</span><span class="sep">:</span><span class="val">${escapeHtml(formatReportDate(b.dispatchDate))} — ${escapeHtml(b.hireWeeksLabel)}</span></div>`
       ).join("")
-    : `<div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.dispatchDate)}</span></div>
+    : `<div class="row"><span class="lbl">Dispatch Date</span><span class="sep">:</span><span class="val">${escapeHtml(formatReportDate(invoice.dispatchDate))}</span></div>
        <div class="row"><span class="lbl">Hire Period</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.hireWeeksLabel)} (${invoice.hireDays} days)</span></div>`;
 
   return renderAccountingReportHeader({
@@ -301,7 +301,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
                 Batch ${batch.batchNumber} — ${escapeHtml(batch.deliveryNoteNumber)}
               </span>
               <span style="font-size:8.5px;color:#555;">
-                Dispatch: ${escapeHtml(batch.dispatchDate)} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
+                Dispatch: ${escapeHtml(formatReportDate(batch.dispatchDate))} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
               </span>
             </div>
             <table>
@@ -429,7 +429,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         </div>
         <div class="footer-processed">
           <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
-          <span>Print date: ${new Date().toLocaleDateString("en-GB")} ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit",minute:"2-digit"})}</span>
+          <span>Print date: ${formatReportDateTime(new Date())}</span>
         </div>
       </div>
     </div>
@@ -477,7 +477,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         </div>
         <div class="footer-processed">
           <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
-          <span>Print date: ${new Date().toLocaleDateString("en-GB")} ${new Date().toLocaleTimeString("en-GB", {hour:"2-digit",minute:"2-digit"})}</span>
+          <span>Print date: ${formatReportDateTime(new Date())}</span>
         </div>
       </div>
     </div>
@@ -642,7 +642,7 @@ const openCustomerStatement = (
   const statementRows = rows
     .map(({ entry, runningBalance: rowBalance }, idx) => `
       <tr>
-        <td>${escapeHtml(entry.dispatchDate)}</td>
+        <td>${escapeHtml(formatReportDate(entry.dispatchDate))}</td>
         <td>${escapeHtml(entry.invoiceNumber)}</td>
         <td>${escapeHtml(entry.site)}</td>
         <td>${escapeHtml(entry.quotationNumber)}</td>
@@ -1255,7 +1255,7 @@ const Accounting = () => {
                                 </TableCell>
                                 <TableCell className="font-medium">{inv.client}</TableCell>
                                 <TableCell>{inv.site}</TableCell>
-                                <TableCell>{inv.dispatchDate}</TableCell>
+                                <TableCell>{formatReportDate(inv.dispatchDate)}</TableCell>
                                 <TableCell className="text-right">{inv.hireWeeksLabel}</TableCell>
                                 <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                                 <TableCell className="text-right">
@@ -1355,7 +1355,7 @@ const Accounting = () => {
                                 </TableCell>
                                 <TableCell className="font-medium">{inv.client}</TableCell>
                                 <TableCell>{inv.site}</TableCell>
-                                <TableCell>{inv.dispatchDate}</TableCell>
+                                <TableCell>{formatReportDate(inv.dispatchDate)}</TableCell>
                                 <TableCell className="text-right">{inv.hireWeeksLabel}</TableCell>
                                 <TableCell className="text-right">{currency.format(inv.hireTotal)}</TableCell>
                                 <TableCell className="text-right">
@@ -1510,7 +1510,7 @@ const Accounting = () => {
                                     siteLocation: q.site_address || "",
                                     siteAddress: q.site_address || "",
                                     quotationNumber: q.quotation_number || "Draft",
-                                    dateCreated: format(asDateOrToday(q.created_at), "yyyy-MM-dd"),
+                                    dateCreated: formatReportDate(q.created_at),
                                     createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
                                     discountRate: 0,
                                     clientId: q.client_id || "",

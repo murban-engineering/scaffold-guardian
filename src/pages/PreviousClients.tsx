@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useClientSites } from "@/hooks/useClientSites";
+import { formatReportDate } from "@/lib/accountingDates";
 
 const ClientSitesBadges = ({ quotationId }: { quotationId: string }) => {
   const { data: sites } = useClientSites(quotationId);
@@ -32,12 +33,7 @@ const PreviousClients = () => {
     ? (hireQuotations.find(q => q.id === selectedQuotation.id) ?? selectedQuotation)
     : null;
 
-  const formatDate = (value: string | null) => {
-    if (!value) return "—";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  };
+  const formatDate = (value: string | null) => formatReportDate(value);
 
   const handleSidebarItemClick = (item: string) => {
     const navMap: Record<string, string> = {
