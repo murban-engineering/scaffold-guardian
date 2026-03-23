@@ -268,11 +268,14 @@ const AddScaffold = () => {
         toast.error(`Cannot remove ${removeQuantity}. Only ${currentQuantity} available.`);
         return;
       }
-      // Use the safe DB function that ONLY updates quantity, never qty_at_start
-      const { error } = await supabase.rpc("adjust_scaffold_quantity", {
-        p_scaffold_id: selectedScaffold.id,
-        p_new_quantity: currentQuantity - removeQuantity,
-      });
+      // Deduct: both quantity AND qty_at_start decrease together
+      const newQuantity = currentQuantity - removeQuantity;
+      const currentQtyAtStart = selectedScaffold.qty_at_start ?? currentQuantity;
+      const newQtyAtStart = Math.max(currentQtyAtStart - removeQuantity, 0);
+      const { error } = await supabase
+        .from("scaffolds")
+        .update({ quantity: newQuantity, qty_at_start: newQtyAtStart })
+        .eq("id", selectedScaffold.id);
       if (error) {
         toast.error(`Failed to remove quantity: ${error.message}`);
         return;
@@ -282,6 +285,7 @@ const AddScaffold = () => {
       return;
     }
 
+    // Add inventory: upsert_scaffold already increments both quantity and qty_at_start
     const scaffoldData = {
       scaffold_type: values.scaffold_type,
       status: values.status,
