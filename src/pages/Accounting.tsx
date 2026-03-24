@@ -299,8 +299,8 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           : `<tr><td colspan="5" class="c">No items in this batch.</td></tr>`;
 
         return `
-          <div style="margin-bottom:10px;">
-            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;">
+          <div style="margin-bottom:10px;page-break-inside:avoid;break-inside:avoid;">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;page-break-after:avoid;break-after:avoid;">
               <span style="font-size:10px;font-weight:800;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:2px;flex:1;">
                 Batch ${batch.batchNumber} — ${escapeHtml(batch.deliveryNoteNumber)}
               </span>
@@ -308,7 +308,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
                 Dispatch: ${escapeHtml(formatReportDate(batch.dispatchDate))} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
               </span>
             </div>
-            <table>
+            <table style="page-break-inside:avoid;break-inside:avoid;">
               <thead><tr>
                 <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Period</th><th class="r">Amount (KES)</th>
               </tr></thead>
