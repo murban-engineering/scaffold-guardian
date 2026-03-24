@@ -2422,7 +2422,7 @@ const HireQuotationWorkflow = ({
       contactPhone: loadingSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: loadingSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: loadingSite?.site_number || "",
       noteTitle: noteType === "balance" ? "Hire Loading Report (Balance)" : "Hire Loading Report",
       items: [],
     };
