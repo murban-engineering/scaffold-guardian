@@ -2224,7 +2224,9 @@ const HireQuotationWorkflow = ({
 
   // Print delivery note from history
   const handlePrintDeliveryNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
-    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use the first registered site if sites exist; fall back to selected or header
+    const firstSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
+    const activeSite = firstSite;
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: delivery.deliveryNoteNumber,
@@ -2234,17 +2236,17 @@ const HireQuotationWorkflow = ({
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: selectedSite?.site_name || header.siteName,
-      siteAddress: selectedSite?.site_address || header.siteAddress,
-      contactName: selectedSite?.site_manager_name || header.clientName,
-      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
+      siteName: activeSite?.site_name || header.siteName,
+      siteAddress: activeSite?.site_address || header.siteAddress,
+      contactName: activeSite?.site_manager_name || header.clientName,
+      contactPhone: activeSite?.site_manager_phone || header.clientPhone,
       deliveredBy: delivery.deliveredBy,
       receivedBy: delivery.receivedBy,
       vehicleNo: delivery.vehicleNo,
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2256,25 +2258,27 @@ const HireQuotationWorkflow = ({
     };
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
+  }, [header, clientSites, initialQuotation]);
 
   // Print loading note from history
   const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
-    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use the first registered site if sites exist; fall back to header
+    const firstSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
+    const activeSite = firstSite;
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: selectedSite?.site_name || header.siteName,
-      siteLocation: selectedSite?.site_location || header.siteLocation,
-      siteAddress: selectedSite?.site_address || header.siteAddress,
-      contactName: selectedSite?.site_manager_name || header.clientName,
-      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
+      siteName: activeSite?.site_name || header.siteName,
+      siteLocation: activeSite?.site_location || header.siteLocation,
+      siteAddress: activeSite?.site_address || header.siteAddress,
+      contactName: activeSite?.site_manager_name || header.clientName,
+      contactPhone: activeSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       noteTitle: "Hire Loading Report",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
@@ -2286,7 +2290,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireLoadingNotePDF(data);
     toast.success("Loading note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
+  }, [header, clientSites, initialQuotation]);
 
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
