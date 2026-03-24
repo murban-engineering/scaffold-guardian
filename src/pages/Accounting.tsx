@@ -141,12 +141,19 @@ const renderAccountingReportHeader = ({
             ${showBrandSubtitle ? '<div class="brand-subtitle">A Division of OTNO Access Group</div>' : ""}
           </div>
         </div>
-        <div class="panel client-panel">
-          <h3>${escapeHtml(client)}</h3>
-          <div class="client-address">${escapeHtml(siteAddress || "-")}</div>
+        <div class="panel client-panel" style="border-width:0.5px;border-color:#aaa;">
+          <h3 style="font-size:14px;margin-bottom:6px;border-bottom:none;padding-bottom:0;">${escapeHtml(client)}</h3>
+          <div class="client-address" style="font-size:9px;">${escapeHtml(siteAddress || "-")}</div>
           <div class="spacer"></div>
           <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(contactName || "-")}</span></div>
           <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(contactPhone || "-")}</span></div>
+          <div style="margin-top:8px;padding-top:6px;border-top:1px solid #e5e7eb;">
+            <div style="font-size:8px;font-weight:800;text-transform:uppercase;color:#6b7280;margin-bottom:4px;">Site Details</div>
+            <div class="row"><span class="lbl">Site Name</span><span class="sep">:</span><span class="val">${escapeHtml(site || "-")}</span></div>
+            <div class="row"><span class="lbl">Site Address</span><span class="sep">:</span><span class="val">${escapeHtml(siteAddress || "-")}</span></div>
+            <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(contactName || "-")}</span></div>
+            <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(contactPhone || "-")}</span></div>
+          </div>
         </div>
       </div>
       <div class="right-block">
@@ -167,14 +174,6 @@ const renderAccountingReportHeader = ({
           <div class="row"><span class="lbl">Website</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_WEBSITE)}</span></div>
           <div class="row"><span class="lbl">Email</span><span class="sep">:</span><span class="val">${escapeHtml(COMPANY_EMAIL)}</span></div>
           <div class="row"><span class="lbl">Prepared By</span><span class="sep">:</span><span class="val">${escapeHtml(createdBy || "-")}</span></div>
-        </div>
-        <div class="panel">
-          <h3>Site Details</h3>
-          <div class="row"><span class="lbl">Customer</span><span class="sep">:</span><span class="val">${escapeHtml(client)}</span></div>
-          <div class="row"><span class="lbl">Site Name</span><span class="sep">:</span><span class="val">${escapeHtml(site)}</span></div>
-          <div class="row"><span class="lbl">Site Address</span><span class="sep">:</span><span class="val">${escapeHtml(siteAddress || "-")}</span></div>
-          <div class="row"><span class="lbl">Contact</span><span class="sep">:</span><span class="val">${escapeHtml(contactName || "-")}</span></div>
-          <div class="row"><span class="lbl">Cell No</span><span class="sep">:</span><span class="val">${escapeHtml(contactPhone || "-")}</span></div>
         </div>
       </div>
     </div>

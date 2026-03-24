@@ -2224,7 +2224,9 @@ const HireQuotationWorkflow = ({
 
   // Print delivery note from history
   const handlePrintDeliveryNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
-    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use the first registered site if sites exist; fall back to selected or header
+    const firstSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
+    const activeSite = firstSite;
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: delivery.deliveryNoteNumber,
@@ -2234,17 +2236,17 @@ const HireQuotationWorkflow = ({
       hireStartDate: delivery.hireStartDate ?? "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: selectedSite?.site_name || header.siteName,
-      siteAddress: selectedSite?.site_address || header.siteAddress,
-      contactName: selectedSite?.site_manager_name || header.clientName,
-      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
+      siteName: activeSite?.site_name || header.siteName,
+      siteAddress: activeSite?.site_address || header.siteAddress,
+      contactName: activeSite?.site_manager_name || header.clientName,
+      contactPhone: activeSite?.site_manager_phone || header.clientPhone,
       deliveredBy: delivery.deliveredBy,
       receivedBy: delivery.receivedBy,
       vehicleNo: delivery.vehicleNo,
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -2256,25 +2258,27 @@ const HireQuotationWorkflow = ({
     };
     generateDeliveryNotePDF(data);
     toast.success("Delivery note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
+  }, [header, clientSites, initialQuotation]);
 
   // Print loading note from history
   const handlePrintLoadingNoteFromHistory = useCallback((delivery: DeliveryRecord) => {
-    const selectedSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use the first registered site if sites exist; fall back to header
+    const firstSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
+    const activeSite = firstSite;
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
       dispatchDate: delivery.deliveryDate || initialQuotation?.dispatch_date || "",
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: selectedSite?.site_name || header.siteName,
-      siteLocation: selectedSite?.site_location || header.siteLocation,
-      siteAddress: selectedSite?.site_address || header.siteAddress,
-      contactName: selectedSite?.site_manager_name || header.clientName,
-      contactPhone: selectedSite?.site_manager_phone || header.clientPhone,
+      siteName: activeSite?.site_name || header.siteName,
+      siteLocation: activeSite?.site_location || header.siteLocation,
+      siteAddress: activeSite?.site_address || header.siteAddress,
+      contactName: activeSite?.site_manager_name || header.clientName,
+      contactPhone: activeSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: selectedSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       noteTitle: "Hire Loading Report",
       items: delivery.items.map(item => ({
         partNumber: item.itemCode,
@@ -2286,7 +2290,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireLoadingNotePDF(data);
     toast.success("Loading note opened for printing");
-  }, [header, clientSites, selectedDeliverySiteId, initialQuotation]);
+  }, [header, clientSites, initialQuotation]);
 
   const handlePrintDeliveryNote = async () => {
     if (!equipmentItems.length) {
@@ -2296,7 +2300,8 @@ const HireQuotationWorkflow = ({
 
     const balanceQuantities: Record<string, number> = {};
     const deliveredQuantities: Record<string, number> = {};
-    const activeSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use first registered site if sites exist
+    const activeSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -2316,7 +2321,7 @@ const HireQuotationWorkflow = ({
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: activeSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
@@ -2402,7 +2407,8 @@ const HireQuotationWorkflow = ({
       })
       .filter((item) => item.quantity > 0);
 
-    const loadingSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use first registered site if sites exist
+    const loadingSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
@@ -2416,7 +2422,7 @@ const HireQuotationWorkflow = ({
       contactPhone: loadingSite?.site_manager_phone || header.clientPhone,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: loadingSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: loadingSite?.site_number || "",
       noteTitle: noteType === "balance" ? "Hire Loading Report (Balance)" : "Hire Loading Report",
       items: [],
     };
@@ -2962,6 +2968,8 @@ const HireQuotationWorkflow = ({
   }, [returnSequence, header.quotationNo]);
 
   const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
+    // Always use first registered site if sites exist
+    const firstReturnSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: record.returnNoteNumber,
@@ -2970,11 +2978,11 @@ const HireQuotationWorkflow = ({
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: firstReturnSite?.site_name || header.siteName,
+      siteLocation: firstReturnSite?.site_location || header.siteLocation,
+      siteAddress: firstReturnSite?.site_address || header.siteAddress,
+      contactName: firstReturnSite?.site_manager_name || header.clientName,
+      contactPhone: firstReturnSite?.site_manager_phone || header.clientPhone,
       contactEmail: header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
@@ -2984,7 +2992,7 @@ const HireQuotationWorkflow = ({
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedReturnSiteId),
+      siteId: firstReturnSite?.site_number || "",
       items: record.items.map((item) => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -3001,9 +3009,11 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
-  }, [header]);
+  }, [header, clientSites]);
 
   const handlePrintCurrentReturnNote = () => {
+    // Always use first registered site if sites exist
+    const firstReturnSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: returnNote.returnNoteNo,
@@ -3012,11 +3022,11 @@ const HireQuotationWorkflow = ({
       hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: firstReturnSite?.site_name || header.siteName,
+      siteLocation: firstReturnSite?.site_location || header.siteLocation,
+      siteAddress: firstReturnSite?.site_address || header.siteAddress,
+      contactName: firstReturnSite?.site_manager_name || header.clientName,
+      contactPhone: firstReturnSite?.site_manager_phone || header.clientPhone,
       contactEmail: header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
@@ -3026,7 +3036,7 @@ const HireQuotationWorkflow = ({
       remarks: returnNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedReturnSiteId),
+      siteId: firstReturnSite?.site_number || "",
       items: returnItems
         .filter((item) => parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0)
         .map((item) => {
