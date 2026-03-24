@@ -2407,7 +2407,8 @@ const HireQuotationWorkflow = ({
       })
       .filter((item) => item.quantity > 0);
 
-    const loadingSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use first registered site if sites exist
+    const loadingSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireLoadingNoteData = {
       quotationNumber: header.quotationNo,
       dateCreated: header.dateCreated,
