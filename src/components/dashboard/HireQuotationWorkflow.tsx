@@ -2300,7 +2300,8 @@ const HireQuotationWorkflow = ({
 
     const balanceQuantities: Record<string, number> = {};
     const deliveredQuantities: Record<string, number> = {};
-    const activeSite = clientSites?.find(s => s.id === selectedDeliverySiteId);
+    // Always use first registered site if sites exist
+    const activeSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: DeliveryNoteData = {
       quotationNumber: header.quotationNo,
       deliveryNoteNumber: deliveryNote.deliveryNoteNo,
@@ -2320,7 +2321,7 @@ const HireQuotationWorkflow = ({
       remarks: deliveryNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: activeSite?.site_number || getSelectedSiteNumber(selectedDeliverySiteId),
+      siteId: activeSite?.site_number || "",
       items: equipmentItems.map(item => {
         const deliveredQty = getInventoryDeliveryQuantity(item);
         const balanceQuantity = Math.max(getOrderedQuantity(item) - deliveredQty, 0);
