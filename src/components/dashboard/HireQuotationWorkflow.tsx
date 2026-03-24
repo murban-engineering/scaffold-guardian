@@ -2968,6 +2968,8 @@ const HireQuotationWorkflow = ({
   }, [returnSequence, header.quotationNo]);
 
   const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
+    // Always use first registered site if sites exist
+    const firstReturnSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: record.returnNoteNumber,
@@ -2976,11 +2978,11 @@ const HireQuotationWorkflow = ({
       hireEndDate: record.hireEndDate || record.returnDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: firstReturnSite?.site_name || header.siteName,
+      siteLocation: firstReturnSite?.site_location || header.siteLocation,
+      siteAddress: firstReturnSite?.site_address || header.siteAddress,
+      contactName: firstReturnSite?.site_manager_name || header.clientName,
+      contactPhone: firstReturnSite?.site_manager_phone || header.clientPhone,
       contactEmail: header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
@@ -2990,7 +2992,7 @@ const HireQuotationWorkflow = ({
       remarks: "",
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedReturnSiteId),
+      siteId: firstReturnSite?.site_number || "",
       items: record.items.map((item) => ({
         partNumber: item.itemCode,
         description: item.description,
@@ -3007,9 +3009,11 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
-  }, [header]);
+  }, [header, clientSites]);
 
   const handlePrintCurrentReturnNote = () => {
+    // Always use first registered site if sites exist
+    const firstReturnSite = clientSites && clientSites.length > 0 ? clientSites[0] : undefined;
     const data: HireReturnNoteData = {
       quotationNumber: header.quotationNo,
       returnNoteNumber: returnNote.returnNoteNo,
@@ -3018,11 +3022,11 @@ const HireQuotationWorkflow = ({
       hireEndDate: returnNote.hireEndDate,
       companyName: header.clientCompanyName,
       ...clientPdfFields,
-      siteName: header.siteName,
-      siteLocation: header.siteLocation,
-      siteAddress: header.siteAddress,
-      contactName: header.clientName,
-      contactPhone: header.clientPhone,
+      siteName: firstReturnSite?.site_name || header.siteName,
+      siteLocation: firstReturnSite?.site_location || header.siteLocation,
+      siteAddress: firstReturnSite?.site_address || header.siteAddress,
+      contactName: firstReturnSite?.site_manager_name || header.clientName,
+      contactPhone: firstReturnSite?.site_manager_phone || header.clientPhone,
       contactEmail: header.clientEmail,
       officeTel: header.officeTel,
       officeEmail: header.officeEmail,
@@ -3032,7 +3036,7 @@ const HireQuotationWorkflow = ({
       remarks: returnNote.remarks,
       createdBy: header.createdBy,
       clientId: header.clientId,
-      siteId: getSelectedSiteNumber(selectedReturnSiteId),
+      siteId: firstReturnSite?.site_number || "",
       items: returnItems
         .filter((item) => parseNumber(item.good) + parseNumber(item.dirty) + parseNumber(item.damaged) + parseNumber(item.scrap) > 0)
         .map((item) => {
