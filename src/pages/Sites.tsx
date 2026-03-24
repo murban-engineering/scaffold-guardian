@@ -28,13 +28,38 @@ const Sites = () => {
     });
   }, [hireQuotations]);
 
+  // Helper: sum delivered quantities across all delivery_history batches
+  const getDeliveredItemsFromHistory = (quotation: HireQuotation): Array<{ description: string; quantity: number }> => {
+    const history = quotation.delivery_history;
+    const batches: Array<{ items: Array<{ description?: string; itemCode?: string; quantityDelivered?: number }> }> = 
+      Array.isArray(history) ? history : [];
+    const totals: Record<string, number> = {};
+    for (const batch of batches) {
+      for (const item of batch.items ?? []) {
+        const desc = item.description || item.itemCode || "Unknown item";
+        totals[desc] = (totals[desc] ?? 0) + (item.quantityDelivered ?? 0);
+      }
+    }
+    // Fallback to line_items.delivered_quantity if no delivery_history
+    if (Object.keys(totals).length === 0) {
+      for (const li of quotation.line_items ?? []) {
+        if ((li.delivered_quantity ?? 0) > 0) {
+          const desc = li.description || li.part_number || "Unknown item";
+          totals[desc] = (totals[desc] ?? 0) + (li.delivered_quantity ?? 0);
+        }
+      }
+    }
+    return Object.entries(totals).map(([description, quantity]) => ({ description, quantity }));
+  };
+
   const removalReportQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
       const status = quotation.status?.toLowerCase?.() ?? "";
       const isEligibleStatus = status === "dispatched" || status === "completed";
-      const hasDeductedEquipment = (quotation.line_items ?? []).some((item) => (item.delivered_quantity ?? 0) > 0);
-      return isEligibleStatus && hasDeductedEquipment;
+      const hasDelivered = getDeliveredItemsFromHistory(quotation).length > 0;
+      return isEligibleStatus && hasDelivered;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hireQuotations]);
 
   const clientOptions = useMemo(() => {
@@ -43,22 +68,21 @@ const Sites = () => {
         (quotation) => quotation.company_name || quotation.site_manager_name || "Unknown client"
       )
     );
-
     return (Array.from(uniqueClients) as string[]).sort((a, b) => a.localeCompare(b));
   }, [removalReportQuotations]);
 
   const removalReportRows = useMemo(() => {
     return removalReportQuotations
-      .flatMap((quotation) =>
-        (quotation.line_items ?? [])
-          .filter((item) => (item.delivered_quantity ?? 0) > 0)
-          .map((item) => ({
-            itemDescription: item.description || item.part_number || "Unknown item",
-            quantity: item.delivered_quantity,
-            client: quotation.company_name || quotation.site_manager_name || "Unknown client",
-          }))
-      )
+      .flatMap((quotation) => {
+        const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
+        return getDeliveredItemsFromHistory(quotation).map((item) => ({
+          itemDescription: item.description,
+          quantity: item.quantity,
+          client,
+        }));
+      })
       .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [removalReportQuotations]);
 
   useEffect(() => {
