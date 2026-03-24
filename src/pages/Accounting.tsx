@@ -299,8 +299,8 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           : `<tr><td colspan="5" class="c">No items in this batch.</td></tr>`;
 
         return `
-          <div style="margin-bottom:10px;">
-            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;">
+          <div style="margin-bottom:10px;page-break-inside:avoid;break-inside:avoid;">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:3px;page-break-after:avoid;break-after:avoid;">
               <span style="font-size:10px;font-weight:800;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:2px;flex:1;">
                 Batch ${batch.batchNumber} — ${escapeHtml(batch.deliveryNoteNumber)}
               </span>
@@ -308,7 +308,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
                 Dispatch: ${escapeHtml(formatReportDate(batch.dispatchDate))} &nbsp;|&nbsp; Period: ${escapeHtml(batch.hireWeeksLabel)} (${batch.hireDays} days)
               </span>
             </div>
-            <table>
+            <table style="page-break-inside:avoid;break-inside:avoid;">
               <thead><tr>
                 <th>Part No</th><th>Description</th><th class="r">Qty</th><th class="r">Period</th><th class="r">Amount (KES)</th>
               </tr></thead>
@@ -401,16 +401,17 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
       .footer-legal{text-align:center;font-size:7.5px;color:#4b5563;padding:3px 8px 4px;border:1px solid #e5e7eb;border-top:none;}
       .footer-processed{display:flex;justify-content:space-between;font-size:7px;color:#6b7280;padding:4px 0 0;}
       /* Page wrappers */
-      .page1-wrap{display:flex;flex-direction:column;min-height:92vh;}
+      .page1-wrap{display:flex;flex-direction:column;}
       .page1-body{flex:1;}
-      .page2-wrap{display:flex;flex-direction:column;min-height:92vh;}
+      .page2-wrap{display:flex;flex-direction:column;}
       .page2-body{flex:1;}
       @media print{
         .print-bar{display:none;}
         body{padding:6px;font-size:8.5px;}
         .print-header{position:static;background:#fff;padding-top:8px;break-inside:avoid-page;}
         .print-content{margin-top:0;}
-        .page2-wrap{page-break-before:always;break-before:page;min-height:92vh;}
+        .page2-wrap{page-break-before:always;break-before:page;}
+        .branded-footer{page-break-inside:avoid;break-inside:avoid;}
       }
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
