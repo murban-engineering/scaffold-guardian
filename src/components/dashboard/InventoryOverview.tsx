@@ -182,6 +182,129 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
       return rows;
     }).join("");
 
+    // Build per-group chart data
+    const groupTotals = new Map<string, { available: number; onHire: number; qtyAtStart: number }>();
+    sorted.forEach((item) => {
+      const group = getInventoryGroupKey(item.description ?? item.scaffold_type);
+      const label = getInventoryGroupLabel(group);
+      const metrics = metricsById.get(item.id);
+      const existing = groupTotals.get(label) ?? { available: 0, onHire: 0, qtyAtStart: 0 };
+      existing.available += metrics?.availableStock ?? 0;
+      existing.onHire += metrics?.onHire ?? 0;
+      existing.qtyAtStart += metrics?.openingStock ?? 0;
+      groupTotals.set(label, existing);
+    });
+    const groupChartData = Array.from(groupTotals.entries()).filter(([, v]) => v.qtyAtStart > 0);
+
+    // SVG bar chart helper — generates an inline SVG bar chart
+    const buildBarSVG = (
+      bars: { label: string; value: number; color: string }[],
+      svgWidth: number,
+      svgHeight: number,
+      chartTitle: string
+    ) => {
+      const maxVal = Math.max(...bars.map((b) => b.value), 1);
+      const barAreaH = svgHeight - 50; // room for x-labels + title
+      const barW = Math.max(14, Math.floor((svgWidth - 40) / bars.length) - 6);
+      const gap = Math.max(4, Math.floor((svgWidth - 40 - barW * bars.length) / (bars.length + 1)));
+      const barsHtml = bars.map((bar, i) => {
+        const barH = Math.max(2, Math.round((bar.value / maxVal) * barAreaH));
+        const x = 40 + gap + i * (barW + gap);
+        const y = 20 + barAreaH - barH;
+        const labelX = x + barW / 2;
+        const truncLabel = bar.label.length > 11 ? bar.label.slice(0, 10) + "…" : bar.label;
+        return `
+          <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${bar.color}" rx="2"/>
+          <text x="${labelX}" y="${y - 3}" text-anchor="middle" font-size="7" fill="#1f2937" font-family="Arial,sans-serif">${bar.value}</text>
+          <text x="${labelX}" y="${20 + barAreaH + 10}" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial,sans-serif">${truncLabel}</text>
+        `;
+      }).join("");
+      // Y-axis ticks
+      const yTicks = [0, 0.25, 0.5, 0.75, 1].map((pct) => {
+        const val = Math.round(maxVal * pct);
+        const y = 20 + barAreaH - Math.round(pct * barAreaH);
+        return `
+          <line x1="36" y1="${y}" x2="${svgWidth - 4}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
+          <text x="34" y="${y + 3}" text-anchor="end" font-size="6" fill="#6b7280" font-family="Arial,sans-serif">${val}</text>
+        `;
+      }).join("");
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" style="display:block;">
+        <text x="${svgWidth / 2}" y="12" text-anchor="middle" font-size="9" font-weight="800" fill="#111827" font-family="Arial,sans-serif">${chartTitle}</text>
+        ${yTicks}
+        ${barsHtml}
+      </svg>`;
+    };
+
+    // Chart 1: Overall summary (Qty at Start / Available / On Hire)
+    const overallSVG = buildBarSVG(
+      [
+        { label: "Qty at Start", value: totals.openingStock, color: "#6366f1" },
+        { label: "Available", value: totals.availableStock, color: "#059669" },
+        { label: "On Hire", value: totals.onHire, color: "#d97706" },
+      ],
+      280, 160,
+      "Overall Inventory"
+    );
+
+    // Chart 2: Tonnage overview
+    const tonnageSVG = buildBarSVG(
+      [
+        { label: "Total (t)", value: parseFloat((totals.openingStockTonnage / 1000).toFixed(2)), color: "#6366f1" },
+        { label: "Available (t)", value: parseFloat((totals.availableTonnage / 1000).toFixed(2)), color: "#059669" },
+        { label: "On Hire (t)", value: parseFloat((totals.onHireTonnage / 1000).toFixed(2)), color: "#d97706" },
+      ],
+      280, 160,
+      "Tonnage Overview (tonnes)"
+    );
+
+    // Chart 3: Per-group Available vs On Hire
+    const groupAvailBars = groupChartData.map(([label, v]) => ({ label, value: v.available, color: "#059669" }));
+    const groupHireBars = groupChartData.map(([label, v]) => ({ label, value: v.onHire, color: "#d97706" }));
+    const groupSVGWidth = Math.max(500, groupChartData.length * 50 + 60);
+    // Grouped bars: available + onHire side by side per category
+    const buildGroupedSVG = (svgWidth: number, svgHeight: number) => {
+      const maxVal = Math.max(...groupChartData.map(([, v]) => Math.max(v.available, v.onHire)), 1);
+      const barAreaH = svgHeight - 60;
+      const pairW = Math.max(30, Math.floor((svgWidth - 50) / groupChartData.length));
+      const singleBarW = Math.max(8, Math.floor(pairW * 0.38));
+      const pairGap = 3;
+      const barsHtml = groupChartData.map(([label, v], i) => {
+        const x = 46 + i * pairW + Math.floor(pairW / 2) - singleBarW - pairGap / 2;
+        const availH = Math.max(1, Math.round((v.available / maxVal) * barAreaH));
+        const hireH = Math.max(1, Math.round((v.onHire / maxVal) * barAreaH));
+        const availY = 18 + barAreaH - availH;
+        const hireY = 18 + barAreaH - hireH;
+        const labelX = 46 + i * pairW + Math.floor(pairW / 2);
+        const truncLabel = label.length > 12 ? label.slice(0, 11) + "…" : label;
+        return `
+          <rect x="${x}" y="${availY}" width="${singleBarW}" height="${availH}" fill="#059669" rx="2"/>
+          <text x="${x + singleBarW / 2}" y="${availY - 2}" text-anchor="middle" font-size="6" fill="#059669" font-family="Arial,sans-serif">${v.available}</text>
+          <rect x="${x + singleBarW + pairGap}" y="${hireY}" width="${singleBarW}" height="${hireH}" fill="#d97706" rx="2"/>
+          <text x="${x + singleBarW + pairGap + singleBarW / 2}" y="${hireY - 2}" text-anchor="middle" font-size="6" fill="#d97706" font-family="Arial,sans-serif">${v.onHire}</text>
+          <text x="${labelX}" y="${18 + barAreaH + 10}" text-anchor="middle" font-size="6" fill="#374151" font-family="Arial,sans-serif">${truncLabel}</text>
+        `;
+      }).join("");
+      const yTicks = [0, 0.5, 1].map((pct) => {
+        const val = Math.round(maxVal * pct);
+        const y = 18 + barAreaH - Math.round(pct * barAreaH);
+        return `
+          <line x1="42" y1="${y}" x2="${svgWidth - 4}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>
+          <text x="40" y="${y + 3}" text-anchor="end" font-size="6" fill="#6b7280" font-family="Arial,sans-serif">${val}</text>
+        `;
+      }).join("");
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" style="display:block;max-width:100%;">
+        <text x="${svgWidth / 2}" y="11" text-anchor="middle" font-size="9" font-weight="800" fill="#111827" font-family="Arial,sans-serif">Available vs On Hire by Category</text>
+        ${yTicks}
+        ${barsHtml}
+        <!-- Legend -->
+        <rect x="46" y="${svgHeight - 18}" width="8" height="8" fill="#059669" rx="1"/>
+        <text x="57" y="${svgHeight - 11}" font-size="7" fill="#059669" font-family="Arial,sans-serif">Available</text>
+        <rect x="110" y="${svgHeight - 18}" width="8" height="8" fill="#d97706" rx="1"/>
+        <text x="121" y="${svgHeight - 11}" font-size="7" fill="#d97706" font-family="Arial,sans-serif">On Hire</text>
+      </svg>`;
+    };
+    const groupedSVG = buildGroupedSVG(groupSVGWidth, 180);
+
     const html = `<!DOCTYPE html><html><head><title>Inventory Report - OTNO Access Solutions</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -192,7 +315,6 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
           border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        /* 4-panel header */
         .report-header { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; margin-bottom: 14px; }
         .header-left { display: grid; gap: 8px; }
         .header-right { display: grid; gap: 6px; }
@@ -208,13 +330,12 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
         .info-sep { color: #6b7280; }
         .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 9px; }
-        /* Summary cards */
-        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-        .summary-card { border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 10px; text-align: center; }
-        .summary-card .num { font-size: 20px; font-weight: 800; color: #111827; }
-        .summary-card .lbl { font-size: 8px; text-transform: uppercase; color: #6b7280; font-weight: 700; margin-top: 2px; }
-        .summary-card.avail .num { color: #059669; }
-        .summary-card.hire .num { color: #d97706; }
+        /* Charts section */
+        .charts-section { margin-bottom: 14px; page-break-inside: avoid; }
+        .charts-section h3 { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; color: #374151; margin-bottom: 6px; border-bottom: 1px solid #e5e7eb; padding-bottom: 3px; }
+        .charts-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+        .chart-box { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; background: #fafafa; flex: 1; min-width: 0; overflow: hidden; }
+        .chart-box-wide { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px; background: #fafafa; width: 100%; overflow: hidden; }
         /* Table */
         table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
         th, td { border: 1px solid #d1d5db; padding: 4px 6px; font-size: 8.5px; vertical-align: middle; }
@@ -224,14 +345,11 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         .mono { font-family: monospace; }
         .available { color: #059669; font-weight: 700; }
         .on-hire { color: #d97706; font-weight: 700; }
-        /* Page wrapper */
         .report-page { display: flex; flex-direction: column; min-height: 92vh; }
-        /* Footer */
         .footer-wrap { margin-top: auto; }
         .footer-brand { background: #facc15; color: #1f2937; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; }
         .footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
         .footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
-        /* Print */
         @media print {
           body { padding: 0 !important; font-size: 8.5px; }
           .print-controls { display: none; }
@@ -239,6 +357,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
           tr { page-break-inside: avoid; }
           thead { display: table-header-group; }
           tr.group-header { page-break-after: avoid; }
+          .charts-section { page-break-inside: avoid; }
         }
       </style>
     </head><body>
@@ -281,6 +400,16 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
               <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
             </div>
           </div>
+        </div>
+
+        <!-- Charts section -->
+        <div class="charts-section">
+          <h3>Inventory Analytics</h3>
+          <div class="charts-row">
+            <div class="chart-box">${overallSVG}</div>
+            <div class="chart-box">${tonnageSVG}</div>
+          </div>
+          <div class="chart-box-wide">${groupedSVG}</div>
         </div>
 
         <!-- Items table -->
