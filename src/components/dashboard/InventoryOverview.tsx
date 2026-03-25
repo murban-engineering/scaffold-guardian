@@ -258,7 +258,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             </div>
             <div class="panel">
               <h3>Inventory Summary</h3>
-              <div class="info-row"><span class="info-label">Total Items (lines)</span><span class="info-sep">:</span><span class="info-value">${scaffolds.length}</span></div>
+              <div class="info-row"><span class="info-label">Total Items (lines)</span><span class="info-sep">:</span><span class="info-value">${dedupedScaffolds.length}</span></div>
               <div class="info-row"><span class="info-label">Total Qty at Start</span><span class="info-sep">:</span><span class="info-value">${totals.openingStock}</span></div>
               <div class="info-row"><span class="info-label">Available Stock</span><span class="info-sep">:</span><span class="info-value" style="color:#059669;font-weight:800;">${totals.availableStock}</span></div>
               <div class="info-row"><span class="info-label">On Hire</span><span class="info-sep">:</span><span class="info-value" style="color:#d97706;font-weight:800;">${totals.onHire}</span></div>
