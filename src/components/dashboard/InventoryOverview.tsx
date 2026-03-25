@@ -140,7 +140,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   };
 
   const handlePrintInventoryReport = () => {
-    if (!scaffolds?.length) {
+    if (!dedupedScaffolds?.length) {
       window.alert("No inventory items to print.");
       return;
     }
@@ -149,8 +149,8 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    // Sort and group all scaffolds
-    const sorted = [...scaffolds].sort((a, b) => {
+    // Sort and group deduplicated scaffolds only
+    const sorted = [...dedupedScaffolds].sort((a, b) => {
       const ga = getInventoryGroupKey(a.description ?? a.scaffold_type);
       const gb = getInventoryGroupKey(b.description ?? b.scaffold_type);
       if (ga !== gb) return ga.localeCompare(gb);
