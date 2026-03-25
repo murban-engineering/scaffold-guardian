@@ -140,7 +140,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   };
 
   const handlePrintInventoryReport = () => {
-    if (!scaffolds?.length) {
+    if (!dedupedScaffolds?.length) {
       window.alert("No inventory items to print.");
       return;
     }
@@ -149,8 +149,8 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    // Sort and group all scaffolds
-    const sorted = [...scaffolds].sort((a, b) => {
+    // Sort and group deduplicated scaffolds only
+    const sorted = [...dedupedScaffolds].sort((a, b) => {
       const ga = getInventoryGroupKey(a.description ?? a.scaffold_type);
       const gb = getInventoryGroupKey(b.description ?? b.scaffold_type);
       if (ga !== gb) return ga.localeCompare(gb);
@@ -258,7 +258,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             </div>
             <div class="panel">
               <h3>Inventory Summary</h3>
-              <div class="info-row"><span class="info-label">Total Items (lines)</span><span class="info-sep">:</span><span class="info-value">${scaffolds.length}</span></div>
+              <div class="info-row"><span class="info-label">Total Items (lines)</span><span class="info-sep">:</span><span class="info-value">${dedupedScaffolds.length}</span></div>
               <div class="info-row"><span class="info-label">Total Qty at Start</span><span class="info-sep">:</span><span class="info-value">${totals.openingStock}</span></div>
               <div class="info-row"><span class="info-label">Available Stock</span><span class="info-sep">:</span><span class="info-value" style="color:#059669;font-weight:800;">${totals.availableStock}</span></div>
               <div class="info-row"><span class="info-label">On Hire</span><span class="info-sep">:</span><span class="info-value" style="color:#d97706;font-weight:800;">${totals.onHire}</span></div>
