@@ -169,7 +169,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
       const qtyAtStart = metrics?.openingStock ?? 0;
       let rows = "";
       if (showGroupHeader) {
-        rows += `<tr class="group-header"><td colspan="6">${groupLabel}</td></tr>`;
+        rows += `<tr class="group-header"><td colspan="8">${groupLabel}</td></tr>`;
       }
       rows += `<tr>
         <td class="mono">${item.part_number || "-"}</td>
@@ -178,6 +178,8 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         <td class="center available">${available}</td>
         <td class="center on-hire">${onHire}</td>
         <td class="center">${item.mass_per_item != null ? item.mass_per_item + " kg" : "-"}</td>
+        <td class="center"></td>
+        <td class="center"></td>
       </tr>`;
       return rows;
     }).join("");
@@ -346,6 +348,10 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         .available { color: #059669; font-weight: 700; }
         .on-hire { color: #d97706; font-weight: 700; }
         .report-page { display: flex; flex-direction: column; min-height: 92vh; }
+        .signoff-section { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 10px 0 12px; }
+        .signoff-field { display: flex; flex-direction: column; gap: 5px; }
+        .signoff-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.25px; color: #374151; }
+        .signoff-line { height: 16px; border-bottom: 1px solid #6b7280; }
         .footer-wrap { margin-top: auto; }
         .footer-brand { background: #facc15; color: #1f2937; font-weight: 700; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; }
         .footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
@@ -422,10 +428,27 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
               <th class="center" style="width:70px">Available</th>
               <th class="center" style="width:70px">On Hire</th>
               <th class="center" style="width:80px">Mass/Item</th>
+              <th class="center" style="width:70px">Stock</th>
+              <th class="center" style="width:90px">Discrepancy</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
         </table>
+
+        <div class="signoff-section">
+          <div class="signoff-field">
+            <span class="signoff-label">Name</span>
+            <div class="signoff-line"></div>
+          </div>
+          <div class="signoff-field">
+            <span class="signoff-label">Date</span>
+            <div class="signoff-line"></div>
+          </div>
+          <div class="signoff-field">
+            <span class="signoff-label">Signature</span>
+            <div class="signoff-line"></div>
+          </div>
+        </div>
 
         <!-- Footer -->
         <div class="footer-wrap">
@@ -741,4 +764,3 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
 };
 
 export default InventoryOverview;
-
