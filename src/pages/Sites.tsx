@@ -621,32 +621,32 @@ const Sites = () => {
     const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #1f2937; line-height: 1.3; padding: 12px; }
+        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #12243d; line-height: 1.3; padding: 12px; background: #f8fafc; }
         .print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; padding: 8px; background: rgba(255,255,255,0.97); border: 1px solid #ddd; border-radius: 8px; }
         .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .report-title { font-size: 18px; font-weight: 900; color: #800000; margin-bottom: 10px; }
-        .panel { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #f8fafc; }
+        .report-title { font-size: 18px; font-weight: 900; color: #10213a; margin-bottom: 10px; }
+        .panel { border: 1px solid #10213a; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #ffffff; }
         .client-section { margin-bottom: 10px; }
-        .site-section { margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; background: #ffffff; }
-        .site-header { background: #800000; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
+        .site-section { margin-bottom: 10px; border: 1px solid #10213a; border-radius: 10px; padding: 8px; background: #ffffff; }
+        .site-header { background: #10213a; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
         .details-box { margin-bottom: 7px; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
         .info-row { display: flex; gap: 4px; align-items: baseline; }
         .info-row-full { grid-column: 1 / -1; }
-        .info-label { font-weight: 700; color: #334155; min-width: 72px; font-size: 9px; }
+        .info-label { font-weight: 700; color: #10213a; min-width: 72px; font-size: 9px; }
         .info-value { font-weight: 700; color: #0f172a; font-size: 9px; }
         .text-right { text-align: right; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 4px; }
-        th, td { border: 1px solid #cbd5e1; padding: 4px 6px; font-size: 8.4px; vertical-align: top; }
-        th { background: #e0edff; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+        th, td { border: 1px solid #10213a; padding: 4px 6px; font-size: 8.4px; vertical-align: top; }
+        th { background: #f4ca16; color: #10213a; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
         @media print {
-          body { padding: 0 !important; font-size: 8.3px; }
+          body { padding: 0 !important; font-size: 8.3px; background: #ffffff; }
           .print-controls { display: none; }
           @page { size: A4 landscape; margin: 8mm; }
           tr { page-break-inside: avoid; }
           thead { display: table-header-group; }
         }
-        .footer { margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 8px; color: #6b7280; display: flex; justify-content: space-between; }
+        .footer { margin-top: 10px; border-top: 2px solid #10213a; padding: 6px 8px; font-size: 8px; color: #10213a; display: flex; justify-content: space-between; background: #f4ca16; font-weight: 700; border-radius: 4px; }
       </style>
     </head><body>
       <div class="print-controls">
@@ -756,7 +756,7 @@ const Sites = () => {
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
                 <div>
-                  <CardTitle className="text-base md:text-lg text-[#800000]">Inventory Movement by Client &amp; Site</CardTitle>
+                  <CardTitle className="text-base md:text-lg text-[#10213a]">Inventory Movement by Client &amp; Site</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     One combined report showing where all delivered inventory has gone, including each client and site details.
                   </p>
@@ -781,7 +781,7 @@ const Sites = () => {
                             key={`${clientSection.client}-${site.quotationNumber}-${site.siteNumber}-${site.siteName}`}
                             className="rounded-lg border border-border bg-card shadow-sm overflow-hidden"
                           >
-                            <div className="bg-[#800000] px-3 py-2">
+                            <div className="bg-[#10213a] px-3 py-2">
                               <p className="text-xs font-semibold uppercase tracking-wide text-white">
                                 Inventory Movement by Client &amp; Site
                               </p>
@@ -799,9 +799,9 @@ const Sites = () => {
                               <div className="rounded-md border border-border overflow-x-auto">
                                 <Table>
                                   <TableHeader>
-                                    <TableRow className="bg-primary/10 hover:bg-primary/10">
-                                      <TableHead className="font-semibold text-primary">Item Description</TableHead>
-                                      <TableHead className="text-right font-semibold text-primary">Qty Delivered</TableHead>
+                                    <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
+                                      <TableHead className="font-semibold text-[#10213a]">Item Description</TableHead>
+                                      <TableHead className="text-right font-semibold text-[#10213a]">Qty Delivered</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
