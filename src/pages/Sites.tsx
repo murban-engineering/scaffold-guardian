@@ -624,11 +624,11 @@ const Sites = () => {
         body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #1f2937; line-height: 1.3; padding: 12px; }
         .print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; padding: 8px; background: rgba(255,255,255,0.97); border: 1px solid #ddd; border-radius: 8px; }
         .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .report-title { font-size: 18px; font-weight: 900; color: #0f172a; margin-bottom: 10px; }
+        .report-title { font-size: 18px; font-weight: 900; color: #800000; margin-bottom: 10px; }
         .panel { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #f8fafc; }
         .client-section { margin-bottom: 10px; }
         .site-section { margin-bottom: 10px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px; background: #ffffff; }
-        .site-header { background: #1d4ed8; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
+        .site-header { background: #800000; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
         .details-box { margin-bottom: 7px; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
         .info-row { display: flex; gap: 4px; align-items: baseline; }
@@ -756,7 +756,7 @@ const Sites = () => {
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
                 <div>
-                  <CardTitle className="text-base md:text-lg">Inventory Movement by Client &amp; Site</CardTitle>
+                  <CardTitle className="text-base md:text-lg text-[#800000]">Inventory Movement by Client &amp; Site</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     One combined report showing where all delivered inventory has gone, including each client and site details.
                   </p>
@@ -781,8 +781,8 @@ const Sites = () => {
                             key={`${clientSection.client}-${site.quotationNumber}-${site.siteNumber}-${site.siteName}`}
                             className="rounded-lg border border-border bg-card shadow-sm overflow-hidden"
                           >
-                            <div className="bg-primary px-3 py-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+                            <div className="bg-[#800000] px-3 py-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-white">
                                 Inventory Movement by Client &amp; Site
                               </p>
                             </div>
