@@ -10,10 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
+import { useAllClientSites } from "@/hooks/useClientSites";
 
 const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
+  const { data: allClientSites = [] } = useAllClientSites();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("");
   // Keep selectedQuotation live-synced with realtime DB updates
@@ -61,6 +63,136 @@ const Sites = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hireQuotations]);
+
+  const inventoryBySiteRows = useMemo(() => {
+    const rows: Array<{
+      client: string;
+      clientId: string;
+      quotationNumber: string;
+      siteNumber: string;
+      siteName: string;
+      siteAddress: string;
+      siteContact: string;
+      sitePhone: string;
+      itemDescription: string;
+      quantity: number;
+    }> = [];
+
+    removalReportQuotations.forEach((quotation) => {
+      const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
+      const clientId = quotation.client_id || "";
+      const deliveryHistory = Array.isArray(quotation.delivery_history) ? quotation.delivery_history : [];
+      const sitesForQuotation = allClientSites.filter((site) => site.quotation_id === quotation.id);
+      const siteMap = new Map(sitesForQuotation.map((site) => [site.site_number, site]));
+
+      if (deliveryHistory.length > 0) {
+        deliveryHistory.forEach((batch) => {
+          const batchSiteNumber =
+            (typeof batch === "object" && batch && "siteNumber" in batch ? String(batch.siteNumber ?? "") : "") ||
+            "";
+          const matchedSite = batchSiteNumber ? siteMap.get(batchSiteNumber) : undefined;
+          const siteNumber = batchSiteNumber || matchedSite?.site_number || "";
+          const siteName = matchedSite?.site_name || quotation.site_name || "";
+          const siteAddress = matchedSite?.site_address || matchedSite?.site_location || quotation.site_address || quotation.delivery_address || "";
+          const siteContact = matchedSite?.site_manager_name || quotation.site_manager_name || "";
+          const sitePhone = matchedSite?.site_manager_phone || quotation.site_manager_phone || "";
+          const batchItems =
+            typeof batch === "object" && batch && "items" in batch && Array.isArray(batch.items) ? batch.items : [];
+
+          batchItems.forEach((item) => {
+            const itemDescription =
+              (typeof item === "object" && item && "description" in item ? String(item.description ?? "") : "") ||
+              (typeof item === "object" && item && "itemCode" in item ? String(item.itemCode ?? "") : "") ||
+              "Unknown item";
+            const quantity = Number(
+              typeof item === "object" && item && "quantityDelivered" in item ? item.quantityDelivered : 0
+            );
+            if (quantity <= 0) return;
+            rows.push({
+              client,
+              clientId,
+              quotationNumber: quotation.quotation_number || "",
+              siteNumber,
+              siteName,
+              siteAddress,
+              siteContact,
+              sitePhone,
+              itemDescription,
+              quantity,
+            });
+          });
+        });
+      } else {
+        const fallbackSite = sitesForQuotation[0];
+        const siteNumber = fallbackSite?.site_number || "";
+        const siteName = fallbackSite?.site_name || quotation.site_name || "";
+        const siteAddress = fallbackSite?.site_address || fallbackSite?.site_location || quotation.site_address || quotation.delivery_address || "";
+        const siteContact = fallbackSite?.site_manager_name || quotation.site_manager_name || "";
+        const sitePhone = fallbackSite?.site_manager_phone || quotation.site_manager_phone || "";
+
+        (quotation.line_items ?? []).forEach((item) => {
+          const quantity = item.delivered_quantity ?? 0;
+          if (quantity <= 0) return;
+          rows.push({
+            client,
+            clientId,
+            quotationNumber: quotation.quotation_number || "",
+            siteNumber,
+            siteName,
+            siteAddress,
+            siteContact,
+            sitePhone,
+            itemDescription: item.description || item.part_number || "Unknown item",
+            quantity,
+          });
+        });
+      }
+    });
+
+    return rows;
+  }, [allClientSites, removalReportQuotations]);
+
+  const summarizedInventoryBySiteRows = useMemo(() => {
+    const groupedRows = inventoryBySiteRows.reduce<Record<string, {
+      client: string;
+      clientId: string;
+      quotationNumber: string;
+      siteNumber: string;
+      siteName: string;
+      siteAddress: string;
+      siteContact: string;
+      sitePhone: string;
+      itemDescription: string;
+      quantity: number;
+    }>>((acc, row) => {
+      const key = [
+        row.client,
+        row.clientId,
+        row.quotationNumber,
+        row.siteNumber,
+        row.siteName,
+        row.siteAddress,
+        row.siteContact,
+        row.sitePhone,
+        row.itemDescription,
+      ].join("::");
+
+      if (!acc[key]) {
+        acc[key] = { ...row };
+      } else {
+        acc[key].quantity += row.quantity;
+      }
+      return acc;
+    }, {});
+
+    return Object.values(groupedRows).sort((a, b) => {
+      const clientCompare = a.client.localeCompare(b.client);
+      if (clientCompare !== 0) return clientCompare;
+      const siteCompare = (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
+      if (siteCompare !== 0) return siteCompare;
+      return a.itemDescription.localeCompare(b.itemDescription);
+    });
+  }, [inventoryBySiteRows]);
 
   const clientOptions = useMemo(() => {
     const uniqueClients = new Set(
@@ -362,6 +494,103 @@ const Sites = () => {
     printWindow.addEventListener("unload", () => URL.revokeObjectURL(url), { once: true });
   };
 
+  const handlePrintInventoryBySiteReport = () => {
+    if (!summarizedInventoryBySiteRows.length) {
+      window.alert("No inventory movement records available to print yet.");
+      return;
+    }
+
+    const origin = window.location.origin;
+    const printDate = formatReportDateTime(new Date());
+    const docDate = formatReportDate(new Date());
+
+    const tableRows = summarizedInventoryBySiteRows
+      .map(
+        (row) => `
+          <tr>
+            <td>${row.client}</td>
+            <td>${row.clientId || "-"}</td>
+            <td>${row.quotationNumber || "-"}</td>
+            <td>${row.siteNumber || "-"}</td>
+            <td>${row.siteName || "-"}</td>
+            <td>${row.siteAddress || "-"}</td>
+            <td>${row.siteContact || "-"}</td>
+            <td>${row.sitePhone || "-"}</td>
+            <td>${row.itemDescription}</td>
+            <td class="text-right">${row.quantity}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #1f2937; line-height: 1.3; padding: 12px; }
+        .print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; padding: 8px; background: rgba(255,255,255,0.97); border: 1px solid #ddd; border-radius: 8px; }
+        .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .report-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 10px; }
+        .panel { border: 1px solid #111827; border-radius: 6px; padding: 7px 9px; margin-bottom: 10px; }
+        .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
+        .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
+        .text-right { text-align: right; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #111827; padding: 4px 6px; font-size: 8.2px; vertical-align: top; }
+        th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+        @media print {
+          body { padding: 0 !important; font-size: 8.3px; }
+          .print-controls { display: none; }
+          @page { size: A4 landscape; margin: 8mm; }
+          tr { page-break-inside: avoid; }
+          thead { display: table-header-group; }
+        }
+        .footer { margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 8px; color: #6b7280; display: flex; justify-content: space-between; }
+      </style>
+    </head><body>
+      <div class="print-controls">
+        <button type="button" class="print-button" onclick="window.print()">Print report</button>
+      </div>
+      <h2 class="report-title">Inventory Movement by Client &amp; Site</h2>
+      <div class="panel">
+        <div class="info-row"><span class="info-label">Document Type</span><span>:</span><span>Inventory Movement by Client &amp; Site</span></div>
+        <div class="info-row"><span class="info-label">Document Date</span><span>:</span><span>${docDate}</span></div>
+        <div class="info-row"><span class="info-label">Company</span><span>:</span><span>OTNO Access Solutions</span></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Client ID</th>
+            <th>Quotation No</th>
+            <th>Site No</th>
+            <th>Site Name</th>
+            <th>Site Address</th>
+            <th>Contact</th>
+            <th>Tel</th>
+            <th>Item Description</th>
+            <th class="text-right">Qty Delivered</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+      <div class="footer">
+        <span>OTNO Access Solutions</span>
+        <span>Printed: ${printDate}</span>
+      </div>
+      <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:90px;height:auto;margin-top:6px;" />
+    </body></html>`;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank");
+    if (!printWindow) {
+      window.alert("Please allow popups to print the report.");
+      URL.revokeObjectURL(url);
+      return;
+    }
+    printWindow.addEventListener("unload", () => URL.revokeObjectURL(url), { once: true });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar activeItem="sites" onItemClick={handleSidebarItemClick} />
@@ -431,6 +660,72 @@ const Sites = () => {
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
                     No inventory removal records yet. Dispatched and completed quotations with deducted equipment will appear here.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="space-y-3 md:space-y-4">
+            <Card>
+              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
+                <div>
+                  <CardTitle className="text-base md:text-lg">Inventory Movement by Client &amp; Site</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    One combined report showing where all delivered inventory has gone, including each client and site details.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrintInventoryBySiteReport}
+                  disabled={!summarizedInventoryBySiteRows.length}
+                  className="w-full md:w-auto"
+                >
+                  Print Combined Report
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {summarizedInventoryBySiteRows.length ? (
+                  <div className="rounded-lg border border-border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Client ID</TableHead>
+                          <TableHead>Quotation No</TableHead>
+                          <TableHead>Site No</TableHead>
+                          <TableHead>Site Name</TableHead>
+                          <TableHead>Site Address</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead>Tel</TableHead>
+                          <TableHead>Item Description</TableHead>
+                          <TableHead className="text-right">Qty Delivered</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {summarizedInventoryBySiteRows.map((row) => (
+                          <TableRow
+                            key={`${row.client}-${row.quotationNumber}-${row.siteNumber}-${row.siteName}-${row.itemDescription}`}
+                          >
+                            <TableCell className="font-medium text-sm">{row.client}</TableCell>
+                            <TableCell>{row.clientId || "-"}</TableCell>
+                            <TableCell>{row.quotationNumber || "-"}</TableCell>
+                            <TableCell>{row.siteNumber || "-"}</TableCell>
+                            <TableCell>{row.siteName || "-"}</TableCell>
+                            <TableCell className="max-w-[240px] whitespace-normal">{row.siteAddress || "-"}</TableCell>
+                            <TableCell>{row.siteContact || "-"}</TableCell>
+                            <TableCell>{row.sitePhone || "-"}</TableCell>
+                            <TableCell>{row.itemDescription}</TableCell>
+                            <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    No delivered inventory movements found yet for the combined client/site report.
                   </div>
                 )}
               </CardContent>
