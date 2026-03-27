@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Receipt,
   ClipboardPenLine,
+  ClipboardList,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -35,6 +36,7 @@ const menuItems = [
   { id: "accounting", label: "Accounting", icon: Receipt },
   { id: "previous-clients", label: "Client Report", icon: FolderClock },
   { id: "site-master-plan", label: "Site Master Plan", icon: ClipboardPenLine },
+  { id: "item-tracking", label: "Item Tracking", icon: ClipboardList },
   { id: "otnoai", label: "OTNOAI", icon: BotMessageSquare },
   { id: "sites", label: "Sites", icon: MapPinned },
   { id: "maintenance", label: "Maintenance Logs", icon: ClipboardCheck },
@@ -57,7 +59,12 @@ const Sidebar = ({ activeItem, onItemClick }: SidebarProps) => {
   };
 
   const handleItemClick = (item: string, closeMobile = false) => {
-    onItemClick(item);
+    if (item === "item-tracking") {
+      navigate("/item-tracking");
+    } else {
+      onItemClick(item);
+    }
+
     if (closeMobile) {
       setMobileOpen(false);
     }
