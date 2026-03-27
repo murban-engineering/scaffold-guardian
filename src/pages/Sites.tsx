@@ -622,6 +622,7 @@ const Sites = () => {
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #1f1f1f; line-height: 1.3; padding: 12px; background: #f5f5f5; }
+        a, a:visited, a:hover, a:active { color: #111111 !important; text-decoration: none !important; }
         .print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; padding: 8px; background: rgba(255,255,255,0.97); border: 1px solid #ddd; border-radius: 8px; }
         .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
         .report-title { font-size: 18px; font-weight: 900; color: #111111; margin-bottom: 10px; }
