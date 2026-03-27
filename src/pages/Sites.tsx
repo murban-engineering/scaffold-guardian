@@ -194,6 +194,73 @@ const Sites = () => {
     });
   }, [inventoryBySiteRows]);
 
+  const inventoryByClientSections = useMemo(() => {
+    const groupedByClient = summarizedInventoryBySiteRows.reduce<
+      Record<string, {
+        client: string;
+        clientId: string;
+        sites: Record<string, {
+          quotationNumber: string;
+          siteNumber: string;
+          siteName: string;
+          siteAddress: string;
+          siteContact: string;
+          sitePhone: string;
+          items: Array<{ itemDescription: string; quantity: number }>;
+        }>;
+      }>
+    >((acc, row) => {
+      const clientKey = `${row.client}::${row.clientId}`;
+      const siteKey = [
+        row.quotationNumber,
+        row.siteNumber,
+        row.siteName,
+        row.siteAddress,
+        row.siteContact,
+        row.sitePhone,
+      ].join("::");
+
+      if (!acc[clientKey]) {
+        acc[clientKey] = {
+          client: row.client,
+          clientId: row.clientId,
+          sites: {},
+        };
+      }
+
+      if (!acc[clientKey].sites[siteKey]) {
+        acc[clientKey].sites[siteKey] = {
+          quotationNumber: row.quotationNumber,
+          siteNumber: row.siteNumber,
+          siteName: row.siteName,
+          siteAddress: row.siteAddress,
+          siteContact: row.siteContact,
+          sitePhone: row.sitePhone,
+          items: [],
+        };
+      }
+
+      acc[clientKey].sites[siteKey].items.push({
+        itemDescription: row.itemDescription,
+        quantity: row.quantity,
+      });
+
+      return acc;
+    }, {});
+
+    return Object.values(groupedByClient)
+      .sort((a, b) => a.client.localeCompare(b.client))
+      .map((clientSection) => ({
+        ...clientSection,
+        sites: Object.values(clientSection.sites)
+          .map((site) => ({
+            ...site,
+            items: [...site.items].sort((a, b) => a.itemDescription.localeCompare(b.itemDescription)),
+          }))
+          .sort((a, b) => (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName)),
+      }));
+  }, [summarizedInventoryBySiteRows]);
+
   const clientOptions = useMemo(() => {
     const uniqueClients = new Set(
       removalReportQuotations.map(
@@ -495,7 +562,7 @@ const Sites = () => {
   };
 
   const handlePrintInventoryBySiteReport = () => {
-    if (!summarizedInventoryBySiteRows.length) {
+    if (!inventoryByClientSections.length) {
       window.alert("No inventory movement records available to print yet.");
       return;
     }
@@ -504,21 +571,53 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    const tableRows = summarizedInventoryBySiteRows
+    const clientSections = inventoryByClientSections
       .map(
-        (row) => `
-          <tr>
-            <td>${row.client}</td>
-            <td>${row.clientId || "-"}</td>
-            <td>${row.quotationNumber || "-"}</td>
-            <td>${row.siteNumber || "-"}</td>
-            <td>${row.siteName || "-"}</td>
-            <td>${row.siteAddress || "-"}</td>
-            <td>${row.siteContact || "-"}</td>
-            <td>${row.sitePhone || "-"}</td>
-            <td>${row.itemDescription}</td>
-            <td class="text-right">${row.quantity}</td>
-          </tr>
+        (clientSection) => `
+          <section class="client-section">
+            <div class="panel">
+              <h3 class="section-title">Client Details</h3>
+              <div class="info-row"><span class="info-label">Client</span><span>:</span><span>${clientSection.client}</span></div>
+              <div class="info-row"><span class="info-label">Client ID</span><span>:</span><span>${clientSection.clientId || "-"}</span></div>
+            </div>
+            ${clientSection.sites
+              .map(
+                (site) => `
+                  <div class="site-section">
+                    <div class="panel">
+                      <h3 class="section-title">Site Details</h3>
+                      <div class="info-row"><span class="info-label">Quotation No</span><span>:</span><span>${site.quotationNumber || "-"}</span></div>
+                      <div class="info-row"><span class="info-label">Site No</span><span>:</span><span>${site.siteNumber || "-"}</span></div>
+                      <div class="info-row"><span class="info-label">Site Name</span><span>:</span><span>${site.siteName || "-"}</span></div>
+                      <div class="info-row"><span class="info-label">Site Address</span><span>:</span><span>${site.siteAddress || "-"}</span></div>
+                      <div class="info-row"><span class="info-label">Contact</span><span>:</span><span>${site.siteContact || "-"}</span></div>
+                      <div class="info-row"><span class="info-label">Tel</span><span>:</span><span>${site.sitePhone || "-"}</span></div>
+                    </div>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Item Description</th>
+                          <th class="text-right">Qty Delivered</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${site.items
+                          .map(
+                            (item) => `
+                              <tr>
+                                <td>${item.itemDescription}</td>
+                                <td class="text-right">${item.quantity}</td>
+                              </tr>
+                            `
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `
+              )
+              .join("")}
+          </section>
         `
       )
       .join("");
@@ -531,10 +630,13 @@ const Sites = () => {
         .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
         .report-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 10px; }
         .panel { border: 1px solid #111827; border-radius: 6px; padding: 7px 9px; margin-bottom: 10px; }
+        .client-section { margin-bottom: 14px; border-bottom: 1px dashed #d1d5db; padding-bottom: 10px; }
+        .site-section { margin-bottom: 10px; }
+        .section-title { font-size: 10px; font-weight: 800; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
         .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
         .info-label { font-weight: 700; color: #111827; min-width: 110px; font-size: 9px; }
         .text-right { text-align: right; }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         th, td { border: 1px solid #111827; padding: 4px 6px; font-size: 8.2px; vertical-align: top; }
         th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
         @media print {
@@ -556,23 +658,7 @@ const Sites = () => {
         <div class="info-row"><span class="info-label">Document Date</span><span>:</span><span>${docDate}</span></div>
         <div class="info-row"><span class="info-label">Company</span><span>:</span><span>OTNO Access Solutions</span></div>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Client</th>
-            <th>Client ID</th>
-            <th>Quotation No</th>
-            <th>Site No</th>
-            <th>Site Name</th>
-            <th>Site Address</th>
-            <th>Contact</th>
-            <th>Tel</th>
-            <th>Item Description</th>
-            <th class="text-right">Qty Delivered</th>
-          </tr>
-        </thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+      ${clientSections}
       <div class="footer">
         <span>OTNO Access Solutions</span>
         <span>Printed: ${printDate}</span>
@@ -686,42 +772,51 @@ const Sites = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                {summarizedInventoryBySiteRows.length ? (
-                  <div className="rounded-lg border border-border overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Client ID</TableHead>
-                          <TableHead>Quotation No</TableHead>
-                          <TableHead>Site No</TableHead>
-                          <TableHead>Site Name</TableHead>
-                          <TableHead>Site Address</TableHead>
-                          <TableHead>Contact</TableHead>
-                          <TableHead>Tel</TableHead>
-                          <TableHead>Item Description</TableHead>
-                          <TableHead className="text-right">Qty Delivered</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summarizedInventoryBySiteRows.map((row) => (
-                          <TableRow
-                            key={`${row.client}-${row.quotationNumber}-${row.siteNumber}-${row.siteName}-${row.itemDescription}`}
-                          >
-                            <TableCell className="font-medium text-sm">{row.client}</TableCell>
-                            <TableCell>{row.clientId || "-"}</TableCell>
-                            <TableCell>{row.quotationNumber || "-"}</TableCell>
-                            <TableCell>{row.siteNumber || "-"}</TableCell>
-                            <TableCell>{row.siteName || "-"}</TableCell>
-                            <TableCell className="max-w-[240px] whitespace-normal">{row.siteAddress || "-"}</TableCell>
-                            <TableCell>{row.siteContact || "-"}</TableCell>
-                            <TableCell>{row.sitePhone || "-"}</TableCell>
-                            <TableCell>{row.itemDescription}</TableCell>
-                            <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                {inventoryByClientSections.length ? (
+                  <div className="space-y-4">
+                    {inventoryByClientSections.map((clientSection) => (
+                      <div key={`${clientSection.client}-${clientSection.clientId}`} className="rounded-lg border border-border p-4 space-y-3">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-foreground">{clientSection.client}</p>
+                          <p className="text-xs text-muted-foreground">Client ID: {clientSection.clientId || "-"}</p>
+                        </div>
+                        <div className="space-y-3">
+                          {clientSection.sites.map((site) => (
+                            <div
+                              key={`${clientSection.client}-${site.quotationNumber}-${site.siteNumber}-${site.siteName}`}
+                              className="rounded-md border border-border/80 p-3 space-y-2"
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-1 text-xs text-muted-foreground">
+                                <p><span className="font-medium text-foreground">Quotation No:</span> {site.quotationNumber || "-"}</p>
+                                <p><span className="font-medium text-foreground">Site No:</span> {site.siteNumber || "-"}</p>
+                                <p><span className="font-medium text-foreground">Site Name:</span> {site.siteName || "-"}</p>
+                                <p><span className="font-medium text-foreground">Contact:</span> {site.siteContact || "-"}</p>
+                                <p><span className="font-medium text-foreground">Tel:</span> {site.sitePhone || "-"}</p>
+                                <p className="md:col-span-2"><span className="font-medium text-foreground">Site Address:</span> {site.siteAddress || "-"}</p>
+                              </div>
+                              <div className="rounded-md border border-border overflow-x-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Item Description</TableHead>
+                                      <TableHead className="text-right">Qty Delivered</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {site.items.map((item) => (
+                                      <TableRow key={`${clientSection.client}-${site.siteNumber}-${item.itemDescription}`}>
+                                        <TableCell>{item.itemDescription}</TableCell>
+                                        <TableCell className="text-right font-bold">{item.quantity as React.ReactNode}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
