@@ -15,6 +15,7 @@ import MaintenanceLogs from "./pages/MaintenanceLogs";
 import Revenue from "./pages/Revenue";
 import Accounting from "./pages/Accounting";
 import SiteMasterPlan from "./pages/SiteMasterPlan";
+import ItemTracking from "./pages/ItemTracking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -123,6 +124,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SiteMasterPlan />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/item-tracking"
+              element={
+                <ProtectedRoute>
+                  <ItemTracking />
                 </ProtectedRoute>
               }
             />
