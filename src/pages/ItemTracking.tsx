@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { PackageSearch, ClipboardList, Users, Warehouse } from "lucide-react";
+import { PackageSearch, ClipboardList, Users, Warehouse, Printer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useScaffolds } from "@/hooks/useScaffolds";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
 
@@ -108,6 +109,132 @@ const ItemTracking = () => {
 
   const quantityAtStart = selectedItem?.qty_at_start ?? 0;
 
+  const handlePrintReport = () => {
+    if (!selectedItem || !selectedPartNumber) return;
+
+    const printWindow = window.open("", "_blank", "width=1000,height=800");
+    if (!printWindow) return;
+
+    const reportDate = new Date().toLocaleString();
+    const reportRows =
+      onHireByClient.length > 0
+        ? onHireByClient
+            .map(
+              (row) => `
+                <tr>
+                  <td>${row.clientName}</td>
+                  <td>${row.clientId}</td>
+                  <td>${row.quotationNumber}</td>
+                  <td class="numeric">${row.onHireQuantity}</td>
+                </tr>
+              `
+            )
+            .join("")
+        : `<tr><td colspan="4">No clients currently have this item on hire.</td></tr>`;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Item Tracking Report - ${selectedPartNumber}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              color: #1f2937;
+              margin: 32px;
+            }
+            h1 {
+              margin-bottom: 8px;
+            }
+            .meta {
+              color: #4b5563;
+              margin: 0 0 20px;
+              font-size: 14px;
+            }
+            .stats {
+              display: grid;
+              grid-template-columns: repeat(3, minmax(0, 1fr));
+              gap: 12px;
+              margin-bottom: 20px;
+            }
+            .stat-card {
+              border: 1px solid #d1d5db;
+              border-radius: 8px;
+              padding: 12px;
+            }
+            .stat-label {
+              font-size: 12px;
+              text-transform: uppercase;
+              color: #6b7280;
+              margin-bottom: 4px;
+            }
+            .stat-value {
+              font-size: 24px;
+              font-weight: 700;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th,
+            td {
+              border: 1px solid #d1d5db;
+              padding: 10px;
+              text-align: left;
+            }
+            th {
+              background: #f3f4f6;
+            }
+            .numeric {
+              text-align: right;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Item Tracking Report</h1>
+          <p class="meta"><strong>Part Number:</strong> ${selectedPartNumber}</p>
+          <p class="meta"><strong>Description:</strong> ${selectedItem.description ?? selectedItem.scaffold_type ?? "N/A"}</p>
+          <p class="meta"><strong>Generated:</strong> ${reportDate}</p>
+
+          <div class="stats">
+            <div class="stat-card">
+              <p class="stat-label">Quantity at Start</p>
+              <p class="stat-value">${quantityAtStart}</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Quantity on Hire</p>
+              <p class="stat-value">${totalOnHire}</p>
+            </div>
+            <div class="stat-card">
+              <p class="stat-label">Clients on Hire</p>
+              <p class="stat-value">${onHireByClient.length}</p>
+            </div>
+          </div>
+
+          <h2>Client Hire Breakdown</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Client ID</th>
+                <th>Quotation</th>
+                <th>On Hire Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reportRows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/40">
       <Sidebar activeItem="item-tracking" onItemClick={handleSidebarItemClick} />
@@ -183,8 +310,18 @@ const ItemTracking = () => {
           )}
 
           <Card className="border-white/50 bg-card/80 shadow-xl backdrop-blur-xl">
-            <CardHeader>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg">Client Hire Breakdown</CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={handlePrintReport}
+                disabled={!selectedPartNumber || !selectedItem || scaffoldsLoading || quotationsLoading}
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Report
+              </Button>
             </CardHeader>
             <CardContent>
               {scaffoldsLoading || quotationsLoading ? (
