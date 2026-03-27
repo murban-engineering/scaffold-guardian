@@ -429,7 +429,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           <img src="${window.location.origin}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
         </div>
         <div class="footer-legal">
-          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 1 of 2
+          All transactions are subject to our standard Terms of Trade which can be found at: otno.ke &nbsp;|&nbsp; Page 1 of 2
         </div>
         <div class="footer-processed">
           <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
@@ -477,7 +477,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           <img src="${window.location.origin}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
         </div>
         <div class="footer-legal">
-          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 2 of 2
+          All transactions are subject to our standard Terms of Trade which can be found at: otno.ke &nbsp;|&nbsp; Page 2 of 2
         </div>
         <div class="footer-processed">
           <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
