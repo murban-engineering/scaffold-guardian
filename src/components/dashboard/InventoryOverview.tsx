@@ -214,11 +214,11 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         const x = 40 + gap + i * (barW + gap);
         const y = 20 + barAreaH - barH;
         const labelX = x + barW / 2;
-        const truncLabel = bar.label.length > 11 ? bar.label.slice(0, 10) + "…" : bar.label;
+        const labelText = bar.label;
         return `
           <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${bar.color}" rx="2"/>
           <text x="${labelX}" y="${y - 3}" text-anchor="middle" font-size="7" fill="#1f2937" font-family="Arial,sans-serif">${bar.value}</text>
-          <text x="${labelX}" y="${20 + barAreaH + 10}" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial,sans-serif">${truncLabel}</text>
+          <text x="${labelX}" y="${20 + barAreaH + 10}" text-anchor="middle" font-size="6.5" fill="#374151" font-family="Arial,sans-serif">${labelText}</text>
         `;
       }).join("");
       // Y-axis ticks
@@ -277,13 +277,13 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
         const availY = 18 + barAreaH - availH;
         const hireY = 18 + barAreaH - hireH;
         const labelX = 46 + i * pairW + Math.floor(pairW / 2);
-        const truncLabel = label.length > 12 ? label.slice(0, 11) + "…" : label;
+        const labelText = label;
         return `
           <rect x="${x}" y="${availY}" width="${singleBarW}" height="${availH}" fill="#059669" rx="2"/>
           <text x="${x + singleBarW / 2}" y="${availY - 2}" text-anchor="middle" font-size="6" fill="#059669" font-family="Arial,sans-serif">${v.available}</text>
           <rect x="${x + singleBarW + pairGap}" y="${hireY}" width="${singleBarW}" height="${hireH}" fill="#d97706" rx="2"/>
           <text x="${x + singleBarW + pairGap + singleBarW / 2}" y="${hireY - 2}" text-anchor="middle" font-size="6" fill="#d97706" font-family="Arial,sans-serif">${v.onHire}</text>
-          <text x="${labelX}" y="${18 + barAreaH + 10}" text-anchor="middle" font-size="6" fill="#374151" font-family="Arial,sans-serif">${truncLabel}</text>
+          <text x="${labelX}" y="${18 + barAreaH + 10}" text-anchor="middle" font-size="6" fill="#374151" font-family="Arial,sans-serif">${labelText}</text>
         `;
       }).join("");
       const yTicks = [0, 0.5, 1].map((pct) => {
@@ -307,7 +307,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
     };
     const groupedSVG = buildGroupedSVG(groupSVGWidth, 180);
 
-    const html = `<!DOCTYPE html><html><head><title>Inventory Report - OTNO Access Solutions</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /><title>Inventory Report - OTNO Access Solutions</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; padding: 12px; }
