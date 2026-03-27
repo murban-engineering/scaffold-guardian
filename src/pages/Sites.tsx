@@ -756,7 +756,7 @@ const Sites = () => {
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
                 <div>
-                  <CardTitle className="text-base md:text-lg text-[#10213a]">Inventory Movement by Client &amp; Site</CardTitle>
+                  <CardTitle className="text-base md:text-lg text-slate-600">Inventory Movement by Client &amp; Site</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     One combined report showing where all delivered inventory has gone, including each client and site details.
                   </p>
@@ -781,8 +781,8 @@ const Sites = () => {
                             key={`${clientSection.client}-${site.quotationNumber}-${site.siteNumber}-${site.siteName}`}
                             className="rounded-lg border border-border bg-card shadow-sm overflow-hidden"
                           >
-                            <div className="bg-[#10213a] px-3 py-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-white">
+                            <div className="bg-slate-200 px-3 py-2">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                                 Inventory Movement by Client &amp; Site
                               </p>
                             </div>
@@ -800,8 +800,8 @@ const Sites = () => {
                                 <Table>
                                   <TableHeader>
                                     <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
-                                      <TableHead className="font-semibold text-[#10213a]">Item Description</TableHead>
-                                      <TableHead className="text-right font-semibold text-[#10213a]">Qty Delivered</TableHead>
+                                      <TableHead className="font-semibold text-slate-600">Item Description</TableHead>
+                                      <TableHead className="text-right font-semibold text-slate-600">Qty Delivered</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
