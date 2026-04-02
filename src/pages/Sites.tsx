@@ -579,14 +579,16 @@ const Sites = () => {
               .map(
                 (site) => `
                   <div class="site-section">
-                    <div class="site-header">Inventory Movement by Client &amp; Site</div>
+                    <div class="site-header">
+                      <div class="site-header-left">Inventory Movement by Client &amp; Site</div>
+                    </div>
                     <div class="panel details-box">
                       <div class="info-grid">
-                        <div class="info-row"><span class="info-label">Client</span><span class="info-value">${clientSection.client}</span></div>
-                        <div class="info-row"><span class="info-label">Client ID</span><span class="info-value">${clientSection.clientId || "-"}</span></div>
-                        <div class="info-row"><span class="info-label">Quotation No</span><span class="info-value">${site.quotationNumber || "-"}</span></div>
-                        <div class="info-row"><span class="info-label">Site No</span><span class="info-value">${site.siteNumber || "-"}</span></div>
-                        <div class="info-row info-row-full"><span class="info-label">Site Name</span><span class="info-value">${site.siteName || "-"}</span></div>
+                        <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value">${clientSection.client}</span></div>
+                        <div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value">${clientSection.clientId || "-"}</span></div>
+                        <div class="info-row"><span class="info-label">Quotation No</span><span class="info-sep">:</span><span class="info-value">${site.quotationNumber || "-"}</span></div>
+                        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${site.siteNumber || "-"}</span></div>
+                        <div class="info-row info-row-full"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${site.siteName || "-"}</span></div>
                       </div>
                     </div>
                     <table>
@@ -621,50 +623,107 @@ const Sites = () => {
     const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9px; color: #1f1f1f; line-height: 1.3; padding: 12px; background: #f5f5f5; }
-        a, a:visited, a:hover, a:active { color: #111111 !important; text-decoration: none !important; }
+        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; padding: 12px; background: #fff; }
+        a, a:visited, a:hover, a:active { color: #111827 !important; text-decoration: none !important; }
+
+        /* ── Print controls ── */
         .print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; padding: 8px; background: rgba(255,255,255,0.97); border: 1px solid #ddd; border-radius: 8px; }
-        .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .report-title { font-size: 18px; font-weight: 900; color: #111111; margin-bottom: 10px; }
-        .panel { border: 1px solid #111111; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #ffffff; }
+        .print-button { border: 1px solid #333; border-radius: 6px; background: #111; color: #fff; padding: 6px 14px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+        /* ── Branding block ── */
+        .brand-block { padding: 8px 10px; margin-bottom: 10px; }
+        .brand-top { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .brand-logo { width: 120px; height: auto; }
+        .brand-title { font-size: 20px; font-weight: 900; line-height: 1.15; color: #111827; letter-spacing: -0.3px; }
+        .brand-meta { font-size: 9px; color: #374151; }
+
+        /* ── Report title ── */
+        .report-title { font-size: 22px; font-weight: 900; color: #111827; margin-bottom: 6px; letter-spacing: -0.2px; }
+
+        /* ── Document info panel ── */
+        .panel { border: 0.5px solid #aaa; border-radius: 8px; padding: 7px 9px; margin-bottom: 8px; background: #ffffff; }
+        .panel h3 { font-size: 9px; font-weight: 800; margin-bottom: 3px; color: #111827; }
+
+        /* ── Info rows ── */
+        .info-row { display: flex; gap: 4px; margin-bottom: 2px; align-items: baseline; }
+        .info-label { font-weight: 700; color: #111827; min-width: 80px; font-size: 8.5px; }
+        .info-sep { color: #6b7280; }
+        .info-value { color: #111827; word-break: break-word; flex: 1; font-size: 8.5px; font-weight: 700; }
+        .info-row-full { grid-column: 1 / -1; }
+
+        /* ── Client / site sections ── */
         .client-section { margin-bottom: 10px; }
-        .site-section { margin-bottom: 10px; border: 1px solid #111111; border-radius: 10px; padding: 8px; background: #ffffff; }
-        .site-header { background: #111111; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
+        .site-section { margin-bottom: 10px; border: 0.5px solid #aaa; border-radius: 8px; padding: 8px; background: #ffffff; page-break-inside: avoid; }
+        .site-header { display: flex; align-items: center; justify-content: space-between; background: #111827; color: #ffffff; font-weight: 800; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; }
         .details-box { margin-bottom: 7px; }
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
-        .info-row { display: flex; gap: 4px; align-items: baseline; }
-        .info-row-full { grid-column: 1 / -1; }
-        .info-label { font-weight: 700; color: #111111; min-width: 72px; font-size: 9px; }
-        .info-value { font-weight: 700; color: #111111; font-size: 9px; }
+
+        /* ── Tables ── */
         .text-right { text-align: right; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 4px; }
-        th, td { border: 1px solid #111111; padding: 4px 6px; font-size: 8.4px; vertical-align: top; }
-        th { background: #facc15; color: #1f1f1f; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+        th, td { border: 1px solid #111827; padding: 4px 6px; font-size: 8.5px; vertical-align: top; }
+        th { background: #f3f4f6; text-transform: uppercase; letter-spacing: 0.2px; font-weight: 800; }
+        .total-row td { background: #f9fafb; font-weight: 800; }
+        tr { page-break-inside: avoid; }
+        thead { display: table-header-group; }
+
+        /* ── Footer ── */
+        .footer-wrap { margin-top: auto; }
+        .footer-brand {
+          background: #facc15; color: #1f2937; font-weight: 700;
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 6px 10px;
+        }
+        .footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
+        .footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
+
+        /* ── Page wrapper ── */
+        .page-wrapper { display: flex; flex-direction: column; min-height: 92vh; }
+        .page-body { flex: 1; }
+
         @media print {
-          body { padding: 0 !important; font-size: 8.3px; background: #ffffff; }
+          body { padding: 0 !important; font-size: 8.5px; background: #ffffff; }
           .print-controls { display: none; }
           @page { size: A4 landscape; margin: 8mm; }
-          tr { page-break-inside: avoid; }
-          thead { display: table-header-group; }
+          .page-wrapper { min-height: 92vh; }
         }
-        .footer { margin-top: 10px; border-top: 2px solid #111111; padding: 6px 8px; font-size: 8px; color: #1f1f1f; display: flex; justify-content: space-between; background: #facc15; font-weight: 700; border-radius: 4px; }
       </style>
     </head><body>
       <div class="print-controls">
         <button type="button" class="print-button" onclick="window.print()">Print report</button>
       </div>
-      <h2 class="report-title">Inventory Movement by Client &amp; Site</h2>
-      <div class="panel">
-        <div class="info-row"><span class="info-label">Document Type</span><span>:</span><span>Inventory Movement by Client &amp; Site</span></div>
-        <div class="info-row"><span class="info-label">Document Date</span><span>:</span><span>${docDate}</span></div>
-        <div class="info-row"><span class="info-label">Company</span><span>:</span><span>OTNO Access Solutions</span></div>
+      <div class="page-wrapper">
+        <div class="page-body">
+          <div class="brand-block">
+            <div class="brand-top">
+              <img src="${origin}/otn-logo-red.png" alt="OTNO Logo" class="brand-logo" />
+              <div class="brand-title">OTNO ACCESS SOLUTIONS LIMITED</div>
+            </div>
+            <div class="brand-meta">
+              <div><strong>PIN No:</strong> P052199134H</div>
+              <div><strong>Reg No:</strong> PVT-TYDZRM3</div>
+            </div>
+          </div>
+          <h2 class="report-title">Inventory Movement by Client &amp; Site</h2>
+          <div class="panel">
+            <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">Inventory Movement by Client &amp; Site</span></div>
+            <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${docDate}</span></div>
+            <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">OTNO Access Solutions</span></div>
+          </div>
+          ${clientSections}
+        </div>
+        <div class="footer-wrap">
+          <div class="footer-brand">
+            <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+            <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+          </div>
+          <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com</div>
+          <div class="footer-processed">
+            <div><div>Processed Date : ${docDate}</div></div>
+            <div style="text-align:right;"><div>Print date : ${printDate}</div></div>
+          </div>
+        </div>
       </div>
-      ${clientSections}
-      <div class="footer">
-        <span>OTNO Access Solutions</span>
-        <span>Printed: ${printDate}</span>
-      </div>
-      <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:90px;height:auto;margin-top:6px;" />
     </body></html>`;
 
     const blob = new Blob([html], { type: "text/html" });
