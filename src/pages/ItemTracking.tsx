@@ -75,14 +75,22 @@ const ItemTracking = () => {
   const onHireByClient = useMemo<ClientHireRow[]>(() => {
     if (!selectedPartNumber) return [];
 
-    return hireQuotations
+    // Only count quotations that have actually been dispatched (not drafts/pending)
+    const activeQuotations = hireQuotations.filter(
+      (q) => q.status !== "draft" && q.status !== "pending"
+    );
+
+    return activeQuotations
       .map((quotation) => {
         const matchingItems = (quotation.line_items ?? []).filter(
           (lineItem) => lineItem.part_number === selectedPartNumber
         );
 
+        if (matchingItems.length === 0) return null;
+
         const onHireQuantity = matchingItems.reduce((total, lineItem) => {
-          const delivered = lineItem.delivered_quantity ?? lineItem.quantity ?? 0;
+          // Use only actual delivered_quantity from DB — never fall back to ordered quantity
+          const delivered = lineItem.delivered_quantity ?? 0;
           const returned = lineItem.returned_quantity ?? 0;
           const currentOnHire = Math.max(delivered - returned, 0);
           return total + currentOnHire;
