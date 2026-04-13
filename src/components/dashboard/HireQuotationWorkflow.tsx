@@ -1390,9 +1390,13 @@ const HireQuotationWorkflow = ({
       toast.error("Site name is required.");
       return;
     }
+    const previousSite = usePreviousSite && selectedPreviousSiteId
+      ? allClientSites?.find(s => s.id === selectedPreviousSiteId)
+      : null;
+
     const existingSites = clientSites || [];
-    const suffix = existingSites.length === 0 ? "" : String.fromCharCode(65 + existingSites.length - 1); // A, B, C...
-    const siteNumber = deriveSiteNumber(header.quotationNo, suffix);
+    const suffix = previousSite ? (previousSite.site_suffix || "") : (existingSites.length === 0 ? "" : String.fromCharCode(65 + existingSites.length - 1));
+    const siteNumber = previousSite ? previousSite.site_number : deriveSiteNumber(header.quotationNo, suffix);
 
     const createdSite = await createClientSite.mutateAsync({
       quotation_id: savedQuotationId,
@@ -4198,7 +4202,9 @@ const HireQuotationWorkflow = ({
                     </div>
                     <div className="flex items-center gap-3 pt-2">
                       <Badge variant="secondary" className="text-sm font-mono">
-                        Next: {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
+                        {usePreviousSite && selectedPreviousSiteId
+                          ? (() => { const ps = allClientSites?.find(s => s.id === selectedPreviousSiteId); return ps ? ps.site_number : "—"; })()
+                          : `Next: ${deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}`}
                       </Badge>
                       <Button type="button" onClick={handleAddClientSite} disabled={createClientSite.isPending || !newSite.siteName}>
                         <Plus className="h-4 w-4 mr-1" />
