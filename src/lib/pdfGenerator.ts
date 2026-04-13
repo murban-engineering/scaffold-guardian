@@ -667,144 +667,192 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
     createdBy: data.createdBy,
   });
 
-  const html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
-    <style>
-      ${SHARED_PRINT_STYLES}
+  const isSinglePage = data.items.length <= 6;
 
-      /* ── Two-page layout ── */
-      html, body { height: 100%; }
-      .hd-page2 {
-        page-break-before: always; break-before: page;
-        font-size: 9px;
-        display: flex; flex-direction: column;
-        min-height: 92vh;
-      }
-      .hd-page2-body { flex: 1; display: flex; flex-direction: column; }
-      .hd-page2-footer { margin-top: auto; }
-      .hd-footer-brand {
-        background: #facc15; color: #1f2937; font-weight: 700;
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 6px 10px;
-      }
-      .hd-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
-      .hd-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
+  const signatureBlock = `
+    <div class="post-total-grid">
+      <div class="section">
+        <h3>Transport Charges</h3>
+        <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+        <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+      </div>
+      <div class="section">
+        <h3>Safety Verification</h3>
+        <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
+        <div class="line-row" style="margin-top:5px;"><span>Checker:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+      </div>
+    </div>
 
-      @media print {
-        @page { size: A4; margin: 8mm; }
-        body { padding: 0 !important; }
-        .hd-page2 { break-before: page; min-height: 92vh; }
-      }
-    </style></head><body>
+    <div class="section" style="margin-bottom:8px;">
+      <div class="signing-grid">
+        <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+      </div>
+    </div>
 
-    <!-- ═══ PAGE 1: Header + Items table ═══ -->
-    <div class="hire-quotation-page">
-      ${sharedLayout}
+    <div class="section" style="margin-bottom:8px;">
+      <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
+      <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
+      <div class="line-row split-row">
+        <span>Time Arrive:</span><span class="line-fill"></span>
+        <span>Time Depart:</span><span class="line-fill"></span>
+      </div>
+    </div>
 
-      <table>
-        <thead>
+    <div class="section" style="margin-bottom:8px;min-height:40px;">
+      <h3>Customer Comments:</h3>
+    </div>
+
+    <div class="section terms-section">
+      <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
+      <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
+      <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
+      <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
+    </div>
+  `;
+
+  const footerBlock = `
+    <div class="hd-footer-brand">
+      <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+      <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+    </div>
+    <div class="hd-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of 1</div>
+    <div class="hd-footer-processed">
+      <div>
+        <div>Processed By : ${data.createdBy || ""}</div>
+        <div>Processed Date : ${formatReportDate(data.deliveryDate) || ""}</div>
+      </div>
+      <div style="text-align:right;">
+        <div>Print date : ${formatTimestamp()}</div>
+      </div>
+    </div>
+  `;
+
+  const itemsTable = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Part Number</th>
+          <th>Description</th>
+          <th class="text-right">Balance Qty</th>
+          <th class="text-right">This Delivery</th>
+          <th class="text-right">Mass/Item (kg)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map((item, idx) => `
           <tr>
-            <th>#</th>
-            <th>Part Number</th>
-            <th>Description</th>
-            <th class="text-right">Balance Qty</th>
-            <th class="text-right">This Delivery</th>
-            <th class="text-right">Mass/Item (kg)</th>
+            <td>${idx + 1}</td>
+            <td>${item.partNumber || "-"}</td>
+            <td>${item.description || "-"}</td>
+            <td class="text-right">${item.balanceQuantity}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right">${formatMass(item.massPerItem)}</td>
           </tr>
-        </thead>
-        <tbody>
-          ${data.items.map((item, idx) => `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>${item.partNumber || "-"}</td>
-              <td>${item.description || "-"}</td>
-              <td class="text-right">${item.balanceQuantity}</td>
-              <td class="text-right">${item.quantity}</td>
-              <td class="text-right">${formatMass(item.massPerItem)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
 
-      ${data.remarks ? `<div class="section" style="margin-top:6px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
-      ${renderPage1Footer(data.createdBy || "", data.deliveryDate || "")}
-    </div>
+  let html: string;
 
-    <!-- ═══ PAGE 2: Header repeat + signature/verification sections ═══ -->
-    <div class="hd-page2">
-      <div class="hd-page2-body">
-        <div class="hire-quotation-page">
-          ${sharedLayout}
-        </div>
-
-        <div class="post-total-grid">
-          <div class="section">
-            <h3>Transport Charges</h3>
-            <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
-            <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+  if (isSinglePage) {
+    html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
+      <style>
+        ${SHARED_PRINT_STYLES}
+        html, body { height: 100%; }
+        .hd-single-page {
+          font-size: 9px;
+          display: flex; flex-direction: column;
+          min-height: 100vh;
+        }
+        .hd-single-body { flex: 1; display: flex; flex-direction: column; }
+        .hd-single-footer { margin-top: auto; }
+        .hd-footer-brand {
+          background: #facc15; color: #1f2937; font-weight: 700;
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 6px 10px;
+        }
+        .hd-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
+        .hd-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
+        @media print {
+          @page { size: A4; margin: 8mm; }
+          body { padding: 0 !important; }
+        }
+      </style></head><body>
+      <div class="hd-single-page">
+        <div class="hd-single-body">
+          <div class="hire-quotation-page">
+            ${sharedLayout}
+            ${itemsTable}
+            ${data.remarks ? `<div class="section" style="margin-top:6px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
           </div>
-          <div class="section">
-            <h3>Safety Verification</h3>
-            <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
-            <div class="line-row" style="margin-top:5px;"><span>Checker:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+          ${signatureBlock}
+        </div>
+        <div class="hd-single-footer">
+          ${footerBlock}
+        </div>
+      </div>
+    </body></html>`;
+  } else {
+    html = `<!DOCTYPE html><html><head><title>Hire Delivery Note - ${data.deliveryNoteNumber}</title>
+      <style>
+        ${SHARED_PRINT_STYLES}
+        html, body { height: 100%; }
+        .hd-page2 {
+          page-break-before: always; break-before: page;
+          font-size: 9px;
+          display: flex; flex-direction: column;
+          min-height: 92vh;
+        }
+        .hd-page2-body { flex: 1; display: flex; flex-direction: column; }
+        .hd-page2-footer { margin-top: auto; }
+        .hd-footer-brand {
+          background: #facc15; color: #1f2937; font-weight: 700;
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 6px 10px;
+        }
+        .hd-footer-legal { text-align: center; font-size: 7.5px; color: #4b5563; padding: 3px 8px 4px; border: 1px solid #e5e7eb; border-top: none; }
+        .hd-footer-processed { display: flex; justify-content: space-between; font-size: 7px; color: #6b7280; padding: 4px 0 0; }
+        @media print {
+          @page { size: A4; margin: 8mm; }
+          body { padding: 0 !important; }
+          .hd-page2 { break-before: page; min-height: 92vh; }
+        }
+      </style></head><body>
+
+      <!-- ═══ PAGE 1: Header + Items table ═══ -->
+      <div class="hire-quotation-page">
+        ${sharedLayout}
+        ${itemsTable}
+        ${data.remarks ? `<div class="section" style="margin-top:6px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+        ${renderPage1Footer(data.createdBy || "", data.deliveryDate || "")}
+      </div>
+
+      <!-- ═══ PAGE 2: Header repeat + signature/verification sections ═══ -->
+      <div class="hd-page2">
+        <div class="hd-page2-body">
+          <div class="hire-quotation-page">
+            ${sharedLayout}
           </div>
+          ${signatureBlock}
         </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="signing-grid">
-            <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
-          <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
-          <div class="line-row split-row">
-            <span>Time Arrive:</span><span class="line-fill"></span>
-            <span>Time Depart:</span><span class="line-fill"></span>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;min-height:40px;">
-          <h3>Customer Comments:</h3>
-        </div>
-
-        <div class="section terms-section">
-          <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</strong></p>
-          <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
-          <p>* The Hirer shall approach the Owner for any advice or assistance in the event of inability to comply with the above.</p>
-          <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
+        <div class="hd-page2-footer">
+          ${footerBlock.replace("Page 1 of 1", "Page 2 of 2")}
         </div>
       </div>
 
-      <!-- Yellow footer pinned at bottom of page 2 -->
-      <div class="hd-page2-footer">
-        <div class="hd-footer-brand">
-          <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
-        </div>
-        <div class="hd-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
-        <div class="hd-footer-processed">
-          <div>
-            <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${formatReportDate(data.deliveryDate) || ""}</div>
-          </div>
-          <div style="text-align:right;">
-            <div>Print date : ${formatTimestamp()}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </body></html>`;
+    </body></html>`;
+  }
 
   printWindow.document.write(withPrintOption(html, "Print delivery note"));
   printWindow.document.close();
