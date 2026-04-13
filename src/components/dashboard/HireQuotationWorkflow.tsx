@@ -1390,9 +1390,13 @@ const HireQuotationWorkflow = ({
       toast.error("Site name is required.");
       return;
     }
+    const previousSite = usePreviousSite && selectedPreviousSiteId
+      ? allClientSites?.find(s => s.id === selectedPreviousSiteId)
+      : null;
+
     const existingSites = clientSites || [];
-    const suffix = existingSites.length === 0 ? "" : String.fromCharCode(65 + existingSites.length - 1); // A, B, C...
-    const siteNumber = deriveSiteNumber(header.quotationNo, suffix);
+    const suffix = previousSite ? (previousSite.site_suffix || "") : (existingSites.length === 0 ? "" : String.fromCharCode(65 + existingSites.length - 1));
+    const siteNumber = previousSite ? previousSite.site_number : deriveSiteNumber(header.quotationNo, suffix);
 
     const createdSite = await createClientSite.mutateAsync({
       quotation_id: savedQuotationId,
