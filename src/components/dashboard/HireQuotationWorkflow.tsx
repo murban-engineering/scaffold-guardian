@@ -4202,7 +4202,9 @@ const HireQuotationWorkflow = ({
                     </div>
                     <div className="flex items-center gap-3 pt-2">
                       <Badge variant="secondary" className="text-sm font-mono">
-                        Next: {deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}
+                        {usePreviousSite && selectedPreviousSiteId
+                          ? (() => { const ps = allClientSites?.find(s => s.id === selectedPreviousSiteId); return ps ? ps.site_number : "—"; })()
+                          : `Next: ${deriveSiteNumber(header.quotationNo, clientSites?.length ? String.fromCharCode(65 + clientSites.length - 1) : "")}`}
                       </Badge>
                       <Button type="button" onClick={handleAddClientSite} disabled={createClientSite.isPending || !newSite.siteName}>
                         <Plus className="h-4 w-4 mr-1" />
