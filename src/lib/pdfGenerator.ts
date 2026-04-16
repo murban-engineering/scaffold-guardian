@@ -1445,7 +1445,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     <div class="hire-quotation-page">
       ${renderStandardReportLayout(sharedLayoutData)}
 
-      ${itemsTableHtml}
+      ${itemsTableOnlyHtml}
 
       ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
@@ -1456,6 +1456,8 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <div class="hire-quotation-page">
           ${renderStandardReportLayout(sharedLayoutData)}
         </div>
+
+        ${commentsHtml}
 
         ${bankingAndTotalsHtml}
       </div>
