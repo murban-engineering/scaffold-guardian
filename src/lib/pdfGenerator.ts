@@ -1259,12 +1259,17 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </tr>
       </tbody>
     </table>
+  `;
 
+  // ── Comments HTML (separate so it can be placed on page 1 or page 2) ──────
+  const commentsHtml = `
     <div class="terms">
       <strong>Comments</strong><br/>
       ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
     </div>
   `;
+
+  const commentsOnPage1 = data.items.length <= 22;
 
   // ── Shared banking / totals / signature HTML ─────────────────────────────────
   const bankingAndTotalsHtml = `
@@ -1430,6 +1435,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </div>
 
         ${itemsTableHtml}
+        ${commentsHtml}
 
         ${bankingAndTotalsHtml}
       </div>
@@ -1441,6 +1447,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
       ${renderStandardReportLayout(sharedLayoutData)}
 
       ${itemsTableHtml}
+      ${commentsOnPage1 ? commentsHtml : ''}
 
       ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
@@ -1452,6 +1459,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
           ${renderStandardReportLayout(sharedLayoutData)}
         </div>
 
+        ${!commentsOnPage1 ? commentsHtml : ''}
         ${bankingAndTotalsHtml}
       </div>
       ${yellowFooterHtml}
