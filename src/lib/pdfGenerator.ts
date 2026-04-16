@@ -1218,7 +1218,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
   };
 
   // ── Shared item table HTML ───────────────────────────────────────────────────
-  const itemsTableOnlyHtml = `
+  const itemsTableHtml = `
     <div style="margin-bottom:10px;font-size:9.5px;line-height:1.5;">
       <strong>Dear: ${data.companyName || data.contactName || "Valued Customer"}</strong><br/>
       We thank you for your valued enquiry and are pleased to submit our relevant quotation based on the terms detailed below.<br/>
@@ -1259,17 +1259,12 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         </tr>
       </tbody>
     </table>
-  `;
 
-  const commentsHtml = `
     <div class="terms">
       <strong>Comments</strong><br/>
       ${(data.comments || "Quote Excludes Transport To And From Site\nFour Weeks Hire Deposit Required Upfront").split("\n").join("<br/>")}
     </div>
   `;
-
-  // Combined for single-page layout
-  const itemsTableHtml = itemsTableOnlyHtml + commentsHtml;
 
   // ── Shared banking / totals / signature HTML ─────────────────────────────────
   const bankingAndTotalsHtml = `
@@ -1445,7 +1440,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
     <div class="hire-quotation-page">
       ${renderStandardReportLayout(sharedLayoutData)}
 
-      ${itemsTableOnlyHtml}
+      ${itemsTableHtml}
 
       ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
@@ -1456,8 +1451,6 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <div class="hire-quotation-page">
           ${renderStandardReportLayout(sharedLayoutData)}
         </div>
-
-        ${commentsHtml}
 
         ${bankingAndTotalsHtml}
       </div>
