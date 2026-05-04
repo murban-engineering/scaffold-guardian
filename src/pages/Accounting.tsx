@@ -361,6 +361,43 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const vatAmount = subtotalBeforeVat * vatRate;
   const totalWithVat = subtotalBeforeVat + vatAmount;
 
+  const hireItemCount = hasBatches
+    ? invoice.dispatchBatches.reduce((n, b) => n + b.lines.length, 0)
+    : invoice.hireBreakdown.length;
+  const isSinglePage = hireItemCount <= 6;
+
+  const summaryAndPolicyBlock = `
+        <div style="margin-top:12px;page-break-inside:avoid;break-inside:avoid;">
+          <div class="sum">
+            <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+            <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
+            <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
+            <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+            <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
+          </div>
+
+          <div class="policy-box">
+            <h4>Return Condition Billing Policy</h4>
+            <ul>
+              <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
+              <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
+              <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
+            </ul>
+          </div>
+
+          <p class="ft">Invoice date: ${escapeHtml(billingDateStr)}. ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
+        </div>`;
+
+  const returnConditionTable = `
+        <h2>B. Return Condition Charges</h2>
+        <table>
+          <thead><tr>
+            <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
+            <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
+          </tr></thead>
+          <tbody>${policyRows}</tbody>
+        </table>`;
+
   const html = `<!doctype html><html><head>
     <title>Invoice ${escapeHtml(invoice.invoiceNumber)}</title>
     <style>
@@ -416,6 +453,32 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     </style></head><body>
     <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Invoice</button></div>
 
+    ${isSinglePage ? `
+    <div class="page1-wrap">
+      <div class="page1-body">
+        ${renderTaxInvoiceHeader(invoice, billingDateStr)}
+        <div class="print-content">
+          <h2>A. Weekly Hire Charges</h2>
+          ${hireSection}
+          ${returnConditionTable}
+          ${summaryAndPolicyBlock}
+        </div>
+      </div>
+      <div class="branded-footer">
+        <div class="footer-brand">
+          <span>${COMPANY_NAME} — Your Trusted Scaffolding &amp; Access Partner.</span>
+          <img src="${window.location.origin}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
+        </div>
+        <div class="footer-legal">
+          All transactions are subject to our standard Terms of Trade which can be found at: otno.ke &nbsp;|&nbsp; Page 1 of 1
+        </div>
+        <div class="footer-processed">
+          <span>Processed By: &nbsp;${escapeHtml(invoice.createdBy || "-")}</span>
+          <span>Print date: ${formatReportDateTime(new Date())}</span>
+        </div>
+      </div>
+    </div>
+    ` : `
     <div class="page1-wrap">
       <div class="page1-body">
         ${renderTaxInvoiceHeader(invoice, billingDateStr)}
@@ -442,35 +505,8 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     <div class="page2-wrap">
       <div class="page2-body">
         ${renderTaxInvoiceHeader(invoice, billingDateStr)}
-        <h2>B. Return Condition Charges</h2>
-        <table>
-          <thead><tr>
-            <th>Part No</th><th>Description</th><th>Condition</th><th class="r">Qty</th>
-            <th class="r">Base Price</th><th>Policy</th><th class="r">Amount (KES)</th>
-          </tr></thead>
-          <tbody>${policyRows}</tbody>
-        </table>
-
-        <div style="margin-top:12px;">
-          <div class="sum">
-            <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
-            <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
-            <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
-            <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
-            <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
-          </div>
-
-          <div class="policy-box">
-            <h4>Return Condition Billing Policy</h4>
-            <ul>
-              <li><strong>Dirty Equipment:</strong> Charged at 2× the list hire price of the item.</li>
-              <li><strong>Damaged Equipment:</strong> Charged at 4× the list hire price of the item.</li>
-              <li><strong>Scrap Equipment:</strong> Charged at the selling price (unit price) of the item.</li>
-            </ul>
-          </div>
-
-          <p class="ft">Invoice date: ${escapeHtml(billingDateStr)}. ${COMPANY_NAME}. All amounts in Kenya Shillings (KES).</p>
-        </div>
+        ${returnConditionTable}
+        ${summaryAndPolicyBlock}
       </div>
       <div class="branded-footer">
         <div class="footer-brand">
@@ -486,6 +522,7 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
         </div>
       </div>
     </div>
+    `}
   </body></html>`;
 
   win.document.write(html);
