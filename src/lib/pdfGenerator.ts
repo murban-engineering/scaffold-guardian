@@ -868,12 +868,145 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
   const noteTitle = data.noteTitle ?? "Hire Loading Report";
 
+  const isSinglePage = data.items.length <= 6;
+
+  const sharedHeader = renderStandardReportLayout({
+    documentType: noteTitle,
+    documentNumber: data.quotationNumber,
+    documentDate: data.dateCreated,
+    dispatchDate: data.dispatchDate,
+    clientName: data.companyName,
+    clientAddress: data.companyAddress,
+    clientCityTown: data.companyCityTown,
+    clientTel: data.companyTel,
+    clientFax: data.companyFax,
+    contactName: data.contactName,
+    contactPhone: data.contactPhone,
+    contactEmail: data.companyEmail,
+    clientVat: data.companyPinNumber,
+    clientReg: data.companyRegNumber,
+    siteName: data.siteName,
+    siteId: data.siteId,
+    siteLocation: data.siteLocation,
+    siteAddress: data.siteAddress,
+    clientId: data.clientId,
+    createdBy: data.createdBy,
+  });
+
+  const itemsTable = `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Part Number</th>
+          <th>Description</th>
+          <th class="text-right">Qty</th>
+          <th class="text-right">This Delivery</th>
+          <th class="text-right">Mass/Item (kg)</th>
+          <th class="text-right">Total Mass (kg)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.items.map((item, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${item.partNumber || "-"}</td>
+            <td>${item.description || "-"}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right"></td>
+            <td class="text-right">${formatMass(item.massPerItem)}</td>
+            <td class="text-right">${formatMass(item.totalMass)}</td>
+          </tr>
+        `).join("")}
+        <tr class="total-row">
+          <td colspan="6">Total Mass</td>
+          <td class="text-right">${formatMass(totalMass)}</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  const signatureBlock = `
+    <div class="section" style="margin-bottom:8px;">
+      <h3>Comments</h3>
+      <p>Quote Excludes Transport To And From Site</p>
+      <p>Four Weeks Hire Deposit Required Upfront</p>
+    </div>
+
+    <div class="post-total-grid">
+      <div class="section">
+        <h3>Transport Charges</h3>
+        <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+        <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
+      </div>
+      <div class="section">
+        <h3>Safety Verification</h3>
+        <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
+        <div class="line-row"><span>Checker:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:8px;">
+      <div class="signing-grid">
+        <div class="line-row"><span>Checker's Name:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:8px;">
+      <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill"></span></div>
+      <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
+      <div class="line-row split-row">
+        <span>Time Arrive:</span><span class="line-fill"></span>
+        <span>Time Depart:</span><span class="line-fill"></span>
+      </div>
+    </div>
+
+    <div class="section terms-section">
+      <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted.</strong></p>
+      <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
+      <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
+    </div>
+  `;
+
+  const footerBlock = (pageLabel: string) => `
+    <div class="hl-footer-brand">
+      <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
+      <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
+    </div>
+    <div class="hl-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; ${pageLabel}</div>
+    <div class="hl-footer-processed">
+      <div>
+        <div>Processed By : ${data.createdBy || ""}</div>
+        <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
+      </div>
+      <div style="text-align:right;">
+        <div>Print date : ${formatTimestamp()}</div>
+      </div>
+    </div>
+  `;
+
   const html = `<!DOCTYPE html><html><head><title>${noteTitle} - ${data.quotationNumber}</title>
     <style>
       ${SHARED_PRINT_STYLES}
 
       /* ── Two-page layout ── */
       html, body { height: 100%; }
+      .hl-single-page {
+        font-size: 9px;
+        display: flex; flex-direction: column;
+        min-height: 100vh;
+      }
+      .hl-single-body { flex: 1; display: flex; flex-direction: column; }
+      .hl-single-footer { margin-top: auto; }
       .hl-page2 {
         page-break-before: always; break-before: page;
         font-size: 9px;
@@ -899,61 +1032,24 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
       }
     </style></head><body>
 
+    ${isSinglePage ? `
+    <div class="hl-single-page">
+      <div class="hl-single-body">
+        <div class="hire-quotation-page">
+          ${sharedHeader}
+          ${itemsTable}
+        </div>
+        ${signatureBlock}
+      </div>
+      <div class="hl-single-footer">
+        ${footerBlock("Page 1 of 1")}
+      </div>
+    </div>
+    ` : `
     <!-- ═══ PAGE 1: Header + Items table ═══ -->
     <div class="hire-quotation-page">
-      ${renderStandardReportLayout({
-        documentType: noteTitle,
-        documentNumber: data.quotationNumber,
-        documentDate: data.dateCreated,
-        dispatchDate: data.dispatchDate,
-        clientName: data.companyName,
-        clientAddress: data.companyAddress,
-        clientCityTown: data.companyCityTown,
-        clientTel: data.companyTel,
-        clientFax: data.companyFax,
-        contactName: data.contactName,
-        contactPhone: data.contactPhone,
-        contactEmail: data.companyEmail,
-        clientVat: data.companyPinNumber,
-        clientReg: data.companyRegNumber,
-        siteName: data.siteName,
-        siteId: data.siteId,
-        siteLocation: data.siteLocation,
-        siteAddress: data.siteAddress,
-        clientId: data.clientId,
-        createdBy: data.createdBy,
-      })}
-
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Part Number</th>
-            <th>Description</th>
-            <th class="text-right">Qty</th>
-            <th class="text-right">This Delivery</th>
-            <th class="text-right">Mass/Item (kg)</th>
-            <th class="text-right">Total Mass (kg)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.items.map((item, idx) => `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>${item.partNumber || "-"}</td>
-              <td>${item.description || "-"}</td>
-              <td class="text-right">${item.quantity}</td>
-              <td class="text-right"></td>
-              <td class="text-right">${formatMass(item.massPerItem)}</td>
-              <td class="text-right">${formatMass(item.totalMass)}</td>
-            </tr>
-          `).join("")}
-          <tr class="total-row">
-            <td colspan="6">Total Mass</td>
-            <td class="text-right">${formatMass(totalMass)}</td>
-          </tr>
-        </tbody>
-      </table>
+      ${sharedHeader}
+      ${itemsTable}
       ${renderPage1Footer(data.createdBy || "", data.dateCreated || "")}
     </div>
 
@@ -961,97 +1057,17 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
     <div class="hl-page2">
       <div class="hl-page2-body">
         <div class="hire-quotation-page">
-          ${renderStandardReportLayout({
-            documentType: noteTitle,
-            documentNumber: data.quotationNumber,
-            documentDate: data.dateCreated,
-            clientName: data.companyName,
-            clientAddress: data.companyAddress,
-            clientCityTown: data.companyCityTown,
-            clientTel: data.companyTel,
-            clientFax: data.companyFax,
-            contactName: data.contactName,
-            contactPhone: data.contactPhone,
-            contactEmail: data.companyEmail,
-            clientVat: data.companyPinNumber,
-            clientReg: data.companyRegNumber,
-            siteName: data.siteName,
-            siteId: data.siteId,
-            siteLocation: data.siteLocation,
-            siteAddress: data.siteAddress,
-            clientId: data.clientId,
-            createdBy: data.createdBy,
-          })}
+          ${sharedHeader}
         </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <h3>Comments</h3>
-          <p>Quote Excludes Transport To And From Site</p>
-          <p>Four Weeks Hire Deposit Required Upfront</p>
-        </div>
-
-        <div class="post-total-grid">
-          <div class="section">
-            <h3>Transport Charges</h3>
-            <div class="line-row"><span>Internal Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
-            <div class="line-row"><span>External Vehicle Charges:</span><span class="line-fill">Ksh</span></div>
-          </div>
-          <div class="section">
-            <h3>Safety Verification</h3>
-            <p>Vehicle safely loaded as per palletizing &amp; loading procedure.</p>
-            <div class="line-row"><span>Checker:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="signing-grid">
-            <div class="line-row"><span>Checker's Name:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Transporter/Customer/Driver:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill"></span></div>
-          <div class="line-row"><span>Name of Transporter/Customer:</span><span class="line-fill"></span></div>
-          <div class="line-row split-row">
-            <span>Time Arrive:</span><span class="line-fill"></span>
-            <span>Time Depart:</span><span class="line-fill"></span>
-          </div>
-        </div>
-
-        <div class="section terms-section">
-          <p><strong>Please check that the equipment count agrees with the above. All errors are to be clearly noted.</strong></p>
-          <p>* The Hirer undertakes to use the goods in accordance with the Occupational Health and Safety Act.</p>
-          <p><strong>Charges: </strong>Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost: selling price of item.</p>
-        </div>
+        ${signatureBlock}
       </div>
 
       <!-- Yellow footer pinned at bottom of page 2 -->
       <div class="hl-page2-footer">
-        <div class="hl-footer-brand">
-          <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
-          <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
-        </div>
-        <div class="hl-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 2</div>
-        <div class="hl-footer-processed">
-          <div>
-            <div>Processed By : ${data.createdBy || ""}</div>
-            <div>Processed Date : ${formatReportDate(data.dateCreated) || ""}</div>
-          </div>
-          <div style="text-align:right;">
-            <div>Print date : ${formatTimestamp()}</div>
-          </div>
-        </div>
+        ${footerBlock("Page 2 of 2")}
       </div>
     </div>
+    `}
 
   </body></html>`;
 
