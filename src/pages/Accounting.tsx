@@ -224,6 +224,9 @@ type ClientInvoice = {
   id: string;
   invoiceNumber: string;
   quotationNumber: string;
+  /** All quotation numbers merged into this invoice (same client + site). */
+  quotationNumbers: string[];
+  clientId: string;
   accountNumber: string;
   client: string;
   site: string;
@@ -240,14 +243,28 @@ type ClientInvoice = {
   hireWeeksLabel: string;
   hireTotal: number;
   policyTotal: number;
+  /** Credit subtracted from hire total for goods returned partway through the period. */
+  returnsCredit: number;
   grandTotal: number;
   hireBreakdown: HireLineBreakdown[];
   policyBreakdown: PolicyLineBreakdown[];
+  returnsBreakdown: ReturnsCreditLine[];
   createdBy: string;
   createdDate: string;
   workflowStatus: string;
   /** Per-batch billing breakdown for multi-dispatch invoices */
   dispatchBatches: DispatchBatch[];
+};
+
+type ReturnsCreditLine = {
+  partNumber: string;
+  item: string;
+  quantity: number;
+  returnDate: string;
+  /** Days of billing paused (from day after return to billing date). */
+  pausedDays: number;
+  weeklyRate: number;
+  credit: number;
 };
 
 const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) => {
