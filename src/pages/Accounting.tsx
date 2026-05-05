@@ -1163,13 +1163,70 @@ const Accounting = () => {
     });
   }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
 
+  // Merge invoices that share the same client_id + site into one consolidated invoice
+  const mergedInvoices = useMemo<ClientInvoice[]>(() => {
+    const groups = new Map<string, ClientInvoice[]>();
+    for (const inv of invoices) {
+      const key = `${inv.clientId || inv.client}::${inv.site}`;
+      const arr = groups.get(key);
+      if (arr) arr.push(inv);
+      else groups.set(key, [inv]);
+    }
+    const out: ClientInvoice[] = [];
+    for (const [, group] of groups) {
+      if (group.length === 1) { out.push(group[0]); continue; }
+      // Sort by dispatch date ascending so batch numbering is chronological
+      group.sort((a, b) => a.dispatchDate.localeCompare(b.dispatchDate));
+      const base = group[0];
+      const allBatches: DispatchBatch[] = [];
+      let bIdx = 1;
+      for (const inv of group) {
+        if (inv.dispatchBatches.length > 0) {
+          for (const b of inv.dispatchBatches) {
+            allBatches.push({ ...b, batchNumber: bIdx++ });
+          }
+        } else if (inv.hireBreakdown.length > 0) {
+          allBatches.push({
+            batchNumber: bIdx++,
+            deliveryNoteNumber: inv.quotationNumber,
+            dispatchDate: inv.dispatchDate,
+            hireDays: inv.hireDays,
+            hireWeeks: inv.hireWeeks,
+            hireWeeksLabel: inv.hireWeeksLabel,
+            lines: inv.hireBreakdown,
+            batchHireTotal: inv.hireBreakdown.reduce((s, l) => s + l.lineTotal, 0),
+          });
+        }
+      }
+      const hireTotal = group.reduce((s, i) => s + i.hireTotal, 0);
+      const policyTotal = group.reduce((s, i) => s + i.policyTotal, 0);
+      const returnsCredit = group.reduce((s, i) => s + i.returnsCredit, 0);
+      out.push({
+        ...base,
+        quotationNumbers: group.map((i) => i.quotationNumber),
+        quotationNumber: group.map((i) => i.quotationNumber).join(", "),
+        invoiceNumber: base.invoiceNumber,
+        dispatchDate: base.dispatchDate,
+        hireBreakdown: group.flatMap((i) => i.hireBreakdown),
+        policyBreakdown: group.flatMap((i) => i.policyBreakdown),
+        returnsBreakdown: group.flatMap((i) => i.returnsBreakdown),
+        dispatchBatches: allBatches,
+        hireTotal,
+        policyTotal,
+        returnsCredit,
+        grandTotal: hireTotal + policyTotal,
+      });
+    }
+    return out;
+  }, [invoices]);
+
   const uniqueClients = useMemo(
-    () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
-    [invoices]
+    () => Array.from(new Set(mergedInvoices.map((i) => i.client))).sort(),
+    [mergedInvoices]
   );
 
   const filteredInvoices = useMemo(() => {
-    let result = selectedClient === "all" ? invoices : invoices.filter((i) => i.client === selectedClient);
+    let result = selectedClient === "all" ? mergedInvoices : mergedInvoices.filter((i) => i.client === selectedClient);
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((i) =>
@@ -1182,7 +1239,7 @@ const Accounting = () => {
     }
     // Sort latest → earliest by dispatch date
     return [...result].sort((a, b) => b.dispatchDate.localeCompare(a.dispatchDate));
-  }, [invoices, selectedClient, searchQuery]);
+  }, [mergedInvoices, selectedClient, searchQuery]);
 
   const dispatchedInvoices = useMemo(
     () => filteredInvoices.filter((invoice) => invoice.workflowStatus === "dispatched"),
