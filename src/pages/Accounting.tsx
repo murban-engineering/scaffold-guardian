@@ -224,6 +224,9 @@ type ClientInvoice = {
   id: string;
   invoiceNumber: string;
   quotationNumber: string;
+  /** All quotation numbers merged into this invoice (same client + site). */
+  quotationNumbers: string[];
+  clientId: string;
   accountNumber: string;
   client: string;
   site: string;
@@ -240,14 +243,28 @@ type ClientInvoice = {
   hireWeeksLabel: string;
   hireTotal: number;
   policyTotal: number;
+  /** Credit subtracted from hire total for goods returned partway through the period. */
+  returnsCredit: number;
   grandTotal: number;
   hireBreakdown: HireLineBreakdown[];
   policyBreakdown: PolicyLineBreakdown[];
+  returnsBreakdown: ReturnsCreditLine[];
   createdBy: string;
   createdDate: string;
   workflowStatus: string;
   /** Per-batch billing breakdown for multi-dispatch invoices */
   dispatchBatches: DispatchBatch[];
+};
+
+type ReturnsCreditLine = {
+  partNumber: string;
+  item: string;
+  quantity: number;
+  returnDate: string;
+  /** Days of billing paused (from day after return to billing date). */
+  pausedDays: number;
+  weeklyRate: number;
+  credit: number;
 };
 
 const renderTaxInvoiceHeader = (invoice: ClientInvoice, billingDateStr: string) => {
@@ -369,12 +386,34 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const summaryAndPolicyBlock = `
         <div style="margin-top:12px;page-break-inside:avoid;break-inside:avoid;">
           <div class="sum">
-            <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+            <div class="sum-row"><span>A. Hire Charges (net of returns)</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+            ${invoice.returnsCredit > 0 ? `<div class="sum-row" style="color:#047857;"><span>&nbsp;&nbsp;Less: Returns paused</span><strong>− ${currency.format(invoice.returnsCredit)}</strong></div>` : ""}
             <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
             <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
             <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
             <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
           </div>
+          ${invoice.returnsBreakdown.length > 0 ? `
+          <div style="margin-top:10px;page-break-inside:avoid;break-inside:avoid;">
+            <h2>C. Returned Items (Billing Paused)</h2>
+            <table>
+              <thead><tr>
+                <th>Part No</th><th>Description</th><th class="r">Qty Returned</th>
+                <th class="r">Return Date</th><th class="r">Days Paused</th><th class="r">Credit (KES)</th>
+              </tr></thead>
+              <tbody>
+                ${invoice.returnsBreakdown.map(r => `
+                  <tr>
+                    <td>${escapeHtml(r.partNumber)}</td>
+                    <td>${escapeHtml(r.item)}</td>
+                    <td class="r">${r.quantity}</td>
+                    <td class="r">${escapeHtml(formatReportDate(r.returnDate))}</td>
+                    <td class="r">${r.pausedDays}</td>
+                    <td class="r">− ${currency.format(r.credit)}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>` : ""}
 
           <div class="policy-box">
             <h4>Return Condition Billing Policy</h4>
@@ -1072,10 +1111,54 @@ const Accounting = () => {
       const qNum = q.quotation_number || "Draft";
       const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
+      // ── Returns credit: pause billing for goods returned before billing date ──
+      type RawReturnRecord = {
+        returnDate?: string;
+        items?: { itemCode?: string; description?: string; totalReturned?: number; good?: number; dirty?: number; damaged?: number; scrap?: number }[];
+      };
+      const returnHistory = Array.isArray(q.return_history)
+        ? (q.return_history as unknown as RawReturnRecord[])
+        : [];
+      const returnsBreakdown: ReturnsCreditLine[] = [];
+      let returnsCredit = 0;
+      for (const rec of returnHistory) {
+        const returnDateIso = toIsoDateOrToday(rec.returnDate);
+        const returnDate = asDateOrToday(returnDateIso);
+        // Days of paused billing = days from day after return to billing date
+        const pausedDays = Math.max(differenceInCalendarDays(bd, returnDate), 0);
+        if (pausedDays <= 0) continue;
+        const pausedWeeks = billableDaysToWeeks(pausedDays);
+        for (const item of rec.items ?? []) {
+          const partNo = item.itemCode || "-";
+          const meta = lineItemMetaByPart.get(partNo);
+          const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? 0;
+          const qty = item.totalReturned
+            ?? ((item.good ?? 0) + (item.dirty ?? 0) + (item.damaged ?? 0) + (item.scrap ?? 0));
+          if (!qty || effectiveWeeklyRate <= 0) continue;
+          const credit = qty * effectiveWeeklyRate * pausedWeeks;
+          if (credit <= 0) continue;
+          returnsCredit += credit;
+          returnsBreakdown.push({
+            partNumber: partNo,
+            item: item.description || meta?.description || partNo,
+            quantity: qty,
+            returnDate: returnDateIso,
+            pausedDays,
+            weeklyRate: effectiveWeeklyRate,
+            credit,
+          });
+        }
+      }
+      // Cap credit so hire never goes negative
+      returnsCredit = Math.min(returnsCredit, hireTotal);
+      const netHireTotal = Math.max(hireTotal - returnsCredit, 0);
+
       return {
         id: q.id,
         invoiceNumber: q.invoice_number || deriveInvoiceNumber(qNum, idx),
         quotationNumber: qNum,
+        quotationNumbers: [qNum],
+        clientId: q.client_id || "",
         accountNumber: q.account_number || "-",
         client: q.company_name || q.site_manager_name || "Unnamed client",
         site: siteNameFromSavedSite || q.site_name || "-",
@@ -1087,11 +1170,13 @@ const Accounting = () => {
         hireDays,
         hireWeeks,
         hireWeeksLabel,
-        hireTotal,
+        hireTotal: netHireTotal,
         policyTotal: surcharge.total,
-        grandTotal: hireTotal + surcharge.total,
+        returnsCredit,
+        grandTotal: netHireTotal + surcharge.total,
         hireBreakdown,
         policyBreakdown: surcharge.entries,
+        returnsBreakdown,
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: toIsoDateOrToday(q.created_at),
         workflowStatus: q.status?.toLowerCase() ?? "",
@@ -1100,13 +1185,70 @@ const Accounting = () => {
     });
   }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
 
+  // Merge invoices that share the same client_id + site into one consolidated invoice
+  const mergedInvoices = useMemo<ClientInvoice[]>(() => {
+    const groups = new Map<string, ClientInvoice[]>();
+    for (const inv of invoices) {
+      const key = `${inv.clientId || inv.client}::${inv.site}`;
+      const arr = groups.get(key);
+      if (arr) arr.push(inv);
+      else groups.set(key, [inv]);
+    }
+    const out: ClientInvoice[] = [];
+    for (const [, group] of groups) {
+      if (group.length === 1) { out.push(group[0]); continue; }
+      // Sort by dispatch date ascending so batch numbering is chronological
+      group.sort((a, b) => a.dispatchDate.localeCompare(b.dispatchDate));
+      const base = group[0];
+      const allBatches: DispatchBatch[] = [];
+      let bIdx = 1;
+      for (const inv of group) {
+        if (inv.dispatchBatches.length > 0) {
+          for (const b of inv.dispatchBatches) {
+            allBatches.push({ ...b, batchNumber: bIdx++ });
+          }
+        } else if (inv.hireBreakdown.length > 0) {
+          allBatches.push({
+            batchNumber: bIdx++,
+            deliveryNoteNumber: inv.quotationNumber,
+            dispatchDate: inv.dispatchDate,
+            hireDays: inv.hireDays,
+            hireWeeks: inv.hireWeeks,
+            hireWeeksLabel: inv.hireWeeksLabel,
+            lines: inv.hireBreakdown,
+            batchHireTotal: inv.hireBreakdown.reduce((s, l) => s + l.lineTotal, 0),
+          });
+        }
+      }
+      const hireTotal = group.reduce((s, i) => s + i.hireTotal, 0);
+      const policyTotal = group.reduce((s, i) => s + i.policyTotal, 0);
+      const returnsCredit = group.reduce((s, i) => s + i.returnsCredit, 0);
+      out.push({
+        ...base,
+        quotationNumbers: group.map((i) => i.quotationNumber),
+        quotationNumber: group.map((i) => i.quotationNumber).join(", "),
+        invoiceNumber: base.invoiceNumber,
+        dispatchDate: base.dispatchDate,
+        hireBreakdown: group.flatMap((i) => i.hireBreakdown),
+        policyBreakdown: group.flatMap((i) => i.policyBreakdown),
+        returnsBreakdown: group.flatMap((i) => i.returnsBreakdown),
+        dispatchBatches: allBatches,
+        hireTotal,
+        policyTotal,
+        returnsCredit,
+        grandTotal: hireTotal + policyTotal,
+      });
+    }
+    return out;
+  }, [invoices]);
+
   const uniqueClients = useMemo(
-    () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
-    [invoices]
+    () => Array.from(new Set(mergedInvoices.map((i) => i.client))).sort(),
+    [mergedInvoices]
   );
 
   const filteredInvoices = useMemo(() => {
-    let result = selectedClient === "all" ? invoices : invoices.filter((i) => i.client === selectedClient);
+    let result = selectedClient === "all" ? mergedInvoices : mergedInvoices.filter((i) => i.client === selectedClient);
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((i) =>
@@ -1119,7 +1261,7 @@ const Accounting = () => {
     }
     // Sort latest → earliest by dispatch date
     return [...result].sort((a, b) => b.dispatchDate.localeCompare(a.dispatchDate));
-  }, [invoices, selectedClient, searchQuery]);
+  }, [mergedInvoices, selectedClient, searchQuery]);
 
   const dispatchedInvoices = useMemo(
     () => filteredInvoices.filter((invoice) => invoice.workflowStatus === "dispatched"),
@@ -1366,7 +1508,7 @@ const Accounting = () => {
                                         }
 
                                         if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
+                                          openCustomerStatement(inv, mergedInvoices, billingDate);
                                           return;
                                         }
 
@@ -1466,7 +1608,7 @@ const Accounting = () => {
                                         }
 
                                         if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
+                                          openCustomerStatement(inv, mergedInvoices, billingDate);
                                           return;
                                         }
 
