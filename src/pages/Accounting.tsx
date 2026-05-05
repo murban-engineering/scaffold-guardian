@@ -1089,10 +1089,54 @@ const Accounting = () => {
       const qNum = q.quotation_number || "Draft";
       const surcharge = surchargeMap.get(qNum) ?? { total: 0, entries: [] };
 
+      // ── Returns credit: pause billing for goods returned before billing date ──
+      type RawReturnRecord = {
+        returnDate?: string;
+        items?: { itemCode?: string; description?: string; totalReturned?: number; good?: number; dirty?: number; damaged?: number; scrap?: number }[];
+      };
+      const returnHistory = Array.isArray(q.return_history)
+        ? (q.return_history as unknown as RawReturnRecord[])
+        : [];
+      const returnsBreakdown: ReturnsCreditLine[] = [];
+      let returnsCredit = 0;
+      for (const rec of returnHistory) {
+        const returnDateIso = toIsoDateOrToday(rec.returnDate);
+        const returnDate = asDateOrToday(returnDateIso);
+        // Days of paused billing = days from day after return to billing date
+        const pausedDays = Math.max(differenceInCalendarDays(bd, returnDate), 0);
+        if (pausedDays <= 0) continue;
+        const pausedWeeks = billableDaysToWeeks(pausedDays);
+        for (const item of rec.items ?? []) {
+          const partNo = item.itemCode || "-";
+          const meta = lineItemMetaByPart.get(partNo);
+          const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? 0;
+          const qty = item.totalReturned
+            ?? ((item.good ?? 0) + (item.dirty ?? 0) + (item.damaged ?? 0) + (item.scrap ?? 0));
+          if (!qty || effectiveWeeklyRate <= 0) continue;
+          const credit = qty * effectiveWeeklyRate * pausedWeeks;
+          if (credit <= 0) continue;
+          returnsCredit += credit;
+          returnsBreakdown.push({
+            partNumber: partNo,
+            item: item.description || meta?.description || partNo,
+            quantity: qty,
+            returnDate: returnDateIso,
+            pausedDays,
+            weeklyRate: effectiveWeeklyRate,
+            credit,
+          });
+        }
+      }
+      // Cap credit so hire never goes negative
+      returnsCredit = Math.min(returnsCredit, hireTotal);
+      const netHireTotal = Math.max(hireTotal - returnsCredit, 0);
+
       return {
         id: q.id,
         invoiceNumber: q.invoice_number || deriveInvoiceNumber(qNum, idx),
         quotationNumber: qNum,
+        quotationNumbers: [qNum],
+        clientId: q.client_id || "",
         accountNumber: q.account_number || "-",
         client: q.company_name || q.site_manager_name || "Unnamed client",
         site: siteNameFromSavedSite || q.site_name || "-",
@@ -1104,11 +1148,13 @@ const Accounting = () => {
         hireDays,
         hireWeeks,
         hireWeeksLabel,
-        hireTotal,
+        hireTotal: netHireTotal,
         policyTotal: surcharge.total,
-        grandTotal: hireTotal + surcharge.total,
+        returnsCredit,
+        grandTotal: netHireTotal + surcharge.total,
         hireBreakdown,
         policyBreakdown: surcharge.entries,
+        returnsBreakdown,
         createdBy: profilesMap.get(q.created_by) || q.created_by || "-",
         createdDate: toIsoDateOrToday(q.created_at),
         workflowStatus: q.status?.toLowerCase() ?? "",
