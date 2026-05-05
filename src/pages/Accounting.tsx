@@ -1508,7 +1508,7 @@ const Accounting = () => {
                                         }
 
                                         if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
+                                          openCustomerStatement(inv, mergedInvoices, billingDate);
                                           return;
                                         }
 
@@ -1608,7 +1608,7 @@ const Accounting = () => {
                                         }
 
                                         if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
+                                          openCustomerStatement(inv, mergedInvoices, billingDate);
                                           return;
                                         }
 
