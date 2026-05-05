@@ -386,12 +386,34 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
   const summaryAndPolicyBlock = `
         <div style="margin-top:12px;page-break-inside:avoid;break-inside:avoid;">
           <div class="sum">
-            <div class="sum-row"><span>A. Hire Charges</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+            <div class="sum-row"><span>A. Hire Charges (net of returns)</span><strong>${currency.format(invoice.hireTotal)}</strong></div>
+            ${invoice.returnsCredit > 0 ? `<div class="sum-row" style="color:#047857;"><span>&nbsp;&nbsp;Less: Returns paused</span><strong>− ${currency.format(invoice.returnsCredit)}</strong></div>` : ""}
             <div class="sum-row"><span>B. Return Policy Charges</span><strong>${currency.format(invoice.policyTotal)}</strong></div>
             <div class="sum-row"><span>Subtotal</span><strong>${currency.format(subtotalBeforeVat)}</strong></div>
             <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
             <div class="sum-row total"><span>TOTAL DUE</span><span>${currency.format(totalWithVat)}</span></div>
           </div>
+          ${invoice.returnsBreakdown.length > 0 ? `
+          <div style="margin-top:10px;page-break-inside:avoid;break-inside:avoid;">
+            <h2>C. Returned Items (Billing Paused)</h2>
+            <table>
+              <thead><tr>
+                <th>Part No</th><th>Description</th><th class="r">Qty Returned</th>
+                <th class="r">Return Date</th><th class="r">Days Paused</th><th class="r">Credit (KES)</th>
+              </tr></thead>
+              <tbody>
+                ${invoice.returnsBreakdown.map(r => `
+                  <tr>
+                    <td>${escapeHtml(r.partNumber)}</td>
+                    <td>${escapeHtml(r.item)}</td>
+                    <td class="r">${r.quantity}</td>
+                    <td class="r">${escapeHtml(formatReportDate(r.returnDate))}</td>
+                    <td class="r">${r.pausedDays}</td>
+                    <td class="r">− ${currency.format(r.credit)}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </div>` : ""}
 
           <div class="policy-box">
             <h4>Return Condition Billing Policy</h4>
