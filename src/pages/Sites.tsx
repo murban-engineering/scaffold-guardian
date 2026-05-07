@@ -939,7 +939,7 @@ const Sites = () => {
                   variant="outline"
                   size="sm"
                   onClick={handlePrintInventoryBySiteReport}
-                  disabled={!summarizedInventoryBySiteRows.length}
+                  disabled={!inventoryMatrix.rows.length}
                   className="w-full md:w-auto"
                 >
                   Print Combined Report
