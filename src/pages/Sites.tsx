@@ -92,9 +92,11 @@ const Sites = () => {
           const batchSiteNumber =
             (typeof batch === "object" && batch && "siteNumber" in batch ? String(batch.siteNumber ?? "") : "") ||
             "";
-          const matchedSite = batchSiteNumber ? siteMap.get(batchSiteNumber) : undefined;
-          const siteNumber = batchSiteNumber || matchedSite?.site_number || "";
-          const siteName = matchedSite?.site_name || quotation.site_name || "";
+          const fallbackSite = sitesForQuotation[0];
+          const effectiveSiteNumber = batchSiteNumber || fallbackSite?.site_number || "";
+          const matchedSite = effectiveSiteNumber ? siteMap.get(effectiveSiteNumber) : undefined;
+          const siteNumber = effectiveSiteNumber;
+          const siteName = matchedSite?.site_name || fallbackSite?.site_name || quotation.site_name || "";
           const siteAddress = matchedSite?.site_address || matchedSite?.site_location || quotation.site_address || quotation.delivery_address || "";
           const siteContact = matchedSite?.site_manager_name || quotation.site_manager_name || "";
           const sitePhone = matchedSite?.site_manager_phone || quotation.site_manager_phone || "";
