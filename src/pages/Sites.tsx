@@ -59,7 +59,7 @@ const Sites = () => {
   const removalReportQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
       const status = quotation.status?.toLowerCase?.() ?? "";
-      const isEligibleStatus = status === "dispatched" || status === "completed";
+      const isEligibleStatus = status === "dispatched";
       const hasDelivered = getDeliveredItemsFromHistory(quotation).length > 0;
       return isEligibleStatus && hasDelivered;
     });
