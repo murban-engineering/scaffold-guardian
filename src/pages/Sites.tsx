@@ -783,6 +783,11 @@ const Sites = () => {
         .total-row td { background: #f9fafb; font-weight: 800; }
         tr { page-break-inside: avoid; }
         thead { display: table-header-group; }
+        .matrix .client-th { background: #facc15; color: #111827; }
+        .matrix .site-th { background: #fef3c7; font-weight: 700; }
+        .matrix .site-th .muted { color: #6b7280; font-weight: 600; }
+        .matrix .total-cell { background: #f9fafb; font-weight: 800; }
+        .align-bottom { vertical-align: bottom; }
 
         /* ── Footer ── */
         .footer-wrap { margin-top: auto; }
