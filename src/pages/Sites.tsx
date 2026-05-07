@@ -947,15 +947,25 @@ const Sites = () => {
                     One combined report showing where all delivered inventory has gone, including each client and site details.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrintInventoryBySiteReport}
-                  disabled={!inventoryMatrix.rows.length}
-                  className="w-full md:w-auto"
-                >
-                  Print Combined Report
-                </Button>
+                <div className="flex flex-col gap-2 w-full md:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintInventoryBySiteReport}
+                    disabled={!inventoryMatrix.rows.length}
+                    className="w-full md:w-auto"
+                  >
+                    Print Combined Report
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/", { state: { activeItem: "inventory" }, replace: true })}
+                    className="w-full md:w-auto"
+                  >
+                    Inventory
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {inventoryMatrix.rows.length ? (
