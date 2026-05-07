@@ -946,53 +946,53 @@ const Sites = () => {
                 </Button>
               </CardHeader>
               <CardContent>
-                {inventoryByClientSections.length ? (
-                  <div className="space-y-4">
-                    {inventoryByClientSections.map((clientSection) => (
-                      <div key={`${clientSection.client}-${clientSection.clientId}`} className="space-y-3">
-                        {clientSection.sites.map((site) => (
-                          <div
-                            key={`${clientSection.client}-${site.quotationNumber}-${site.siteNumber}-${site.siteName}`}
-                            className="rounded-lg border border-border bg-card shadow-sm overflow-hidden"
-                          >
-                            <div className="bg-muted px-3 py-2">
-                              <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
-                                Inventory Movement by Client &amp; Site
-                              </p>
-                            </div>
-                            <div className="p-3 space-y-3">
-                              <div className="rounded-md border border-border/80 bg-muted/30 p-3">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                                  <p><span className="font-semibold text-foreground">Client:</span> <span className="text-muted-foreground">{clientSection.client}</span></p>
-                                  <p><span className="font-semibold text-foreground">Client ID:</span> <span className="text-muted-foreground">{clientSection.clientId || "-"}</span></p>
-                                  <p><span className="font-semibold text-foreground">Quotation No:</span> <span className="text-muted-foreground">{site.quotationNumber || "-"}</span></p>
-                                  <p><span className="font-semibold text-foreground">Site No:</span> <span className="text-muted-foreground">{site.siteNumber || "-"}</span></p>
-                                  <p className="md:col-span-2"><span className="font-semibold text-foreground">Site Name:</span> <span className="text-muted-foreground">{site.siteName || "-"}</span></p>
-                                </div>
-                              </div>
-                              <div className="rounded-md border border-border overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
-                                      <TableHead className="font-semibold text-foreground">Item Description</TableHead>
-                                      <TableHead className="text-right font-semibold text-foreground">Qty Delivered</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {site.items.map((item) => (
-                                      <TableRow key={`${clientSection.client}-${site.siteNumber}-${item.itemDescription}`}>
-                                        <TableCell>{item.itemDescription}</TableCell>
-                                        <TableCell className="text-right font-bold">{item.quantity as React.ReactNode}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </div>
-                          </div>
+                {inventoryMatrix.rows.length ? (
+                  <div className="rounded-md border border-border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
+                          <TableHead rowSpan={2} className="font-semibold text-foreground align-bottom">Item Description</TableHead>
+                          <TableHead rowSpan={2} className="text-right font-semibold text-foreground align-bottom">Qty at Start</TableHead>
+                          {(() => {
+                            // Group columns by client for the spanned header
+                            const groups: Array<{ client: string; clientId: string; span: number }> = [];
+                            inventoryMatrix.siteCols.forEach((c) => {
+                              const last = groups[groups.length - 1];
+                              if (last && last.client === c.client && last.clientId === c.clientId) last.span++;
+                              else groups.push({ client: c.client, clientId: c.clientId, span: 1 });
+                            });
+                            return groups.map((g, i) => (
+                              <TableHead key={`grp-${i}`} colSpan={g.span} className="text-center font-semibold text-foreground border-l">
+                                {g.client}{g.clientId ? ` (${g.clientId})` : ""}
+                              </TableHead>
+                            ));
+                          })()}
+                          <TableHead rowSpan={2} className="text-right font-semibold text-foreground align-bottom border-l">On Hire</TableHead>
+                        </TableRow>
+                        <TableRow className="bg-[#f4ca16]/30 hover:bg-[#f4ca16]/30">
+                          {inventoryMatrix.siteCols.map((c) => (
+                            <TableHead key={`sub-${c.key}`} className="text-center text-xs font-semibold text-foreground border-l">
+                              <div>{c.quotationNumber || "-"}</div>
+                              <div className="text-muted-foreground">{c.siteNumber || "-"}</div>
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inventoryMatrix.rows.map((row) => (
+                          <TableRow key={row.description}>
+                            <TableCell className="font-medium text-sm">{row.description}</TableCell>
+                            <TableCell className="text-right">{row.qtyAtStart ?? "-"}</TableCell>
+                            {row.perSite.map((v, i) => (
+                              <TableCell key={`v-${i}`} className="text-right border-l">
+                                {v > 0 ? v : ""}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-right font-bold border-l">{row.onHireTotal}</TableCell>
+                          </TableRow>
                         ))}
-                      </div>
-                    ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
