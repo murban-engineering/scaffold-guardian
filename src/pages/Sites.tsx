@@ -300,10 +300,12 @@ const Sites = () => {
       const sitesForQuotation = allClientSites.filter((s) => s.quotation_id === quotation.id);
       const siteMap = new Map(sitesForQuotation.map((s) => [s.site_number, s]));
 
+      const fallbackSite = sitesForQuotation[0];
       const colKeyFor = (siteNumber: string) => {
-        const matched = siteNumber ? siteMap.get(siteNumber) : undefined;
-        const sName = matched?.site_name || quotation.site_name || "";
-        return `${client}::${clientId}::${quotation.quotation_number || ""}::${siteNumber}::${sName}`;
+        const effectiveSiteNumber = siteNumber || fallbackSite?.site_number || "";
+        const matched = effectiveSiteNumber ? siteMap.get(effectiveSiteNumber) : undefined;
+        const sName = matched?.site_name || fallbackSite?.site_name || quotation.site_name || "";
+        return `${client}::${clientId}::${quotation.quotation_number || ""}::${effectiveSiteNumber}::${sName}`;
       };
 
       const deliveryHistory = Array.isArray(quotation.delivery_history) ? quotation.delivery_history : [];
