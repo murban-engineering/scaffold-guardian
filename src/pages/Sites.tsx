@@ -11,11 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAllClientSites } from "@/hooks/useClientSites";
+import { useScaffolds } from "@/hooks/useScaffolds";
 
 const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const { data: allClientSites = [] } = useAllClientSites();
+  const { data: scaffolds = [] } = useScaffolds();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("");
   // Keep selectedQuotation live-synced with realtime DB updates
