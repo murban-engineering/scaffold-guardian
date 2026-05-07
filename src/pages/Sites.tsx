@@ -263,6 +263,118 @@ const Sites = () => {
       }));
   }, [summarizedInventoryBySiteRows]);
 
+  // ── Matrix view: rows = items, columns = client → site, values = On Hire (delivered - returned per site)
+  const inventoryMatrix = useMemo(() => {
+    // Build site columns grouped by client, only for sites with movement
+    type SiteCol = { client: string; clientId: string; quotationNumber: string; siteNumber: string; siteName: string };
+    const siteColMap = new Map<string, SiteCol>();
+    inventoryByClientSections.forEach((cs) => {
+      cs.sites.forEach((s) => {
+        const key = `${cs.client}::${cs.clientId}::${s.quotationNumber}::${s.siteNumber}::${s.siteName}`;
+        if (!siteColMap.has(key)) {
+          siteColMap.set(key, {
+            client: cs.client,
+            clientId: cs.clientId,
+            quotationNumber: s.quotationNumber,
+            siteNumber: s.siteNumber,
+            siteName: s.siteName,
+          });
+        }
+      });
+    });
+    const siteCols = Array.from(siteColMap.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => {
+        const c = a.client.localeCompare(b.client);
+        if (c !== 0) return c;
+        return (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
+      });
+
+    // Aggregate per-site delivered & returned by item description
+    const deliveredByKey: Record<string, Record<string, number>> = {};
+    const returnedByKey: Record<string, Record<string, number>> = {};
+
+    removalReportQuotations.forEach((quotation) => {
+      const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
+      const clientId = quotation.client_id || "";
+      const sitesForQuotation = allClientSites.filter((s) => s.quotation_id === quotation.id);
+      const siteMap = new Map(sitesForQuotation.map((s) => [s.site_number, s]));
+
+      const colKeyFor = (siteNumber: string) => {
+        const matched = siteNumber ? siteMap.get(siteNumber) : undefined;
+        const sName = matched?.site_name || quotation.site_name || "";
+        return `${client}::${clientId}::${quotation.quotation_number || ""}::${siteNumber}::${sName}`;
+      };
+
+      const deliveryHistory = Array.isArray(quotation.delivery_history) ? quotation.delivery_history : [];
+      deliveryHistory.forEach((batch) => {
+        const siteNumber =
+          (typeof batch === "object" && batch && "siteNumber" in batch ? String((batch as { siteNumber?: string }).siteNumber ?? "") : "") || "";
+        const items =
+          typeof batch === "object" && batch && "items" in batch && Array.isArray((batch as { items?: unknown[] }).items)
+            ? ((batch as { items: Array<{ description?: string; itemCode?: string; quantityDelivered?: number }> }).items)
+            : [];
+        const ck = colKeyFor(siteNumber);
+        items.forEach((it) => {
+          const desc = it.description || it.itemCode || "Unknown item";
+          const q = Number(it.quantityDelivered ?? 0);
+          if (q <= 0) return;
+          deliveredByKey[ck] = deliveredByKey[ck] || {};
+          deliveredByKey[ck][desc] = (deliveredByKey[ck][desc] ?? 0) + q;
+        });
+      });
+
+      const returnHistory = Array.isArray(quotation.return_history) ? quotation.return_history : [];
+      (returnHistory as Array<{ siteNumber?: string; items?: Array<{ description?: string; itemCode?: string; totalReturned?: number }> }>).forEach((batch) => {
+        const siteNumber = String(batch?.siteNumber ?? "") || "";
+        const ck = colKeyFor(siteNumber);
+        (batch?.items ?? []).forEach((it) => {
+          const desc = it.description || it.itemCode || "Unknown item";
+          const q = Number(it.totalReturned ?? 0);
+          if (q <= 0) return;
+          returnedByKey[ck] = returnedByKey[ck] || {};
+          returnedByKey[ck][desc] = (returnedByKey[ck][desc] ?? 0) + q;
+        });
+      });
+    });
+
+    // Collect all item descriptions that appear anywhere
+    const itemSet = new Set<string>();
+    Object.values(deliveredByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
+    Object.values(returnedByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
+
+    // Map description → qty_at_start from scaffolds (best-effort match by description, then part_number)
+    const qtyAtStartFor = (desc: string): number | null => {
+      const lower = desc.toLowerCase().trim();
+      const found = scaffolds.find(
+        (s) =>
+          (s.description ?? "").toLowerCase().trim() === lower ||
+          (s.part_number ?? "").toLowerCase().trim() === lower
+      );
+      return found?.qty_at_start ?? null;
+    };
+
+    const rows = Array.from(itemSet)
+      .sort((a, b) => a.localeCompare(b))
+      .map((desc) => {
+        const perSite = siteCols.map((col) => {
+          const delivered = deliveredByKey[col.key]?.[desc] ?? 0;
+          const returned = returnedByKey[col.key]?.[desc] ?? 0;
+          return Math.max(delivered - returned, 0);
+        });
+        const onHireTotal = perSite.reduce((a, b) => a + b, 0);
+        return {
+          description: desc,
+          qtyAtStart: qtyAtStartFor(desc),
+          perSite,
+          onHireTotal,
+        };
+      })
+      .filter((r) => r.onHireTotal > 0 || (r.qtyAtStart ?? 0) > 0);
+
+    return { siteCols, rows };
+  }, [inventoryByClientSections, removalReportQuotations, allClientSites, scaffolds]);
+
   const clientOptions = useMemo(() => {
     const uniqueClients = new Set(
       removalReportQuotations.map(
