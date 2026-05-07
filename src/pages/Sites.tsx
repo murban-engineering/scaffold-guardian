@@ -676,7 +676,7 @@ const Sites = () => {
   };
 
   const handlePrintInventoryBySiteReport = () => {
-    if (!inventoryByClientSections.length) {
+    if (!inventoryMatrix.rows.length) {
       window.alert("No inventory movement records available to print yet.");
       return;
     }
@@ -685,54 +685,57 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    const clientSections = inventoryByClientSections
+    // Build grouped client header
+    const clientGroups: Array<{ client: string; clientId: string; span: number }> = [];
+    inventoryMatrix.siteCols.forEach((c) => {
+      const last = clientGroups[clientGroups.length - 1];
+      if (last && last.client === c.client && last.clientId === c.clientId) last.span++;
+      else clientGroups.push({ client: c.client, clientId: c.clientId, span: 1 });
+    });
+
+    const clientHeaderCells = clientGroups
       .map(
-        (clientSection) => `
-          <section class="client-section">
-            ${clientSection.sites
-              .map(
-                (site) => `
-                  <div class="site-section">
-                    <div class="site-header">
-                      <div class="site-header-left">Inventory Movement by Client &amp; Site</div>
-                    </div>
-                    <div class="panel details-box">
-                      <div class="info-grid">
-                        <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value">${clientSection.client}</span></div>
-                        <div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value">${clientSection.clientId || "-"}</span></div>
-                        <div class="info-row"><span class="info-label">Quotation No</span><span class="info-sep">:</span><span class="info-value">${site.quotationNumber || "-"}</span></div>
-                        <div class="info-row"><span class="info-label">Site No</span><span class="info-sep">:</span><span class="info-value">${site.siteNumber || "-"}</span></div>
-                        <div class="info-row info-row-full"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${site.siteName || "-"}</span></div>
-                      </div>
-                    </div>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Item Description</th>
-                          <th class="text-right">Qty Delivered</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${site.items
-                          .map(
-                            (item) => `
-                              <tr>
-                                <td>${item.itemDescription}</td>
-                                <td class="text-right">${item.quantity}</td>
-                              </tr>
-                            `
-                          )
-                          .join("")}
-                      </tbody>
-                    </table>
-                  </div>
-                `
-              )
-              .join("")}
-          </section>
-        `
+        (g) =>
+          `<th colspan="${g.span}" class="text-center client-th">${g.client}${g.clientId ? ` (${g.clientId})` : ""}</th>`
       )
       .join("");
+
+    const siteSubHeaderCells = inventoryMatrix.siteCols
+      .map(
+        (c) =>
+          `<th class="text-center site-th"><div>${c.quotationNumber || "-"}</div><div class="muted">${c.siteNumber || "-"}</div></th>`
+      )
+      .join("");
+
+    const bodyRows = inventoryMatrix.rows
+      .map((row) => {
+        const cells = row.perSite.map((v) => `<td class="text-right">${v > 0 ? v : ""}</td>`).join("");
+        return `<tr>
+          <td>${row.description}</td>
+          <td class="text-right">${row.qtyAtStart ?? "-"}</td>
+          ${cells}
+          <td class="text-right total-cell">${row.onHireTotal}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const clientSections = `
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th rowspan="2" class="align-bottom">Item Description</th>
+            <th rowspan="2" class="text-right align-bottom">Qty at Start</th>
+            ${clientHeaderCells}
+            <th rowspan="2" class="text-right align-bottom">On Hire</th>
+          </tr>
+          <tr>
+            ${siteSubHeaderCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>`;
 
     const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
       <style>
