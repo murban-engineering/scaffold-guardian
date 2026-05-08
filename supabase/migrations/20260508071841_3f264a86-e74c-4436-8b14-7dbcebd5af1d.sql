@@ -1,0 +1,1 @@
+UPDATE public.scaffolds SET qty_at_start = qty_at_start + 6, quantity = quantity + 6, updated_at = now() WHERE id = '1da830c8-7214-45bf-b6c2-2bd5c88d2914';
