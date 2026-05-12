@@ -59,7 +59,7 @@ const Sites = () => {
   const removalReportQuotations = useMemo(() => {
     return hireQuotations.filter((quotation) => {
       const status = quotation.status?.toLowerCase?.() ?? "";
-      const isEligibleStatus = status === "dispatched";
+      const isEligibleStatus = status !== "completed";
       const hasDelivered = getDeliveredItemsFromHistory(quotation).length > 0;
       return isEligibleStatus && hasDelivered;
     });
@@ -430,6 +430,54 @@ const Sites = () => {
 
   const formatDate = (value: string | null) => formatReportDate(value);
 
+
+
+  const combinedInventoryMatrix = useMemo(() => {
+    const siteColumns = Array.from(
+      new Set(
+        summarizedInventoryBySiteRows.map((row) =>
+          JSON.stringify({
+            client: row.client || "Unknown client",
+            site: row.siteNumber || row.siteName || row.quotationNumber || "Unassigned site",
+          })
+        )
+      )
+    )
+      .map((column) => JSON.parse(column) as { client: string; site: string })
+      .sort((a, b) => `${a.client} — ${a.site}`.localeCompare(`${b.client} — ${b.site}`));
+
+    const clientColumnGroups = siteColumns.reduce<Array<{ client: string; span: number }>>((acc, column) => {
+      const existing = acc.find((group) => group.client === column.client);
+      if (existing) {
+        existing.span += 1;
+      } else {
+        acc.push({ client: column.client, span: 1 });
+      }
+      return acc;
+    }, []);
+
+    const rowsByItem = summarizedInventoryBySiteRows.reduce<Record<string, Record<string, number>>>((acc, row) => {
+      const itemKey = row.itemDescription || "Unknown item";
+      const columnKey = JSON.stringify({
+        client: row.client || "Unknown client",
+        site: row.siteNumber || row.siteName || row.quotationNumber || "Unassigned site",
+      });
+      if (!acc[itemKey]) acc[itemKey] = {};
+      acc[itemKey][columnKey] = (acc[itemKey][columnKey] ?? 0) + row.quantity;
+      return acc;
+    }, {});
+
+    const itemRows = Object.entries(rowsByItem)
+      .map(([itemDescription, quantities]) => ({
+        itemDescription,
+        quantities,
+        total: Object.values(quantities).reduce((sum, value) => sum + value, 0),
+      }))
+      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
+
+    return { siteColumns, clientColumnGroups, itemRows };
+  }, [summarizedInventoryBySiteRows]);
+
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
       navigate("/", { state: { activeItem: "dashboard" }, replace: true });
@@ -689,20 +737,29 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    // Build grouped client header
-    const clientGroups: Array<{ client: string; clientId: string; span: number }> = [];
-    inventoryMatrix.siteCols.forEach((c) => {
-      const last = clientGroups[clientGroups.length - 1];
-      if (last && last.client === c.client && last.clientId === c.clientId) last.span++;
-      else clientGroups.push({ client: c.client, clientId: c.clientId, span: 1 });
-    });
-
-    const clientHeaderCells = clientGroups
-      .map(
-        (g) =>
-          `<th colspan="${g.span}" class="text-center client-th">${g.client}${g.clientId ? ` (${g.clientId})` : ""}</th>`
-      )
-      .join("");
+    const combinedTable = `
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="2">Item Description</th>
+            ${combinedInventoryMatrix.clientColumnGroups.map((group) => `<th colspan="${group.span}">${group.client}</th>`).join("")}
+            <th rowspan="2">Total</th>
+          </tr>
+          <tr>
+            ${combinedInventoryMatrix.siteColumns.map((column) => `<th>${column.site}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${combinedInventoryMatrix.itemRows.map((item) => `
+            <tr>
+              <td>${item.itemDescription}</td>
+              ${combinedInventoryMatrix.siteColumns.map((column) => `<td class="text-right">${item.quantities[JSON.stringify(column)] ?? ""}</td>`).join("")}
+              <td class="text-right">${item.total}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
 
     const siteSubHeaderCells = inventoryMatrix.siteCols
       .map(
@@ -830,13 +887,13 @@ const Sites = () => {
               <div><strong>Reg No:</strong> PVT-TYDZRM3</div>
             </div>
           </div>
-          <h2 class="report-title">Inventory Movement by Client &amp; Site</h2>
+          <h2 class="report-title">Inventory Movement by Client and Site</h2>
           <div class="panel">
-            <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">Inventory Movement by Client &amp; Site</span></div>
+            <div class="info-row"><span class="info-label">Document Type</span><span class="info-sep">:</span><span class="info-value">Inventory Movement by Client and Site</span></div>
             <div class="info-row"><span class="info-label">Document Date</span><span class="info-sep">:</span><span class="info-value">${docDate}</span></div>
             <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">OTNO Access Solutions</span></div>
           </div>
-          ${clientSections}
+          ${combinedTable}
         </div>
         <div class="footer-wrap">
           <div class="footer-brand">
@@ -942,9 +999,9 @@ const Sites = () => {
             <Card>
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pb-3">
                 <div>
-                  <CardTitle className="text-base md:text-lg text-foreground">Inventory Movement by Client &amp; Site</CardTitle>
+                  <CardTitle className="text-base md:text-lg text-foreground">Inventory Movement by Client and Site</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    One combined report showing where all delivered inventory has gone, including each client and site details.
+                    Combined report of delivered inventory grouped by client and site.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full md:w-auto">
@@ -968,49 +1025,35 @@ const Sites = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {inventoryMatrix.rows.length ? (
+                {combinedInventoryMatrix.itemRows.length ? (
                   <div className="rounded-md border border-border overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
-                          <TableHead rowSpan={2} className="font-semibold text-foreground align-bottom">Item Description</TableHead>
-                          <TableHead rowSpan={2} className="text-right font-semibold text-foreground align-bottom">Qty at Start</TableHead>
-                          {(() => {
-                            // Group columns by client for the spanned header
-                            const groups: Array<{ client: string; clientId: string; span: number }> = [];
-                            inventoryMatrix.siteCols.forEach((c) => {
-                              const last = groups[groups.length - 1];
-                              if (last && last.client === c.client && last.clientId === c.clientId) last.span++;
-                              else groups.push({ client: c.client, clientId: c.clientId, span: 1 });
-                            });
-                            return groups.map((g, i) => (
-                              <TableHead key={`grp-${i}`} colSpan={g.span} className="text-center font-semibold text-foreground border-l">
-                                {g.client}{g.clientId ? ` (${g.clientId})` : ""}
-                              </TableHead>
-                            ));
-                          })()}
-                          <TableHead rowSpan={2} className="text-right font-semibold text-foreground align-bottom border-l">On Hire</TableHead>
+                          <TableHead rowSpan={2} className="font-semibold text-foreground">Item Description</TableHead>
+                          {combinedInventoryMatrix.clientColumnGroups.map((group) => (
+                            <TableHead key={group.client} colSpan={group.span} className="text-center font-semibold text-foreground whitespace-nowrap">{group.client}</TableHead>
+                          ))}
+                          <TableHead rowSpan={2} className="text-right font-semibold text-foreground">Total</TableHead>
                         </TableRow>
                         <TableRow className="bg-[#f4ca16]/30 hover:bg-[#f4ca16]/30">
-                          {inventoryMatrix.siteCols.map((c) => (
-                            <TableHead key={`sub-${c.key}`} className="text-center text-xs font-semibold text-foreground border-l">
-                              <div>{c.quotationNumber || "-"}</div>
-                              <div className="text-muted-foreground">{c.siteNumber || "-"}</div>
+                          {combinedInventoryMatrix.siteColumns.map((column) => (
+                            <TableHead key={`${column.client}-${column.site}`} className="text-right font-semibold text-foreground whitespace-nowrap">
+                              {column.site}
                             </TableHead>
                           ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {inventoryMatrix.rows.map((row) => (
-                          <TableRow key={row.description}>
-                            <TableCell className="font-medium text-sm">{row.description}</TableCell>
-                            <TableCell className="text-right">{row.qtyAtStart ?? "-"}</TableCell>
-                            {row.perSite.map((v, i) => (
-                              <TableCell key={`v-${i}`} className="text-right border-l">
-                                {v > 0 ? v : ""}
+                        {combinedInventoryMatrix.itemRows.map((item) => (
+                          <TableRow key={item.itemDescription}>
+                            <TableCell>{item.itemDescription}</TableCell>
+                            {combinedInventoryMatrix.siteColumns.map((column) => (
+                              <TableCell key={`${item.itemDescription}-${column.client}-${column.site}`} className="text-right font-bold">
+                                {item.quantities[JSON.stringify(column)] ?? ""}
                               </TableCell>
                             ))}
-                            <TableCell className="text-right font-bold border-l">{row.onHireTotal}</TableCell>
+                            <TableCell className="text-right font-bold">{item.total}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

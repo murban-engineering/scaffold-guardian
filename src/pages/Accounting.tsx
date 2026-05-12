@@ -1356,8 +1356,8 @@ const Accounting = () => {
                   <DollarSign className="h-4 w-4" />
                   Total Billing (KES)
                 </div>
-                <p className="text-3xl font-bold">{currency.format(filteredInvoices.reduce((s, i) => s + i.grandTotal, 0))}</p>
-                <p className="text-xs text-muted-foreground mt-1">{filteredInvoices.length} active client(s)</p>
+                <p className="text-3xl font-bold">{currency.format(dispatchedInvoices.reduce((s, i) => s + i.grandTotal, 0))}</p>
+                <p className="text-xs text-muted-foreground mt-1">{dispatchedInvoices.length} active client(s)</p>
               </CardContent>
             </Card>
           </div>

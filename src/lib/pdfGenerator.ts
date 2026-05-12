@@ -1593,60 +1593,9 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
   const totalReturned = data.items.reduce((sum, item) => sum + item.totalReturned, 0);
   const totalMass = data.items.reduce((sum, item) => sum + (item.totalMass || 0), 0);
 
-  // Page 1: Gate Pass (pink)
-  const gatePassItemRows = Array.from({ length: 20 }, () =>
-    "<tr><td style='height:22px'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td><td style='text-align:center'>&nbsp;</td></tr>"
-  ).join("");
+  const isSinglePageReturn = data.items.length < 6;
 
-  const gatePassPage = () => `
-    <div class="rn-gate-pass page">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:90px;height:auto;"/>
-        <div style="font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px;color:#7b1a2e;">Hire Return Form</div>
-      </div>
-
-      <div class="rn-gate-table-wrap">
-        <table style="border-color:#8a5a6b;height:100%;margin-bottom:0;">
-          <thead style="background:#f3b9cf;">
-            <tr>
-              <th>Product Description</th>
-              <th class="text-center">Site Number</th>
-              <th class="text-center">Good</th>
-              <th class="text-center">Dirty</th>
-              <th class="text-center">Damaged</th>
-              <th class="text-center">Scrap</th>
-              <th class="text-center">Total</th>
-            </tr>
-          </thead>
-          <tbody>${gatePassItemRows}</tbody>
-        </table>
-      </div>
-
-      <div style="border:1px solid #8a5a6b;padding:8px;border-radius:4px;margin-bottom:8px;background:#f9dce8;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <div class="line-row"><span>Size of Vehicle</span><span class="line-fill"></span></div>
-          <div class="line-row"><span>Vehicle Reg. No</span><span class="line-fill"></span></div>
-          <div class="line-row"><span>Time In</span><span class="line-fill"></span></div>
-          <div class="line-row"><span>Time Out</span><span class="line-fill"></span></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px;">
-          <div><p><strong>OTNOS Checker</strong></p><p>Name: _______________</p><p>Signature: _______________</p></div>
-          <div><p><strong>Customer / Driver</strong></p><p>Name: _______________</p><p>Signature: _______________</p></div>
-        </div>
-        <div style="font-size:9px;padding:4px 0;border-top:1px solid #8a5a6b;">
-          Balance still on site: <strong>Yes / No</strong> &nbsp;&nbsp; Is site clear: <strong>Yes / No</strong> &nbsp;&nbsp; Collect again: <strong>Yes / No</strong>
-        </div>
-        <div class="line-row" style="margin-top:5px;"><span>Collection Date</span><span class="line-fill"></span></div>
-      </div>
-
-      <div style="text-align:center;font-size:8.5px;border-top:1px solid #8a5a6b;padding-top:6px;">
-        <p>${COMPANY_NAME} &bull; ${COMPANY_LOCATION}</p>
-        <p style="font-size:8px;margin-top:3px;">All transactions are subject to our terms of trade.</p>
-      </div>
-    </div>
-  `;
-
-  // Page 2: System Return Note rows
+  // Main system return note rows
   const systemItemRows = data.items.map(item =>
     `<tr>
       <td>${item.partNumber || "-"}</td>
@@ -1660,8 +1609,59 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     </tr>`
   ).join("");
 
-  const systemPage = (copyLabel: string) => `
-    <div class="rn-page2">
+  const returnDetailsSection = () => `
+    <div class="post-total-grid">
+      <div class="section">
+        <h4>SAFETY VERIFICATION</h4>
+        <p>Vehicle safely loaded as per palletizing &amp; loading procedure</p>
+        <div class="line-row"><span>Checker:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+      </div>
+      <div class="section">
+        <p><strong>Transport Charges</strong></p>
+        <div class="line-row"><span>Internal Vehicle:</span><span class="line-fill">Ksh</span></div>
+        <div class="line-row"><span>External Vehicle:</span><span class="line-fill">Ksh</span></div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:8px;">
+      <div class="signing-grid">
+        <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Transporter / Customer / Driver:</span><span class="line-fill">${data.returnedBy || ""}</span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
+        <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:8px;">
+      <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
+      <div class="line-row"><span>Name of Transporter / Customer:</span><span class="line-fill"></span></div>
+      <div class="line-row split-row">
+        <span>Time Arrive:</span><span class="line-fill"></span>
+        <span>Time Depart:</span><span class="line-fill"></span>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom:8px;min-height:40px;">
+      <h3>Customer Comments:</h3>
+    </div>
+
+    <div class="section terms-section">
+      <p><strong>Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on ${formatReportDate(data.returnDate)}.</strong></p>
+      <p>All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
+      <p><strong>Charges:</strong> Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost / Scrap: selling price of item.</p>
+    </div>
+
+    ${data.remarks ? `<div class="section" style="margin-top:8px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+  `;
+
+  const systemPage = (copyLabel: string, totalPages: number) => `
+    <div class="${isSinglePageReturn ? "rn-single-page" : "rn-page2"}">
       <div class="rn-page2-body">
         ${renderStandardReportLayout({
           documentType: "Hire Return Note",
@@ -1710,6 +1710,8 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
             </tr>
           </tbody>
         </table>
+
+        ${isSinglePageReturn ? returnDetailsSection() : ""}
       </div>
 
       <!-- Yellow footer pinned at bottom of page 2 -->
@@ -1718,7 +1720,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
           <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
         </div>
-        <div class="rn-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 2 of 3</div>
+        <div class="rn-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of ${totalPages}</div>
         <div class="rn-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
@@ -1760,54 +1762,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           createdBy: data.createdBy,
         })}
 
-        <div class="post-total-grid">
-          <div class="section">
-            <h4>SAFETY VERIFICATION</h4>
-            <p>Vehicle safely loaded as per palletizing &amp; loading procedure</p>
-            <div class="line-row"><span>Checker:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-          </div>
-          <div class="section">
-            <p><strong>Transport Charges</strong></p>
-            <div class="line-row"><span>Internal Vehicle:</span><span class="line-fill">Ksh</span></div>
-            <div class="line-row"><span>External Vehicle:</span><span class="line-fill">Ksh</span></div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="signing-grid">
-            <div class="line-row"><span>${COMPANY_NAME} Rep's Name:</span><span class="line-fill">${data.receivedBy || ""}</span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Transporter / Customer / Driver:</span><span class="line-fill">${data.returnedBy || ""}</span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Customer Representative:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Signature:</span><span class="line-fill"></span></div>
-            <div class="line-row"><span>Date:</span><span class="line-fill"></span></div>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;">
-          <div class="line-row"><span>Vehicle Registration Number:</span><span class="line-fill">${data.vehicleNo || ""}</span></div>
-          <div class="line-row"><span>Name of Transporter / Customer:</span><span class="line-fill"></span></div>
-          <div class="line-row split-row">
-            <span>Time Arrive:</span><span class="line-fill"></span>
-            <span>Time Depart:</span><span class="line-fill"></span>
-          </div>
-        </div>
-
-        <div class="section" style="margin-bottom:8px;min-height:40px;">
-          <h3>Customer Comments:</h3>
-        </div>
-
-        <div class="section terms-section">
-          <p><strong>Please check that the equipment count agrees with the above. Hire charges after quantities returned as above will cease on ${formatReportDate(data.returnDate)}.</strong></p>
-          <p>All errors are to be clearly noted. Failure to do this assumes acceptance of the documentation.</p>
-          <p><strong>Charges:</strong> Dirty: 2× list hire price &bull; Damaged: 4× list hire price &bull; Lost / Scrap: selling price of item.</p>
-        </div>
-
-        ${data.remarks ? `<div class="section" style="margin-top:8px;"><strong>Remarks:</strong> ${data.remarks}</div>` : ""}
+        ${returnDetailsSection()}
       </div>
 
       <div class="rn-page2-footer">
@@ -1816,7 +1771,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
         </div>
         <div class="rn-footer-legal">
-          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 3 of 3
+          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 2 of 2
         </div>
         <div class="rn-footer-processed">
           <span>Processed By: &nbsp;${data.createdBy || "-"}</span>
@@ -1834,28 +1789,16 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       .page-header { display: none !important; }
       .page-header-spacer { display: none !important; }
 
-      /* Page 1: Pink gate pass fills the full page */
-      .rn-gate-pass {
-        background: #f8cddd;
-        border: 1px solid #c58ea3;
-        padding: 12px;
-        display: flex;
-        flex-direction: column;
-        min-height: 96vh;
-      }
-      .rn-gate-table-wrap {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 8px;
-      }
-      .rn-gate-table-wrap table { flex: 1; height: 100%; margin-bottom: 0; }
-      .rn-gate-table-wrap tbody tr { height: 22px; }
-
       /* Page 2: items table + yellow footer */
       .rn-page2 {
         page-break-before: always;
         break-before: page;
+        display: flex;
+        flex-direction: column;
+        min-height: 92vh;
+        font-size: 9px;
+      }
+      .rn-single-page {
         display: flex;
         flex-direction: column;
         min-height: 92vh;
@@ -1886,15 +1829,15 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
       @media print {
         @page { size: A4; margin: 8mm; }
         body { padding: 0 !important; }
-        .rn-gate-pass { min-height: 96vh; }
         .rn-page2 { break-before: page; min-height: 92vh; }
         .rn-page3 { break-before: page; min-height: 92vh; }
+        .rn-single-page { min-height: 92vh; }
       }
     ` + "</style>" +
     "</head><body>" +
-    gatePassPage() +
-    systemPage("Company Copy") +
-    page3("Company Copy") +
+    (isSinglePageReturn
+      ? systemPage("Company Copy", 1)
+      : systemPage("Company Copy", 2) + page3("Company Copy")) +
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));

@@ -573,7 +573,7 @@ const HireQuotationWorkflow = ({
   const [returnNote, setReturnNote] = useState({
     returnNoteNo: "",
     returnDate: getToday(),
-    returnedBy: "",
+    returnedBy: signedInUserName,
     receivedBy: "",
     vehicleNo: "",
     hireEndDate: getToday(),
@@ -664,6 +664,16 @@ const HireQuotationWorkflow = ({
       prev.createdBy === signedInUserName
         ? prev
         : { ...prev, createdBy: signedInUserName }
+    ));
+  }, [signedInUserName]);
+
+  useEffect(() => {
+    if (!signedInUserName) return;
+
+    setReturnNote((prev) => (
+      prev.returnedBy === signedInUserName
+        ? prev
+        : { ...prev, returnedBy: signedInUserName }
     ));
   }, [signedInUserName]);
 
@@ -2954,7 +2964,7 @@ const HireQuotationWorkflow = ({
           ...prev,
           returnNoteNo: deriveReturnNoteNumber(header.quotationNo, nextSequence),
           returnDate: getToday(),
-          returnedBy: "",
+          returnedBy: signedInUserName || "",
           receivedBy: "",
           vehicleNo: "",
           hireEndDate: getToday(),
@@ -2975,14 +2985,14 @@ const HireQuotationWorkflow = ({
       ...prev,
       returnNoteNo: deriveReturnNoteNumber(header.quotationNo, nextSequence),
       returnDate: getToday(),
-      returnedBy: "",
+      returnedBy: signedInUserName || "",
       receivedBy: "",
       vehicleNo: "",
       hireEndDate: getToday(),
       remarks: "",
     }));
     toast.info("Starting return batch " + nextSequence + ". Enter return quantities.");
-  }, [returnSequence, header.quotationNo]);
+  }, [returnSequence, header.quotationNo, signedInUserName]);
 
   const handlePrintReturnNoteFromHistory = useCallback((record: ReturnRecord) => {
     // Always use first registered site if sites exist
@@ -3007,7 +3017,7 @@ const HireQuotationWorkflow = ({
       receivedBy: record.receivedBy,
       vehicleNo: record.vehicleNo,
       remarks: "",
-      createdBy: header.createdBy,
+      createdBy: header.createdBy || signedInUserName,
       clientId: header.clientId,
       siteId: firstReturnSite?.site_number || "",
       items: record.items.map((item) => ({
@@ -3026,7 +3036,7 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
-  }, [header, clientSites]);
+  }, [header, clientSites, signedInUserName]);
 
   const handlePrintCurrentReturnNote = () => {
     // Always use first registered site if sites exist
@@ -3051,7 +3061,7 @@ const HireQuotationWorkflow = ({
       receivedBy: returnNote.receivedBy,
       vehicleNo: returnNote.vehicleNo,
       remarks: returnNote.remarks,
-      createdBy: header.createdBy,
+      createdBy: header.createdBy || signedInUserName,
       clientId: header.clientId,
       siteId: firstReturnSite?.site_number || "",
       items: returnItems
