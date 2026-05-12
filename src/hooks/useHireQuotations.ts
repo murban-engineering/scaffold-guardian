@@ -39,6 +39,7 @@ export interface HireQuotation {
   pin_number: string | null;
   company_reg_number: string | null;
   city_town: string | null;
+  company_email: string | null;
   site_name: string | null;
   site_address: string | null;
   site_manager_name: string | null;
@@ -71,6 +72,12 @@ export interface HireQuotation {
 export interface CreateQuotationInput {
   company_name?: string;
   company_address?: string;
+  company_tel?: string;
+  company_fax?: string;
+  pin_number?: string;
+  company_reg_number?: string;
+  city_town?: string;
+  company_email?: string;
   site_name?: string;
   site_address?: string;
   site_manager_name?: string;
