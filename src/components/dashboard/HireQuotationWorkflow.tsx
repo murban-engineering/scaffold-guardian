@@ -3573,7 +3573,7 @@ const HireQuotationWorkflow = ({
                   </div>
                 </div>
                 <Input value={header.otherInformation.landlordDetails} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, landlordDetails: e.target.value } }))} placeholder="If no, name and telephone number of landlord" className="md:col-span-2" />
-                <Input value={header.otherInformation.vatRegistrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, vatRegistrationNumber: e.target.value } }))} placeholder="VAT Registration Number" className="md:col-span-2" />
+                <Input value={header.otherInformation.vatRegistrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value, otherInformation: { ...prev.otherInformation, vatRegistrationNumber: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="VAT Registration Number" className="md:col-span-2" />
                 {header.otherInformation.authorisedPersons.map((person, index) => (
                   <Input
                     key={`authorised-person-${index}`}
