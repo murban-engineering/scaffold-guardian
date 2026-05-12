@@ -1,0 +1,1 @@
+ALTER TABLE public.hire_quotations ADD COLUMN IF NOT EXISTS company_email text;

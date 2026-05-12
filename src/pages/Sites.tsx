@@ -11,11 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAllClientSites } from "@/hooks/useClientSites";
+import { useScaffolds } from "@/hooks/useScaffolds";
 
 const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const { data: allClientSites = [] } = useAllClientSites();
+  const { data: scaffolds = [] } = useScaffolds();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedClient, setSelectedClient] = useState<string>("");
   // Keep selectedQuotation live-synced with realtime DB updates
@@ -90,9 +92,11 @@ const Sites = () => {
           const batchSiteNumber =
             (typeof batch === "object" && batch && "siteNumber" in batch ? String(batch.siteNumber ?? "") : "") ||
             "";
-          const matchedSite = batchSiteNumber ? siteMap.get(batchSiteNumber) : undefined;
-          const siteNumber = batchSiteNumber || matchedSite?.site_number || "";
-          const siteName = matchedSite?.site_name || quotation.site_name || "";
+          const fallbackSite = sitesForQuotation[0];
+          const effectiveSiteNumber = batchSiteNumber || fallbackSite?.site_number || "";
+          const matchedSite = effectiveSiteNumber ? siteMap.get(effectiveSiteNumber) : undefined;
+          const siteNumber = effectiveSiteNumber;
+          const siteName = matchedSite?.site_name || fallbackSite?.site_name || quotation.site_name || "";
           const siteAddress = matchedSite?.site_address || matchedSite?.site_location || quotation.site_address || quotation.delivery_address || "";
           const siteContact = matchedSite?.site_manager_name || quotation.site_manager_name || "";
           const sitePhone = matchedSite?.site_manager_phone || quotation.site_manager_phone || "";
@@ -260,6 +264,120 @@ const Sites = () => {
           .sort((a, b) => (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName)),
       }));
   }, [summarizedInventoryBySiteRows]);
+
+  // ── Matrix view: rows = items, columns = client → site, values = On Hire (delivered - returned per site)
+  const inventoryMatrix = useMemo(() => {
+    // Build site columns grouped by client, only for sites with movement
+    type SiteCol = { client: string; clientId: string; quotationNumber: string; siteNumber: string; siteName: string };
+    const siteColMap = new Map<string, SiteCol>();
+    inventoryByClientSections.forEach((cs) => {
+      cs.sites.forEach((s) => {
+        const key = `${cs.client}::${cs.clientId}::${s.quotationNumber}::${s.siteNumber}::${s.siteName}`;
+        if (!siteColMap.has(key)) {
+          siteColMap.set(key, {
+            client: cs.client,
+            clientId: cs.clientId,
+            quotationNumber: s.quotationNumber,
+            siteNumber: s.siteNumber,
+            siteName: s.siteName,
+          });
+        }
+      });
+    });
+    const siteCols = Array.from(siteColMap.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => {
+        const c = a.client.localeCompare(b.client);
+        if (c !== 0) return c;
+        return (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
+      });
+
+    // Aggregate per-site delivered & returned by item description
+    const deliveredByKey: Record<string, Record<string, number>> = {};
+    const returnedByKey: Record<string, Record<string, number>> = {};
+
+    removalReportQuotations.forEach((quotation) => {
+      const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
+      const clientId = quotation.client_id || "";
+      const sitesForQuotation = allClientSites.filter((s) => s.quotation_id === quotation.id);
+      const siteMap = new Map(sitesForQuotation.map((s) => [s.site_number, s]));
+
+      const fallbackSite = sitesForQuotation[0];
+      const colKeyFor = (siteNumber: string) => {
+        const effectiveSiteNumber = siteNumber || fallbackSite?.site_number || "";
+        const matched = effectiveSiteNumber ? siteMap.get(effectiveSiteNumber) : undefined;
+        const sName = matched?.site_name || fallbackSite?.site_name || quotation.site_name || "";
+        return `${client}::${clientId}::${quotation.quotation_number || ""}::${effectiveSiteNumber}::${sName}`;
+      };
+
+      const deliveryHistory = Array.isArray(quotation.delivery_history) ? quotation.delivery_history : [];
+      deliveryHistory.forEach((batch) => {
+        const siteNumber =
+          (typeof batch === "object" && batch && "siteNumber" in batch ? String((batch as { siteNumber?: string }).siteNumber ?? "") : "") || "";
+        const items =
+          typeof batch === "object" && batch && "items" in batch && Array.isArray((batch as { items?: unknown[] }).items)
+            ? ((batch as { items: Array<{ description?: string; itemCode?: string; quantityDelivered?: number }> }).items)
+            : [];
+        const ck = colKeyFor(siteNumber);
+        items.forEach((it) => {
+          const desc = it.description || it.itemCode || "Unknown item";
+          const q = Number(it.quantityDelivered ?? 0);
+          if (q <= 0) return;
+          deliveredByKey[ck] = deliveredByKey[ck] || {};
+          deliveredByKey[ck][desc] = (deliveredByKey[ck][desc] ?? 0) + q;
+        });
+      });
+
+      const returnHistory = Array.isArray(quotation.return_history) ? quotation.return_history : [];
+      (returnHistory as Array<{ siteNumber?: string; items?: Array<{ description?: string; itemCode?: string; totalReturned?: number }> }>).forEach((batch) => {
+        const siteNumber = String(batch?.siteNumber ?? "") || "";
+        const ck = colKeyFor(siteNumber);
+        (batch?.items ?? []).forEach((it) => {
+          const desc = it.description || it.itemCode || "Unknown item";
+          const q = Number(it.totalReturned ?? 0);
+          if (q <= 0) return;
+          returnedByKey[ck] = returnedByKey[ck] || {};
+          returnedByKey[ck][desc] = (returnedByKey[ck][desc] ?? 0) + q;
+        });
+      });
+    });
+
+    // Collect all item descriptions that appear anywhere
+    const itemSet = new Set<string>();
+    Object.values(deliveredByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
+    Object.values(returnedByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
+
+    // Map description → qty_at_start from scaffolds (best-effort match by description, then part_number)
+    const qtyAtStartFor = (desc: string): number | null => {
+      const lower = desc.toLowerCase().trim();
+      const found = scaffolds.find(
+        (s) =>
+          (s.description ?? "").toLowerCase().trim() === lower ||
+          (s.part_number ?? "").toLowerCase().trim() === lower
+      );
+      return found?.qty_at_start ?? null;
+    };
+
+    const rows = Array.from(itemSet)
+      .sort((a, b) => a.localeCompare(b))
+      .map((desc) => {
+        const perSite = siteCols.map((col) => {
+          const delivered = deliveredByKey[col.key]?.[desc] ?? 0;
+          const returned = returnedByKey[col.key]?.[desc] ?? 0;
+          return Math.max(delivered - returned, 0);
+        });
+        const onHireTotal = perSite.reduce((a, b) => a + b, 0);
+        return {
+          description: desc,
+          qtyAtStart: qtyAtStartFor(desc),
+          perSite,
+          onHireTotal,
+        };
+      })
+      .filter((r) => r.onHireTotal > 0 || (r.qtyAtStart ?? 0) > 0);
+
+    return { siteCols, rows };
+  }, [inventoryByClientSections, removalReportQuotations, allClientSites, scaffolds]);
 
   const clientOptions = useMemo(() => {
     const uniqueClients = new Set(
@@ -610,7 +728,7 @@ const Sites = () => {
   };
 
   const handlePrintInventoryBySiteReport = () => {
-    if (!inventoryByClientSections.length) {
+    if (!inventoryMatrix.rows.length) {
       window.alert("No inventory movement records available to print yet.");
       return;
     }
@@ -642,6 +760,43 @@ const Sites = () => {
         </tbody>
       </table>
     `;
+
+    const siteSubHeaderCells = inventoryMatrix.siteCols
+      .map(
+        (c) =>
+          `<th class="text-center site-th"><div>${c.quotationNumber || "-"}</div><div class="muted">${c.siteNumber || "-"}</div></th>`
+      )
+      .join("");
+
+    const bodyRows = inventoryMatrix.rows
+      .map((row) => {
+        const cells = row.perSite.map((v) => `<td class="text-right">${v > 0 ? v : ""}</td>`).join("");
+        return `<tr>
+          <td>${row.description}</td>
+          <td class="text-right">${row.qtyAtStart ?? "-"}</td>
+          ${cells}
+          <td class="text-right total-cell">${row.onHireTotal}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const clientSections = `
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th rowspan="2" class="align-bottom">Item Description</th>
+            <th rowspan="2" class="text-right align-bottom">Qty at Start</th>
+            ${clientHeaderCells}
+            <th rowspan="2" class="text-right align-bottom">On Hire</th>
+          </tr>
+          <tr>
+            ${siteSubHeaderCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>`;
 
     const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
       <style>
@@ -689,6 +844,11 @@ const Sites = () => {
         .total-row td { background: #f9fafb; font-weight: 800; }
         tr { page-break-inside: avoid; }
         thead { display: table-header-group; }
+        .matrix .client-th { background: #facc15; color: #111827; }
+        .matrix .site-th { background: #fef3c7; font-weight: 700; }
+        .matrix .site-th .muted { color: #6b7280; font-weight: 600; }
+        .matrix .total-cell { background: #f9fafb; font-weight: 800; }
+        .align-bottom { vertical-align: bottom; }
 
         /* ── Footer ── */
         .footer-wrap { margin-top: auto; }
@@ -844,15 +1004,25 @@ const Sites = () => {
                     Combined report of delivered inventory grouped by client and site.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePrintInventoryBySiteReport}
-                  disabled={!summarizedInventoryBySiteRows.length}
-                  className="w-full md:w-auto"
-                >
-                  Print Combined Report
-                </Button>
+                <div className="flex flex-col gap-2 w-full md:w-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrintInventoryBySiteReport}
+                    disabled={!inventoryMatrix.rows.length}
+                    className="w-full md:w-auto"
+                  >
+                    Print Combined Report
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/", { state: { activeItem: "inventory" }, replace: true })}
+                    className="w-full md:w-auto"
+                  >
+                    Inventory
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {combinedInventoryMatrix.itemRows.length ? (
