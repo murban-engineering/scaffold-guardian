@@ -3319,6 +3319,7 @@ const HireQuotationWorkflow = ({
                     id="physicalAddress"
                     value={header.physicalAddress}
                     onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="Street / Road address"
                   />
                 </div>
@@ -3535,9 +3536,9 @@ const HireQuotationWorkflow = ({
               <h4 className="text-sm font-semibold mb-4 text-primary">Section 3 — Companies (Public and Private) and Close Corporations</h4>
               <div className="grid gap-3 md:grid-cols-2">
                 <Input value={header.companySection.registeredName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredName: e.target.value } }))} placeholder="Registered Name of Company / CC" className="md:col-span-2" />
-                <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} placeholder="Registration Number / CC Number" className="md:col-span-2" />
+                <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registration Number / CC Number" className="md:col-span-2" />
                 <Input value={header.companySection.commencementDate} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, commencementDate: e.target.value } }))} placeholder="Date of Commencement of Business" className="md:col-span-2" />
-                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} placeholder="Registered Office" className="md:col-span-2" />
+                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registered Office" className="md:col-span-2" />
                 <Input value={header.companySection.issuedShareCapital} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, issuedShareCapital: e.target.value } }))} placeholder="Issued Share Capital" className="md:col-span-2" />
                 <div className="md:col-span-2">
                   <Label>Judicial Management / Compromise with Creditors</Label>
