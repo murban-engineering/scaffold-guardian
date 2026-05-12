@@ -721,7 +721,7 @@ const HireQuotationWorkflow = ({
         clientName: initialQuotation.site_manager_name ?? "",
         clientPhone: initialQuotation.site_manager_phone ?? "",
         clientEmail: initialQuotation.site_manager_email ?? "",
-        companyEmail: initialQuotation.site_manager_email ?? "",
+        companyEmail: (initialQuotation as HireQuotation & { company_email?: string }).company_email ?? initialQuotation.site_manager_email ?? "",
         siteContactPerson: initialQuotation.site_manager_name ?? "",
         landline1: initialQuotation.site_manager_phone ?? "",
         cityTown: (initialQuotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? "",
