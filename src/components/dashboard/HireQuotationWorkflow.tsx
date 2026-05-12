@@ -1666,6 +1666,11 @@ const HireQuotationWorkflow = ({
       companyEmail: (quotation as HireQuotation & { company_email?: string }).company_email ?? quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
       clientEmail: quotation.site_manager_email ?? "",
       physicalAddress: quotation.company_address ?? savedProfile.physicalAddress ?? prev.physicalAddress,
+      cityTown: (quotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? prev.cityTown,
+      companyTel: (quotation as HireQuotation & { company_tel?: string }).company_tel ?? savedProfile.companyTel ?? prev.companyTel,
+      companyFax: (quotation as HireQuotation & { company_fax?: string }).company_fax ?? savedProfile.companyFax ?? prev.companyFax,
+      pinNumber: (quotation as HireQuotation & { pin_number?: string }).pin_number ?? savedProfile.pinNumber ?? prev.pinNumber,
+      companyRegNumber: (quotation as HireQuotation & { company_reg_number?: string }).company_reg_number ?? savedProfile.companyRegNumber ?? parsedNotes.clientDetails.companySection.registrationNumber ?? prev.companyRegNumber,
       siteAddress: "",
       siteLocation: quotation.delivery_address ?? "",
       officialOrdersUsed: quotation.official_order_required ? "yes" : (savedProfile.officialOrdersUsed ?? prev.officialOrdersUsed),
@@ -1731,12 +1736,12 @@ const HireQuotationWorkflow = ({
 
       // Shared client detail fields saved to DB
       const clientDbFields = {
-        company_address: header.physicalAddress || null,
+        company_address: header.physicalAddress || header.companySection.registeredOffice || null,
         city_town: header.cityTown || null,
         company_tel: header.companyTel || header.landline1 || null,
         company_fax: header.companyFax || null,
-        pin_number: header.pinNumber || null,
-        company_reg_number: header.companyRegNumber || null,
+        pin_number: header.pinNumber || header.otherInformation.vatRegistrationNumber || null,
+        company_reg_number: header.companyRegNumber || header.companySection.registrationNumber || null,
         company_email: header.companyEmail || header.clientEmail || null,
       };
 
