@@ -3079,7 +3079,7 @@ const HireQuotationWorkflow = ({
 
   // Helper: shared client company fields passed to every PDF generator
   const clientPdfFields = {
-    companyAddress: header.physicalAddress || undefined,
+    companyAddress: header.physicalAddress || header.companySection.registeredOffice || undefined,
     companyCityTown: header.cityTown || undefined,
     companyTel: header.companyTel || header.landline1 || undefined,
     companyFax: header.companyFax || undefined,
@@ -3538,7 +3538,7 @@ const HireQuotationWorkflow = ({
                 <Input value={header.companySection.registeredName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredName: e.target.value } }))} placeholder="Registered Name of Company / CC" className="md:col-span-2" />
                 <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registration Number / CC Number" className="md:col-span-2" />
                 <Input value={header.companySection.commencementDate} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, commencementDate: e.target.value } }))} placeholder="Date of Commencement of Business" className="md:col-span-2" />
-                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registered Office" className="md:col-span-2" />
+                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registered Office" className="md:col-span-2" />
                 <Input value={header.companySection.issuedShareCapital} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, issuedShareCapital: e.target.value } }))} placeholder="Issued Share Capital" className="md:col-span-2" />
                 <div className="md:col-span-2">
                   <Label>Judicial Management / Compromise with Creditors</Label>
