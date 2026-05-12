@@ -1737,6 +1737,7 @@ const HireQuotationWorkflow = ({
         company_fax: header.companyFax || null,
         pin_number: header.pinNumber || null,
         company_reg_number: header.companyRegNumber || null,
+        company_email: header.companyEmail || header.clientEmail || null,
       };
 
       if (!savedQuotationId) {
