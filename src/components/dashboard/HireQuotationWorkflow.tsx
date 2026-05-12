@@ -1796,6 +1796,13 @@ const HireQuotationWorkflow = ({
     if (id) handleNext();
   };
 
+  // Autosave Section 1 client fields when an input loses focus, so values
+  // are persisted to the DB immediately without waiting for "Continue".
+  const handleClientFieldBlur = async () => {
+    if (!savedQuotationId) return;
+    await ensureQuotationSaved(true);
+  };
+
   const handleTestSaveAndContinue = async () => {
     const id = await ensureQuotationSaved(false);
     if (id) {
