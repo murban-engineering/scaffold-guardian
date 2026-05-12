@@ -1663,7 +1663,7 @@ const HireQuotationWorkflow = ({
       clientName: quotation.site_manager_name ?? "",
       landline1: quotation.site_manager_phone ?? savedProfile.landline1 ?? prev.landline1,
       clientPhone: quotation.site_manager_phone ?? "",
-      companyEmail: quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
+      companyEmail: (quotation as HireQuotation & { company_email?: string }).company_email ?? quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
       clientEmail: quotation.site_manager_email ?? "",
       physicalAddress: quotation.company_address ?? savedProfile.physicalAddress ?? prev.physicalAddress,
       siteAddress: "",
