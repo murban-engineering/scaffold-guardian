@@ -721,7 +721,7 @@ const HireQuotationWorkflow = ({
         clientName: initialQuotation.site_manager_name ?? "",
         clientPhone: initialQuotation.site_manager_phone ?? "",
         clientEmail: initialQuotation.site_manager_email ?? "",
-        companyEmail: initialQuotation.site_manager_email ?? "",
+        companyEmail: (initialQuotation as HireQuotation & { company_email?: string }).company_email ?? initialQuotation.site_manager_email ?? "",
         siteContactPerson: initialQuotation.site_manager_name ?? "",
         landline1: initialQuotation.site_manager_phone ?? "",
         cityTown: (initialQuotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? "",
@@ -1663,7 +1663,7 @@ const HireQuotationWorkflow = ({
       clientName: quotation.site_manager_name ?? "",
       landline1: quotation.site_manager_phone ?? savedProfile.landline1 ?? prev.landline1,
       clientPhone: quotation.site_manager_phone ?? "",
-      companyEmail: quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
+      companyEmail: (quotation as HireQuotation & { company_email?: string }).company_email ?? quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
       clientEmail: quotation.site_manager_email ?? "",
       physicalAddress: quotation.company_address ?? savedProfile.physicalAddress ?? prev.physicalAddress,
       siteAddress: "",
@@ -1737,6 +1737,7 @@ const HireQuotationWorkflow = ({
         company_fax: header.companyFax || null,
         pin_number: header.pinNumber || null,
         company_reg_number: header.companyRegNumber || null,
+        company_email: header.companyEmail || header.clientEmail || null,
       };
 
       if (!savedQuotationId) {
@@ -1793,6 +1794,13 @@ const HireQuotationWorkflow = ({
     if (!validateHeader()) return;
     const id = await ensureQuotationSaved(false);
     if (id) handleNext();
+  };
+
+  // Autosave Section 1 client fields when an input loses focus, so values
+  // are persisted to the DB immediately without waiting for "Continue".
+  const handleClientFieldBlur = async () => {
+    if (!savedQuotationId) return;
+    await ensureQuotationSaved(true);
   };
 
   const handleTestSaveAndContinue = async () => {
@@ -3315,6 +3323,7 @@ const HireQuotationWorkflow = ({
                     id="cityTown"
                     value={header.cityTown}
                     onChange={(e) => setHeader(prev => ({ ...prev, cityTown: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. Nairobi, Mombasa"
                   />
                 </div>
@@ -3324,6 +3333,7 @@ const HireQuotationWorkflow = ({
                     id="companyTel"
                     value={header.companyTel}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyTel: e.target.value, landline1: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="+254 ..."
                   />
                 </div>
@@ -3333,6 +3343,7 @@ const HireQuotationWorkflow = ({
                     id="companyFax"
                     value={header.companyFax}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="Mobile number"
                   />
                 </div>
@@ -3342,6 +3353,7 @@ const HireQuotationWorkflow = ({
                     id="pinNumber"
                     value={header.pinNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. A003674298L"
                   />
                 </div>
@@ -3351,6 +3363,7 @@ const HireQuotationWorkflow = ({
                     id="companyRegNumber"
                     value={header.companyRegNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. BN-ZMCLAZ3A"
                   />
                 </div>
@@ -3361,6 +3374,7 @@ const HireQuotationWorkflow = ({
                     type="email"
                     value={header.companyEmail}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="info@company.co.ke"
                   />
                 </div>
