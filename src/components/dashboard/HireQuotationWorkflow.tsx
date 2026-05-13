@@ -1764,7 +1764,7 @@ const HireQuotationWorkflow = ({
           // Pass existing client ID (e.g. from promoted test quotation) so it is preserved;
           // if empty, useCreateQuotation will generate a fresh one from the sequence.
           client_id: header.clientId || undefined,
-        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
+        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null; company_email?: string | null });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
         const clientId = quotation.client_id || "";
@@ -1791,7 +1791,7 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
+        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null; company_email?: string | null });
         return savedQuotationId;
       }
     } catch (error) {
