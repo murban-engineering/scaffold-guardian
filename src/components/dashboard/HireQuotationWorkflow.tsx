@@ -1747,6 +1747,7 @@ const HireQuotationWorkflow = ({
         company_fax: header.companyFax || null,
         pin_number: header.pinNumber || null,
         company_reg_number: header.companyRegNumber || null,
+        company_email: header.companyEmail || header.clientEmail || null,
       };
 
       if (!savedQuotationId) {
@@ -1763,7 +1764,7 @@ const HireQuotationWorkflow = ({
           // Pass existing client ID (e.g. from promoted test quotation) so it is preserved;
           // if empty, useCreateQuotation will generate a fresh one from the sequence.
           client_id: header.clientId || undefined,
-        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
+        } as Parameters<typeof createQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null; company_email?: string | null });
         setSavedQuotationId(quotation.id);
         // Use the stored client_id from DB (independent from quotation number)
         const clientId = quotation.client_id || "";
@@ -1790,7 +1791,7 @@ const HireQuotationWorkflow = ({
           site_manager_email: contactEmail,
           delivery_address: header.siteLocation || undefined,
           notes: structuredNotes,
-        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null });
+        } as Parameters<typeof updateQuotation.mutateAsync>[0] & { company_address?: string | null; city_town?: string | null; company_tel?: string | null; company_fax?: string | null; pin_number?: string | null; company_reg_number?: string | null; company_email?: string | null });
         return savedQuotationId;
       }
     } catch (error) {
@@ -1803,6 +1804,12 @@ const HireQuotationWorkflow = ({
     if (!validateHeader()) return;
     const id = await ensureQuotationSaved(false);
     if (id) handleNext();
+  };
+
+  // Autosave client detail fields when focus leaves the input
+  const handleClientFieldBlur = async () => {
+    if (!savedQuotationId) return;
+    await ensureQuotationSaved(true);
   };
 
   const handleTestSaveAndContinue = async () => {
@@ -3325,6 +3332,7 @@ const HireQuotationWorkflow = ({
                     id="cityTown"
                     value={header.cityTown}
                     onChange={(e) => setHeader(prev => ({ ...prev, cityTown: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. Nairobi, Mombasa"
                   />
                 </div>
@@ -3334,6 +3342,7 @@ const HireQuotationWorkflow = ({
                     id="companyTel"
                     value={header.companyTel}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyTel: e.target.value, landline1: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="+254 ..."
                   />
                 </div>
@@ -3343,6 +3352,7 @@ const HireQuotationWorkflow = ({
                     id="companyFax"
                     value={header.companyFax}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="Mobile number"
                   />
                 </div>
@@ -3352,6 +3362,7 @@ const HireQuotationWorkflow = ({
                     id="pinNumber"
                     value={header.pinNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. A003674298L"
                   />
                 </div>
@@ -3361,6 +3372,7 @@ const HireQuotationWorkflow = ({
                     id="companyRegNumber"
                     value={header.companyRegNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. BN-ZMCLAZ3A"
                   />
                 </div>
