@@ -728,7 +728,7 @@ const Sites = () => {
   };
 
   const handlePrintInventoryBySiteReport = () => {
-    if (!inventoryMatrix.rows.length) {
+    if (!combinedInventoryMatrix.itemRows.length || !combinedInventoryMatrix.siteColumns.length) {
       window.alert("No inventory movement records available to print yet.");
       return;
     }
