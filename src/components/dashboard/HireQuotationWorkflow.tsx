@@ -731,7 +731,7 @@ const HireQuotationWorkflow = ({
         clientName: initialQuotation.site_manager_name ?? "",
         clientPhone: initialQuotation.site_manager_phone ?? "",
         clientEmail: initialQuotation.site_manager_email ?? "",
-        companyEmail: initialQuotation.site_manager_email ?? "",
+        companyEmail: (initialQuotation as HireQuotation & { company_email?: string }).company_email ?? initialQuotation.site_manager_email ?? "",
         siteContactPerson: initialQuotation.site_manager_name ?? "",
         landline1: initialQuotation.site_manager_phone ?? "",
         cityTown: (initialQuotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? "",
@@ -1673,9 +1673,14 @@ const HireQuotationWorkflow = ({
       clientName: quotation.site_manager_name ?? "",
       landline1: quotation.site_manager_phone ?? savedProfile.landline1 ?? prev.landline1,
       clientPhone: quotation.site_manager_phone ?? "",
-      companyEmail: quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
+      companyEmail: (quotation as HireQuotation & { company_email?: string }).company_email ?? quotation.site_manager_email ?? savedProfile.companyEmail ?? prev.companyEmail,
       clientEmail: quotation.site_manager_email ?? "",
       physicalAddress: quotation.company_address ?? savedProfile.physicalAddress ?? prev.physicalAddress,
+      cityTown: (quotation as HireQuotation & { city_town?: string }).city_town ?? savedProfile.cityTown ?? prev.cityTown,
+      companyTel: (quotation as HireQuotation & { company_tel?: string }).company_tel ?? savedProfile.companyTel ?? prev.companyTel,
+      companyFax: (quotation as HireQuotation & { company_fax?: string }).company_fax ?? savedProfile.companyFax ?? prev.companyFax,
+      pinNumber: (quotation as HireQuotation & { pin_number?: string }).pin_number ?? savedProfile.pinNumber ?? prev.pinNumber,
+      companyRegNumber: (quotation as HireQuotation & { company_reg_number?: string }).company_reg_number ?? savedProfile.companyRegNumber ?? parsedNotes.clientDetails.companySection.registrationNumber ?? prev.companyRegNumber,
       siteAddress: "",
       siteLocation: quotation.delivery_address ?? "",
       officialOrdersUsed: quotation.official_order_required ? "yes" : (savedProfile.officialOrdersUsed ?? prev.officialOrdersUsed),
@@ -1741,12 +1746,12 @@ const HireQuotationWorkflow = ({
 
       // Shared client detail fields saved to DB
       const clientDbFields = {
-        company_address: header.physicalAddress || null,
+        company_address: header.physicalAddress || header.companySection.registeredOffice || null,
         city_town: header.cityTown || null,
         company_tel: header.companyTel || header.landline1 || null,
         company_fax: header.companyFax || null,
-        pin_number: header.pinNumber || null,
-        company_reg_number: header.companyRegNumber || null,
+        pin_number: header.pinNumber || header.otherInformation.vatRegistrationNumber || null,
+        company_reg_number: header.companyRegNumber || header.companySection.registrationNumber || null,
         company_email: header.companyEmail || header.clientEmail || null,
       };
 
@@ -1806,7 +1811,8 @@ const HireQuotationWorkflow = ({
     if (id) handleNext();
   };
 
-  // Autosave client detail fields when focus leaves the input
+  // Autosave Section 1 client fields when an input loses focus, so values
+  // are persisted to the DB immediately without waiting for "Continue".
   const handleClientFieldBlur = async () => {
     if (!savedQuotationId) return;
     await ensureQuotationSaved(true);
@@ -3083,7 +3089,7 @@ const HireQuotationWorkflow = ({
 
   // Helper: shared client company fields passed to every PDF generator
   const clientPdfFields = {
-    companyAddress: header.physicalAddress || undefined,
+    companyAddress: header.physicalAddress || header.companySection.registeredOffice || undefined,
     companyCityTown: header.cityTown || undefined,
     companyTel: header.companyTel || header.landline1 || undefined,
     companyFax: header.companyFax || undefined,
@@ -3323,6 +3329,7 @@ const HireQuotationWorkflow = ({
                     id="physicalAddress"
                     value={header.physicalAddress}
                     onChange={(e) => setHeader(prev => ({ ...prev, physicalAddress: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="Street / Road address"
                   />
                 </div>
@@ -3383,6 +3390,7 @@ const HireQuotationWorkflow = ({
                     type="email"
                     value={header.companyEmail}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyEmail: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="info@company.co.ke"
                   />
                 </div>
@@ -3538,9 +3546,9 @@ const HireQuotationWorkflow = ({
               <h4 className="text-sm font-semibold mb-4 text-primary">Section 3 — Companies (Public and Private) and Close Corporations</h4>
               <div className="grid gap-3 md:grid-cols-2">
                 <Input value={header.companySection.registeredName} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredName: e.target.value } }))} placeholder="Registered Name of Company / CC" className="md:col-span-2" />
-                <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} placeholder="Registration Number / CC Number" className="md:col-span-2" />
+                <Input value={header.companySection.registrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value, companySection: { ...prev.companySection, registrationNumber: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registration Number / CC Number" className="md:col-span-2" />
                 <Input value={header.companySection.commencementDate} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, commencementDate: e.target.value } }))} placeholder="Date of Commencement of Business" className="md:col-span-2" />
-                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} placeholder="Registered Office" className="md:col-span-2" />
+                <Input value={header.companySection.registeredOffice} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, registeredOffice: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="Registered Office" className="md:col-span-2" />
                 <Input value={header.companySection.issuedShareCapital} onChange={(e) => setHeader(prev => ({ ...prev, companySection: { ...prev.companySection, issuedShareCapital: e.target.value } }))} placeholder="Issued Share Capital" className="md:col-span-2" />
                 <div className="md:col-span-2">
                   <Label>Judicial Management / Compromise with Creditors</Label>
@@ -3575,7 +3583,7 @@ const HireQuotationWorkflow = ({
                   </div>
                 </div>
                 <Input value={header.otherInformation.landlordDetails} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, landlordDetails: e.target.value } }))} placeholder="If no, name and telephone number of landlord" className="md:col-span-2" />
-                <Input value={header.otherInformation.vatRegistrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, otherInformation: { ...prev.otherInformation, vatRegistrationNumber: e.target.value } }))} placeholder="VAT Registration Number" className="md:col-span-2" />
+                <Input value={header.otherInformation.vatRegistrationNumber} onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value, otherInformation: { ...prev.otherInformation, vatRegistrationNumber: e.target.value } }))} onBlur={handleClientFieldBlur} placeholder="VAT Registration Number" className="md:col-span-2" />
                 {header.otherInformation.authorisedPersons.map((person, index) => (
                   <Input
                     key={`authorised-person-${index}`}

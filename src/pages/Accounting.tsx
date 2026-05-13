@@ -987,20 +987,28 @@ const Accounting = () => {
           return da.localeCompare(db);
         });
 
-      // Build returns lookup: itemCode → FIFO queue of {remaining qty, returnDate}.
-      // Sorted earliest-first so returns are matched to earliest dispatches first.
-      type ReturnAlloc = { remaining: number; returnDate: string };
-      type RawReturnRecord = { returnDate?: string; items?: { itemCode?: string; totalReturned?: number }[] };
+      // ── Build returns lookup (FIFO by return date, per part number) ─────────
+      type RawReturnRecord = {
+        returnDate?: string;
+        status?: string;
+        items?: { itemCode?: string; totalReturned?: number; good?: number; dirty?: number; damaged?: number; scrap?: number }[];
+      };
       const returnHistoryRaw = Array.isArray(q.return_history)
         ? (q.return_history as unknown as RawReturnRecord[])
         : [];
-      const returnsByItem = new Map<string, ReturnAlloc[]>();
-      for (const r of [...returnHistoryRaw].sort((a, b) => (a.returnDate ?? "").localeCompare(b.returnDate ?? ""))) {
-        for (const it of r.items ?? []) {
+      // Map<partNumber, Array<{date, remainingQty}>> — FIFO queue of returns to be applied across batches
+      const returnsByPart = new Map<string, { date: string; remaining: number }[]>();
+      const sortedReturns = [...returnHistoryRaw]
+        .filter((r) => r && Array.isArray(r.items))
+        .sort((a, b) => (a.returnDate ?? "").localeCompare(b.returnDate ?? ""));
+      for (const rec of sortedReturns) {
+        for (const it of rec.items ?? []) {
           if (!it.itemCode) continue;
-          const arr = returnsByItem.get(it.itemCode) ?? [];
-          arr.push({ remaining: it.totalReturned ?? 0, returnDate: r.returnDate ?? "" });
-          returnsByItem.set(it.itemCode, arr);
+          const qty = it.totalReturned ?? ((it.good ?? 0) + (it.dirty ?? 0) + (it.damaged ?? 0) + (it.scrap ?? 0));
+          if (qty <= 0) continue;
+          const arr = returnsByPart.get(it.itemCode) ?? [];
+          arr.push({ date: rec.returnDate ?? "", remaining: qty });
+          returnsByPart.set(it.itemCode, arr);
         }
       }
 
@@ -1010,58 +1018,60 @@ const Accounting = () => {
         const batchWeeks = billableDaysToWeeks(batchDays);
         const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
 
-        const lines: HireLineBreakdown[] = (rec.items ?? []).flatMap((item) => {
+        const lines: HireLineBreakdown[] = [];
+        for (const item of rec.items ?? []) {
           const partNo = item.itemCode || "-";
           const meta = lineItemMetaByPart.get(partNo);
           const weeklyRate = meta?.weeklyRate ?? 0;
           const discountRate = meta?.discountRate ?? 0;
           const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
-          const totalQty = item.quantityDelivered ?? 0;
-          const itemLabel = item.description || meta?.description || partNo;
+          let qty = item.quantityDelivered ?? 0;
+          const description = item.description || meta?.description || partNo;
 
-          // Allocate returns FIFO (returns array shared across batches via closure)
-          const returnQueue = returnsByItem.get(partNo) ?? [];
-          let remaining = totalQty;
-          const subLines: HireLineBreakdown[] = [];
-
-          for (const ret of returnQueue) {
-            if (remaining <= 0) break;
-            if (ret.remaining <= 0) continue;
-            const allocate = Math.min(remaining, ret.remaining);
-            const retIso = toIsoDateOrToday(ret.returnDate);
-            const retDate = new Date(retIso);
-            const endDate = retDate < bd ? retDate : bd;
-            const days = Math.max(calculateBillableDays(batchDispatchDate, endDate), 0);
-            const weeks = billableDaysToWeeks(days);
-            const lineTotal = allocate * effectiveWeeklyRate * weeks;
-            subLines.push({
+          // Apply FIFO returns: each returned qty bills only from dispatch up to return date
+          const returnQueue = returnsByPart.get(partNo) ?? [];
+          while (qty > 0 && returnQueue.length > 0 && returnQueue[0].remaining > 0) {
+            const head = returnQueue[0];
+            const applied = Math.min(qty, head.remaining);
+            // Days from dispatch to return (clamped, capped at billing date)
+            const returnDateForBilling = head.date && head.date < format(bd, "yyyy-MM-dd") ? head.date : format(bd, "yyyy-MM-dd");
+            const retDays = Math.min(calculateBillableDays(batchDispatchDate, asDateOrToday(returnDateForBilling)), batchDays);
+            const retWeeks = billableDaysToWeeks(retDays);
+            const retLabel = formatWeeksDaysLabel(retDays);
+            const retTotal = applied * effectiveWeeklyRate * retWeeks;
+            lines.push({
               partNumber: partNo,
-              item: `${itemLabel} (returned ${formatReportDate(retIso)})`,
-              quantity: allocate,
-              weeklyRate, discountRate, effectiveWeeklyRate,
-              weeks, weeksLabel: formatWeeksDaysLabel(days), lineTotal,
+              item: `${description} (returned ${formatReportDate(head.date)})`,
+              quantity: applied,
+              weeklyRate,
+              discountRate,
+              effectiveWeeklyRate,
+              weeks: retWeeks,
+              weeksLabel: retLabel,
+              lineTotal: retTotal,
             });
-            ret.remaining -= allocate;
-            remaining -= allocate;
+            head.remaining -= applied;
+            qty -= applied;
+            if (head.remaining <= 0) returnQueue.shift();
           }
+          returnsByPart.set(partNo, returnQueue);
 
-          if (remaining > 0) {
-            subLines.push({
+          // Remaining qty still on hire — bill through current billing date
+          if (qty > 0) {
+            const lineTotal = qty * effectiveWeeklyRate * batchWeeks;
+            lines.push({
               partNumber: partNo,
-              item: itemLabel,
-              quantity: remaining,
-              weeklyRate, discountRate, effectiveWeeklyRate,
-              weeks: batchWeeks, weeksLabel: batchWeeksLabel,
-              lineTotal: remaining * effectiveWeeklyRate * batchWeeks,
+              item: description,
+              quantity: qty,
+              weeklyRate,
+              discountRate,
+              effectiveWeeklyRate,
+              weeks: batchWeeks,
+              weeksLabel: batchWeeksLabel,
+              lineTotal,
             });
           }
-
-          return subLines.length > 0 ? subLines : [{
-            partNumber: partNo, item: itemLabel, quantity: totalQty,
-            weeklyRate, discountRate, effectiveWeeklyRate,
-            weeks: batchWeeks, weeksLabel: batchWeeksLabel, lineTotal: 0,
-          }];
-        });
+        }
 
         const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
         return {
