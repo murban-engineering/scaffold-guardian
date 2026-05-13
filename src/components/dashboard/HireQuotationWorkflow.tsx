@@ -1747,6 +1747,7 @@ const HireQuotationWorkflow = ({
         company_fax: header.companyFax || null,
         pin_number: header.pinNumber || null,
         company_reg_number: header.companyRegNumber || null,
+        company_email: header.companyEmail || header.clientEmail || null,
       };
 
       if (!savedQuotationId) {
@@ -1800,6 +1801,18 @@ const HireQuotationWorkflow = ({
   };
 
   const handleHeaderSave = async () => {
+    if (!validateHeader()) return;
+    const id = await ensureQuotationSaved(false);
+    if (id) handleNext();
+  };
+
+  // Autosave client detail fields when focus leaves the input
+  const handleClientFieldBlur = async () => {
+    if (!savedQuotationId) return;
+    await ensureQuotationSaved(true);
+  };
+
+  const handleHeaderSave_DUPLICATE_REMOVE = async () => {
     if (!validateHeader()) return;
     const id = await ensureQuotationSaved(false);
     if (id) handleNext();
