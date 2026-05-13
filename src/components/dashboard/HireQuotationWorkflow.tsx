@@ -1812,12 +1812,6 @@ const HireQuotationWorkflow = ({
     await ensureQuotationSaved(true);
   };
 
-  const handleHeaderSave_DUPLICATE_REMOVE = async () => {
-    if (!validateHeader()) return;
-    const id = await ensureQuotationSaved(false);
-    if (id) handleNext();
-  };
-
   const handleTestSaveAndContinue = async () => {
     const id = await ensureQuotationSaved(false);
     if (id) {
