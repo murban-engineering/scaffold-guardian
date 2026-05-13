@@ -320,16 +320,26 @@ const ItemTracking = () => {
           <Card className="border-white/50 bg-card/80 shadow-xl backdrop-blur-xl">
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg">Client Hire Breakdown</CardTitle>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full sm:w-auto"
-                onClick={handlePrintReport}
-                disabled={!selectedPartNumber || !selectedItem || scaffoldsLoading || quotationsLoading}
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                Print Report
-              </Button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={handlePrintReport}
+                  disabled={!selectedPartNumber || !selectedItem || scaffoldsLoading || quotationsLoading}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print Report
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => navigate("/sites")}
+                >
+                  Print Combined Report
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {scaffoldsLoading || quotationsLoading ? (
