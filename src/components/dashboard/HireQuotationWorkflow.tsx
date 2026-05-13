@@ -3325,6 +3325,7 @@ const HireQuotationWorkflow = ({
                     id="cityTown"
                     value={header.cityTown}
                     onChange={(e) => setHeader(prev => ({ ...prev, cityTown: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. Nairobi, Mombasa"
                   />
                 </div>
@@ -3334,6 +3335,7 @@ const HireQuotationWorkflow = ({
                     id="companyTel"
                     value={header.companyTel}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyTel: e.target.value, landline1: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="+254 ..."
                   />
                 </div>
@@ -3343,6 +3345,7 @@ const HireQuotationWorkflow = ({
                     id="companyFax"
                     value={header.companyFax}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyFax: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="Mobile number"
                   />
                 </div>
@@ -3352,6 +3355,7 @@ const HireQuotationWorkflow = ({
                     id="pinNumber"
                     value={header.pinNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, pinNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. A003674298L"
                   />
                 </div>
@@ -3361,6 +3365,7 @@ const HireQuotationWorkflow = ({
                     id="companyRegNumber"
                     value={header.companyRegNumber}
                     onChange={(e) => setHeader(prev => ({ ...prev, companyRegNumber: e.target.value }))}
+                    onBlur={handleClientFieldBlur}
                     placeholder="e.g. BN-ZMCLAZ3A"
                   />
                 </div>
