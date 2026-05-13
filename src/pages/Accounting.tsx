@@ -987,6 +987,23 @@ const Accounting = () => {
           return da.localeCompare(db);
         });
 
+      // Build returns lookup: itemCode → FIFO queue of {remaining qty, returnDate}.
+      // Sorted earliest-first so returns are matched to earliest dispatches first.
+      type ReturnAlloc = { remaining: number; returnDate: string };
+      type RawReturnRecord = { returnDate?: string; items?: { itemCode?: string; totalReturned?: number }[] };
+      const returnHistoryRaw = Array.isArray(q.return_history)
+        ? (q.return_history as unknown as RawReturnRecord[])
+        : [];
+      const returnsByItem = new Map<string, ReturnAlloc[]>();
+      for (const r of [...returnHistoryRaw].sort((a, b) => (a.returnDate ?? "").localeCompare(b.returnDate ?? ""))) {
+        for (const it of r.items ?? []) {
+          if (!it.itemCode) continue;
+          const arr = returnsByItem.get(it.itemCode) ?? [];
+          arr.push({ remaining: it.totalReturned ?? 0, returnDate: r.returnDate ?? "" });
+          returnsByItem.set(it.itemCode, arr);
+        }
+      }
+
       const batches: DispatchBatch[] = dispatchedBatches.map((rec, batchIdx) => {
         const batchDispatchDate = toIsoDateOrToday(rec.deliveryDate);
         const batchDays = calculateBillableDays(batchDispatchDate, bd);
