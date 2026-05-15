@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useScaffolds } from "@/hooks/useScaffolds";
-import { useNavigate } from "react-router-dom";
+import { useAllClientSites } from "@/hooks/useClientSites";
+import { useHireQuotations } from "@/hooks/useHireQuotations";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // @ts-ignore
@@ -20,10 +21,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatReportDate, formatReportDateTime } from "@/lib/accountingDates";
 import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGrouping";
+import { buildCombinedInventoryMatrix, openCombinedInventoryReport } from "@/lib/combinedInventoryReport";
 
 const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
-  const navigate = useNavigate();
   const { data: scaffolds, isLoading, error } = useScaffolds();
+  const { data: hireQuotations = [] } = useHireQuotations();
+  const { data: allClientSites = [] } = useAllClientSites();
   const [search, setSearch] = useState("");
 
   // Sync with external search from header
@@ -128,6 +131,15 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
   const formatMass = (value: number | null) => {
     if (value === null || value === undefined) return "-";
     return `${value} kg`;
+  };
+
+  const combinedInventoryMatrix = useMemo(
+    () => buildCombinedInventoryMatrix(hireQuotations, allClientSites),
+    [allClientSites, hireQuotations]
+  );
+
+  const handlePrintCombinedReport = () => {
+    openCombinedInventoryReport(combinedInventoryMatrix);
   };
 
   const getStatusBadge = (status: string) => {
@@ -558,7 +570,13 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
           <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
             View All <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/sites")} className="gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrintCombinedReport}
+            disabled={!combinedInventoryMatrix.itemRows.length}
+            className="gap-1.5"
+          >
             <Printer className="w-4 h-4" /> Print Combined Report
           </Button>
           <Button variant="outline" size="sm" onClick={handlePrintInventoryReport} className="gap-1.5">

@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useScaffolds } from "@/hooks/useScaffolds";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
+import { useAllClientSites } from "@/hooks/useClientSites";
+import { buildCombinedInventoryMatrix, openCombinedInventoryReport } from "@/lib/combinedInventoryReport";
 
 interface ClientHireRow {
   quotationId: string;
@@ -23,6 +25,7 @@ const ItemTracking = () => {
   const navigate = useNavigate();
   const { data: scaffolds = [], isLoading: scaffoldsLoading } = useScaffolds();
   const { data: hireQuotations = [], isLoading: quotationsLoading } = useHireQuotations();
+  const { data: allClientSites = [] } = useAllClientSites();
   const [selectedPartNumber, setSelectedPartNumber] = useState<string>("");
 
   const handleSidebarItemClick = (item: string) => {
@@ -71,6 +74,15 @@ const ItemTracking = () => {
     () => scaffolds.find((item) => item.part_number === selectedPartNumber) ?? null,
     [scaffolds, selectedPartNumber]
   );
+
+  const combinedInventoryMatrix = useMemo(
+    () => buildCombinedInventoryMatrix(hireQuotations, allClientSites),
+    [allClientSites, hireQuotations]
+  );
+
+  const handlePrintCombinedReport = () => {
+    openCombinedInventoryReport(combinedInventoryMatrix);
+  };
 
   const onHireByClient = useMemo<ClientHireRow[]>(() => {
     if (!selectedPartNumber) return [];
@@ -335,7 +347,8 @@ const ItemTracking = () => {
                   type="button"
                   variant="outline"
                   className="w-full sm:w-auto"
-                  onClick={() => navigate("/sites")}
+                  onClick={handlePrintCombinedReport}
+                  disabled={!combinedInventoryMatrix.itemRows.length}
                 >
                   Print Combined Report
                 </Button>
