@@ -199,7 +199,7 @@ const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
 const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd";
 const COMPANY_WEBSITE = "otno.ke";
-const COMPANY_EMAIL = "otnoacess@gmail.com";
+const COMPANY_EMAIL = "info@otno.ke";
 const COMPANY_REG = "YQ192VDK";
 const COMPANY_PIN = "P052471711M";
 
@@ -216,7 +216,7 @@ const renderPage1Footer = (createdBy: string, dateCreated: string) => `
       <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
     </div>
     <div style="text-align:center;font-size:7.5px;color:#4b5563;padding:3px 8px 4px;border:1px solid #e5e7eb;border-top:none;">
-      All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of 2
+      All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; Page 1 of 2
     </div>
     <div style="display:flex;justify-content:space-between;font-size:7px;color:#6b7280;padding:4px 0 0;">
       <div>
@@ -724,7 +724,7 @@ export const generateDeliveryNotePDF = (data: DeliveryNoteData) => {
       <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
       <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
     </div>
-    <div class="hd-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of 1</div>
+    <div class="hd-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; Page 1 of 1</div>
     <div class="hd-footer-processed">
       <div>
         <div>Processed By : ${data.createdBy || ""}</div>
@@ -982,7 +982,7 @@ export const generateHireLoadingNotePDF = (data: HireLoadingNoteData) => {
       <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
       <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
     </div>
-    <div class="hl-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; ${pageLabel}</div>
+    <div class="hl-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; ${pageLabel}</div>
     <div class="hl-footer-processed">
       <div>
         <div>Processed By : ${data.createdBy || ""}</div>
@@ -1341,7 +1341,7 @@ export const generateHireQuotationReportPDF = (data: HireQuotationReportData) =>
         <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
         <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
       </div>
-      <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page ${isSinglePage ? "1 of 1" : "2 of 2"}</div>
+      <div class="hq-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; Page ${isSinglePage ? "1 of 1" : "2 of 2"}</div>
       <div class="hq-footer-processed">
         <div>
           <div>Processed By : ${data.createdBy || ""}</div>
@@ -1720,7 +1720,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
           <img src="${window.location.origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
         </div>
-        <div class="rn-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com &nbsp;|&nbsp; Page 1 of ${totalPages}</div>
+        <div class="rn-footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; Page 1 of ${totalPages}</div>
         <div class="rn-footer-processed">
           <div>
             <div>Processed By : ${data.createdBy || ""}</div>
@@ -1771,7 +1771,7 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
           <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/otn-logo-red.png" alt="OTN Logo" style="height:28px;width:auto;" />
         </div>
         <div class="rn-footer-legal">
-          All transactions are subject to our standard Terms of Trade which can be found at: otnoaseas@gmail.com &nbsp;|&nbsp; Page 2 of 2
+          All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke &nbsp;|&nbsp; Page 2 of 2
         </div>
         <div class="rn-footer-processed">
           <span>Processed By: &nbsp;${data.createdBy || "-"}</span>
