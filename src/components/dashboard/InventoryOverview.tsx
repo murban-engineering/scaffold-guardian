@@ -416,7 +416,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
               <div class="info-row"><span class="info-label">Company</span><span class="info-sep">:</span><span class="info-value">OTNO Access Solutions</span></div>
               <div class="info-row"><span class="info-label">Address</span><span class="info-sep">:</span><span class="info-value">99215-80107 Mombasa, Kenya</span></div>
               <div class="info-row"><span class="info-label">Location</span><span class="info-sep">:</span><span class="info-value">Embakasi, Old North Airport Rd, next to Naivas Embakasi</span></div>
-              <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">otnoacess@gmail.com</span></div>
+              <div class="info-row"><span class="info-label">Email</span><span class="info-sep">:</span><span class="info-value">info@otno.ke</span></div>
             </div>
           </div>
         </div>
@@ -469,7 +469,7 @@ const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: str
             <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
             <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
           </div>
-          <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com</div>
+          <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke</div>
           <div class="footer-processed">
             <div>Processed Date : ${docDate}</div>
             <div>Print date : ${printDate}</div>
