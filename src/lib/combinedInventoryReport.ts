@@ -346,7 +346,7 @@ export const openCombinedInventoryReport = (combinedInventoryMatrix: CombinedInv
           <span>OTNO Access Solutions — Your Trusted Scaffolding &amp; Access Partner.</span>
           <img src="${origin}/otn-logo-red.png" alt="OTNO" style="width:80px;height:auto;"/>
         </div>
-        <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: otnoacess@gmail.com</div>
+        <div class="footer-legal">All transactions are subject to our standard Terms of Trade which can be found at: info@otno.ke</div>
         <div class="footer-processed">
           <div><div>Processed Date : ${docDate}</div></div>
           <div style="text-align:right;"><div>Print date : ${printDate}</div></div>

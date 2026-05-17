@@ -60,7 +60,7 @@ const COMPANY_NAME = "OTNO Access Solutions";
 const COMPANY_ADDRESS = "P.O.BOX 142-00502 Nairobi Karen";
 const COMPANY_LOCATION = "Embakasi, Old North Airport Rd";
 const COMPANY_WEBSITE = "otno.ke";
-const COMPANY_EMAIL = "otnoacess@gmail.com";
+const COMPANY_EMAIL = "info@otno.ke";
 
 const deriveInvoiceNumber = (quotationNumber: string, fallbackSequence: number) => {
   const quotedSequence = Number.parseInt(quotationNumber.replace(/\D/g, ""), 10);
