@@ -23,6 +23,22 @@ import { formatReportDate, formatReportDateTime } from "@/lib/accountingDates";
 import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGrouping";
 import { buildCombinedInventoryMatrix, openCombinedInventoryReport } from "@/lib/combinedInventoryReport";
 
+// Sort so that variants whose part number ends with a letter (e.g. "1105059A"
+// — the casted swivel coupler) appear directly after their base part
+// ("1105059" — the galvanised swivel coupler).
+const compareInventoryPartNumber = (
+  a: { part_number: string | null; description: string | null },
+  b: { part_number: string | null; description: string | null }
+) => {
+  const pa = (a.part_number ?? "").trim();
+  const pb = (b.part_number ?? "").trim();
+  const baseA = pa.replace(/[A-Za-z]+$/, "");
+  const baseB = pb.replace(/[A-Za-z]+$/, "");
+  if (baseA && baseB && baseA !== baseB) return baseA.localeCompare(baseB);
+  if (pa !== pb) return pa.localeCompare(pb);
+  return (a.description ?? "").localeCompare(b.description ?? "");
+};
+
 const InventoryOverview = ({ externalSearch, chartOnly }: { externalSearch?: string; chartOnly?: boolean }) => {
   const { data: scaffolds, isLoading, error } = useScaffolds();
   const { data: hireQuotations = [] } = useHireQuotations();
