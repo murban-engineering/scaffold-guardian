@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { formatReportDate } from "@/lib/accountingDates";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +51,7 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
+  const [continueSearchQuery, setContinueSearchQuery] = useState("");
   const [continueSortAsc, setContinueSortAsc] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
@@ -170,7 +172,16 @@ const Index = () => {
           const clientId = toClientId(quotation);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
-    return [...filtered].sort((a, b) => {
+    const query = continueSearchQuery.trim().toLowerCase();
+    const searched = query
+      ? filtered.filter((q) => {
+          const qNum = (q.quotation_number ?? "").toLowerCase();
+          const cId = toClientId(q).toLowerCase();
+          const company = (q.company_name ?? "").toLowerCase();
+          return qNum.includes(query) || cId.includes(query) || company.includes(query);
+        })
+      : filtered;
+    return [...searched].sort((a, b) => {
       const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
       return continueSortAsc ? -cmp : cmp;
     });
