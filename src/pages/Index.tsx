@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, FolderClock, Building2, FlaskConical, Trash2, ArrowUpDown, ArrowUp, ArrowDown, Search } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import InventoryOverview from "@/components/dashboard/InventoryOverview";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { formatReportDate } from "@/lib/accountingDates";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +51,7 @@ const Index = () => {
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
+  const [continueSearchQuery, setContinueSearchQuery] = useState("");
   const [continueSortAsc, setContinueSortAsc] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
@@ -170,7 +172,16 @@ const Index = () => {
           const clientId = toClientId(quotation);
           return `${companyName}|${clientId}` === selectedContinueClient;
         });
-    return [...filtered].sort((a, b) => {
+    const query = continueSearchQuery.trim().toLowerCase();
+    const searched = query
+      ? filtered.filter((q) => {
+          const qNum = (q.quotation_number ?? "").toLowerCase();
+          const cId = toClientId(q).toLowerCase();
+          const company = (q.company_name ?? "").toLowerCase();
+          return qNum.includes(query) || cId.includes(query) || company.includes(query);
+        })
+      : filtered;
+    return [...searched].sort((a, b) => {
       const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
       return continueSortAsc ? -cmp : cmp;
     });
@@ -589,6 +600,7 @@ const Index = () => {
           setShowContinueDialog(open);
           if (open) {
             setSelectedContinueClient("all");
+            setContinueSearchQuery("");
           }
           if (!open && (activeItem === "site-master" || activeItem === "yard-verification") && !selectedQuotation) {
             setActiveItem("dashboard");
@@ -606,6 +618,19 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
+              <div className="grid gap-2">
+                <Label htmlFor="continue-search">Search by ID</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="continue-search"
+                    value={continueSearchQuery}
+                    onChange={(e) => setContinueSearchQuery(e.target.value)}
+                    placeholder="Enter CL-, HSQ-, or TST- ID (or client name)"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1 grid gap-2">
                   <Label htmlFor="continue-client-filter">Filter by client</Label>
