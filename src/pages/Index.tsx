@@ -600,6 +600,7 @@ const Index = () => {
           setShowContinueDialog(open);
           if (open) {
             setSelectedContinueClient("all");
+            setContinueSearchQuery("");
           }
           if (!open && (activeItem === "site-master" || activeItem === "yard-verification") && !selectedQuotation) {
             setActiveItem("dashboard");
@@ -617,6 +618,19 @@ const Index = () => {
                   ? "Select a quotation to work with."
                   : "Resume a saved hire quotation with client details and order line items."}
               </p>
+              <div className="grid gap-2">
+                <Label htmlFor="continue-search">Search by ID</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="continue-search"
+                    value={continueSearchQuery}
+                    onChange={(e) => setContinueSearchQuery(e.target.value)}
+                    placeholder="Enter CL-, HSQ-, or TST- ID (or client name)"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1 grid gap-2">
                   <Label htmlFor="continue-client-filter">Filter by client</Label>
