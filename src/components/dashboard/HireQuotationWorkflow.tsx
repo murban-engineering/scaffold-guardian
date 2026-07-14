@@ -1268,11 +1268,12 @@ const HireQuotationWorkflow = ({
           Math.max(existing?.previouslyReturned ?? 0, derivedPreviouslyReturned),
           maxReturnable
         );
-        const computedBalance = selectedReturnSiteNumber
-          ? Math.max(maxReturnable - previouslyReturned, 0)
-          : persistedBalance !== null && persistedBalance !== undefined
-            ? Math.min(Math.max(persistedBalance, 0), maxReturnable)
-            : Math.max(maxReturnable - previouslyReturned, 0);
+        // Always derive the balance from what's actually been returned so far.
+        // Trusting a stale `return_balance_quantity` from the database can leave
+        // items stuck at 0 (e.g. when dispatch wrote 0 instead of the delivered
+        // quantity), which then disables every input and blocks the return.
+        const computedBalance = Math.max(maxReturnable - previouslyReturned, 0);
+        void persistedBalance;
         return {
           id: item.id,
           scaffoldId: item.scaffoldId,
