@@ -691,7 +691,10 @@ const Index = () => {
                                 </div>
                                 <p className="text-xs text-muted-foreground">{itemCount} item(s)</p>
                                 {section.isTest ? (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                    <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "promote")}>Convert to Hire</Button>
+                                  </div>
                                 ) : (
                                   <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
                                     {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
@@ -746,7 +749,10 @@ const Index = () => {
                                     <TableCell className="capitalize text-sm">{quotation.status || "draft"}</TableCell>
                                     <TableCell className="text-right">
                                       {section.isTest ? (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                        <div className="flex justify-end gap-2">
+                                          <Button size="sm" variant="outline" onClick={() => handleContinueQuotation(quotation, "test")}>Continue</Button>
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>Convert to Hire</Button>
+                                        </div>
                                       ) : (
                                         <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
                                           {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}

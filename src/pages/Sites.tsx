@@ -761,6 +761,16 @@ const Sites = () => {
       </table>
     `;
 
+    const clientHeaderCells = inventoryMatrix.siteCols
+      .reduce<Array<{ client: string; span: number }>>((acc, col) => {
+        const last = acc[acc.length - 1];
+        if (last && last.client === col.client) last.span += 1;
+        else acc.push({ client: col.client, span: 1 });
+        return acc;
+      }, [])
+      .map((group) => `<th colspan="${group.span}" class="text-center">${group.client}</th>`)
+      .join("");
+
     const siteSubHeaderCells = inventoryMatrix.siteCols
       .map(
         (c) =>
