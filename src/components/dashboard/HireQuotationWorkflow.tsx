@@ -1622,10 +1622,11 @@ const HireQuotationWorkflow = ({
     }
   }, [previousClientMatches, selectedPreviousClientId]);
 
-  const handleSelectPreviousClient = (quotation: HireQuotation) => {
-    // Treat client selection as a context switch to prevent cross-client equipment carry-over.
+  const handleSelectPreviousClient = (quotation: HireQuotation, carryEquipment = false) => {
+    // Treat client selection as a context switch to prevent cross-client equipment carry-over,
+    // unless we are promoting a test quotation (carryEquipment) where items must be preserved.
     const existingEquipment =
-      isTestQuotation && quotation.line_items?.length
+      (isTestQuotation || carryEquipment) && quotation.line_items?.length
         ? mapDatabaseLineItemsToEquipment(quotation.line_items)
         : [];
 
