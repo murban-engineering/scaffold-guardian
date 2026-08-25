@@ -1715,8 +1715,13 @@ const HireQuotationWorkflow = ({
     if (initialClientMode === "existing") {
       setClientEntryMode("existing");
     }
-    handleSelectPreviousClient(initialExistingClient);
-  }, [initialClientMode, initialExistingClient]);
+    // Promotion path (test → HSQ) opens in "new" client mode and must carry the equipment over.
+    const isPromotion =
+      initialClientMode !== "existing" &&
+      !isTestQuotation &&
+      Boolean(initialExistingClient.line_items?.length);
+    handleSelectPreviousClient(initialExistingClient, isPromotion);
+  }, [initialClientMode, initialExistingClient, isTestQuotation]);
 
   const validateHeader = () => {
     // For test quotations, all fields are optional
