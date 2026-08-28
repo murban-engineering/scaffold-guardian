@@ -1370,6 +1370,19 @@ const HireQuotationWorkflow = ({
     return Math.min(Math.max(requestedQty, 0), Math.max(availableQty, 0));
   };
 
+  // Always resolve warehouse stock live from the inventory query. The value stored
+  // on the equipment row can be 0 when the quotation was hydrated before the
+  // scaffolds query resolved, which wrongly blocked quantity edits.
+  const getWarehouseAvailableQty = (item: EquipmentItem) => {
+    const match =
+      scaffolds?.find((scaffold) => scaffold.id === item.scaffoldId) ??
+      (item.itemCode
+        ? scaffolds?.find((scaffold) => scaffold.part_number === item.itemCode)
+        : undefined);
+    return match?.quantity ?? item.warehouseAvailableQty ?? 0;
+  };
+
+
   const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
   const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
   const hasValidDateRange =
