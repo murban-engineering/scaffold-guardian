@@ -3874,11 +3874,13 @@ const HireQuotationWorkflow = ({
                               onChange={(e) => {
                                 const value = e.target.value;
                                 const requestedQty = parseNumber(value);
-                                const nextQty = clampToInventory(requestedQty, item.warehouseAvailableQty);
+                                const availableQty = getWarehouseAvailableQty(item);
+                                const nextQty = clampToInventory(requestedQty, availableQty);
 
-                                if (!isTestQuotation && requestedQty > item.warehouseAvailableQty) {
-                                  toast.error(`Cannot set quantity above inventory (${item.warehouseAvailableQty}).`);
+                                if (!isTestQuotation && requestedQty > availableQty) {
+                                  toast.error(`Cannot set quantity above inventory (${availableQty}).`);
                                 }
+
 
                                 setEquipmentItems((prev) =>
                                   prev.map((entry, entryIndex) =>
