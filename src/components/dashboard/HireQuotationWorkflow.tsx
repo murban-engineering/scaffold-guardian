@@ -1370,6 +1370,19 @@ const HireQuotationWorkflow = ({
     return Math.min(Math.max(requestedQty, 0), Math.max(availableQty, 0));
   };
 
+  // Always resolve warehouse stock live from the inventory query. The value stored
+  // on the equipment row can be 0 when the quotation was hydrated before the
+  // scaffolds query resolved, which wrongly blocked quantity edits.
+  const getWarehouseAvailableQty = (item: EquipmentItem) => {
+    const match =
+      scaffolds?.find((scaffold) => scaffold.id === item.scaffoldId) ??
+      (item.itemCode
+        ? scaffolds?.find((scaffold) => scaffold.part_number === item.itemCode)
+        : undefined);
+    return match?.quantity ?? item.warehouseAvailableQty ?? 0;
+  };
+
+
   const hireDateValue = calculation.hireDate ? new Date(calculation.hireDate) : null;
   const returnDateValue = calculation.returnDate ? new Date(calculation.returnDate) : null;
   const hasValidDateRange =
@@ -3861,11 +3874,13 @@ const HireQuotationWorkflow = ({
                               onChange={(e) => {
                                 const value = e.target.value;
                                 const requestedQty = parseNumber(value);
-                                const nextQty = clampToInventory(requestedQty, item.warehouseAvailableQty);
+                                const availableQty = getWarehouseAvailableQty(item);
+                                const nextQty = clampToInventory(requestedQty, availableQty);
 
-                                if (!isTestQuotation && requestedQty > item.warehouseAvailableQty) {
-                                  toast.error(`Cannot set quantity above inventory (${item.warehouseAvailableQty}).`);
+                                if (!isTestQuotation && requestedQty > availableQty) {
+                                  toast.error(`Cannot set quantity above inventory (${availableQty}).`);
                                 }
+
 
                                 setEquipmentItems((prev) =>
                                   prev.map((entry, entryIndex) =>
