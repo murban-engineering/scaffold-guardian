@@ -1274,13 +1274,21 @@ const Accounting = () => {
       // Only bill this batch if it was dispatched before or during this month
       const batchInMonth = !isBefore(monthEnd, batchDispatch);
       if (!batchInMonth) {
-        return { ...batch, hireDays: 0, hireWeeks: 0, hireWeeksLabel: "0 days", lines: batch.lines.map(l => ({ ...l, weeks: 0, weeksLabel: "0 days", lineTotal: 0 })), batchHireTotal: 0 };
+        return {
+          ...batch,
+          hireDays: 0,
+          hireWeeks: 0,
+          hireWeeksLabel: "0 days",
+          lines: batch.lines.map(l => (l.isReturned ? l : { ...l, weeks: 0, weeksLabel: "0 days", lineTotal: 0 })),
+          batchHireTotal: 0,
+        };
       }
       const batchBillingStart = isSameMonth(monthStart, batchDispatch) ? batchDispatch : startOfMonth(monthStart);
       const batchDays = differenceInCalendarDays(monthEnd, batchBillingStart);
       const batchWeeks = billableDaysToWeeks(batchDays);
       const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
-      const lines = batch.lines.map((l) => ({
+      // Returned rows are reference-only — they keep their original (ended) billing period.
+      const lines = batch.lines.map((l) => (l.isReturned ? l : {
         ...l,
         weeks: batchWeeks,
         weeksLabel: batchWeeksLabel,
@@ -1293,7 +1301,8 @@ const Accounting = () => {
         hireWeeks: batchWeeks,
         hireWeeksLabel: batchWeeksLabel,
         lines,
-        batchHireTotal: lines.reduce((s, l) => s + l.lineTotal, 0),
+        batchHireTotal: lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
+        batchReturnedReference: lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
       };
     });
 
