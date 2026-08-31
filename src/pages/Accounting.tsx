@@ -295,7 +295,6 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
     ? invoice.dispatchBatches.map((batch, bi) => {
         const onHireLines = batch.lines.filter(l => !l.isReturned);
         const returnedLines = batch.lines.filter(l => l.isReturned);
-        const returnedReference = batch.batchReturnedReference ?? returnedLines.reduce((s, l) => s + l.lineTotal, 0);
 
         const batchRows = onHireLines.length > 0
           ? onHireLines.map(l => `
