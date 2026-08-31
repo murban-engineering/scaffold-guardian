@@ -192,6 +192,10 @@ type HireLineBreakdown = {
   /** Display label e.g. "2 weeks 4 days" */
   weeksLabel: string;
   lineTotal: number;
+  /** True when this quantity has already been returned — billing has stopped, excluded from totals */
+  isReturned?: boolean;
+  /** ISO date the quantity was returned (only for returned rows) */
+  returnDate?: string;
 };
 
 type PolicyLineBreakdown = {
