@@ -1119,7 +1119,9 @@ const Accounting = () => {
           }
         }
 
-        const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
+        // Only items still on site are billed; returned quantities stop billing on their return date.
+        const batchHireTotal = lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
+        const batchReturnedReference = lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
         return {
           batchNumber: batchIdx + 1,
           deliveryNoteNumber: rec.deliveryNoteNumber || `Batch ${batchIdx + 1}`,
@@ -1129,6 +1131,7 @@ const Accounting = () => {
           hireWeeksLabel: batchWeeksLabel,
           lines,
           batchHireTotal,
+          batchReturnedReference,
         };
       });
 
