@@ -1,29 +1,27 @@
+# Tax Invoice: separate returned equipment from items still on hire
+
 ## Goal
-When a Tax Invoice in Accounting has 6 or fewer hire equipment items, fit the entire invoice (Hire Charges + Return Condition Charges + Summary + Policy box + Footer) onto a single A4 page so it prints as one page only. Multi-page layout remains for invoices with more than 6 items.
 
-## Where
-`src/pages/Accounting.tsx` → `openInvoicePrint()` (lines ~280–493).
+On the Accounting tax invoice, clearly split equipment into two sections:
 
-Currently the function always emits two wrappers:
-- `.page1-wrap`: header + "A. Weekly Hire Charges" + footer (Page 1 of 2)
-- `.page2-wrap`: header (repeated) + "B. Return Condition Charges" + summary + policy box + footer (Page 2 of 2), forced via `page-break-before:always`
+1. **Equipment On Hire** — items still on site, billed from dispatch through the billing date. This is the only section that feeds the invoice grand total.
+2. **Returned Equipment** — items already returned, showing the return date and the period they were on hire, marked as billing ended. Shown for reference, excluded from the grand total.
 
-## Changes
-1. Compute item count:
-   ```ts
-   const hireItemCount = hasBatches
-     ? invoice.dispatchBatches.reduce((n, b) => n + b.lines.length, 0)
-     : invoice.hireBreakdown.length;
-   const isSinglePage = hireItemCount <= 6;
-   ```
-2. When `isSinglePage`:
-   - Render ONE `.page1-wrap` containing: header (once), "A. Weekly Hire Charges" + `hireSection`, "B. Return Condition Charges" table, summary box, policy box, invoice-date footer, and the branded yellow footer.
-   - Footer legal text shows `Page 1 of 1`.
-   - Do NOT emit the `.page2-wrap` block (so no forced page break).
-3. When more than 6 items: keep existing two-page structure unchanged (Page 1 of 2 / Page 2 of 2).
-4. Keep `@media print` rules as-is; the absence of `.page2-wrap` naturally prevents a second page. Add `page-break-inside:avoid` on the summary/policy block for safety so they don't split awkwardly on Page 1.
+Figures for items still on site stay exactly as they are today.
 
-## Acceptance
-- Invoice with ≤ 6 hire items prints as exactly one page containing all sections.
-- Invoice with > 6 hire items still prints as the existing two-page layout.
-- No changes to data, calculations, headers, or styling beyond layout/page-break behavior.
+## What changes on the invoice
+
+- Each dispatch batch keeps its current header (delivery note, dispatch date, hire period).
+- Inside a batch, rows are grouped: on-hire rows first with a subtotal, then a "Returned Equipment (billing ended)" block with its own subtotal shown as a reference amount.
+- Returned rows display: quantity returned, return date, and the hire period from dispatch up to the return date, with a "Billing ended" marker.
+- Batch total, invoice subtotal, VAT and grand total are computed from on-hire rows only.
+- If a batch has no returned rows, it looks exactly as it does now.
+- If everything in a batch is returned, the batch shows the returned block plus a zero billing total.
+
+## Technical notes
+
+- All work is in `src/pages/Accounting.tsx`; no database or schema changes.
+- The existing FIFO return allocation (returns matched per part number, oldest return first, billed dispatch → return date) is kept unchanged; only the classification and totalling change.
+- `HireLineBreakdown` gains flags: `isReturned`, `returnDate`, and the returned rows keep their computed `lineTotal` as a reference figure.
+- `batchHireTotal` sums only rows where `isReturned` is false; a separate `batchReturnedReference` sums the returned rows for display.
+- Both the on-screen invoice view and the print/PDF markup render the two sections with matching styling; existing single-page rules (6 items or fewer) count on-hire plus returned rows so pagination stays correct.
