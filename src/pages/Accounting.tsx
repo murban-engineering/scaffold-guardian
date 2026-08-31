@@ -221,7 +221,10 @@ type DispatchBatch = {
   hireWeeks: number;
   hireWeeksLabel: string;
   lines: HireLineBreakdown[];
+  /** Billable total for items still on hire only (returned items excluded) */
   batchHireTotal: number;
+  /** Reference amount for already-returned items in this batch (not billed) */
+  batchReturnedReference?: number;
 };
 
 type ClientInvoice = {
