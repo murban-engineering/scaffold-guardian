@@ -1085,7 +1085,7 @@ const Accounting = () => {
             const retTotal = applied * effectiveWeeklyRate * retWeeks;
             lines.push({
               partNumber: partNo,
-              item: `${description} (returned ${formatReportDate(head.date)})`,
+              item: description,
               quantity: applied,
               weeklyRate,
               discountRate,
@@ -1093,6 +1093,8 @@ const Accounting = () => {
               weeks: retWeeks,
               weeksLabel: retLabel,
               lineTotal: retTotal,
+              isReturned: true,
+              returnDate: head.date,
             });
             head.remaining -= applied;
             qty -= applied;
