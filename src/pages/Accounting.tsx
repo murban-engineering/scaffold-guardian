@@ -1244,6 +1244,28 @@ const Accounting = () => {
     [filteredInvoices]
   );
 
+  /**
+   * Expected billing for the CURRENT month only (based on billingDate):
+   * each dispatched workflow's still-on-hire items billed for the full
+   * number of days in the current month (weekly rate × days/7).
+   */
+  const monthlyExpected = useMemo(() => {
+    const bd = asDateOrToday(billingDate);
+    const daysInMonth = getDate(endOfMonth(bd));
+    const monthLabel = format(bd, "MMMM yyyy");
+    const perInvoice = dispatchedInvoices.map((invoice) => {
+      const total = invoice.dispatchBatches.reduce((sum, batch) => {
+        return sum + batch.lines.reduce((lineSum, line) => {
+          if (line.isReturned) return lineSum;
+          return lineSum + line.quantity * line.effectiveWeeklyRate * (daysInMonth / 7);
+        }, 0);
+      }, 0);
+      return { invoice, total };
+    });
+    const grandTotal = perInvoice.reduce((s, r) => s + r.total, 0);
+    return { monthLabel, daysInMonth, perInvoice, grandTotal };
+  }, [dispatchedInvoices, billingDate]);
+
   // Generate monthly invoices from dispatch date to billing date
   const generateMonthlyInvoices = (invoice: ClientInvoice) => {
     const dispatchDate = asDateOrToday(invoice.dispatchDate);
