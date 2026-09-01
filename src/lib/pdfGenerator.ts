@@ -186,6 +186,39 @@ export interface HireReturnNoteData {
   }>;
 }
 
+export interface HireReturnCumulativeSummaryData {
+  quotationNumber: string;
+  reportDate: string;
+  companyName: string;
+  companyAddress?: string;
+  companyCityTown?: string;
+  companyTel?: string;
+  companyFax?: string;
+  companyEmail?: string;
+  companyPinNumber?: string;
+  companyRegNumber?: string;
+  siteName: string;
+  siteLocation: string;
+  siteAddress: string;
+  contactName: string;
+  contactPhone: string;
+  contactEmail: string;
+  createdBy?: string;
+  clientId?: string;
+  siteId?: string;
+  items: Array<{
+    partNumber: string;
+    description: string;
+    good: number;
+    dirty: number;
+    damaged: number;
+    scrap: number;
+    totalReturned: number;
+    remainingOnSite: number;
+    totalMass: number;
+  }>;
+}
+
 const COMPANY_NAME = "OTNO Access Solutions";
 const PAYMENT_DETAILS_HTML = `<strong>Payment Details:</strong><br/>
       Account Name: OTNO ACCESS SOLUTIONS LIMITED<br/>
@@ -1841,5 +1874,89 @@ export const generateHireReturnNotePDF = (data: HireReturnNoteData) => {
     "</body></html>";
 
   printWindow.document.write(withPrintOption(html));
+  printWindow.document.close();
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HIRE RETURN CUMULATIVE SUMMARY
+// ═══════════════════════════════════════════════════════════════════════════════
+export const generateHireReturnCumulativeSummaryPDF = (data: HireReturnCumulativeSummaryData) => {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) { alert("Please allow popups for this site to generate reports"); return; }
+
+  const totals = data.items.reduce(
+    (sum, item) => ({
+      good: sum.good + item.good,
+      dirty: sum.dirty + item.dirty,
+      damaged: sum.damaged + item.damaged,
+      scrap: sum.scrap + item.scrap,
+      returned: sum.returned + item.totalReturned,
+      remaining: sum.remaining + item.remainingOnSite,
+      mass: sum.mass + item.totalMass,
+    }),
+    { good: 0, dirty: 0, damaged: 0, scrap: 0, returned: 0, remaining: 0, mass: 0 }
+  );
+
+  const itemRows = data.items.map((item) => `
+    <tr>
+      <td>${item.partNumber || "-"}</td>
+      <td>${item.description || "-"}</td>
+      <td class="text-right">${item.good}</td>
+      <td class="text-right">${item.dirty}</td>
+      <td class="text-right">${item.damaged}</td>
+      <td class="text-right">${item.scrap}</td>
+      <td class="text-right">${item.totalReturned}</td>
+      <td class="text-right"><strong>${item.remainingOnSite}</strong></td>
+      <td class="text-right">${item.totalMass.toFixed(2)}</td>
+    </tr>
+  `).join("");
+
+  const html = `<!DOCTYPE html><html><head><title>Hire Return Cumulative Summary - ${data.quotationNumber}</title>
+    <style>${SHARED_PRINT_STYLES}
+      .report-summary { margin: 0 0 12px; padding: 8px 10px; border: 1px solid #111827; border-radius: 6px; font-size: 9px; }
+      .report-summary strong { font-size: 10px; }
+    </style></head><body>
+    ${renderStandardReportLayout({
+      documentType: "Hire Return Cumulative Summary",
+      documentNumber: data.quotationNumber,
+      documentDate: data.reportDate,
+      clientName: data.companyName,
+      clientAddress: data.companyAddress,
+      clientCityTown: data.companyCityTown,
+      clientTel: data.companyTel,
+      clientFax: data.companyFax,
+      contactName: data.contactName,
+      contactPhone: data.contactPhone,
+      contactEmail: data.companyEmail || data.contactEmail,
+      clientVat: data.companyPinNumber,
+      clientReg: data.companyRegNumber,
+      siteName: data.siteName,
+      siteId: data.siteId,
+      siteLocation: data.siteLocation,
+      siteAddress: data.siteAddress,
+      clientId: data.clientId,
+      createdBy: data.createdBy,
+    })}
+    <div class="report-summary"><strong>Site balance:</strong> ${totals.remaining} item(s) remain on site. This report includes all processed return batches for the selected site.</div>
+    <table>
+      <thead><tr>
+        <th>Part Number</th><th>Description</th><th class="text-right">Good</th><th class="text-right">Dirty</th>
+        <th class="text-right">Damaged</th><th class="text-right">Scrap</th><th class="text-right">Total Returned</th>
+        <th class="text-right">Remaining on Site</th><th class="text-right">Mass (kg)</th>
+      </tr></thead>
+      <tbody>
+        ${itemRows}
+        <tr class="total-row">
+          <td colspan="2"><strong>TOTAL</strong></td><td class="text-right"><strong>${totals.good}</strong></td>
+          <td class="text-right"><strong>${totals.dirty}</strong></td><td class="text-right"><strong>${totals.damaged}</strong></td>
+          <td class="text-right"><strong>${totals.scrap}</strong></td><td class="text-right"><strong>${totals.returned}</strong></td>
+          <td class="text-right"><strong>${totals.remaining}</strong></td><td class="text-right"><strong>${totals.mass.toFixed(2)}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="text-align:right;font-size:8px;color:#6b7280;margin-top:12px;">Print date: ${formatTimestamp()}</div>
+    </body></html>`;
+
+  printWindow.document.write(withPrintOption(html, "Print cumulative summary"));
   printWindow.document.close();
 };
