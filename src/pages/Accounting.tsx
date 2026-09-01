@@ -311,11 +311,11 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           ? `
             <div style="margin-top:6px;page-break-inside:avoid;break-inside:avoid;">
               <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#7a2e2e;margin-bottom:2px;">
-                Returned Equipment — Billing Ended (not charged)
+                Returned Equipment — Billed Up To Return Date
               </div>
               <table style="page-break-inside:avoid;break-inside:avoid;">
                 <thead><tr>
-                  <th>Part No</th><th>Description</th><th class="r">Qty Returned</th><th class="r">Return Date</th><th class="r">Status</th>
+                  <th>Part No</th><th>Description</th><th class="r">Qty Returned</th><th class="r">Return Date</th><th class="r">Period</th><th class="r">Amount (KES)</th>
                 </tr></thead>
                 <tbody>
                   ${returnedLines.map(l => `
@@ -324,13 +324,14 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
                       <td>${escapeHtml(l.item)}</td>
                       <td class="r">${l.quantity}</td>
                       <td class="r">${escapeHtml(l.returnDate ? formatReportDate(l.returnDate) : "-")}</td>
-                      <td class="r">Billing ended</td>
+                      <td class="r">${escapeHtml(l.weeksLabel)}</td>
+                      <td class="r">${currency.format(l.lineTotal)}</td>
                     </tr>`).join("")}
                 </tbody>
                 <tfoot>
                   <tr style="background:#fdf5f5;">
-                    <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Returned items — not billed in this invoice</td>
-                    <td class="r" style="font-weight:700;">${currency.format(0)}</td>
+                    <td colspan="5" style="text-align:right;font-weight:700;font-size:8.5px;">Returned items subtotal (billed to return date)</td>
+                    <td class="r" style="font-weight:700;">${currency.format(returnedLines.reduce((s, l) => s + l.lineTotal, 0))}</td>
                   </tr>
                 </tfoot>
               </table>
