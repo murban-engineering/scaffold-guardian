@@ -359,11 +359,15 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
               <tfoot>
                 <tr style="background:#f9fafb;">
                   <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Batch ${batch.batchNumber} Subtotal (on hire)</td>
-                  <td class="r" style="font-weight:700;">${currency.format(batch.batchHireTotal)}</td>
+                  <td class="r" style="font-weight:700;">${currency.format(onHireLines.reduce((s, l) => s + l.lineTotal, 0))}</td>
                 </tr>
               </tfoot>
             </table>
             ${returnedBlock}
+            <div style="margin-top:3px;padding:3px 6px;background:#f3f4f6;border:1px solid #ddd;display:flex;justify-content:space-between;font-size:8.5px;font-weight:800;">
+              <span>Batch ${batch.batchNumber} Total</span>
+              <span>${currency.format(batch.batchHireTotal)}</span>
+            </div>
           </div>`;
       }).join("") +
       `<div style="margin-top:4px;padding:4px 8px;background:#f3f4f6;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;font-size:9px;font-weight:800;">
