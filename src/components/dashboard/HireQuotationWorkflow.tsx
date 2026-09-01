@@ -17,12 +17,14 @@ import {
   generateDeliveryNotePDF,
   generateHireLoadingNotePDF,
   generateHireQuotationReportPDF,
+  generateHireReturnCumulativeSummaryPDF,
   generateHireReturnNotePDF,
   generateQuotationPDF,
   generateYardVerificationNotePDF,
   DeliveryNoteData,
   HireLoadingNoteData,
   HireQuotationReportData,
+  HireReturnCumulativeSummaryData,
   HireReturnNoteData,
   QuotationCalculationData,
 } from "@/lib/pdfGenerator";
@@ -1248,6 +1250,63 @@ const HireQuotationWorkflow = ({
 
     return quantities;
   }, [deliveryHistory, returnHistory, selectedReturnSiteNumber]);
+
+  const cumulativeReturnSummaryItems = useMemo(() => {
+    const summary = new Map<string, {
+      itemCode: string;
+      description: string;
+      good: number;
+      dirty: number;
+      damaged: number;
+      scrap: number;
+      totalReturned: number;
+      totalMass: number;
+      remainingOnSite: number;
+    }>();
+
+    returnItems.forEach((item) => {
+      const key = item.itemCode || item.description;
+      if (!key) return;
+      summary.set(key, {
+        itemCode: item.itemCode,
+        description: item.description,
+        good: 0,
+        dirty: 0,
+        damaged: 0,
+        scrap: 0,
+        totalReturned: 0,
+        totalMass: 0,
+        remainingOnSite: item.returnBalance,
+      });
+    });
+
+    returnHistory
+      .filter((record) => !selectedReturnSiteNumber || !record.siteNumber || record.siteNumber === selectedReturnSiteNumber)
+      .forEach((record) => record.items.forEach((item) => {
+        const key = item.itemCode || item.description;
+        if (!key) return;
+        const existing = summary.get(key) ?? {
+          itemCode: item.itemCode,
+          description: item.description,
+          good: 0,
+          dirty: 0,
+          damaged: 0,
+          scrap: 0,
+          totalReturned: 0,
+          totalMass: 0,
+          remainingOnSite: 0,
+        };
+        existing.good += item.good;
+        existing.dirty += item.dirty;
+        existing.damaged += item.damaged;
+        existing.scrap += item.scrap;
+        existing.totalReturned += item.totalReturned;
+        existing.totalMass += item.totalMass;
+        summary.set(key, existing);
+      }));
+
+    return Array.from(summary.values());
+  }, [returnHistory, returnItems, selectedReturnSiteNumber]);
 
   useEffect(() => {
     setReturnItems((prev) =>
@@ -3105,6 +3164,39 @@ const HireQuotationWorkflow = ({
     };
     generateHireReturnNotePDF(data);
     toast.success("Return note opened for printing");
+  };
+
+  const handlePrintCumulativeReturnSummary = () => {
+    const selectedSite = clientSites?.find((site) => site.id === selectedReturnSiteId);
+    const reportSite = selectedSite ?? (clientSites && clientSites.length > 0 ? clientSites[0] : undefined);
+    const data: HireReturnCumulativeSummaryData = {
+      quotationNumber: header.quotationNo,
+      reportDate: getToday(),
+      companyName: header.clientCompanyName,
+      ...clientPdfFields,
+      siteName: reportSite?.site_name || header.siteName,
+      siteLocation: reportSite?.site_location || header.siteLocation,
+      siteAddress: reportSite?.site_address || header.siteAddress,
+      contactName: reportSite?.site_manager_name || header.clientName,
+      contactPhone: reportSite?.site_manager_phone || header.clientPhone,
+      contactEmail: header.clientEmail,
+      createdBy: header.createdBy || signedInUserName,
+      clientId: header.clientId,
+      siteId: reportSite?.site_number || "",
+      items: cumulativeReturnSummaryItems.map((item) => ({
+        partNumber: item.itemCode,
+        description: item.description,
+        good: item.good,
+        dirty: item.dirty,
+        damaged: item.damaged,
+        scrap: item.scrap,
+        totalReturned: item.totalReturned,
+        remainingOnSite: item.remainingOnSite,
+        totalMass: item.totalMass,
+      })),
+    };
+    generateHireReturnCumulativeSummaryPDF(data);
+    toast.success("Cumulative return summary opened for printing");
   };
 
   // Helper: shared client company fields passed to every PDF generator
@@ -4990,44 +5082,33 @@ const HireQuotationWorkflow = ({
                           <th className="px-3 py-2 text-right font-medium">Damaged</th>
                           <th className="px-3 py-2 text-right font-medium">Scrap</th>
                           <th className="px-3 py-2 text-right font-medium">Total</th>
+                          <th className="px-3 py-2 text-right font-medium">Remaining on Site</th>
                           <th className="px-3 py-2 text-right font-medium">Mass (kg)</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(() => {
-                          const cumulative: Record<string, { itemCode: string; description: string; good: number; dirty: number; damaged: number; scrap: number; total: number; mass: number }> = {};
-                          returnHistory.forEach(r => r.items.forEach(item => {
-                            const key = item.itemCode || item.description;
-                            if (!cumulative[key]) cumulative[key] = { itemCode: item.itemCode, description: item.description, good: 0, dirty: 0, damaged: 0, scrap: 0, total: 0, mass: 0 };
-                            cumulative[key].good += item.good;
-                            cumulative[key].dirty += item.dirty;
-                            cumulative[key].damaged += item.damaged;
-                            cumulative[key].scrap += item.scrap;
-                            cumulative[key].total += item.totalReturned;
-                            cumulative[key].mass += item.totalMass;
-                          }));
-                          return Object.values(cumulative).map((item, idx) => (
-                            <tr key={idx} className="border-b border-border/50">
-                              <td className="px-3 py-2">
-                                <span className="font-medium">{item.itemCode}</span>
-                                <span className="text-muted-foreground ml-1">- {item.description}</span>
-                              </td>
-                              <td className="px-3 py-2 text-right text-green-600">{item.good}</td>
-                              <td className="px-3 py-2 text-right text-amber-600">{item.dirty}</td>
-                              <td className="px-3 py-2 text-right text-red-600">{item.damaged}</td>
-                              <td className="px-3 py-2 text-right text-red-800">{item.scrap}</td>
-                              <td className="px-3 py-2 text-right font-semibold">{item.total}</td>
-                              <td className="px-3 py-2 text-right text-muted-foreground">{item.mass.toFixed(2)}</td>
-                            </tr>
-                          ));
-                        })()}
+                        {cumulativeReturnSummaryItems.map((item) => (
+                          <tr key={item.itemCode || item.description} className="border-b border-border/50">
+                            <td className="px-3 py-2">
+                              <span className="font-medium">{item.itemCode}</span>
+                              <span className="text-muted-foreground ml-1">- {item.description}</span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-green-600">{item.good}</td>
+                            <td className="px-3 py-2 text-right text-amber-600">{item.dirty}</td>
+                            <td className="px-3 py-2 text-right text-red-600">{item.damaged}</td>
+                            <td className="px-3 py-2 text-right text-red-800">{item.scrap}</td>
+                            <td className="px-3 py-2 text-right font-semibold">{item.totalReturned}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-primary">{item.remainingOnSite}</td>
+                            <td className="px-3 py-2 text-right text-muted-foreground">{item.totalMass.toFixed(2)}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={() => returnHistory.length > 0 && handlePrintReturnNoteFromHistory(returnHistory[0])}>
+                    <Button variant="outline" onClick={handlePrintCumulativeReturnSummary}>
                       <Printer className="h-4 w-4 mr-2" />
-                      Print Latest Return Note
+                      Print Cumulative Summary
                     </Button>
                   </div>
                 </CardContent>
