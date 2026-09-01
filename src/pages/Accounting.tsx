@@ -311,11 +311,11 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
           ? `
             <div style="margin-top:6px;page-break-inside:avoid;break-inside:avoid;">
               <div style="font-size:9px;font-weight:800;text-transform:uppercase;color:#7a2e2e;margin-bottom:2px;">
-                Returned Equipment — Billing Ended (not charged)
+                Returned Equipment — Billed Up To Return Date
               </div>
               <table style="page-break-inside:avoid;break-inside:avoid;">
                 <thead><tr>
-                  <th>Part No</th><th>Description</th><th class="r">Qty Returned</th><th class="r">Return Date</th><th class="r">Status</th>
+                  <th>Part No</th><th>Description</th><th class="r">Qty Returned</th><th class="r">Return Date</th><th class="r">Period</th><th class="r">Amount (KES)</th>
                 </tr></thead>
                 <tbody>
                   ${returnedLines.map(l => `
@@ -324,13 +324,14 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
                       <td>${escapeHtml(l.item)}</td>
                       <td class="r">${l.quantity}</td>
                       <td class="r">${escapeHtml(l.returnDate ? formatReportDate(l.returnDate) : "-")}</td>
-                      <td class="r">Billing ended</td>
+                      <td class="r">${escapeHtml(l.weeksLabel)}</td>
+                      <td class="r">${currency.format(l.lineTotal)}</td>
                     </tr>`).join("")}
                 </tbody>
                 <tfoot>
                   <tr style="background:#fdf5f5;">
-                    <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Returned items — not billed in this invoice</td>
-                    <td class="r" style="font-weight:700;">${currency.format(0)}</td>
+                    <td colspan="5" style="text-align:right;font-weight:700;font-size:8.5px;">Returned items subtotal (billed to return date)</td>
+                    <td class="r" style="font-weight:700;">${currency.format(returnedLines.reduce((s, l) => s + l.lineTotal, 0))}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -358,11 +359,15 @@ const openInvoicePrint = (invoice: ClientInvoice, billingDateStr: string) => {
               <tfoot>
                 <tr style="background:#f9fafb;">
                   <td colspan="4" style="text-align:right;font-weight:700;font-size:8.5px;">Batch ${batch.batchNumber} Subtotal (on hire)</td>
-                  <td class="r" style="font-weight:700;">${currency.format(batch.batchHireTotal)}</td>
+                  <td class="r" style="font-weight:700;">${currency.format(onHireLines.reduce((s, l) => s + l.lineTotal, 0))}</td>
                 </tr>
               </tfoot>
             </table>
             ${returnedBlock}
+            <div style="margin-top:3px;padding:3px 6px;background:#f3f4f6;border:1px solid #ddd;display:flex;justify-content:space-between;font-size:8.5px;font-weight:800;">
+              <span>Batch ${batch.batchNumber} Total</span>
+              <span>${currency.format(batch.batchHireTotal)}</span>
+            </div>
           </div>`;
       }).join("") +
       `<div style="margin-top:4px;padding:4px 8px;background:#f3f4f6;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;font-size:9px;font-weight:800;">
@@ -1119,8 +1124,8 @@ const Accounting = () => {
           }
         }
 
-        // Only items still on site are billed; returned quantities stop billing on their return date.
-        const batchHireTotal = lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
+        // Returned quantities are billed up to their return date; on-hire items bill to the billing date.
+        const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
         const batchReturnedReference = lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
         return {
           batchNumber: batchIdx + 1,
@@ -1279,21 +1284,46 @@ const Accounting = () => {
           hireDays: 0,
           hireWeeks: 0,
           hireWeeksLabel: "0 days",
-          lines: batch.lines.map(l => (l.isReturned ? l : { ...l, weeks: 0, weeksLabel: "0 days", lineTotal: 0 })),
+          lines: [],
           batchHireTotal: 0,
+          batchReturnedReference: 0,
         };
       }
       const batchBillingStart = isSameMonth(monthStart, batchDispatch) ? batchDispatch : startOfMonth(monthStart);
       const batchDays = differenceInCalendarDays(monthEnd, batchBillingStart);
       const batchWeeks = billableDaysToWeeks(batchDays);
       const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
-      // Returned rows are reference-only — they keep their original (ended) billing period.
-      const lines = batch.lines.map((l) => (l.isReturned ? l : {
-        ...l,
-        weeks: batchWeeks,
-        weeksLabel: batchWeeksLabel,
-        lineTotal: l.quantity * l.effectiveWeeklyRate * batchWeeks,
-      }));
+      const monthStartIso = format(startOfMonth(monthStart), "yyyy-MM-dd");
+      const lines = batch.lines
+        // Returned items only belong to the month in which (or before which) they stopped billing.
+        .filter((l) => {
+          if (!l.isReturned) return true;
+          const ret = l.returnDate ? asDateOrToday(l.returnDate) : null;
+          if (!ret) return true;
+          // Drop returns that ended in an earlier month — nothing to bill this month.
+          return format(ret, "yyyy-MM-dd") >= monthStartIso;
+        })
+        .map((l) => {
+          if (!l.isReturned) {
+            return {
+              ...l,
+              weeks: batchWeeks,
+              weeksLabel: batchWeeksLabel,
+              lineTotal: l.quantity * l.effectiveWeeklyRate * batchWeeks,
+            };
+          }
+          // Bill returned items from this month's start (or dispatch) up to their return date.
+          const ret = l.returnDate ? asDateOrToday(l.returnDate) : monthEnd;
+          const endDate = isBefore(monthEnd, ret) ? monthEnd : ret;
+          const days = Math.max(differenceInCalendarDays(endDate, batchBillingStart), 0);
+          const weeks = billableDaysToWeeks(days);
+          return {
+            ...l,
+            weeks,
+            weeksLabel: formatWeeksDaysLabel(days),
+            lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
+          };
+        });
       return {
         ...batch,
         dispatchDate: format(batchBillingStart, "yyyy-MM-dd"),
@@ -1301,7 +1331,7 @@ const Accounting = () => {
         hireWeeks: batchWeeks,
         hireWeeksLabel: batchWeeksLabel,
         lines,
-        batchHireTotal: lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
+        batchHireTotal: lines.reduce((s, l) => s + l.lineTotal, 0),
         batchReturnedReference: lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
       };
     });
