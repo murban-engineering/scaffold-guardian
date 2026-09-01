@@ -1119,8 +1119,8 @@ const Accounting = () => {
           }
         }
 
-        // Only items still on site are billed; returned quantities stop billing on their return date.
-        const batchHireTotal = lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
+        // Returned quantities are billed up to their return date; on-hire items bill to the billing date.
+        const batchHireTotal = lines.reduce((s, l) => s + l.lineTotal, 0);
         const batchReturnedReference = lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0);
         return {
           batchNumber: batchIdx + 1,
