@@ -1279,21 +1279,46 @@ const Accounting = () => {
           hireDays: 0,
           hireWeeks: 0,
           hireWeeksLabel: "0 days",
-          lines: batch.lines.map(l => (l.isReturned ? l : { ...l, weeks: 0, weeksLabel: "0 days", lineTotal: 0 })),
+          lines: [],
           batchHireTotal: 0,
+          batchReturnedReference: 0,
         };
       }
       const batchBillingStart = isSameMonth(monthStart, batchDispatch) ? batchDispatch : startOfMonth(monthStart);
       const batchDays = differenceInCalendarDays(monthEnd, batchBillingStart);
       const batchWeeks = billableDaysToWeeks(batchDays);
       const batchWeeksLabel = formatWeeksDaysLabel(batchDays);
-      // Returned rows are reference-only — they keep their original (ended) billing period.
-      const lines = batch.lines.map((l) => (l.isReturned ? l : {
-        ...l,
-        weeks: batchWeeks,
-        weeksLabel: batchWeeksLabel,
-        lineTotal: l.quantity * l.effectiveWeeklyRate * batchWeeks,
-      }));
+      const monthStartIso = format(startOfMonth(monthStart), "yyyy-MM-dd");
+      const lines = batch.lines
+        // Returned items only belong to the month in which (or before which) they stopped billing.
+        .filter((l) => {
+          if (!l.isReturned) return true;
+          const ret = l.returnDate ? asDateOrToday(l.returnDate) : null;
+          if (!ret) return true;
+          // Drop returns that ended in an earlier month — nothing to bill this month.
+          return format(ret, "yyyy-MM-dd") >= monthStartIso;
+        })
+        .map((l) => {
+          if (!l.isReturned) {
+            return {
+              ...l,
+              weeks: batchWeeks,
+              weeksLabel: batchWeeksLabel,
+              lineTotal: l.quantity * l.effectiveWeeklyRate * batchWeeks,
+            };
+          }
+          // Bill returned items from this month's start (or dispatch) up to their return date.
+          const ret = l.returnDate ? asDateOrToday(l.returnDate) : monthEnd;
+          const endDate = isBefore(monthEnd, ret) ? monthEnd : ret;
+          const days = Math.max(differenceInCalendarDays(endDate, batchBillingStart), 0);
+          const weeks = billableDaysToWeeks(days);
+          return {
+            ...l,
+            weeks,
+            weeksLabel: formatWeeksDaysLabel(days),
+            lineTotal: l.quantity * l.effectiveWeeklyRate * weeks,
+          };
+        });
       return {
         ...batch,
         dispatchDate: format(batchBillingStart, "yyyy-MM-dd"),
@@ -1301,7 +1326,7 @@ const Accounting = () => {
         hireWeeks: batchWeeks,
         hireWeeksLabel: batchWeeksLabel,
         lines,
-        batchHireTotal: lines.filter((l) => !l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
+        batchHireTotal: lines.reduce((s, l) => s + l.lineTotal, 0),
         batchReturnedReference: lines.filter((l) => l.isReturned).reduce((s, l) => s + l.lineTotal, 0),
       };
     });
