@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore, isSameMonth, getDate } from "date-fns";
+import { differenceInCalendarDays, format, endOfMonth, addMonths, startOfMonth, isBefore, isSameMonth } from "date-fns";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { useHireQuotations } from "@/hooks/useHireQuotations";
@@ -1244,28 +1244,6 @@ const Accounting = () => {
     [filteredInvoices]
   );
 
-  /**
-   * Expected billing for the CURRENT month only (based on billingDate):
-   * each dispatched workflow's still-on-hire items billed for the full
-   * number of days in the current month (weekly rate × days/7).
-   */
-  const monthlyExpected = useMemo(() => {
-    const bd = asDateOrToday(billingDate);
-    const daysInMonth = getDate(endOfMonth(bd));
-    const monthLabel = format(bd, "MMMM yyyy");
-    const perInvoice = dispatchedInvoices.map((invoice) => {
-      const total = invoice.dispatchBatches.reduce((sum, batch) => {
-        return sum + batch.lines.reduce((lineSum, line) => {
-          if (line.isReturned) return lineSum;
-          return lineSum + line.quantity * line.effectiveWeeklyRate * (daysInMonth / 7);
-        }, 0);
-      }, 0);
-      return { invoice, total };
-    });
-    const grandTotal = perInvoice.reduce((s, r) => s + r.total, 0);
-    return { monthLabel, daysInMonth, perInvoice, grandTotal };
-  }, [dispatchedInvoices, billingDate]);
-
   // Generate monthly invoices from dispatch date to billing date
   const generateMonthlyInvoices = (invoice: ClientInvoice) => {
     const dispatchDate = asDateOrToday(invoice.dispatchDate);
@@ -1471,52 +1449,6 @@ const Accounting = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Total per Month Expected — current month only */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Total per Month Expected — {monthlyExpected.monthLabel}</CardTitle>
-              <CardDescription>
-                Expected hire billing for {monthlyExpected.monthLabel} ({monthlyExpected.daysInMonth} days) across all dispatched workflows — items still on hire only.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold mb-4">{currency.format(monthlyExpected.grandTotal)}</p>
-              {monthlyExpected.perInvoice.length ? (
-                <div className="overflow-x-auto rounded-lg border border-border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Invoice</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Site</TableHead>
-                        <TableHead className="text-right">Expected ({monthlyExpected.monthLabel})</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {monthlyExpected.perInvoice.map(({ invoice, total }) => (
-                        <TableRow key={invoice.id}>
-                          <TableCell>
-                            <div className="font-medium">{invoice.invoiceNumber}</div>
-                            <div className="text-xs text-muted-foreground">{invoice.quotationNumber}</div>
-                          </TableCell>
-                          <TableCell className="font-medium">{invoice.client}</TableCell>
-                          <TableCell>{invoice.site}</TableCell>
-                          <TableCell className="text-right font-bold">{currency.format(total)}</TableCell>
-                        </TableRow>
-                      ))}
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-right font-bold">Total Expected</TableCell>
-                        <TableCell className="text-right font-bold">{currency.format(monthlyExpected.grandTotal)}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No dispatched workflows for this month.</p>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Client Invoices */}
           <Card>
