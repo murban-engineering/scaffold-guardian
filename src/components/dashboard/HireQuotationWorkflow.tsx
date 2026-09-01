@@ -3186,13 +3186,15 @@ const HireQuotationWorkflow = ({
       items: cumulativeReturnSummaryItems.map((item) => ({
         partNumber: item.itemCode,
         description: item.description,
+        totalDelivered: returnItems.find((returnItem) =>
+          (returnItem.itemCode || returnItem.description) === (item.itemCode || item.description)
+        )?.totalDelivered ?? item.totalReturned + item.remainingOnSite,
         good: item.good,
         dirty: item.dirty,
         damaged: item.damaged,
         scrap: item.scrap,
         totalReturned: item.totalReturned,
         remainingOnSite: item.remainingOnSite,
-        totalMass: item.totalMass,
       })),
     };
     generateHireReturnCumulativeSummaryPDF(data);

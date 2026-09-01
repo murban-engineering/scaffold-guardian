@@ -209,13 +209,13 @@ export interface HireReturnCumulativeSummaryData {
   items: Array<{
     partNumber: string;
     description: string;
+    totalDelivered: number;
     good: number;
     dirty: number;
     damaged: number;
     scrap: number;
     totalReturned: number;
     remainingOnSite: number;
-    totalMass: number;
   }>;
 }
 
@@ -1886,28 +1886,28 @@ export const generateHireReturnCumulativeSummaryPDF = (data: HireReturnCumulativ
 
   const totals = data.items.reduce(
     (sum, item) => ({
+      delivered: sum.delivered + item.totalDelivered,
       good: sum.good + item.good,
       dirty: sum.dirty + item.dirty,
       damaged: sum.damaged + item.damaged,
       scrap: sum.scrap + item.scrap,
       returned: sum.returned + item.totalReturned,
       remaining: sum.remaining + item.remainingOnSite,
-      mass: sum.mass + item.totalMass,
     }),
-    { good: 0, dirty: 0, damaged: 0, scrap: 0, returned: 0, remaining: 0, mass: 0 }
+    { delivered: 0, good: 0, dirty: 0, damaged: 0, scrap: 0, returned: 0, remaining: 0 }
   );
 
   const itemRows = data.items.map((item) => `
     <tr>
       <td>${item.partNumber || "-"}</td>
       <td>${item.description || "-"}</td>
+      <td class="text-right">${item.totalDelivered}</td>
       <td class="text-right">${item.good}</td>
       <td class="text-right">${item.dirty}</td>
       <td class="text-right">${item.damaged}</td>
       <td class="text-right">${item.scrap}</td>
       <td class="text-right">${item.totalReturned}</td>
       <td class="text-right"><strong>${item.remainingOnSite}</strong></td>
-      <td class="text-right">${item.totalMass.toFixed(2)}</td>
     </tr>
   `).join("");
 
@@ -1940,17 +1940,17 @@ export const generateHireReturnCumulativeSummaryPDF = (data: HireReturnCumulativ
     <div class="report-summary"><strong>Site balance:</strong> ${totals.remaining} item(s) remain on site. This report includes all processed return batches for the selected site.</div>
     <table>
       <thead><tr>
-        <th>Part Number</th><th>Description</th><th class="text-right">Good</th><th class="text-right">Dirty</th>
+        <th>Part Number</th><th>Description</th><th class="text-right">Total Delivered</th><th class="text-right">Good</th><th class="text-right">Dirty</th>
         <th class="text-right">Damaged</th><th class="text-right">Scrap</th><th class="text-right">Total Returned</th>
-        <th class="text-right">Remaining on Site</th><th class="text-right">Mass (kg)</th>
+        <th class="text-right">Remaining on Site</th>
       </tr></thead>
       <tbody>
         ${itemRows}
         <tr class="total-row">
-          <td colspan="2"><strong>TOTAL</strong></td><td class="text-right"><strong>${totals.good}</strong></td>
+          <td colspan="2"><strong>TOTAL</strong></td><td class="text-right"><strong>${totals.delivered}</strong></td><td class="text-right"><strong>${totals.good}</strong></td>
           <td class="text-right"><strong>${totals.dirty}</strong></td><td class="text-right"><strong>${totals.damaged}</strong></td>
           <td class="text-right"><strong>${totals.scrap}</strong></td><td class="text-right"><strong>${totals.returned}</strong></td>
-          <td class="text-right"><strong>${totals.remaining}</strong></td><td class="text-right"><strong>${totals.mass.toFixed(2)}</strong></td>
+          <td class="text-right"><strong>${totals.remaining}</strong></td>
         </tr>
       </tbody>
     </table>
