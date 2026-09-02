@@ -1493,6 +1493,11 @@ const Accounting = () => {
   // overlay/pointer-events stuck, forcing a refresh before the next report opens.
   const handleReportAction = (inv: ClientInvoice, action: string) => {
     window.setTimeout(() => {
+      if (action === "weekly-rate") {
+        openWeeklyRateReport(inv);
+        return;
+      }
+
       if (action === "dds") {
         openInvoicePrint(inv, billingDate);
         return;
