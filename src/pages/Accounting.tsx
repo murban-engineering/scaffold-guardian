@@ -1530,29 +1530,7 @@ const Accounting = () => {
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center">
                                     <Select
-                                      onValueChange={(action) => {
-                                        if (action === "dds") {
-                                          openInvoicePrint(inv, billingDate);
-                                          return;
-                                        }
-
-                                        if (action === "scrap") {
-                                          openScrapReport(inv);
-                                          return;
-                                        }
-
-                                        if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
-                                          return;
-                                        }
-
-                                        if (action.startsWith("monthly:")) {
-                                          const monthIdx = Number(action.replace("monthly:", ""));
-                                          const months = generateMonthlyInvoices(inv);
-                                          const m = months[monthIdx];
-                                          if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
-                                        }
-                                      }}
+                                      onValueChange={(action) => handleReportAction(inv, action)}
                                     >
                                       <SelectTrigger className="h-8 w-[180px] text-xs">
                                         <SelectValue placeholder="Reports" />
