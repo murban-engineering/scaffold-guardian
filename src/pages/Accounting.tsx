@@ -1361,6 +1361,35 @@ const Accounting = () => {
     openInvoicePrint(monthInvoice, monthBillingDate);
   };
 
+  // Defer opening the report window until the Select dropdown has fully closed.
+  // Opening a popup while the dropdown is still unmounting leaves the page's
+  // overlay/pointer-events stuck, forcing a refresh before the next report opens.
+  const handleReportAction = (inv: ClientInvoice, action: string) => {
+    window.setTimeout(() => {
+      if (action === "dds") {
+        openInvoicePrint(inv, billingDate);
+        return;
+      }
+
+      if (action === "scrap") {
+        openScrapReport(inv);
+        return;
+      }
+
+      if (action === "customer-statement") {
+        openCustomerStatement(inv, invoices, billingDate);
+        return;
+      }
+
+      if (action.startsWith("monthly:")) {
+        const monthIdx = Number(action.replace("monthly:", ""));
+        const months = generateMonthlyInvoices(inv);
+        const m = months[monthIdx];
+        if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
+      }
+    }, 0);
+  };
+
   const handleSidebarItemClick = (item: string) => {
     const routes: Record<string, string> = {
       dashboard: "/",
@@ -1501,29 +1530,7 @@ const Accounting = () => {
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center">
                                     <Select
-                                      onValueChange={(action) => {
-                                        if (action === "dds") {
-                                          openInvoicePrint(inv, billingDate);
-                                          return;
-                                        }
-
-                                        if (action === "scrap") {
-                                          openScrapReport(inv);
-                                          return;
-                                        }
-
-                                        if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
-                                          return;
-                                        }
-
-                                        if (action.startsWith("monthly:")) {
-                                          const monthIdx = Number(action.replace("monthly:", ""));
-                                          const months = generateMonthlyInvoices(inv);
-                                          const m = months[monthIdx];
-                                          if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
-                                        }
-                                      }}
+                                      onValueChange={(action) => handleReportAction(inv, action)}
                                     >
                                       <SelectTrigger className="h-8 w-[180px] text-xs">
                                         <SelectValue placeholder="Reports" />
@@ -1601,29 +1608,7 @@ const Accounting = () => {
                                 <TableCell className="text-center">
                                   <div className="flex items-center justify-center">
                                     <Select
-                                      onValueChange={(action) => {
-                                        if (action === "dds") {
-                                          openInvoicePrint(inv, billingDate);
-                                          return;
-                                        }
-
-                                        if (action === "scrap") {
-                                          openScrapReport(inv);
-                                          return;
-                                        }
-
-                                        if (action === "customer-statement") {
-                                          openCustomerStatement(inv, invoices, billingDate);
-                                          return;
-                                        }
-
-                                        if (action.startsWith("monthly:")) {
-                                          const monthIdx = Number(action.replace("monthly:", ""));
-                                          const months = generateMonthlyInvoices(inv);
-                                          const m = months[monthIdx];
-                                          if (m) openMonthlyInvoice(inv, m.startDate, m.endDate, m.label);
-                                        }
-                                      }}
+                                      onValueChange={(action) => handleReportAction(inv, action)}
                                     >
                                       <SelectTrigger className="h-8 w-[180px] text-xs">
                                         <SelectValue placeholder="Reports" />
