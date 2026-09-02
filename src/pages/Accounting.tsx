@@ -674,6 +674,133 @@ const openScrapReport = (invoice: ClientInvoice) => {
   win.document.close();
 };
 
+/**
+ * Weekly Rate report — one page, items currently on hire ONLY.
+ * Duration is exactly one week: Amount = Qty on hire x weekly rate.
+ * Returned items are excluded entirely.
+ */
+const openWeeklyRateReport = (invoice: ClientInvoice) => {
+  // Aggregate on-hire quantities per part number across all dispatch batches.
+  const onHireMap = new Map<string, { partNumber: string; item: string; quantity: number; weeklyRate: number }>();
+  const batches = invoice.dispatchBatches.length
+    ? invoice.dispatchBatches
+    : [{ lines: invoice.hireBreakdown } as DispatchBatch];
+
+  batches.forEach((batch) => {
+    batch.lines
+      .filter((l) => !l.isReturned)
+      .forEach((l) => {
+        const key = l.partNumber || l.item;
+        const existing = onHireMap.get(key);
+        if (existing) {
+          existing.quantity += l.quantity;
+        } else {
+          onHireMap.set(key, {
+            partNumber: l.partNumber,
+            item: l.item,
+            quantity: l.quantity,
+            weeklyRate: l.effectiveWeeklyRate ?? l.weeklyRate,
+          });
+        }
+      });
+  });
+
+  const lines = Array.from(onHireMap.values());
+  if (!lines.length) {
+    alert("No items currently on hire for this client.");
+    return;
+  }
+
+  const win = window.open("", "_blank");
+  if (!win) { alert("Please allow popups to print reports"); return; }
+
+  const rows = lines.map((l, idx) => `
+    <tr>
+      <td>${idx + 1}</td>
+      <td>${escapeHtml(l.partNumber || "-")}</td>
+      <td>${escapeHtml(l.item)}</td>
+      <td class="r">${l.quantity}</td>
+      <td class="r">${currency.format(l.weeklyRate)}</td>
+      <td class="r">${currency.format(l.quantity * l.weeklyRate)}</td>
+    </tr>`).join("");
+
+  const weeklyTotal = lines.reduce((s, l) => s + l.quantity * l.weeklyRate, 0);
+  const vatAmount = weeklyTotal * 0.16;
+  const totalWithVat = weeklyTotal + vatAmount;
+
+  const html = `<!doctype html><html><head>
+    <title>Weekly Rate - ${escapeHtml(invoice.client)}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:24px;color:#111;font-size:12px}
+      h1{margin:0 0 4px;font-size:16px;line-height:1.2}
+      h2{margin:18px 0 6px;font-size:13px;border-bottom:1px solid #ccc;padding-bottom:4px}
+      .header-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;align-items:start;margin-bottom:14px}
+      .left-block{padding:8px 4px;display:grid;gap:10px}
+      .right-block{display:grid;gap:8px}
+      .brand-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+      .logo{width:88px;height:auto}
+      .brand-title{font-size:18px;font-weight:800;line-height:1.15;color:#111827}
+      .brand-subtitle{font-size:11px;color:#4b5563;margin-top:2px}
+      .panel{border:1px solid #111827;border-radius:6px;padding:8px}
+      .panel h3{margin:0 0 6px;font-size:12px;border-bottom:1px solid #e5e7eb;padding-bottom:4px;text-transform:uppercase}
+      .client-panel h3{font-size:20px;border-bottom:none;padding-bottom:0;margin-bottom:8px}
+      .client-address{white-space:pre-line;min-height:42px}
+      .spacer{height:16px}
+      .row{display:flex;align-items:flex-start;margin-bottom:3px}.lbl{width:112px;font-weight:700;color:#374151}.sep{width:10px;color:#6b7280}.val{flex:1}
+      table{width:100%;border-collapse:collapse;margin-top:8px}
+      th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+      th{background:#f5f5f5;font-size:11px}
+      .r{text-align:right}
+      .sum{max-width:360px;margin:14px 0 0 auto}
+      .sum-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}
+      .sum-row.total{font-weight:700;border-top:2px solid #333;border-bottom:none;margin-top:6px;padding-top:8px;font-size:14px}
+      .ft{margin-top:10px;font-size:11px;color:#555}
+      .print-bar{position:sticky;top:0;z-index:999;display:flex;justify-content:flex-end;padding:10px 20px;background:rgba(255,255,255,.96);border-bottom:1px solid #ddd}
+      .print-btn{border:1px solid #333;border-radius:6px;background:#111;color:#fff;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer}
+      @media print{
+        .print-bar{display:none}
+        body{margin:0;padding:12px}
+        @page{size:A4 portrait;margin:10mm}
+      }
+    </style></head><body>
+    <div class="print-bar"><button class="print-btn" onclick="window.print()">Print Weekly Rate</button></div>
+    ${renderAccountingReportHeader({
+      documentTitle: "Weekly Rate",
+      documentNumber: invoice.quotationNumber,
+      documentDate: invoice.createdDate,
+      client: invoice.client,
+      site: invoice.site,
+      siteAddress: invoice.siteAddress || "-",
+      contactName: invoice.contactName || "-",
+      contactPhone: invoice.contactPhone || "-",
+      createdBy: invoice.createdBy,
+      extraRows: `<div class="row"><span class="lbl">Invoice No</span><span class="sep">:</span><span class="val">${escapeHtml(invoice.invoiceNumber)}</span></div>
+        <div class="row"><span class="lbl">Duration</span><span class="sep">:</span><span class="val">1 Week</span></div>`,
+    })}
+
+    <div class="print-content">
+      <h2>Weekly Hire Charges — Items On Hire (1 Week)</h2>
+      <table>
+        <thead><tr>
+          <th>#</th><th>Part No</th><th>Description</th><th class="r">Qty On Hire</th><th class="r">Weekly Rate (KES)</th><th class="r">Weekly Amount (KES)</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="sum">
+        <div class="sum-row"><span>Weekly Hire Total</span><strong>${currency.format(weeklyTotal)}</strong></div>
+        <div class="sum-row"><span>VAT (16%)</span><strong>${currency.format(vatAmount)}</strong></div>
+        <div class="sum-row total"><span>WEEKLY TOTAL</span><span>${currency.format(totalWithVat)}</span></div>
+      </div>
+
+      <p class="ft">Weekly rate report for ${COMPANY_NAME}. Covers items currently on hire only, billed for one (1) week. All amounts in Kenya Shillings (KES).</p>
+    </div>
+  </body></html>`;
+
+  win.document.write(html);
+  win.document.close();
+};
+
 const openCustomerStatement = (
   invoice: ClientInvoice,
   allInvoices: ClientInvoice[],
