@@ -1668,6 +1668,7 @@ const Accounting = () => {
                                         <SelectValue placeholder="Reports" />
                                       </SelectTrigger>
                                       <SelectContent>
+                                        <SelectItem value="weekly-rate">Weekly Rate</SelectItem>
                                         <SelectItem value="dds">Tax Invoice Copy</SelectItem>
                                         <SelectItem
                                           value="scrap"
@@ -1746,6 +1747,7 @@ const Accounting = () => {
                                         <SelectValue placeholder="Reports" />
                                       </SelectTrigger>
                                       <SelectContent>
+                                        <SelectItem value="weekly-rate">Weekly Rate</SelectItem>
                                         <SelectItem value="dds">Tax Invoice Copy</SelectItem>
                                         <SelectItem
                                           value="scrap"
