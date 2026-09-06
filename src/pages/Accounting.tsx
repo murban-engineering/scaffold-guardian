@@ -1143,6 +1143,36 @@ const Accounting = () => {
         });
       }
 
+      // Fallback lookup: delivery notes sometimes store a base/variant code
+      // (e.g. "1105076" vs line item "1105076A", or with/without leading zeros).
+      const normalisePart = (p: string) => p.trim().toUpperCase().replace(/[^0-9A-Z]/g, "").replace(/^0+/, "").replace(/[A-Z]+$/, "");
+      const lineItemMetaByNormalised = new Map<string, LineItemMeta>();
+      for (const meta of lineItemMetaByPart.values()) {
+        const key = normalisePart(meta.partNumber);
+        if (key && !lineItemMetaByNormalised.has(key)) lineItemMetaByNormalised.set(key, meta);
+      }
+      const scaffoldMetaByNormalised = new Map<string, LineItemMeta>();
+      for (const s of scaffolds as { part_number?: string | null; description?: string | null; weekly_rate?: number | null }[]) {
+        if (!s.part_number) continue;
+        const key = normalisePart(s.part_number);
+        if (!key || scaffoldMetaByNormalised.has(key)) continue;
+        const weeklyRate = s.weekly_rate ?? 0;
+        scaffoldMetaByNormalised.set(key, {
+          weeklyRate,
+          discountRate: 0,
+          effectiveWeeklyRate: weeklyRate,
+          partNumber: s.part_number,
+          description: s.description || s.part_number,
+        });
+      }
+      const resolveMeta = (partNo: string): LineItemMeta | undefined => {
+        const direct = lineItemMetaByPart.get(partNo);
+        if (direct) return direct;
+        const key = normalisePart(partNo);
+        return lineItemMetaByNormalised.get(key) ?? scaffoldMetaByNormalised.get(key);
+      };
+
+
       // ── Build per-batch billing from delivery history ────────────────────────
       type RawDeliveryRecord = {
         id?: string;
@@ -1197,7 +1227,7 @@ const Accounting = () => {
         const lines: HireLineBreakdown[] = [];
         for (const item of rec.items ?? []) {
           const partNo = item.itemCode || "-";
-          const meta = lineItemMetaByPart.get(partNo);
+          const meta = resolveMeta(partNo);
           const weeklyRate = meta?.weeklyRate ?? 0;
           const discountRate = meta?.discountRate ?? 0;
           const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
@@ -1338,7 +1368,7 @@ const Accounting = () => {
         dispatchBatches: batches,
       };
     });
-  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
+  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap, scaffolds]);
 
   const uniqueClients = useMemo(
     () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
