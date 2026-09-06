@@ -1227,7 +1227,7 @@ const Accounting = () => {
         const lines: HireLineBreakdown[] = [];
         for (const item of rec.items ?? []) {
           const partNo = item.itemCode || "-";
-          const meta = lineItemMetaByPart.get(partNo);
+          const meta = resolveMeta(partNo);
           const weeklyRate = meta?.weeklyRate ?? 0;
           const discountRate = meta?.discountRate ?? 0;
           const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
