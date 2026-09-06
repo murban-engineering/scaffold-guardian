@@ -1368,7 +1368,7 @@ const Accounting = () => {
         dispatchBatches: batches,
       };
     });
-  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap]);
+  }, [activeQuotations, billingDate, surchargeMap, siteNameByQuotationAndNumber, profilesMap, scaffolds]);
 
   const uniqueClients = useMemo(
     () => Array.from(new Set(invoices.map((i) => i.client))).sort(),
