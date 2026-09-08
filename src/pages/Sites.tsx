@@ -612,15 +612,34 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    const tableRows = summarizedRemovalRows
-      .map(
-        (row) => `
+    const tableRows = removalReportSiteGroups
+      .map((group) => {
+        const label =
+          group.siteNumber && group.siteName
+            ? `${group.siteNumber} — ${group.siteName}`
+            : group.siteNumber || group.siteName || group.quotationNumber || "Unassigned site";
+        const details = [group.siteAddress, group.siteContact, group.sitePhone].filter(Boolean).join(" · ");
+        return `
           <tr>
-            <td>${row.itemDescription}</td>
-            <td class="text-right">${row.quantity}</td>
+            <td colspan="2" style="background:#fef3c7;font-weight:800;">
+              ${label}${group.quotationNumber ? ` (${group.quotationNumber})` : ""}${details ? `<div style="font-weight:400;font-size:8px;color:#4b5563;">${details}</div>` : ""}
+            </td>
           </tr>
-        `
-      )
+          ${group.items
+            .map(
+              (item) => `
+          <tr>
+            <td>${item.itemDescription}</td>
+            <td class="text-right">${item.quantity}</td>
+          </tr>`
+            )
+            .join("")}
+          <tr>
+            <td style="font-weight:800;text-align:right;">Total on hire — ${label}</td>
+            <td class="text-right" style="font-weight:800;">${group.total}</td>
+          </tr>
+        `;
+      })
       .join("");
 
     const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient}</title>
