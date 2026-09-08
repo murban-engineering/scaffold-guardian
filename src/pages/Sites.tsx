@@ -418,28 +418,13 @@ const Sites = () => {
     return { siteCols, rows };
   }, [inventoryByClientSections, removalReportQuotations, allClientSites, scaffolds]);
 
+  // Only clients that currently have equipment on hire
   const clientOptions = useMemo(() => {
-    const uniqueClients = new Set(
-      removalReportQuotations.map(
-        (quotation) => quotation.company_name || quotation.site_manager_name || "Unknown client"
-      )
-    );
+    const uniqueClients = new Set(summarizedInventoryBySiteRows.map((row) => row.client));
     return (Array.from(uniqueClients) as string[]).sort((a, b) => a.localeCompare(b));
-  }, [removalReportQuotations]);
+  }, [summarizedInventoryBySiteRows]);
 
-  const removalReportRows = useMemo(() => {
-    return removalReportQuotations
-      .flatMap((quotation) => {
-        const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
-        return getDeliveredItemsFromHistory(quotation).map((item) => ({
-          itemDescription: item.description,
-          quantity: item.quantity,
-          client,
-        }));
-      })
-      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [removalReportQuotations]);
+  const removalReportRows = summarizedInventoryBySiteRows;
 
   useEffect(() => {
     if (!clientOptions.length) {
@@ -452,20 +437,63 @@ const Sites = () => {
     }
   }, [clientOptions, selectedClient]);
 
-  const filteredRemovalReportRows = useMemo(() => {
-    return removalReportRows.filter((row) => row.client === selectedClient);
-  }, [removalReportRows, selectedClient]);
+  // On-hire equipment for the selected client, grouped per site
+  const removalReportSiteGroups = useMemo(() => {
+    const groups: Record<string, {
+      siteNumber: string;
+      siteName: string;
+      siteAddress: string;
+      siteContact: string;
+      sitePhone: string;
+      quotationNumber: string;
+      clientId: string;
+      items: Array<{ itemDescription: string; quantity: number }>;
+    }> = {};
+
+    summarizedInventoryBySiteRows
+      .filter((row) => row.client === selectedClient)
+      .forEach((row) => {
+        const key = [row.quotationNumber, row.siteNumber, row.siteName].join("::");
+        if (!groups[key]) {
+          groups[key] = {
+            siteNumber: row.siteNumber,
+            siteName: row.siteName,
+            siteAddress: row.siteAddress,
+            siteContact: row.siteContact,
+            sitePhone: row.sitePhone,
+            quotationNumber: row.quotationNumber,
+            clientId: row.clientId,
+            items: [],
+          };
+        }
+        const existing = groups[key].items.find((item) => item.itemDescription === row.itemDescription);
+        if (existing) {
+          existing.quantity += row.quantity;
+        } else {
+          groups[key].items.push({ itemDescription: row.itemDescription, quantity: row.quantity });
+        }
+      });
+
+    return Object.values(groups)
+      .map((group) => ({
+        ...group,
+        items: group.items.sort((a, b) => a.itemDescription.localeCompare(b.itemDescription)),
+        total: group.items.reduce((sum, item) => sum + item.quantity, 0),
+      }))
+      .sort((a, b) => (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName));
+  }, [summarizedInventoryBySiteRows, selectedClient]);
 
   const summarizedRemovalRows = useMemo(() => {
-    const groupedRows = filteredRemovalReportRows.reduce<Record<string, number>>((acc, row) => {
-      acc[row.itemDescription] = (acc[row.itemDescription] ?? 0) + row.quantity;
-      return acc;
-    }, {});
-
-    return Object.entries(groupedRows)
-      .map(([itemDescription, quantity]) => ({ itemDescription, quantity }))
-      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
-  }, [filteredRemovalReportRows]);
+    return removalReportSiteGroups.flatMap((group) =>
+      group.items.map((item) => ({
+        siteLabel: group.siteNumber && group.siteName
+          ? `${group.siteNumber} — ${group.siteName}`
+          : group.siteNumber || group.siteName || group.quotationNumber || "Unassigned site",
+        itemDescription: item.itemDescription,
+        quantity: item.quantity,
+      }))
+    );
+  }, [removalReportSiteGroups]);
 
   const formatDate = (value: string | null) => formatReportDate(value);
 
