@@ -19,7 +19,7 @@ const Sites = () => {
   const { data: allClientSites = [] } = useAllClientSites();
   const { data: scaffolds = [] } = useScaffolds();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
-  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedClientKey, setSelectedClientKey] = useState<string>("");
   // Keep selectedQuotation live-synced with realtime DB updates
   const liveSelectedQuotation = selectedQuotation
     ? (hireQuotations.find(q => q.id === selectedQuotation.id) ?? selectedQuotation)
@@ -420,20 +420,33 @@ const Sites = () => {
 
   // Only clients that currently have equipment on hire
   const clientOptions = useMemo(() => {
-    const uniqueClients = new Set(summarizedInventoryBySiteRows.map((row) => row.client));
-    return (Array.from(uniqueClients) as string[]).sort((a, b) => a.localeCompare(b));
+    const clients = new Map<string, { key: string; name: string; id: string }>();
+    summarizedInventoryBySiteRows.forEach((row) => {
+      const key = `${row.client}::${row.clientId}`;
+      if (!clients.has(key)) {
+        clients.set(key, { key, name: row.client, id: row.clientId });
+      }
+    });
+    return Array.from(clients.values()).sort((a, b) =>
+      `${a.name} ${a.id}`.localeCompare(`${b.name} ${b.id}`)
+    );
   }, [summarizedInventoryBySiteRows]);
+
+  const selectedClient = useMemo(
+    () => clientOptions.find((client) => client.key === selectedClientKey),
+    [clientOptions, selectedClientKey]
+  );
 
   const removalReportRows = summarizedInventoryBySiteRows;
 
   useEffect(() => {
     if (!clientOptions.length) {
-      setSelectedClient("");
+      setSelectedClientKey("");
       return;
     }
 
-    if (!selectedClient || !clientOptions.includes(selectedClient)) {
-      setSelectedClient(clientOptions[0] as string);
+    if (!selectedClient) {
+      setSelectedClientKey(clientOptions[0].key);
     }
   }, [clientOptions, selectedClient]);
 
@@ -451,7 +464,7 @@ const Sites = () => {
     }> = {};
 
     summarizedInventoryBySiteRows
-      .filter((row) => row.client === selectedClient)
+      .filter((row) => row.client === selectedClient?.name && row.clientId === selectedClient?.id)
       .forEach((row) => {
         const key = [row.quotationNumber, row.siteNumber, row.siteName].join("::");
         if (!groups[key]) {
@@ -486,9 +499,9 @@ const Sites = () => {
   const summarizedRemovalRows = useMemo(() => {
     return removalReportSiteGroups.flatMap((group) =>
       group.items.map((item) => ({
-        siteLabel: group.siteNumber && group.siteName
-          ? `${group.siteNumber} — ${group.siteName}`
-          : group.siteNumber || group.siteName || group.quotationNumber || "Unassigned site",
+        hsqNumber: group.quotationNumber,
+        siteNumber: group.siteNumber,
+        siteName: group.siteName,
         itemDescription: item.itemDescription,
         quantity: item.quantity,
       }))
@@ -600,7 +613,9 @@ const Sites = () => {
 
     // Pull site details from the first matching quotation for this client
     const clientQuotation = removalReportQuotations.find(
-      (q) => (q.company_name || q.site_manager_name || "Unknown client") === selectedClient
+      (q) =>
+        (q.company_name || q.site_manager_name || "Unknown client") === selectedClient.name &&
+        (q.client_id || "") === selectedClient.id
     );
     const siteName = clientQuotation?.site_name || "";
     const siteAddress = clientQuotation?.site_address || clientQuotation?.delivery_address || "";
@@ -621,7 +636,7 @@ const Sites = () => {
         const details = [group.siteAddress, group.siteContact, group.sitePhone].filter(Boolean).join(" · ");
         return `
           <tr>
-            <td colspan="2" style="background:#fef3c7;font-weight:800;">
+            <td colspan="5" style="background:#fef3c7;font-weight:800;">
               ${label}${group.quotationNumber ? ` (${group.quotationNumber})` : ""}${details ? `<div style="font-weight:400;font-size:8px;color:#4b5563;">${details}</div>` : ""}
             </td>
           </tr>
@@ -629,20 +644,23 @@ const Sites = () => {
             .map(
               (item) => `
           <tr>
+            <td>${group.quotationNumber || "-"}</td>
+            <td>${group.siteNumber || "-"}</td>
+            <td>${group.siteName || "-"}</td>
             <td>${item.itemDescription}</td>
             <td class="text-right">${item.quantity}</td>
           </tr>`
             )
             .join("")}
           <tr>
-            <td style="font-weight:800;text-align:right;">Total on hire — ${label}</td>
+            <td colspan="4" style="font-weight:800;text-align:right;">Total on hire — ${label}</td>
             <td class="text-right" style="font-weight:800;">${group.total}</td>
           </tr>
         `;
       })
       .join("");
 
-    const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient}</title>
+    const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient.name}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 9.5px; color: #1f2937; line-height: 1.3; padding: 12px; }
@@ -740,9 +758,9 @@ const Sites = () => {
               <div class="brand-meta"><span><strong>Reg No:</strong> P052471711M</span></div>
             </div>
             <div class="panel client-panel">
-              <h3>${selectedClient}</h3>
+              <h3>${selectedClient.name}</h3>
               <div style="margin-top:8px;">
-                <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient}</span></div>
+                <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient.name}</span></div>
               </div>
             </div>
           </div>
@@ -764,7 +782,7 @@ const Sites = () => {
             <div class="panel">
               <h3>Site Details</h3>
               ${clientId ? `<div class="info-row"><span class="info-label">Client ID</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${clientId}</span></div>` : ""}
-              <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient}</span></div>
+              <div class="info-row"><span class="info-label">Client</span><span class="info-sep">:</span><span class="info-value" style="font-weight:800;">${selectedClient.name}</span></div>
               ${siteName ? `<div class="info-row"><span class="info-label">Site Name</span><span class="info-sep">:</span><span class="info-value">${siteName}</span></div>` : ""}
               ${siteAddress ? `<div class="info-row"><span class="info-label">Site Address</span><span class="info-sep">:</span><span class="info-value">${siteAddress}</span></div>` : ""}
               ${contactName ? `<div class="info-row"><span class="info-label">Contact</span><span class="info-sep">:</span><span class="info-value">${contactName}</span></div>` : ""}
@@ -777,6 +795,9 @@ const Sites = () => {
         <table>
           <thead>
             <tr>
+              <th>HSQ Number</th>
+              <th>Site Number</th>
+              <th>Site Name</th>
               <th>Item Description</th>
               <th class="text-right">Quantity Removed</th>
             </tr>
@@ -1045,14 +1066,14 @@ const Sites = () => {
                   <div className="space-y-4">
                     <div className="grid gap-2">
                       <label className="text-sm font-medium text-foreground">Select client</label>
-                      <Select value={selectedClient} onValueChange={setSelectedClient}>
+                      <Select value={selectedClientKey} onValueChange={setSelectedClientKey}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a client" />
                         </SelectTrigger>
                         <SelectContent>
                           {clientOptions.map((client) => (
-                            <SelectItem key={client} value={client}>
-                              {client}
+                            <SelectItem key={client.key} value={client.key}>
+                              {client.id ? `${client.name} — ${client.id}` : client.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1062,13 +1083,19 @@ const Sites = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>HSQ Number</TableHead>
+                            <TableHead>Site Number</TableHead>
+                            <TableHead>Site Name</TableHead>
                             <TableHead>Item Description</TableHead>
                             <TableHead className="text-right">Qty Removed</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {summarizedRemovalRows.map((row) => (
-                            <TableRow key={`${selectedClient}-${row.itemDescription}`}>
+                            <TableRow key={`${selectedClientKey}-${row.hsqNumber}-${row.siteNumber}-${row.siteName}-${row.itemDescription}`}>
+                              <TableCell className="font-medium text-sm">{row.hsqNumber || "-"}</TableCell>
+                              <TableCell className="font-medium text-sm">{row.siteNumber || "-"}</TableCell>
+                              <TableCell className="font-medium text-sm">{row.siteName || "-"}</TableCell>
                               <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
                               <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
                             </TableRow>
