@@ -11,13 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useHireQuotations, HireQuotation } from "@/hooks/useHireQuotations";
 import { useAllClientSites } from "@/hooks/useClientSites";
-import { useScaffolds } from "@/hooks/useScaffolds";
+import { buildOnSiteInventoryReport } from "@/lib/siteInventoryReport";
 
 const Sites = () => {
   const navigate = useNavigate();
   const { data: hireQuotations = [], isLoading } = useHireQuotations();
   const { data: allClientSites = [] } = useAllClientSites();
-  const { data: scaffolds = [] } = useScaffolds();
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedClientKey, setSelectedClientKey] = useState<string>("");
   // Keep selectedQuotation live-synced with realtime DB updates
@@ -304,119 +303,6 @@ const Sites = () => {
       }));
   }, [summarizedInventoryBySiteRows]);
 
-  // ── Matrix view: rows = items, columns = client → site, values = On Hire (delivered - returned per site)
-  const inventoryMatrix = useMemo(() => {
-    // Build site columns grouped by client, only for sites with movement
-    type SiteCol = { client: string; clientId: string; quotationNumber: string; siteNumber: string; siteName: string };
-    const siteColMap = new Map<string, SiteCol>();
-    inventoryByClientSections.forEach((cs) => {
-      cs.sites.forEach((s) => {
-        const key = `${cs.client}::${cs.clientId}::${s.quotationNumber}::${s.siteNumber}::${s.siteName}`;
-        if (!siteColMap.has(key)) {
-          siteColMap.set(key, {
-            client: cs.client,
-            clientId: cs.clientId,
-            quotationNumber: s.quotationNumber,
-            siteNumber: s.siteNumber,
-            siteName: s.siteName,
-          });
-        }
-      });
-    });
-    const siteCols = Array.from(siteColMap.entries())
-      .map(([key, v]) => ({ key, ...v }))
-      .sort((a, b) => {
-        const c = a.client.localeCompare(b.client);
-        if (c !== 0) return c;
-        return (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
-      });
-
-    // Aggregate per-site delivered & returned by item description
-    const deliveredByKey: Record<string, Record<string, number>> = {};
-    const returnedByKey: Record<string, Record<string, number>> = {};
-
-    removalReportQuotations.forEach((quotation) => {
-      const client = quotation.company_name || quotation.site_manager_name || "Unknown client";
-      const clientId = quotation.client_id || "";
-      const sitesForQuotation = allClientSites.filter((s) => s.quotation_id === quotation.id);
-      const siteMap = new Map(sitesForQuotation.map((s) => [s.site_number, s]));
-
-      const fallbackSite = sitesForQuotation[0];
-      const colKeyFor = (siteNumber: string) => {
-        const effectiveSiteNumber = siteNumber || fallbackSite?.site_number || "";
-        const matched = effectiveSiteNumber ? siteMap.get(effectiveSiteNumber) : undefined;
-        const sName = matched?.site_name || fallbackSite?.site_name || quotation.site_name || "";
-        return `${client}::${clientId}::${quotation.quotation_number || ""}::${effectiveSiteNumber}::${sName}`;
-      };
-
-      const deliveryHistory = Array.isArray(quotation.delivery_history) ? quotation.delivery_history : [];
-      deliveryHistory.forEach((batch) => {
-        const siteNumber =
-          (typeof batch === "object" && batch && "siteNumber" in batch ? String((batch as { siteNumber?: string }).siteNumber ?? "") : "") || "";
-        const items =
-          typeof batch === "object" && batch && "items" in batch && Array.isArray((batch as { items?: unknown[] }).items)
-            ? ((batch as { items: Array<{ description?: string; itemCode?: string; quantityDelivered?: number }> }).items)
-            : [];
-        const ck = colKeyFor(siteNumber);
-        items.forEach((it) => {
-          const desc = it.description || it.itemCode || "Unknown item";
-          const q = Number(it.quantityDelivered ?? 0);
-          if (q <= 0) return;
-          deliveredByKey[ck] = deliveredByKey[ck] || {};
-          deliveredByKey[ck][desc] = (deliveredByKey[ck][desc] ?? 0) + q;
-        });
-      });
-
-      const returnHistory = Array.isArray(quotation.return_history) ? quotation.return_history : [];
-      (returnHistory as Array<{ siteNumber?: string; items?: Array<{ description?: string; itemCode?: string; totalReturned?: number }> }>).forEach((batch) => {
-        const siteNumber = String(batch?.siteNumber ?? "") || "";
-        const ck = colKeyFor(siteNumber);
-        (batch?.items ?? []).forEach((it) => {
-          const desc = it.description || it.itemCode || "Unknown item";
-          const q = Number(it.totalReturned ?? 0);
-          if (q <= 0) return;
-          returnedByKey[ck] = returnedByKey[ck] || {};
-          returnedByKey[ck][desc] = (returnedByKey[ck][desc] ?? 0) + q;
-        });
-      });
-    });
-
-    // Collect all item descriptions that appear anywhere
-    const itemSet = new Set<string>();
-    Object.values(deliveredByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
-    Object.values(returnedByKey).forEach((m) => Object.keys(m).forEach((d) => itemSet.add(d)));
-
-    // Map description → qty_at_start from scaffolds (best-effort match by description, then part_number)
-    const qtyAtStartFor = (desc: string): number | null => {
-      const lower = desc.toLowerCase().trim();
-      const found = scaffolds.find(
-        (s) =>
-          (s.description ?? "").toLowerCase().trim() === lower ||
-          (s.part_number ?? "").toLowerCase().trim() === lower
-      );
-      return found?.qty_at_start ?? null;
-    };
-
-    const rows = Array.from(itemSet)
-      .sort((a, b) => a.localeCompare(b))
-      .map((desc) => {
-        const perSite = siteCols.map((col) => {
-          const delivered = deliveredByKey[col.key]?.[desc] ?? 0;
-          const returned = returnedByKey[col.key]?.[desc] ?? 0;
-          return Math.max(delivered - returned, 0);
-        });
-        const onHireTotal = perSite.reduce((a, b) => a + b, 0);
-        return {
-          description: desc,
-          qtyAtStart: qtyAtStartFor(desc),
-          perSite,
-          onHireTotal,
-        };
-      })
-      .filter((r) => r.onHireTotal > 0 || (r.qtyAtStart ?? 0) > 0);
-
-    return { siteCols, rows };
-  }, [inventoryByClientSections, removalReportQuotations, allClientSites, scaffolds]);
 
   // Only clients that currently have equipment on hire
   const clientOptions = useMemo(() => {
@@ -510,53 +396,22 @@ const Sites = () => {
 
   const formatDate = (value: string | null) => formatReportDate(value);
 
+  const combinedInventoryMatrix = useMemo(
+    () => buildOnSiteInventoryReport(hireQuotations, allClientSites),
+    [hireQuotations, allClientSites],
+  );
 
-
-  const combinedInventoryMatrix = useMemo(() => {
-    const siteColumns = Array.from(
-      new Set(
-        summarizedInventoryBySiteRows.map((row) =>
-          JSON.stringify({
-            client: row.client || "Unknown client",
-            site: row.siteNumber || row.siteName || row.quotationNumber || "Unassigned site",
-          })
-        )
-      )
-    )
-      .map((column) => JSON.parse(column) as { client: string; site: string })
-      .sort((a, b) => `${a.client} — ${a.site}`.localeCompare(`${b.client} — ${b.site}`));
-
-    const clientColumnGroups = siteColumns.reduce<Array<{ client: string; span: number }>>((acc, column) => {
-      const existing = acc.find((group) => group.client === column.client);
-      if (existing) {
-        existing.span += 1;
-      } else {
-        acc.push({ client: column.client, span: 1 });
-      }
-      return acc;
-    }, []);
-
-    const rowsByItem = summarizedInventoryBySiteRows.reduce<Record<string, Record<string, number>>>((acc, row) => {
-      const itemKey = row.itemDescription || "Unknown item";
-      const columnKey = JSON.stringify({
-        client: row.client || "Unknown client",
-        site: row.siteNumber || row.siteName || row.quotationNumber || "Unassigned site",
-      });
-      if (!acc[itemKey]) acc[itemKey] = {};
-      acc[itemKey][columnKey] = (acc[itemKey][columnKey] ?? 0) + row.quantity;
-      return acc;
-    }, {});
-
-    const itemRows = Object.entries(rowsByItem)
-      .map(([itemDescription, quantities]) => ({
-        itemDescription,
-        quantities,
-        total: Object.values(quantities).reduce((sum, value) => sum + value, 0),
-      }))
-      .sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
-
-    return { siteColumns, clientColumnGroups, itemRows };
-  }, [summarizedInventoryBySiteRows]);
+  const clientColumnGroups = useMemo(() => {
+    return combinedInventoryMatrix.siteColumns.reduce<Array<{ client: string; clientId: string; span: number }>>(
+      (groups, column) => {
+        const group = groups.find((candidate) => candidate.client === column.client && candidate.clientId === column.clientId);
+        if (group) group.span += 1;
+        else groups.push({ client: column.client, clientId: column.clientId, span: 1 });
+        return groups;
+      },
+      [],
+    );
+  }, [combinedInventoryMatrix.siteColumns]);
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -849,7 +704,7 @@ const Sites = () => {
         <thead>
           <tr>
             <th rowspan="2">Item Description</th>
-            ${combinedInventoryMatrix.clientColumnGroups.map((group) => `<th colspan="${group.span}">${group.client}</th>`).join("")}
+            ${clientColumnGroups.map((group) => `<th colspan="${group.span}">${group.client}${group.clientId ? ` — ${group.clientId}` : ""}</th>`).join("")}
             <th rowspan="2">Total</th>
           </tr>
           <tr>
@@ -860,7 +715,7 @@ const Sites = () => {
           ${combinedInventoryMatrix.itemRows.map((item) => `
             <tr>
               <td>${item.itemDescription}</td>
-              ${combinedInventoryMatrix.siteColumns.map((column) => `<td class="text-right">${item.quantities[JSON.stringify(column)] ?? ""}</td>`).join("")}
+              ${combinedInventoryMatrix.siteColumns.map((column) => `<td class="text-right">${item.quantities[column.key] ?? ""}</td>`).join("")}
               <td class="text-right">${item.total}</td>
             </tr>
           `).join("")}
@@ -868,52 +723,6 @@ const Sites = () => {
       </table>
     `;
 
-    const clientHeaderCells = inventoryMatrix.siteCols
-      .reduce<Array<{ client: string; span: number }>>((acc, col) => {
-        const last = acc[acc.length - 1];
-        if (last && last.client === col.client) last.span += 1;
-        else acc.push({ client: col.client, span: 1 });
-        return acc;
-      }, [])
-      .map((group) => `<th colspan="${group.span}" class="text-center">${group.client}</th>`)
-      .join("");
-
-    const siteSubHeaderCells = inventoryMatrix.siteCols
-      .map(
-        (c) =>
-          `<th class="text-center site-th"><div>${c.quotationNumber || "-"}</div><div class="muted">${c.siteNumber || "-"}</div></th>`
-      )
-      .join("");
-
-    const bodyRows = inventoryMatrix.rows
-      .map((row) => {
-        const cells = row.perSite.map((v) => `<td class="text-right">${v > 0 ? v : ""}</td>`).join("");
-        return `<tr>
-          <td>${row.description}</td>
-          <td class="text-right">${row.qtyAtStart ?? "-"}</td>
-          ${cells}
-          <td class="text-right total-cell">${row.onHireTotal}</td>
-        </tr>`;
-      })
-      .join("");
-
-    const clientSections = `
-      <table class="matrix">
-        <thead>
-          <tr>
-            <th rowspan="2" class="align-bottom">Item Description</th>
-            <th rowspan="2" class="text-right align-bottom">Qty at Start</th>
-            ${clientHeaderCells}
-            <th rowspan="2" class="text-right align-bottom">On Hire</th>
-          </tr>
-          <tr>
-            ${siteSubHeaderCells}
-          </tr>
-        </thead>
-        <tbody>
-          ${bodyRows}
-        </tbody>
-      </table>`;
 
     const html = `<!DOCTYPE html><html><head><title>Inventory by Client & Site Report</title>
       <style>
@@ -1124,7 +933,7 @@ const Sites = () => {
                 <div>
                   <CardTitle className="text-base md:text-lg text-foreground">Inventory Movement by Client and Site</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Combined report of delivered inventory grouped by client and site.
+                    Current equipment on site, combined by client and site. Returned equipment is excluded.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full md:w-auto">
@@ -1132,7 +941,7 @@ const Sites = () => {
                     variant="outline"
                     size="sm"
                     onClick={handlePrintInventoryBySiteReport}
-                    disabled={!inventoryMatrix.rows.length}
+                    disabled={!combinedInventoryMatrix.itemRows.length}
                     className="w-full md:w-auto"
                   >
                     Print Combined Report
@@ -1154,14 +963,14 @@ const Sites = () => {
                       <TableHeader>
                         <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
                           <TableHead rowSpan={2} className="font-semibold text-foreground">Item Description</TableHead>
-                          {combinedInventoryMatrix.clientColumnGroups.map((group) => (
-                            <TableHead key={group.client} colSpan={group.span} className="text-center font-semibold text-foreground whitespace-nowrap">{group.client}</TableHead>
+                          {clientColumnGroups.map((group) => (
+                            <TableHead key={`${group.client}-${group.clientId}`} colSpan={group.span} className="text-center font-semibold text-foreground whitespace-nowrap">{group.client}{group.clientId ? ` — ${group.clientId}` : ""}</TableHead>
                           ))}
                           <TableHead rowSpan={2} className="text-right font-semibold text-foreground">Total</TableHead>
                         </TableRow>
                         <TableRow className="bg-[#f4ca16]/30 hover:bg-[#f4ca16]/30">
                           {combinedInventoryMatrix.siteColumns.map((column) => (
-                            <TableHead key={`${column.client}-${column.site}`} className="text-right font-semibold text-foreground whitespace-nowrap">
+                            <TableHead key={column.key} className="text-right font-semibold text-foreground whitespace-nowrap">
                               {column.site}
                             </TableHead>
                           ))}
@@ -1172,8 +981,8 @@ const Sites = () => {
                           <TableRow key={item.itemDescription}>
                             <TableCell>{item.itemDescription}</TableCell>
                             {combinedInventoryMatrix.siteColumns.map((column) => (
-                              <TableCell key={`${item.itemDescription}-${column.client}-${column.site}`} className="text-right font-bold">
-                                {item.quantities[JSON.stringify(column)] ?? ""}
+                              <TableCell key={`${item.itemDescription}-${column.key}`} className="text-right font-bold">
+                                {item.quantities[column.key] ?? ""}
                               </TableCell>
                             ))}
                             <TableCell className="text-right font-bold">{item.total}</TableCell>
@@ -1184,7 +993,7 @@ const Sites = () => {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    No delivered inventory movements found yet for the combined client/site report.
+                    No equipment is currently on site for the combined client/site report.
                   </div>
                 )}
               </CardContent>
