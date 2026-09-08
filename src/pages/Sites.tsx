@@ -156,6 +156,30 @@ const Sites = () => {
     return rows;
   }, [allClientSites, removalReportQuotations]);
 
+  // Returned quantities per quotation + site + item description
+  const returnedBySiteItem = useMemo(() => {
+    const map: Record<string, number> = {};
+    removalReportQuotations.forEach((quotation) => {
+      const sitesForQuotation = allClientSites.filter((site) => site.quotation_id === quotation.id);
+      const fallbackSite = sitesForQuotation[0];
+      const returnHistory = Array.isArray(quotation.return_history) ? quotation.return_history : [];
+      (returnHistory as Array<{
+        siteNumber?: string;
+        items?: Array<{ description?: string; itemCode?: string; totalReturned?: number; quantityReturned?: number }>;
+      }>).forEach((batch) => {
+        const siteNumber = String(batch?.siteNumber ?? "") || fallbackSite?.site_number || "";
+        (batch?.items ?? []).forEach((item) => {
+          const desc = item.description || item.itemCode || "Unknown item";
+          const qty = Number(item.totalReturned ?? item.quantityReturned ?? 0);
+          if (qty <= 0) return;
+          const key = [quotation.quotation_number || "", siteNumber, desc].join("::");
+          map[key] = (map[key] ?? 0) + qty;
+        });
+      });
+    });
+    return map;
+  }, [removalReportQuotations, allClientSites]);
+
   const summarizedInventoryBySiteRows = useMemo(() => {
     const groupedRows = inventoryBySiteRows.reduce<Record<string, {
       client: string;
@@ -189,14 +213,29 @@ const Sites = () => {
       return acc;
     }, {});
 
-    return Object.values(groupedRows).sort((a, b) => {
-      const clientCompare = a.client.localeCompare(b.client);
-      if (clientCompare !== 0) return clientCompare;
-      const siteCompare = (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
-      if (siteCompare !== 0) return siteCompare;
-      return a.itemDescription.localeCompare(b.itemDescription);
-    });
-  }, [inventoryBySiteRows]);
+    // Deduct returned quantities so only equipment still on hire is reported
+    const remainingReturns = { ...returnedBySiteItem };
+
+    return Object.values(groupedRows)
+      .map((row) => {
+        const key = [row.quotationNumber, row.siteNumber, row.itemDescription].join("::");
+        const returned = remainingReturns[key] ?? 0;
+        if (returned > 0) {
+          const applied = Math.min(returned, row.quantity);
+          remainingReturns[key] = returned - applied;
+          return { ...row, quantity: row.quantity - applied };
+        }
+        return row;
+      })
+      .filter((row) => row.quantity > 0)
+      .sort((a, b) => {
+        const clientCompare = a.client.localeCompare(b.client);
+        if (clientCompare !== 0) return clientCompare;
+        const siteCompare = (a.siteNumber || a.siteName).localeCompare(b.siteNumber || b.siteName);
+        if (siteCompare !== 0) return siteCompare;
+        return a.itemDescription.localeCompare(b.itemDescription);
+      });
+  }, [inventoryBySiteRows, returnedBySiteItem]);
 
   const inventoryByClientSections = useMemo(() => {
     const groupedByClient = summarizedInventoryBySiteRows.reduce<
