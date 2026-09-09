@@ -401,6 +401,35 @@ const Sites = () => {
     );
   }, [removalReportSiteGroups]);
 
+  // One combined matrix per client: items as rows, sites as columns
+  const removalMatrix = useMemo(() => {
+    const columns = removalReportSiteGroups.map((group) => ({
+      key: [group.quotationNumber, group.siteNumber, group.siteName].join("::"),
+      hsqNumber: group.quotationNumber,
+      siteNumber: group.siteNumber,
+      siteName: group.siteName,
+    }));
+
+    const rowMap = new Map<string, { itemDescription: string; quantities: Record<string, number>; total: number }>();
+    removalReportSiteGroups.forEach((group, columnIndex) => {
+      const columnKey = columns[columnIndex].key;
+      group.items.forEach((item) => {
+        const row = rowMap.get(item.itemDescription) ?? { itemDescription: item.itemDescription, quantities: {}, total: 0 };
+        row.quantities[columnKey] = (row.quantities[columnKey] ?? 0) + item.quantity;
+        row.total += item.quantity;
+        rowMap.set(item.itemDescription, row);
+      });
+    });
+
+    const rows = Array.from(rowMap.values()).sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
+    const columnTotals = columns.map((column) =>
+      rows.reduce((sum, row) => sum + (row.quantities[column.key] ?? 0), 0)
+    );
+    const grandTotal = rows.reduce((sum, row) => sum + row.total, 0);
+
+    return { columns, rows, columnTotals, grandTotal };
+  }, [removalReportSiteGroups]);
+
   const formatDate = (value: string | null) => formatReportDate(value);
 
   const combinedInventoryMatrix = useMemo(
