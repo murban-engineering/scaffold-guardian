@@ -675,15 +675,21 @@ const Sites = () => {
         <table>
           <thead>
             <tr>
-              <th>HSQ Number</th>
-              <th>Site Number</th>
-              <th>Site Name</th>
-              <th>Item Description</th>
-              <th class="text-right">Quantity On Hire</th>
+              <th rowspan="2">Item Description</th>
+              <th colspan="${removalMatrix.columns.length}" style="background:#facc15;">${selectedClient.name}${selectedClient.id ? ` — ${selectedClient.id}` : ""}</th>
+              <th rowspan="2" class="text-right">Total</th>
+            </tr>
+            <tr>
+              ${removalMatrix.columns
+                .map(
+                  (column) => `<th>${column.hsqNumber || "-"}<br/>${column.siteNumber || "-"}<br/><span style="font-weight:400;text-transform:none;">${column.siteName || "-"}</span></th>`
+                )
+                .join("")}
             </tr>
           </thead>
           <tbody>
             ${tableRows}
+            ${totalsRow}
           </tbody>
         </table>
 
