@@ -927,24 +927,44 @@ const Sites = () => {
                     <div className="rounded-lg border border-border overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>HSQ Number</TableHead>
-                            <TableHead>Site Number</TableHead>
-                            <TableHead>Site Name</TableHead>
-                            <TableHead>Item Description</TableHead>
-                            <TableHead className="text-right">Qty On Hire</TableHead>
+                          <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
+                            <TableHead rowSpan={2} className="font-semibold text-foreground">Item Description</TableHead>
+                            <TableHead colSpan={removalMatrix.columns.length} className="text-center font-semibold text-foreground">
+                              {selectedClient?.name}{selectedClient?.id ? ` — ${selectedClient.id}` : ""}
+                            </TableHead>
+                            <TableHead rowSpan={2} className="text-right font-semibold text-foreground">Total</TableHead>
+                          </TableRow>
+                          <TableRow className="bg-[#f4ca16]/30 hover:bg-[#f4ca16]/30">
+                            {removalMatrix.columns.map((column) => (
+                              <TableHead key={column.key} className="text-center font-semibold text-foreground whitespace-nowrap">
+                                <div>{column.hsqNumber || "-"}</div>
+                                <div>{column.siteNumber || "-"}</div>
+                                <div className="text-xs font-normal text-muted-foreground">{column.siteName || "-"}</div>
+                              </TableHead>
+                            ))}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {summarizedRemovalRows.map((row) => (
-                            <TableRow key={`${selectedClientKey}-${row.hsqNumber}-${row.siteNumber}-${row.siteName}-${row.itemDescription}`}>
-                              <TableCell className="font-medium text-sm">{row.hsqNumber || "-"}</TableCell>
-                              <TableCell className="font-medium text-sm">{row.siteNumber || "-"}</TableCell>
-                              <TableCell className="font-medium text-sm">{row.siteName || "-"}</TableCell>
+                          {removalMatrix.rows.map((row) => (
+                            <TableRow key={`${selectedClientKey}-${row.itemDescription}`}>
                               <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
-                              <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
+                              {removalMatrix.columns.map((column) => (
+                                <TableCell key={`${row.itemDescription}-${column.key}`} className="text-center font-bold">
+                                  {row.quantities[column.key] ?? ""}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right font-bold">{row.total}</TableCell>
                             </TableRow>
                           ))}
+                          <TableRow className="bg-muted/40">
+                            <TableCell className="font-bold text-sm">Total on hire</TableCell>
+                            {removalMatrix.columns.map((column, index) => (
+                              <TableCell key={`total-${column.key}`} className="text-center font-bold">
+                                {removalMatrix.columnTotals[index] || ""}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-right font-bold">{removalMatrix.grandTotal}</TableCell>
+                          </TableRow>
                         </TableBody>
                       </Table>
                     </div>
