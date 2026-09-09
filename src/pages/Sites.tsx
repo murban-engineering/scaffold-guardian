@@ -661,7 +661,7 @@ const Sites = () => {
               <th>Site Number</th>
               <th>Site Name</th>
               <th>Item Description</th>
-              <th class="text-right">Quantity Removed</th>
+              <th class="text-right">Quantity On Hire</th>
             </tr>
           </thead>
           <tbody>
@@ -870,7 +870,7 @@ const Sites = () => {
                 <div>
                   <CardTitle className="text-base md:text-lg">Inventory Removal Report</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Generate client-specific reports from dispatched and completed quotations only.
+                    Pick a client to see only the equipment currently on their sites, with the HSQ number and site name. Returned items drop off automatically.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handlePrintRemovalReport} className="w-full md:w-auto">
@@ -903,7 +903,7 @@ const Sites = () => {
                             <TableHead>Site Number</TableHead>
                             <TableHead>Site Name</TableHead>
                             <TableHead>Item Description</TableHead>
-                            <TableHead className="text-right">Qty Removed</TableHead>
+                            <TableHead className="text-right">Qty On Hire</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -927,7 +927,7 @@ const Sites = () => {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    No inventory removal records yet. Dispatched and completed quotations with deducted equipment will appear here.
+                    No equipment is currently on hire. Once items are dispatched to a client, they will appear here until returned.
                   </div>
                 )}
               </CardContent>
