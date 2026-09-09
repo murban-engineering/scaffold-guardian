@@ -216,15 +216,19 @@ const Sites = () => {
     }, {});
 
     // Deduct returned quantities so only equipment still on hire is reported
-    const remainingReturns = { ...returnedBySiteItem };
+    const remainingBySite = { ...returnedBySiteItem.bySite };
+    const remainingByQuotationItem = { ...returnedBySiteItem.byQuotationItem };
 
     return Object.values(groupedRows)
       .map((row) => {
-        const key = [row.quotationNumber, row.siteNumber, row.itemDescription].join("::");
-        const returned = remainingReturns[key] ?? 0;
+        const siteKey = [row.quotationNumber, row.siteNumber, row.itemDescription].join("::");
+        const quotationKey = [row.quotationNumber, row.itemDescription].join("::");
+        // Prefer the site-specific return record; fall back to the quotation-level total
+        const returned = Math.max(remainingBySite[siteKey] ?? 0, remainingByQuotationItem[quotationKey] ?? 0);
         if (returned > 0) {
           const applied = Math.min(returned, row.quantity);
-          remainingReturns[key] = returned - applied;
+          remainingBySite[siteKey] = Math.max(0, (remainingBySite[siteKey] ?? 0) - applied);
+          remainingByQuotationItem[quotationKey] = Math.max(0, (remainingByQuotationItem[quotationKey] ?? 0) - applied);
           return { ...row, quantity: row.quantity - applied };
         }
         return row;
