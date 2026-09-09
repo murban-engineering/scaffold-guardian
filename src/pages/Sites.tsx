@@ -157,7 +157,8 @@ const Sites = () => {
 
   // Returned quantities per quotation + site + item description
   const returnedBySiteItem = useMemo(() => {
-    const map: Record<string, number> = {};
+    const bySite: Record<string, number> = {};
+    const byQuotationItem: Record<string, number> = {};
     removalReportQuotations.forEach((quotation) => {
       const sitesForQuotation = allClientSites.filter((site) => site.quotation_id === quotation.id);
       const fallbackSite = sitesForQuotation[0];
@@ -171,12 +172,14 @@ const Sites = () => {
           const desc = item.description || item.itemCode || "Unknown item";
           const qty = Number(item.totalReturned ?? item.quantityReturned ?? 0);
           if (qty <= 0) return;
-          const key = [quotation.quotation_number || "", siteNumber, desc].join("::");
-          map[key] = (map[key] ?? 0) + qty;
+          const siteKey = [quotation.quotation_number || "", siteNumber, desc].join("::");
+          bySite[siteKey] = (bySite[siteKey] ?? 0) + qty;
+          const quotationKey = [quotation.quotation_number || "", desc].join("::");
+          byQuotationItem[quotationKey] = (byQuotationItem[quotationKey] ?? 0) + qty;
         });
       });
     });
-    return map;
+    return { bySite, byQuotationItem };
   }, [removalReportQuotations, allClientSites]);
 
   const summarizedInventoryBySiteRows = useMemo(() => {
