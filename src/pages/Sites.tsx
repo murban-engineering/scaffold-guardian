@@ -401,6 +401,35 @@ const Sites = () => {
     );
   }, [removalReportSiteGroups]);
 
+  // One combined matrix per client: items as rows, sites as columns
+  const removalMatrix = useMemo(() => {
+    const columns = removalReportSiteGroups.map((group) => ({
+      key: [group.quotationNumber, group.siteNumber, group.siteName].join("::"),
+      hsqNumber: group.quotationNumber,
+      siteNumber: group.siteNumber,
+      siteName: group.siteName,
+    }));
+
+    const rowMap = new Map<string, { itemDescription: string; quantities: Record<string, number>; total: number }>();
+    removalReportSiteGroups.forEach((group, columnIndex) => {
+      const columnKey = columns[columnIndex].key;
+      group.items.forEach((item) => {
+        const row = rowMap.get(item.itemDescription) ?? { itemDescription: item.itemDescription, quantities: {}, total: 0 };
+        row.quantities[columnKey] = (row.quantities[columnKey] ?? 0) + item.quantity;
+        row.total += item.quantity;
+        rowMap.set(item.itemDescription, row);
+      });
+    });
+
+    const rows = Array.from(rowMap.values()).sort((a, b) => a.itemDescription.localeCompare(b.itemDescription));
+    const columnTotals = columns.map((column) =>
+      rows.reduce((sum, row) => sum + (row.quantities[column.key] ?? 0), 0)
+    );
+    const grandTotal = rows.reduce((sum, row) => sum + row.total, 0);
+
+    return { columns, rows, columnTotals, grandTotal };
+  }, [removalReportSiteGroups]);
+
   const formatDate = (value: string | null) => formatReportDate(value);
 
   const combinedInventoryMatrix = useMemo(
@@ -489,38 +518,27 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    const tableRows = removalReportSiteGroups
-      .map((group) => {
-        const label =
-          group.siteNumber && group.siteName
-            ? `${group.siteNumber} — ${group.siteName}`
-            : group.siteNumber || group.siteName || group.quotationNumber || "Unassigned site";
-        const details = [group.siteAddress, group.siteContact, group.sitePhone].filter(Boolean).join(" · ");
-        return `
+    const tableRows = removalMatrix.rows
+      .map(
+        (row) => `
           <tr>
-            <td colspan="5" style="background:#fef3c7;font-weight:800;">
-              ${label}${group.quotationNumber ? ` (${group.quotationNumber})` : ""}${details ? `<div style="font-weight:400;font-size:8px;color:#4b5563;">${details}</div>` : ""}
-            </td>
-          </tr>
-          ${group.items
-            .map(
-              (item) => `
-          <tr>
-            <td>${group.quotationNumber || "-"}</td>
-            <td>${group.siteNumber || "-"}</td>
-            <td>${group.siteName || "-"}</td>
-            <td>${item.itemDescription}</td>
-            <td class="text-right">${item.quantity}</td>
+            <td>${row.itemDescription}</td>
+            ${removalMatrix.columns
+              .map((column) => `<td class="text-right">${row.quantities[column.key] ?? ""}</td>`)
+              .join("")}
+            <td class="text-right" style="font-weight:800;">${row.total}</td>
           </tr>`
-            )
-            .join("")}
-          <tr>
-            <td colspan="4" style="font-weight:800;text-align:right;">Total on hire — ${label}</td>
-            <td class="text-right" style="font-weight:800;">${group.total}</td>
-          </tr>
-        `;
-      })
+      )
       .join("");
+
+    const totalsRow = `
+      <tr>
+        <td style="font-weight:800;">Total on hire</td>
+        ${removalMatrix.columns
+          .map((column, index) => `<td class="text-right" style="font-weight:800;">${removalMatrix.columnTotals[index] || ""}</td>`)
+          .join("")}
+        <td class="text-right" style="font-weight:800;">${removalMatrix.grandTotal}</td>
+      </tr>`;
 
     const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient.name}</title>
       <style>
@@ -657,15 +675,21 @@ const Sites = () => {
         <table>
           <thead>
             <tr>
-              <th>HSQ Number</th>
-              <th>Site Number</th>
-              <th>Site Name</th>
-              <th>Item Description</th>
-              <th class="text-right">Quantity On Hire</th>
+              <th rowspan="2">Item Description</th>
+              <th colspan="${removalMatrix.columns.length}" style="background:#facc15;">${selectedClient.name}${selectedClient.id ? ` — ${selectedClient.id}` : ""}</th>
+              <th rowspan="2" class="text-right">Total</th>
+            </tr>
+            <tr>
+              ${removalMatrix.columns
+                .map(
+                  (column) => `<th>${column.hsqNumber || "-"}<br/>${column.siteNumber || "-"}<br/><span style="font-weight:400;text-transform:none;">${column.siteName || "-"}</span></th>`
+                )
+                .join("")}
             </tr>
           </thead>
           <tbody>
             ${tableRows}
+            ${totalsRow}
           </tbody>
         </table>
 
@@ -898,24 +922,44 @@ const Sites = () => {
                     <div className="rounded-lg border border-border overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>HSQ Number</TableHead>
-                            <TableHead>Site Number</TableHead>
-                            <TableHead>Site Name</TableHead>
-                            <TableHead>Item Description</TableHead>
-                            <TableHead className="text-right">Qty On Hire</TableHead>
+                          <TableRow className="bg-[#f4ca16]/50 hover:bg-[#f4ca16]/50">
+                            <TableHead rowSpan={2} className="font-semibold text-foreground">Item Description</TableHead>
+                            <TableHead colSpan={removalMatrix.columns.length} className="text-center font-semibold text-foreground">
+                              {selectedClient?.name}{selectedClient?.id ? ` — ${selectedClient.id}` : ""}
+                            </TableHead>
+                            <TableHead rowSpan={2} className="text-right font-semibold text-foreground">Total</TableHead>
+                          </TableRow>
+                          <TableRow className="bg-[#f4ca16]/30 hover:bg-[#f4ca16]/30">
+                            {removalMatrix.columns.map((column) => (
+                              <TableHead key={column.key} className="text-center font-semibold text-foreground whitespace-nowrap">
+                                <div>{column.hsqNumber || "-"}</div>
+                                <div>{column.siteNumber || "-"}</div>
+                                <div className="text-xs font-normal text-muted-foreground">{column.siteName || "-"}</div>
+                              </TableHead>
+                            ))}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {summarizedRemovalRows.map((row) => (
-                            <TableRow key={`${selectedClientKey}-${row.hsqNumber}-${row.siteNumber}-${row.siteName}-${row.itemDescription}`}>
-                              <TableCell className="font-medium text-sm">{row.hsqNumber || "-"}</TableCell>
-                              <TableCell className="font-medium text-sm">{row.siteNumber || "-"}</TableCell>
-                              <TableCell className="font-medium text-sm">{row.siteName || "-"}</TableCell>
+                          {removalMatrix.rows.map((row) => (
+                            <TableRow key={`${selectedClientKey}-${row.itemDescription}`}>
                               <TableCell className="font-medium text-sm">{row.itemDescription}</TableCell>
-                              <TableCell className="text-right font-bold">{row.quantity as React.ReactNode}</TableCell>
+                              {removalMatrix.columns.map((column) => (
+                                <TableCell key={`${row.itemDescription}-${column.key}`} className="text-center font-bold">
+                                  {row.quantities[column.key] ?? ""}
+                                </TableCell>
+                              ))}
+                              <TableCell className="text-right font-bold">{row.total}</TableCell>
                             </TableRow>
                           ))}
+                          <TableRow className="bg-muted/40">
+                            <TableCell className="font-bold text-sm">Total on hire</TableCell>
+                            {removalMatrix.columns.map((column, index) => (
+                              <TableCell key={`total-${column.key}`} className="text-center font-bold">
+                                {removalMatrix.columnTotals[index] || ""}
+                              </TableCell>
+                            ))}
+                            <TableCell className="text-right font-bold">{removalMatrix.grandTotal}</TableCell>
+                          </TableRow>
                         </TableBody>
                       </Table>
                     </div>
