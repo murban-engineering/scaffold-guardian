@@ -157,7 +157,8 @@ const Sites = () => {
 
   // Returned quantities per quotation + site + item description
   const returnedBySiteItem = useMemo(() => {
-    const map: Record<string, number> = {};
+    const bySite: Record<string, number> = {};
+    const byQuotationItem: Record<string, number> = {};
     removalReportQuotations.forEach((quotation) => {
       const sitesForQuotation = allClientSites.filter((site) => site.quotation_id === quotation.id);
       const fallbackSite = sitesForQuotation[0];
@@ -171,12 +172,14 @@ const Sites = () => {
           const desc = item.description || item.itemCode || "Unknown item";
           const qty = Number(item.totalReturned ?? item.quantityReturned ?? 0);
           if (qty <= 0) return;
-          const key = [quotation.quotation_number || "", siteNumber, desc].join("::");
-          map[key] = (map[key] ?? 0) + qty;
+          const siteKey = [quotation.quotation_number || "", siteNumber, desc].join("::");
+          bySite[siteKey] = (bySite[siteKey] ?? 0) + qty;
+          const quotationKey = [quotation.quotation_number || "", desc].join("::");
+          byQuotationItem[quotationKey] = (byQuotationItem[quotationKey] ?? 0) + qty;
         });
       });
     });
-    return map;
+    return { bySite, byQuotationItem };
   }, [removalReportQuotations, allClientSites]);
 
   const summarizedInventoryBySiteRows = useMemo(() => {
@@ -213,15 +216,19 @@ const Sites = () => {
     }, {});
 
     // Deduct returned quantities so only equipment still on hire is reported
-    const remainingReturns = { ...returnedBySiteItem };
+    const remainingBySite = { ...returnedBySiteItem.bySite };
+    const remainingByQuotationItem = { ...returnedBySiteItem.byQuotationItem };
 
     return Object.values(groupedRows)
       .map((row) => {
-        const key = [row.quotationNumber, row.siteNumber, row.itemDescription].join("::");
-        const returned = remainingReturns[key] ?? 0;
+        const siteKey = [row.quotationNumber, row.siteNumber, row.itemDescription].join("::");
+        const quotationKey = [row.quotationNumber, row.itemDescription].join("::");
+        // Prefer the site-specific return record; fall back to the quotation-level total
+        const returned = Math.max(remainingBySite[siteKey] ?? 0, remainingByQuotationItem[quotationKey] ?? 0);
         if (returned > 0) {
           const applied = Math.min(returned, row.quantity);
-          remainingReturns[key] = returned - applied;
+          remainingBySite[siteKey] = Math.max(0, (remainingBySite[siteKey] ?? 0) - applied);
+          remainingByQuotationItem[quotationKey] = Math.max(0, (remainingByQuotationItem[quotationKey] ?? 0) - applied);
           return { ...row, quantity: row.quantity - applied };
         }
         return row;
@@ -654,7 +661,7 @@ const Sites = () => {
               <th>Site Number</th>
               <th>Site Name</th>
               <th>Item Description</th>
-              <th class="text-right">Quantity Removed</th>
+              <th class="text-right">Quantity On Hire</th>
             </tr>
           </thead>
           <tbody>
@@ -863,7 +870,7 @@ const Sites = () => {
                 <div>
                   <CardTitle className="text-base md:text-lg">Inventory Removal Report</CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Generate client-specific reports from dispatched and completed quotations only.
+                    Pick a client to see only the equipment currently on their sites, with the HSQ number and site name. Returned items drop off automatically.
                   </p>
                 </div>
                 <Button variant="outline" size="sm" onClick={handlePrintRemovalReport} className="w-full md:w-auto">
@@ -896,7 +903,7 @@ const Sites = () => {
                             <TableHead>Site Number</TableHead>
                             <TableHead>Site Name</TableHead>
                             <TableHead>Item Description</TableHead>
-                            <TableHead className="text-right">Qty Removed</TableHead>
+                            <TableHead className="text-right">Qty On Hire</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -920,7 +927,7 @@ const Sites = () => {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                    No inventory removal records yet. Dispatched and completed quotations with deducted equipment will appear here.
+                    No equipment is currently on hire. Once items are dispatched to a client, they will appear here until returned.
                   </div>
                 )}
               </CardContent>
