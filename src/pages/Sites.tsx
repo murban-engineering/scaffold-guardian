@@ -518,38 +518,27 @@ const Sites = () => {
     const printDate = formatReportDateTime(new Date());
     const docDate = formatReportDate(new Date());
 
-    const tableRows = removalReportSiteGroups
-      .map((group) => {
-        const label =
-          group.siteNumber && group.siteName
-            ? `${group.siteNumber} — ${group.siteName}`
-            : group.siteNumber || group.siteName || group.quotationNumber || "Unassigned site";
-        const details = [group.siteAddress, group.siteContact, group.sitePhone].filter(Boolean).join(" · ");
-        return `
+    const tableRows = removalMatrix.rows
+      .map(
+        (row) => `
           <tr>
-            <td colspan="5" style="background:#fef3c7;font-weight:800;">
-              ${label}${group.quotationNumber ? ` (${group.quotationNumber})` : ""}${details ? `<div style="font-weight:400;font-size:8px;color:#4b5563;">${details}</div>` : ""}
-            </td>
-          </tr>
-          ${group.items
-            .map(
-              (item) => `
-          <tr>
-            <td>${group.quotationNumber || "-"}</td>
-            <td>${group.siteNumber || "-"}</td>
-            <td>${group.siteName || "-"}</td>
-            <td>${item.itemDescription}</td>
-            <td class="text-right">${item.quantity}</td>
+            <td>${row.itemDescription}</td>
+            ${removalMatrix.columns
+              .map((column) => `<td class="text-right">${row.quantities[column.key] ?? ""}</td>`)
+              .join("")}
+            <td class="text-right" style="font-weight:800;">${row.total}</td>
           </tr>`
-            )
-            .join("")}
-          <tr>
-            <td colspan="4" style="font-weight:800;text-align:right;">Total on hire — ${label}</td>
-            <td class="text-right" style="font-weight:800;">${group.total}</td>
-          </tr>
-        `;
-      })
+      )
       .join("");
+
+    const totalsRow = `
+      <tr>
+        <td style="font-weight:800;">Total on hire</td>
+        ${removalMatrix.columns
+          .map((column, index) => `<td class="text-right" style="font-weight:800;">${removalMatrix.columnTotals[index] || ""}</td>`)
+          .join("")}
+        <td class="text-right" style="font-weight:800;">${removalMatrix.grandTotal}</td>
+      </tr>`;
 
     const html = `<!DOCTYPE html><html><head><title>Inventory Removal Report - ${selectedClient.name}</title>
       <style>
