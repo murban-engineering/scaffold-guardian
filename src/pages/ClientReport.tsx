@@ -399,7 +399,7 @@ const ClientReport = () => {
                 </div>
               ) : (
                 <div className="mx-4 mb-4 rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                  {searchQuery.trim() ? "No quotations match your search." : "No saved quotations found yet. Create a new hire quotation to get started."}
+                  {searchQuery.trim() ? "No dispatched or completed quotations match your search." : "No dispatched or completed quotations found. Drafts are hidden from this report."}
                 </div>
               )}
             </CardContent>
