@@ -335,14 +335,18 @@ const ClientReport = () => {
 
   const filteredQuotations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const activeOnly = hireQuotations.filter((hq) => {
+      const s = (hq.status || "").toLowerCase();
+      return s === "dispatched" || s === "completed";
+    });
     const filtered = q
-      ? hireQuotations.filter((hq) =>
+      ? activeOnly.filter((hq) =>
           (hq.quotation_number || "").toLowerCase().includes(q) ||
           (hq.client_id || "").toLowerCase().includes(q) ||
           (hq.company_name || "").toLowerCase().includes(q) ||
           (hq.account_number || "").toLowerCase().includes(q)
         )
-      : hireQuotations;
+      : activeOnly;
     return [...filtered].sort((a, b) => {
       const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
       return sortAsc ? -cmp : cmp;
