@@ -335,14 +335,18 @@ const ClientReport = () => {
 
   const filteredQuotations = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    const activeOnly = hireQuotations.filter((hq) => {
+      const s = (hq.status || "").toLowerCase();
+      return s === "dispatched" || s === "completed";
+    });
     const filtered = q
-      ? hireQuotations.filter((hq) =>
+      ? activeOnly.filter((hq) =>
           (hq.quotation_number || "").toLowerCase().includes(q) ||
           (hq.client_id || "").toLowerCase().includes(q) ||
           (hq.company_name || "").toLowerCase().includes(q) ||
           (hq.account_number || "").toLowerCase().includes(q)
         )
-      : hireQuotations;
+      : activeOnly;
     return [...filtered].sort((a, b) => {
       const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
       return sortAsc ? -cmp : cmp;
@@ -395,7 +399,7 @@ const ClientReport = () => {
                 </div>
               ) : (
                 <div className="mx-4 mb-4 rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                  {searchQuery.trim() ? "No quotations match your search." : "No saved quotations found yet. Create a new hire quotation to get started."}
+                  {searchQuery.trim() ? "No dispatched or completed quotations match your search." : "No dispatched or completed quotations found. Drafts are hidden from this report."}
                 </div>
               )}
             </CardContent>
