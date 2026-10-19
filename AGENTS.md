@@ -1,0 +1,2 @@
+# Architecture rules
+- Manual scaffold CRUD is protected by database policies and guarded stock-entry functions; UI controls use the server-verified permission hook, while delivery/return quantity functions remain operational so permissions cannot be granted through editable profile data.
