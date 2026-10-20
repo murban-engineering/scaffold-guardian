@@ -1,3 +1,3 @@
 # Inventory permissions
-- [ ] Restrict Add Scaffold page Add and Deduct actions to Angela with server enforcement.
-- [ ] Verify Angela access, other-user denial, and unchanged operational delivery/return adjustments.
+- [x] Restrict Add Scaffold page Add and Deduct actions to Angela with server enforcement.
+- [x] Verify Angela adds/deducts through the page and another signed-in user is denied by the server; confirm delivery/return callers and functions are unchanged.
