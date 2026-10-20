@@ -1,2 +1,2 @@
 # Architecture rules
-- Manual scaffold CRUD is protected by database policies and guarded stock-entry functions; UI controls use the server-verified permission hook, while delivery/return quantity functions remain operational so permissions cannot be granted through editable profile data.
+- Add Scaffold page Add/Deduct actions use dedicated identity-checked database functions and the server-verified permission hook; unrelated CRUD and delivery/return functions remain unchanged to keep the restriction scoped to the requested page.

@@ -608,8 +608,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_inventory_from_entry_page: {
+        Args: {
+          p_description: string
+          p_mass_per_item: number
+          p_part_number: string
+          p_quantity: number
+          p_scaffold_type: Database["public"]["Enums"]["scaffold_type"]
+          p_status: Database["public"]["Enums"]["scaffold_status"]
+          p_unit_price: number
+          p_weekly_rate: number
+        }
+        Returns: string
+      }
       adjust_scaffold_quantity: {
         Args: { p_new_quantity: number; p_scaffold_id: string }
+        Returns: undefined
+      }
+      can_manage_manual_inventory: { Args: never; Returns: boolean }
+      deduct_inventory_from_entry_page: {
+        Args: { p_quantity: number; p_scaffold_id: string }
         Returns: undefined
       }
       generate_next_client_id: { Args: never; Returns: string }

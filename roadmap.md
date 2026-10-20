@@ -1,3 +1,3 @@
 # Inventory permissions
-- [ ] Restrict manual inventory changes to Angela in the database and inventory screens.
-- [ ] Verify Angela access, other-user denial, and unchanged operational stock adjustments.
+- [ ] Restrict Add Scaffold page Add and Deduct actions to Angela with server enforcement.
+- [ ] Verify Angela access, other-user denial, and unchanged operational delivery/return adjustments.

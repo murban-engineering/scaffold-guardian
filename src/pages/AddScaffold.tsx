@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import constructionImage from "@/assets/construction-silhouette.jpg";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useInventoryPermissions } from "@/hooks/useInventoryPermissions";
 
 import {
   Form,
@@ -30,7 +32,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import { useCreateScaffold, useDeleteScaffold, useScaffolds, useUpdateScaffold } from "@/hooks/useScaffolds";
+import { useDeleteScaffold, useScaffolds } from "@/hooks/useScaffolds";
 import { getInventoryGroupKey, getInventoryGroupLabel } from "@/lib/inventoryGrouping";
 
 const formSchema = z.object({
@@ -65,14 +67,14 @@ type FormValues = z.infer<typeof formSchema>;
 
 const AddScaffold = () => {
   const navigate = useNavigate();
-  const createScaffold = useCreateScaffold();
-  const updateScaffold = useUpdateScaffold();
+  const queryClient = useQueryClient();
+  const { canManageInventory, isLoading: permissionLoading } = useInventoryPermissions();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const deleteScaffold = useDeleteScaffold();
   const { data: existingScaffolds } = useScaffolds();
   const [selectedScaffoldId, setSelectedScaffoldId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [inventorySearch, setInventorySearch] = useState("");
-  const isSubmitting = createScaffold.isPending || updateScaffold.isPending;
 
   const handleSidebarItemClick = (item: string) => {
     if (item === "dashboard") {
@@ -175,6 +177,7 @@ const AddScaffold = () => {
   };
 
   const handleAdjustmentSelect = (type: FormValues["adjustment_type"]) => {
+    if (!canManageInventory) return;
     form.setValue("adjustment_type", type);
     if (type === "remove" && !selectedScaffoldId && existingScaffolds?.length) {
       handlePresetSelect(existingScaffolds[0].id);
@@ -254,6 +257,10 @@ const AddScaffold = () => {
   }, [existingScaffolds, form, selectedScaffoldId, watchedPartNumber]);
 
   const onSubmit = async (values: FormValues) => {
+    if (!canManageInventory) {
+      toast.error("Only Angela may add or deduct inventory on this page.");
+      return;
+    }
     if (values.adjustment_type === "remove") {
       if (!selectedScaffold) {
         toast.error("Select an existing inventory item before removing quantity.");
@@ -268,36 +275,42 @@ const AddScaffold = () => {
         toast.error(`Cannot remove ${removeQuantity}. Only ${currentQuantity} available.`);
         return;
       }
-      // Deduct: both quantity AND qty_at_start decrease together
-      const newQuantity = currentQuantity - removeQuantity;
-      const currentQtyAtStart = selectedScaffold.qty_at_start ?? currentQuantity;
-      const newQtyAtStart = Math.max(currentQtyAtStart - removeQuantity, 0);
-      const { error } = await supabase
-        .from("scaffolds")
-        .update({ quantity: newQuantity, qty_at_start: newQtyAtStart })
-        .eq("id", selectedScaffold.id);
+      setIsSubmitting(true);
+      const { error } = await supabase.rpc("deduct_inventory_from_entry_page", {
+        p_scaffold_id: selectedScaffold.id,
+        p_quantity: removeQuantity,
+      });
+      setIsSubmitting(false);
       if (error) {
         toast.error(`Failed to remove quantity: ${error.message}`);
         return;
       }
+      queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+      queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
       toast.success("Quantity removed successfully");
       navigate("/");
       return;
     }
 
-    // Add inventory: upsert_scaffold already increments both quantity and qty_at_start
-    const scaffoldData = {
-      scaffold_type: values.scaffold_type,
-      status: values.status,
-      part_number: values.part_number,
-      description: values.description,
-      quantity: values.quantity,
-      mass_per_item: values.mass_per_item,
-      weekly_rate: values.weekly_rate,
-      unit_price: values.unit_price ?? null,
-    };
-
-    await createScaffold.mutateAsync(scaffoldData);
+    setIsSubmitting(true);
+    const { error } = await supabase.rpc("add_inventory_from_entry_page", {
+      p_scaffold_type: values.scaffold_type,
+      p_status: values.status,
+      p_part_number: values.part_number,
+      p_description: values.description,
+      p_quantity: values.quantity,
+      p_mass_per_item: values.mass_per_item,
+      p_weekly_rate: values.weekly_rate,
+      p_unit_price: values.unit_price ?? null,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      toast.error(`Failed to add scaffold: ${error.message}`);
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["scaffolds"] });
+    queryClient.invalidateQueries({ queryKey: ["scaffold-stats"] });
+    toast.success("Scaffold added successfully");
     navigate("/");
   };
 
@@ -392,6 +405,7 @@ const AddScaffold = () => {
                                 type="button"
                                 variant={field.value === "add" ? "default" : "outline"}
                                 className="justify-start gap-2"
+                                disabled={!canManageInventory || isSubmitting}
                                 onClick={() => handleAdjustmentSelect("add")}
                               >
                                 <Plus className="h-4 w-4" />
@@ -401,6 +415,7 @@ const AddScaffold = () => {
                                 type="button"
                                 variant={field.value === "remove" ? "default" : "outline"}
                                 className="justify-start gap-2"
+                                disabled={!canManageInventory || isSubmitting}
                                 onClick={() => handleAdjustmentSelect("remove")}
                               >
                                 <Minus className="h-4 w-4" />
@@ -453,6 +468,12 @@ const AddScaffold = () => {
                         </FormItem>
                       )}
                     />
+
+                    {!canManageInventory && (
+                      <p role="status" className="text-sm text-muted-foreground">
+                        {permissionLoading ? "Checking inventory access…" : "Only Angela may add or deduct inventory here."}
+                      </p>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
@@ -582,7 +603,7 @@ const AddScaffold = () => {
                       <Button
                         type="submit"
                         className="flex-1"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !canManageInventory}
                       >
                         {isSubmitting
                           ? "Saving..."

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792469340173,
+      "tag": "0000_guard_add_scaffold_page_actions",
+      "breakpoints": true
+    }
+  ]
+}
