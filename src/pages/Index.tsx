@@ -136,7 +136,14 @@ const Index = () => {
       acc.push(quotation);
       return acc;
     }, [])
-    .slice(0, 10);
+    .filter((quotation) => {
+      const query = existingClientSearch.trim().toLowerCase();
+      if (!query) return true;
+      const clientId = toClientId(quotation).toLowerCase();
+      const company = (quotation.company_name || "").toLowerCase();
+      const quotationNumber = (quotation.quotation_number || "").toLowerCase();
+      return clientId.includes(query) || company.includes(query) || quotationNumber.includes(query);
+    });
 
   const testClientOptions = hireQuotations
     .filter((quotation) => isTestQuotationNumber(quotation.quotation_number))
