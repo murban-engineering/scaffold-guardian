@@ -1,47 +1,19 @@
-# Fix "Existing Client New Quotation" — one client ID per customer
+# Existing Client New Quotation — searchable list with CL-ID autofill
 
-## The problem (verified)
+## Scope (only this change)
+Fix the dashboard "Existing Client New Quotation" entry point. Nothing else changes — no workflow edits, no data cleanup in this round.
 
-**1. Client details don't auto-fill, and searching fails to find clients.**
-- On the dashboard, "Existing Client New Quotation" is a dropdown capped at the 10 most recent clients with no search — most clients are simply not listed.
-- Inside the quotation workflow the "Existing Client New Site" picker searches only what was typed and shows at most 8 results, and each company appears multiple times because duplicates split them up.
+## The problem
+The dashboard's "Existing Client New Quotation" dropdown lists only the 10 most recent clients with no search, so most clients can't be found and their details get re-keyed, creating a new client ID each time (Linsas, Hascons, Patronics, Shaeez and others are duplicated in the data as a result).
 
-**2. Every re-keyed quotation creates a brand-new client ID.**
-The database confirms heavy duplication — same company saved under different client IDs:
-
-- Linsas Scaffolding → CL-000006, CL-000086, CL-000103, CL-000104
-- Hascons Company Limited → CL-000013, CL-000106, CL-000107
-- Patronics Services Ltd → CL-000063…066 (four IDs)
-- Shaeez enterprise → CL-000019, CL-000072, CL-000097
-- Murban, Orton, Remiven, TATU CITY, Wilman, Unity homes, Chennai — all duplicated
-
-Root cause in the workflow: when a repeat client's details are keyed manually instead of picked from the list, the client ID field is empty, so save generates a fresh ID from the sequence. Nothing stops it, and nothing warns that the company already exists.
-
-## The fix
-
-### 1. Dashboard entry point
-- Replace the capped dropdown with a searchable list (same pattern as "Continue Quotation"): search by client ID, company name or HSQ number, no 10-item cap, most recent first.
-
-### 2. Workflow — reuse the client ID, never regenerate
-- Picking an existing client keeps that client's ID locked and read-only; only the quotation number (auto) and site number/details are new.
-- Add a duplicate guard in Section 1: when the company name typed matches an existing client (ignoring case/spacing), warn and offer to load that client's details and ID with one click instead of saving a duplicate.
-
-### 3. One-time data cleanup — one client ID per customer
-- Merge every duplicate to one canonical client ID per real company (same approach used for Mevon → CL-000002), picking the ID with the most quotations as the survivor.
-- Canonical picks (ID with the most history keeps; others point to it):
-  - Linsas Scaffolding → CL-000006 (also unify the name spelling)
-  - Hascons → CL-000013; Patronics → CL-000063; Shaeez → CL-000019
-  - Murban → CL-000037; Orton → CL-000046; Remiven → CL-000028
-  - TATU CITY → CL-000053; Wilman → CL-000078; Chennai → CL-000095
-  - Unity homes / "Unity homes - Tatu City" / Unity West Sez → CL-000088
-- Name variants (e.g. "Linsas scaffolding" vs "Linsas Scaffolding") are normalised to one spelling so search and reports match.
-- New-client sequence is unaffected — only existing records change.
-
-## What stays untouched
-- Quotation numbering (HSQ), site numbering (NK), the CL sequence for genuinely new clients, billing/reports logic.
+## The fix — `src/pages/Index.tsx`
+1. Replace the capped dropdown with a searchable picker, the same pattern as "Continue Quotation":
+   - Search box matches Client ID (CL-…), company name, or HSQ number (case-insensitive).
+   - Full client list, most recent first, no 10-item cap; each client shown once as "Company • CL-…".
+2. Typing a CL ID and selecting it proceeds straight into the quotation workflow with that client's details auto-filled (company, address, contacts, PIN, email) and that client's existing client ID — only the quotation number and site number are new. This reuses the existing client-prefill path; no new save logic.
+3. Keep the same "New Quotation" and "Continue Quotation" buttons as they are.
 
 ## Verification
-- Search finds any client from the dashboard and in the workflow.
-- Creating a quotation for a repeat client keeps their client ID; a new site number is created.
-- Typing an existing company name triggers the duplicate warning.
-- Reports (Sites entry/removal, Client Report) now show each merged client under one ID.
+- Search "CL-000006" or "linsas" from the dashboard finds Linsas Scaffolding; selecting it opens the quotation with details filled and client ID CL-000006 kept.
+- A client outside the latest 10 is findable.
+- New Quotation and Continue Quotation still work unchanged.
