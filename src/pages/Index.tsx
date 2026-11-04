@@ -50,6 +50,8 @@ const Index = () => {
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [showExistingClientDialog, setShowExistingClientDialog] = useState(false);
+  const [existingClientSearch, setExistingClientSearch] = useState("");
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
   const [continueSearchQuery, setContinueSearchQuery] = useState("");
   const [continueSortAsc, setContinueSortAsc] = useState(false);
