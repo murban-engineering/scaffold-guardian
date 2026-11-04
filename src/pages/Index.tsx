@@ -50,6 +50,8 @@ const Index = () => {
   const [processedClient, setProcessedClient] = useState<ProcessedClient | null>(null);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [showExistingClientDialog, setShowExistingClientDialog] = useState(false);
+  const [existingClientSearch, setExistingClientSearch] = useState("");
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
   const [continueSearchQuery, setContinueSearchQuery] = useState("");
   const [continueSortAsc, setContinueSortAsc] = useState(false);
@@ -134,7 +136,14 @@ const Index = () => {
       acc.push(quotation);
       return acc;
     }, [])
-    .slice(0, 10);
+    .filter((quotation) => {
+      const query = existingClientSearch.trim().toLowerCase();
+      if (!query) return true;
+      const clientId = toClientId(quotation).toLowerCase();
+      const company = (quotation.company_name || "").toLowerCase();
+      const quotationNumber = (quotation.quotation_number || "").toLowerCase();
+      return clientId.includes(query) || company.includes(query) || quotationNumber.includes(query);
+    });
 
   const testClientOptions = hireQuotations
     .filter((quotation) => isTestQuotationNumber(quotation.quotation_number))
@@ -499,37 +508,10 @@ const Index = () => {
                           <FolderClock className="mr-2 h-4 w-4" />
                           Continue Quotation
                         </DropdownMenuItem>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger className="cursor-pointer">
-                            <Building2 className="mr-2 h-4 w-4" />
-                            Existing Client New Quotation
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
-                            {existingClientOptions.length ? (
-                              existingClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation);
-                                return (
-                                  <DropdownMenuItem
-                                    key={quotation.id}
-                                    className="cursor-pointer"
-                                    onClick={() => handleStartExistingClientOrder(quotation)}
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium">
-                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
-                                      </p>
-                                      <p className="truncate text-xs text-muted-foreground">
-                                        {clientId} • {quotation.site_manager_name || "No contact"}
-                                      </p>
-                                    </div>
-                                  </DropdownMenuItem>
-                                );
-                              })
-                            ) : (
-                              <DropdownMenuItem disabled>No existing clients available</DropdownMenuItem>
-                            )}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                        <DropdownMenuItem onClick={() => setShowExistingClientDialog(true)} className="cursor-pointer">
+                          <Building2 className="mr-2 h-4 w-4" />
+                          Existing Client New Quotation
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
