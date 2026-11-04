@@ -508,37 +508,10 @@ const Index = () => {
                           <FolderClock className="mr-2 h-4 w-4" />
                           Continue Quotation
                         </DropdownMenuItem>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger className="cursor-pointer">
-                            <Building2 className="mr-2 h-4 w-4" />
-                            Existing Client New Quotation
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent alignOffset={-4} className="max-h-80 w-72 overflow-y-auto">
-                            {existingClientOptions.length ? (
-                              existingClientOptions.map((quotation) => {
-                                const clientId = toClientId(quotation);
-                                return (
-                                  <DropdownMenuItem
-                                    key={quotation.id}
-                                    className="cursor-pointer"
-                                    onClick={() => handleStartExistingClientOrder(quotation)}
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium">
-                                        {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
-                                      </p>
-                                      <p className="truncate text-xs text-muted-foreground">
-                                        {clientId} • {quotation.site_manager_name || "No contact"}
-                                      </p>
-                                    </div>
-                                  </DropdownMenuItem>
-                                );
-                              })
-                            ) : (
-                              <DropdownMenuItem disabled>No existing clients available</DropdownMenuItem>
-                            )}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                        <DropdownMenuItem onClick={() => setShowExistingClientDialog(true)} className="cursor-pointer">
+                          <Building2 className="mr-2 h-4 w-4" />
+                          Existing Client New Quotation
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
