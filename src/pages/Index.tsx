@@ -508,7 +508,13 @@ const Index = () => {
                           <FolderClock className="mr-2 h-4 w-4" />
                           Continue Quotation
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowExistingClientDialog(true)} className="cursor-pointer">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setExistingClientSearch("");
+                            setShowExistingClientDialog(true);
+                          }}
+                          className="cursor-pointer"
+                        >
                           <Building2 className="mr-2 h-4 w-4" />
                           Existing Client New Quotation
                         </DropdownMenuItem>
@@ -545,6 +551,78 @@ const Index = () => {
             <MaintenanceLogOverview />
           </div>
         )}
+
+        <Dialog
+          open={showExistingClientDialog}
+          onOpenChange={(open) => {
+            setShowExistingClientDialog(open);
+            if (!open) setExistingClientSearch("");
+          }}
+        >
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-xl p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle>Existing Client New Quotation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label htmlFor="existing-client-search">Search by Client ID, company, or HSQ number</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="existing-client-search"
+                  aria-label="Search existing clients"
+                  value={existingClientSearch}
+                  onChange={(event) => setExistingClientSearch(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    const query = existingClientSearch.trim().toLowerCase();
+                    const exactClient = existingClientOptions.find(
+                      (quotation) => toClientId(quotation).toLowerCase() === query,
+                    );
+                    const quotation = exactClient ?? existingClientOptions[0];
+                    if (quotation) {
+                      setShowExistingClientDialog(false);
+                      setExistingClientSearch("");
+                      handleStartExistingClientOrder(quotation);
+                    }
+                  }}
+                  placeholder="e.g. CL-000006, Linsas, or HSQ-000057"
+                  className="pl-9"
+                />
+              </div>
+              <div className="max-h-[55vh] overflow-y-auto rounded-md border border-border">
+                {quotationsLoading ? (
+                  <p className="p-4 text-sm text-muted-foreground">Loading clients...</p>
+                ) : existingClientOptions.length ? (
+                  <div className="divide-y divide-border">
+                    {existingClientOptions.map((quotation) => (
+                      <Button
+                        key={`existing-client-${quotation.id}`}
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start rounded-none px-4 py-3 text-left"
+                        onClick={() => {
+                          setShowExistingClientDialog(false);
+                          setExistingClientSearch("");
+                          handleStartExistingClientOrder(quotation);
+                        }}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {quotation.company_name || quotation.site_manager_name || "Unnamed client"}
+                            <span className="text-muted-foreground"> • {toClientId(quotation)}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">Latest quotation: {quotation.quotation_number}</p>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="p-4 text-sm text-muted-foreground">No matching clients found.</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Hire Quotation Dialog - accessible from all views */}
         <Dialog
