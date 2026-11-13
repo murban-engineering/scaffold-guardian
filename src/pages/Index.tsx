@@ -55,6 +55,7 @@ const Index = () => {
   const [selectedContinueClient, setSelectedContinueClient] = useState("all");
   const [continueSearchQuery, setContinueSearchQuery] = useState("");
   const [continueSortAsc, setContinueSortAsc] = useState(false);
+  const [continueCategory, setContinueCategory] = useState<"all" | "draft" | "dispatched" | "completed" | "other" | "test">("all");
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
@@ -160,6 +161,15 @@ const Index = () => {
   const isTestQuotation = (quotation: HireQuotation) =>
     isTestQuotationNumber(quotation.quotation_number);
 
+  const getContinueCategory = (quotation: HireQuotation) => {
+    if (isTestQuotation(quotation)) return "test";
+    const status = (quotation.status || "draft").trim().toLowerCase();
+    if (status === "draft") return "draft";
+    if (status === "dispatched") return "dispatched";
+    if (status === "completed") return "completed";
+    return "other";
+  };
+
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
 
@@ -194,6 +204,36 @@ const Index = () => {
       const cmp = (b.created_at ?? "").localeCompare(a.created_at ?? "");
       return continueSortAsc ? -cmp : cmp;
     });
+  };
+
+  const filteredStandardQuotations = filterQuotationsByClient(standardQuotations);
+  const filteredTestQuotations = filterQuotationsByClient(testQuotations);
+  const standardQuotationSections = ([
+    { category: "draft", title: "Drafts" },
+    { category: "dispatched", title: "Dispatched Quotations" },
+    { category: "completed", title: "Completed Quotations" },
+    { category: "other", title: "Other Quotations" },
+  ] as const)
+    .filter(({ category }) => continueCategory === "all" || continueCategory === category)
+    .map(({ category, title }) => ({
+      title,
+      rows: filteredStandardQuotations.filter((quotation) => getContinueCategory(quotation) === category),
+      isTest: false,
+    }))
+    .filter((section) => section.rows.length > 0);
+  const continueQuotationSections = [
+    ...standardQuotationSections,
+    ...(continueCategory === "all" || continueCategory === "test"
+      ? [{ title: "Test Quotations", rows: filteredTestQuotations, isTest: true }]
+      : []),
+  ];
+  const continueCategoryCounts = {
+    all: filteredStandardQuotations.length + filteredTestQuotations.length,
+    draft: filteredStandardQuotations.filter((quotation) => getContinueCategory(quotation) === "draft").length,
+    dispatched: filteredStandardQuotations.filter((quotation) => getContinueCategory(quotation) === "dispatched").length,
+    completed: filteredStandardQuotations.filter((quotation) => getContinueCategory(quotation) === "completed").length,
+    other: filteredStandardQuotations.filter((quotation) => getContinueCategory(quotation) === "other").length,
+    test: filteredTestQuotations.length,
   };
 
   const handleStartNewQuotation = () => {
@@ -661,6 +701,7 @@ const Index = () => {
           if (open) {
             setSelectedContinueClient("all");
             setContinueSearchQuery("");
+            setContinueCategory("all");
           }
           if (!open && (activeItem === "site-master" || activeItem === "yard-verification") && !selectedQuotation) {
             setActiveItem("dashboard");
@@ -691,6 +732,28 @@ const Index = () => {
                   />
                 </div>
               </div>
+              {activeItem !== "site-master" && activeItem !== "yard-verification" && (
+                <div className="flex flex-wrap gap-2" role="group" aria-label="Filter quotations by status">
+                  {([
+                    { value: "all", label: "All" },
+                    { value: "draft", label: "Drafts" },
+                    { value: "dispatched", label: "Dispatched" },
+                    { value: "completed", label: "Completed" },
+                    { value: "other", label: "Other" },
+                    { value: "test", label: "Test Quotations" },
+                  ] as const).map(({ value, label }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      size="sm"
+                      variant={continueCategory === value ? "default" : "outline"}
+                      onClick={() => setContinueCategory(value)}
+                    >
+                      {label}<span className="ml-1 tabular-nums">{continueCategoryCounts[value]}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
               <div className="flex items-end gap-2">
                 <div className="flex-1 grid gap-2">
                   <Label htmlFor="continue-client-filter">Filter by client</Label>
@@ -717,18 +780,8 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Loading saved quotations...</p>
               ) : hireQuotations.length ? (
                 <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
-                  {[
-                    { title: "Saved Quotations", rows: filterQuotationsByClient(standardQuotations), isTest: false },
-                    {
-                      title: "Test Quotations",
-                      rows:
-                        activeItem === "site-master" || activeItem === "yard-verification"
-                          ? []
-                          : filterQuotationsByClient(testQuotations),
-                      isTest: true,
-                    },
-                  ]
-                    .filter((section) => section.rows.length > 0)
+                  {continueQuotationSections
+                    .filter((section) => !section.isTest || (activeItem !== "site-master" && activeItem !== "yard-verification"))
                     .map((section) => (
                       <div key={section.title} className="rounded-lg border border-border overflow-hidden">
                         <div className="border-b px-4 py-2 bg-muted/30">
