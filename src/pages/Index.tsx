@@ -18,6 +18,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCreateQuotation, useDeleteQuotation, useHireQuotations, useUpdateQuotation, HireQuotation } from "@/hooks/useHireQuotations";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { formatReportDate } from "@/lib/accountingDates";
 import { Label } from "@/components/ui/label";
@@ -36,6 +46,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { getNextTestQuotationNumber, isTestQuotationNumber } from "@/lib/testQuotation";
+import { getContinueQuotationCategory, isDraftQuotationDeletable } from "@/lib/quotationStatus";
 
 const Index = () => {
   useRealtimeSync();
@@ -57,6 +68,7 @@ const Index = () => {
   const [continueSortAsc, setContinueSortAsc] = useState(false);
   const [continueCategory, setContinueCategory] = useState<"all" | "draft" | "dispatched" | "completed" | "other" | "test">("all");
   const [selectedQuotation, setSelectedQuotation] = useState<HireQuotation | null>(null);
+  const [draftToDelete, setDraftToDelete] = useState<HireQuotation | null>(null);
   const [selectedExistingClient, setSelectedExistingClient] = useState<HireQuotation | null>(null);
   const [workflowInitialStep, setWorkflowInitialStep] = useState<StepKey | undefined>(undefined);
   const [workflowInitialClientMode, setWorkflowInitialClientMode] = useState<"new" | "existing">("new");
@@ -161,14 +173,8 @@ const Index = () => {
   const isTestQuotation = (quotation: HireQuotation) =>
     isTestQuotationNumber(quotation.quotation_number);
 
-  const getContinueCategory = (quotation: HireQuotation) => {
-    if (isTestQuotation(quotation)) return "test";
-    const status = (quotation.status || "draft").trim().toLowerCase();
-    if (status === "draft") return "draft";
-    if (status === "dispatched") return "dispatched";
-    if (status === "completed") return "completed";
-    return "other";
-  };
+  const getContinueCategory = (quotation: HireQuotation) =>
+    getContinueQuotationCategory(quotation.status, quotation.quotation_number);
 
   const standardQuotations = hireQuotations.filter((quotation) => !isTestQuotation(quotation));
   const testQuotations = hireQuotations.filter((quotation) => isTestQuotation(quotation));
@@ -370,6 +376,24 @@ const Index = () => {
       toast.success(`Deleted test quotation ${clientId} and cleared its saved history.`);
     } catch (error) {
       console.error("Failed to delete test quotation", error);
+    }
+  };
+
+  const handleConfirmDeleteDraft = async () => {
+    const currentDraft = draftToDelete
+      ? hireQuotations.find((quotation) => quotation.id === draftToDelete.id)
+      : null;
+
+    if (!currentDraft || !isDraftQuotationDeletable(currentDraft.status, currentDraft.quotation_number)) {
+      setDraftToDelete(null);
+      return;
+    }
+
+    try {
+      await deleteQuotation.mutateAsync({ id: currentDraft.id });
+      setDraftToDelete(null);
+    } catch {
+      // The mutation displays its own error notification.
     }
   };
 
@@ -809,9 +833,25 @@ const Index = () => {
                                     <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "promote")}>Convert to Hire</Button>
                                   </div>
                                 ) : (
-                                  <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                    {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                  </Button>
+                                  <div className={getContinueCategory(quotation) === "draft" && activeItem !== "site-master" && activeItem !== "yard-verification" ? "grid grid-cols-[1fr_auto] gap-2" : ""}>
+                                    <Button size="sm" className="w-full text-xs" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                      {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                    </Button>
+                                    {getContinueCategory(quotation) === "draft" && activeItem !== "site-master" && activeItem !== "yard-verification" && (
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="destructive"
+                                        className="h-9 w-9"
+                                        title="Delete draft"
+                                        aria-label={`Delete draft ${quotation.quotation_number || "quotation"}`}
+                                        disabled={deleteQuotation.isPending}
+                                        onClick={() => setDraftToDelete(quotation)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             );
@@ -867,9 +907,25 @@ const Index = () => {
                                           <Button size="sm" onClick={() => handleContinueQuotation(quotation, "promote")}>Convert to Hire</Button>
                                         </div>
                                       ) : (
-                                        <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
-                                          {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                          {getContinueCategory(quotation) === "draft" && activeItem !== "site-master" && activeItem !== "yard-verification" && (
+                                            <Button
+                                              type="button"
+                                              size="icon"
+                                              variant="destructive"
+                                              className="h-9 w-9"
+                                              title="Delete draft"
+                                              aria-label={`Delete draft ${quotation.quotation_number || "quotation"}`}
+                                              disabled={deleteQuotation.isPending}
+                                              onClick={() => setDraftToDelete(quotation)}
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          )}
+                                          <Button size="sm" onClick={() => handleContinueQuotation(quotation, "continue")}>
+                                            {activeItem === "site-master" || activeItem === "yard-verification" ? "Select" : "Continue"}
+                                          </Button>
+                                        </div>
                                       )}
                                     </TableCell>
                                   </TableRow>
@@ -889,6 +945,31 @@ const Index = () => {
             </div>
           </DialogContent>
         </Dialog>
+        <AlertDialog open={Boolean(draftToDelete)} onOpenChange={(open) => {
+          if (!open && !deleteQuotation.isPending) setDraftToDelete(null);
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this draft quotation?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete {draftToDelete?.quotation_number || "this draft"} and its saved equipment and site details. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteQuotation.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteQuotation.isPending}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleConfirmDeleteDraft();
+                }}
+              >
+                {deleteQuotation.isPending ? "Deleting…" : "Delete draft"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
