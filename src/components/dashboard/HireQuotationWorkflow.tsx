@@ -32,6 +32,7 @@ import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useAllClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
 import { Switch } from "@/components/ui/switch";
+import { getQuotationQuantity } from "@/lib/quotationQuantity";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
@@ -1406,28 +1407,17 @@ const HireQuotationWorkflow = ({
     () => scaffolds?.find((scaffold) => scaffold.id === selectedScaffoldId),
     [scaffolds, selectedScaffoldId]
   );
-  const remainingSelectedQty = useMemo(() => {
+  const alreadySelectedQty = useMemo(() => {
     if (!selectedScaffold) return 0;
-    if (isTestQuotation) return selectedScaffold.quantity ?? 0;
 
-    const alreadyAdded = equipmentItems.reduce((total, item) => {
+    return equipmentItems.reduce((total, item) => {
       if (item.scaffoldId !== selectedScaffold.id) return total;
       return total + parseNumber(item.qtyDelivered);
     }, 0);
-
-    return Math.max((selectedScaffold.quantity ?? 0) - alreadyAdded, 0);
-  }, [equipmentItems, isTestQuotation, selectedScaffold]);
+  }, [equipmentItems, selectedScaffold]);
   const addDisabled =
     !selectedScaffoldId ||
     parseNumber(equipmentQuantity) <= 0;
-
-  const clampToInventory = (requestedQty: number, availableQty: number) => {
-    if (isTestQuotation) {
-      return Math.max(requestedQty, 0);
-    }
-
-    return Math.min(Math.max(requestedQty, 0), Math.max(availableQty, 0));
-  };
 
   // Always resolve warehouse stock live from the inventory query. The value stored
   // on the equipment row can be 0 when the quotation was hydrated before the
@@ -1926,14 +1916,9 @@ const HireQuotationWorkflow = ({
       return;
     }
 
-    const availableQty = scaffold.quantity ?? 0;
     const existingItem = equipmentItems.find(item => item.scaffoldId === scaffold.id);
     const alreadyAdded = existingItem ? parseNumber(existingItem.qtyDelivered) : 0;
-    const totalRequested = clampToInventory(alreadyAdded + qty, availableQty);
-
-    if (!isTestQuotation && alreadyAdded + qty > availableQty) {
-      toast.error(`Cannot request more than ${availableQty} item(s) available in inventory.`);
-    }
+    const totalRequested = getQuotationQuantity(alreadyAdded + qty);
 
     const existingIndex = equipmentItems.findIndex(item => item.scaffoldId === scaffold.id);
     if (existingIndex >= 0) {
@@ -1951,13 +1936,13 @@ const HireQuotationWorkflow = ({
         itemCode: scaffold.part_number || "",
         description: scaffold.description || scaffold.scaffold_type,
         unit: "pcs",
-        qtyDelivered: String(clampToInventory(qty, availableQty)),
+        qtyDelivered: String(getQuotationQuantity(qty)),
         weeklyRate: String(scaffold.weekly_rate || 0),
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
         warehouseAvailableQty: scaffold.quantity ?? 0,
-        originalQuantity: clampToInventory(qty, availableQty),
+        originalQuantity: getQuotationQuantity(qty),
         previouslyDelivered: 0,
         dbBalanceQuantity: 0,
       };
@@ -3893,7 +3878,6 @@ const HireQuotationWorkflow = ({
                     <Input
                       type="number"
                       min={0}
-                      max={isTestQuotation ? undefined : remainingSelectedQty}
                       value={equipmentQuantity}
                       onChange={(e) => {
                         const value = e.target.value;
@@ -3902,12 +3886,7 @@ const HireQuotationWorkflow = ({
                           return;
                         }
 
-                        const clampedQty = clampToInventory(parseNumber(value), remainingSelectedQty);
-                        if (!isTestQuotation && parseNumber(value) > remainingSelectedQty) {
-                          toast.error(`Cannot request more than ${remainingSelectedQty} item(s) available in inventory.`);
-                        }
-
-                        setEquipmentQuantity(String(clampedQty));
+                        setEquipmentQuantity(String(getQuotationQuantity(parseNumber(value))));
                       }}
                       disabled={!selectedScaffoldId}
                     />
@@ -3917,7 +3896,7 @@ const HireQuotationWorkflow = ({
                   </div>
                   {selectedScaffoldId && (
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Available in yard: {selectedScaffold?.quantity ?? 0} • Remaining to add: {remainingSelectedQty}
+                      Available in yard: {selectedScaffold?.quantity ?? 0} • Already in quotation: {alreadySelectedQty}
                     </p>
                   )}
                 </div>
@@ -3968,13 +3947,7 @@ const HireQuotationWorkflow = ({
                               onChange={(e) => {
                                 const value = e.target.value;
                                 const requestedQty = parseNumber(value);
-                                const availableQty = getWarehouseAvailableQty(item);
-                                const nextQty = clampToInventory(requestedQty, availableQty);
-
-                                if (!isTestQuotation && requestedQty > availableQty) {
-                                  toast.error(`Cannot set quantity above inventory (${availableQty}).`);
-                                }
-
+                                const nextQty = getQuotationQuantity(requestedQty);
 
                                 setEquipmentItems((prev) =>
                                   prev.map((entry, entryIndex) =>

@@ -9,3 +9,7 @@
 # Draft quotation deletion
 - [x] Add a delete action only for draft quotations in Continue Quotation and require confirmation.
 - [ ] Verify draft-only eligibility in tests and the preview.
+
+# Quotation quantities beyond current stock
+- [x] Remove current-stock caps when adding or editing equipment in new and continued quotations; retain dispatch stock checks.
+- [x] Run the quantity tests and typecheck; verify stock checks remain on dispatch.
