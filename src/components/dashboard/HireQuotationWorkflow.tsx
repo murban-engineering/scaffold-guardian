@@ -32,7 +32,7 @@ import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useAllClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
 import { Switch } from "@/components/ui/switch";
-import { getEquipmentTargetWeeklyRate } from "@/lib/equipmentTargetWeeklyRates";
+import { getEquipmentRateOptions, getEquipmentRateTierForWeeklyRate, getEquipmentTargetWeeklyRate, type EquipmentRateTier } from "@/lib/equipmentTargetWeeklyRates";
 import { getQuotationQuantity } from "@/lib/quotationQuantity";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
@@ -3904,6 +3904,10 @@ const HireQuotationWorkflow = ({
               </div>
             </div>
 
+            <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+              Choose a MINIMUM, TARGET, or PREMIUM weekly rate for each item. Monthly card prices appear in the selector for reference; VAT is added separately.
+            </div>
+
             {/* Equipment Table */}
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
@@ -3931,6 +3935,8 @@ const HireQuotationWorkflow = ({
                     equipmentItems.map((item, idx) => {
                       const qty = parseNumber(item.qtyDelivered);
                       const rate = parseNumber(item.weeklyRate);
+                      const rateOptions = getEquipmentRateOptions(item.itemCode);
+                      const selectedRateTier = getEquipmentRateTierForWeeklyRate(item.itemCode, rate);
                       const mass = parseNumber(item.massPerItem);
                       const discountRate = Math.min(Math.max(parseNumber(item.hireDiscount), 0), 100) / 100;
                       const hireRate = Math.max(rate * (1 - discountRate), 0);
@@ -3962,7 +3968,48 @@ const HireQuotationWorkflow = ({
                             />
                           </td>
                           <td className="px-3 py-2 text-right">{mass ? `${mass} kg` : "-"}</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(rate)}</td>
+                          <td className="px-3 py-2 text-right">
+                            {rateOptions ? (
+                              <Select
+                                value={selectedRateTier}
+                                disabled={isEquipmentItemLocked(item)}
+                                onValueChange={(value) => {
+                                  const tier = value as EquipmentRateTier;
+                                  const nextRate = rateOptions[tier].weekly;
+                                  setEquipmentItems((prev) =>
+                                    prev.map((entry, entryIndex) =>
+                                      entryIndex === idx
+                                        ? { ...entry, weeklyRate: String(nextRate) }
+                                        : entry
+                                    )
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="ml-auto h-8 min-w-[190px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(["minimum", "target", "premium"] as const).map((tier) => {
+                                    const option = rateOptions[tier];
+                                    const label = tier.charAt(0).toUpperCase() + tier.slice(1);
+                                    const monthly = option.monthly === null ? "" : ` · ${formatCurrency(option.monthly)}/month`;
+                                    return (
+                                      <SelectItem key={tier} value={tier}>
+                                        {`${label} · ${formatCurrency(option.weekly)}/week${monthly}`}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                  {selectedRateTier === "custom" && (
+                                    <SelectItem value="custom" disabled>
+                                      Current · {formatCurrency(rate)}/week
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              formatCurrency(rate)
+                            )}
+                          </td>
                           <td className="px-3 py-2 text-right">
                             <Input
                               type="number"
