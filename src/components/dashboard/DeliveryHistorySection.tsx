@@ -21,6 +21,8 @@ export interface DeliveryRecord {
     quantityDelivered: number;
     balanceAfter: number;
     massPerItem: number;
+    weeklyRate?: number;
+    hireDiscount?: number;
     totalMass: number;
   }[];
   totalMass: number;
