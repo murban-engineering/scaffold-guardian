@@ -680,8 +680,15 @@ const openScrapReport = (invoice: ClientInvoice) => {
  * Returned items are excluded entirely.
  */
 const openWeeklyRateReport = (invoice: ClientInvoice) => {
-  // Aggregate on-hire quantities per part number across all dispatch batches.
-  const onHireMap = new Map<string, { partNumber: string; item: string; quantity: number; weeklyRate: number }>();
+  // Keep different selected rates for the same part number as separate report rows.
+  const onHireMap = new Map<string, {
+    partNumber: string;
+    item: string;
+    quantity: number;
+    weeklyRate: number;
+    discountRate: number;
+    effectiveWeeklyRate: number;
+  }>();
   const batches = invoice.dispatchBatches.length
     ? invoice.dispatchBatches
     : [{ lines: invoice.hireBreakdown } as DispatchBatch];
@@ -690,7 +697,7 @@ const openWeeklyRateReport = (invoice: ClientInvoice) => {
     batch.lines
       .filter((l) => !l.isReturned)
       .forEach((l) => {
-        const key = l.partNumber || l.item;
+        const key = JSON.stringify([l.partNumber || l.item, l.weeklyRate, l.discountRate]);
         const existing = onHireMap.get(key);
         if (existing) {
           existing.quantity += l.quantity;
@@ -699,7 +706,9 @@ const openWeeklyRateReport = (invoice: ClientInvoice) => {
             partNumber: l.partNumber,
             item: l.item,
             quantity: l.quantity,
-            weeklyRate: l.effectiveWeeklyRate ?? l.weeklyRate,
+            weeklyRate: l.weeklyRate,
+            discountRate: l.discountRate,
+            effectiveWeeklyRate: l.effectiveWeeklyRate,
           });
         }
       });
@@ -721,10 +730,12 @@ const openWeeklyRateReport = (invoice: ClientInvoice) => {
       <td>${escapeHtml(l.item)}</td>
       <td class="r">${l.quantity}</td>
       <td class="r">${currency.format(l.weeklyRate)}</td>
-      <td class="r">${currency.format(l.quantity * l.weeklyRate)}</td>
+      <td class="r">${l.discountRate}%</td>
+      <td class="r">${currency.format(l.effectiveWeeklyRate)}</td>
+      <td class="r">${currency.format(l.quantity * l.effectiveWeeklyRate)}</td>
     </tr>`).join("");
 
-  const weeklyTotal = lines.reduce((s, l) => s + l.quantity * l.weeklyRate, 0);
+  const weeklyTotal = lines.reduce((s, l) => s + l.quantity * l.effectiveWeeklyRate, 0);
   const vatAmount = weeklyTotal * 0.16;
   const totalWithVat = weeklyTotal + vatAmount;
 
@@ -782,7 +793,7 @@ const openWeeklyRateReport = (invoice: ClientInvoice) => {
       <h2>Weekly Hire Charges — Items On Hire (1 Week)</h2>
       <table>
         <thead><tr>
-          <th>#</th><th>Part No</th><th>Description</th><th class="r">Qty On Hire</th><th class="r">Weekly Rate (KES)</th><th class="r">Weekly Amount (KES)</th>
+          <th>#</th><th>Part No</th><th>Description</th><th class="r">Qty On Hire</th><th class="r">Selected Weekly Rate (KES)</th><th class="r">Discount</th><th class="r">Net Weekly Rate (KES)</th><th class="r">Weekly Amount (KES)</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
