@@ -79,3 +79,17 @@ export const getEquipmentRateOptions = (partNumber: string | null | undefined) =
 
 export const getEquipmentTargetWeeklyRate = (partNumber: string | null | undefined) =>
   getEquipmentRateOptions(partNumber)?.target.weekly;
+
+export const getEquipmentRateTierForWeeklyRate = (
+  partNumber: string | null | undefined,
+  weeklyRate: number
+): EquipmentRateTier | "custom" => {
+  const options = getEquipmentRateOptions(partNumber);
+  if (!options) return "custom";
+
+  const matchingTier = (["minimum", "target", "premium"] as const).find(
+    (tier) => options[tier].weekly === weeklyRate
+  );
+
+  return matchingTier ?? "custom";
+};
