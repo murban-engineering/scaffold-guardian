@@ -30,6 +30,7 @@ import { DeliveryHistorySection, DeliveryRecord } from "./DeliveryHistorySection
 import { ReturnHistorySection, ReturnRecord } from "./ReturnHistorySection";
 import { useClientSites, useAllClientSites, useCreateClientSite, useUpdateClientSite, useDeleteClientSite, deriveSiteNumber, ClientSite } from "@/hooks/useClientSites";
 import { Switch } from "@/components/ui/switch";
+import { getEquipmentTargetWeeklyRate } from "@/lib/equipmentTargetWeeklyRates";
 
 export type StepKey = "client" | "equipment" | "quotation" | "site-master" | "hire-delivery" | "delivery" | "return";
 
@@ -1860,7 +1861,7 @@ const HireQuotationWorkflow = ({
         description: scaffold.description || scaffold.scaffold_type,
         unit: "pcs",
         qtyDelivered: String(clampToInventory(qty, availableQty)),
-        weeklyRate: String(scaffold.weekly_rate || 0),
+        weeklyRate: String(getEquipmentTargetWeeklyRate(scaffold.part_number) ?? scaffold.weekly_rate ?? 0),
         hireDiscount: inheritedDiscount,
         massPerItem: String(scaffold.mass_per_item || 0),
         notes: "",
@@ -3739,7 +3740,7 @@ const HireQuotationWorkflow = ({
                                 )}
                                 <SelectItem value={scaffold.id}>
                                   {scaffold.part_number} - {scaffold.description || scaffold.scaffold_type} 
-                                  (Status: {scaffold.status}, Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(scaffold.weekly_rate || 0)}/week)
+                                  (Status: {scaffold.status}, Qty: {scaffold.quantity}, Remaining: {remainingQty}, Rate: {formatCurrency(getEquipmentTargetWeeklyRate(scaffold.part_number) ?? scaffold.weekly_rate ?? 0)}/week)
                                 </SelectItem>
                               </React.Fragment>
                             );
