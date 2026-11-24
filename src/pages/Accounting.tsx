@@ -1179,7 +1179,13 @@ const Accounting = () => {
         deliveryNoteNumber?: string;
         deliveryDate?: string;
         status?: string;
-        items?: { itemCode?: string; description?: string; quantityDelivered?: number }[];
+        items?: {
+          itemCode?: string;
+          description?: string;
+          quantityDelivered?: number;
+          weeklyRate?: number;
+          hireDiscount?: number;
+        }[];
       };
 
       const dispatchedBatches = (deliveryHistory as unknown as RawDeliveryRecord[])
@@ -1228,9 +1234,12 @@ const Accounting = () => {
         for (const item of rec.items ?? []) {
           const partNo = item.itemCode || "-";
           const meta = resolveMeta(partNo);
-          const weeklyRate = meta?.weeklyRate ?? 0;
-          const discountRate = meta?.discountRate ?? 0;
-          const effectiveWeeklyRate = meta?.effectiveWeeklyRate ?? weeklyRate;
+          const weeklyRate = item.weeklyRate ?? meta?.weeklyRate ?? 0;
+          const discountRate = item.hireDiscount ?? meta?.discountRate ?? 0;
+          const effectiveWeeklyRate = Math.max(
+            weeklyRate * (1 - Math.min(Math.max(discountRate, 0), 100) / 100),
+            0
+          );
           let qty = item.quantityDelivered ?? 0;
           const description = item.description || meta?.description || partNo;
 
