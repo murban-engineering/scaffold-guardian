@@ -2108,6 +2108,8 @@ const HireQuotationWorkflow = ({
         quantityDelivered: deliveredQty,
         balanceAfter,
         massPerItem,
+        weeklyRate: parseNumber(item.weeklyRate),
+        hireDiscount: parseNumber(item.hireDiscount),
         totalMass: deliveredQty * massPerItem,
       };
     }).filter(item => item.quantityDelivered > 0);
